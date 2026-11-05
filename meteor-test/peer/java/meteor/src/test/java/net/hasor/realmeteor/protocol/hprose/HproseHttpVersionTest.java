@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hprose;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -27,7 +28,8 @@ public class HproseHttpVersionTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void http1CallsTheMountedService() throws Exception {
         // 在同一个 HTTP 端口的 /api 挂载 Hprose。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("hprose");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("hprose");
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("hprose") //
@@ -68,7 +70,8 @@ public class HproseHttpVersionTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void http1ReturnsTheFunctionList() throws Exception {
         // 在同一个 HTTP 端口的 /api 挂载 Hprose。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("hprose");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("hprose");
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("hprose") //
@@ -108,7 +111,8 @@ public class HproseHttpVersionTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void http1RejectsAnUnknownPath() throws Exception {
         // 在同一个 HTTP 端口的 /api 挂载 Hprose。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("hprose");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("hprose");
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("hprose") //
@@ -146,7 +150,8 @@ public class HproseHttpVersionTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void h2cUpgradeCallsTheMountedService() throws Exception {
         // 在同一个 HTTP 端口的 /api 挂载 Hprose。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("hprose");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("hprose");
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("hprose") //
@@ -187,7 +192,8 @@ public class HproseHttpVersionTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void h2cUpgradeReturnsTheFunctionList() throws Exception {
         // 在同一个 HTTP 端口的 /api 挂载 Hprose。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("hprose");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("hprose");
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("hprose") //
@@ -227,7 +233,8 @@ public class HproseHttpVersionTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void h2cUpgradeRejectsAnUnknownPath() throws Exception {
         // 在同一个 HTTP 端口的 /api 挂载 Hprose。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("hprose");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("hprose");
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("hprose") //

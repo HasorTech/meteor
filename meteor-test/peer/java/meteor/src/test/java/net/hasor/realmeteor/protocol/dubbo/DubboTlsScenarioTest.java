@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.dubbo;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import net.hasor.cobble.StringUtils;
@@ -202,9 +203,12 @@ public class DubboTlsScenarioTest {
     public void plaintextAndSecureEndpointsCanCoexist() throws Exception {
         // 同一进程使用两个 TCP 监听器，安全属性和地址别名各自独立。
         MetConfiguration incoming = this.server("server", "NONE", "TLSv1.3,TLSv1.2");
-        incoming.connector("tcp").bind("127.0.0.1", 0).protocol("dubbo");
+        incoming.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("dubbo");
         MetConfiguration outgoing = this.client(null, "trust", "TLSv1.3,TLSv1.2");
-        outgoing.connector("tcp").protocol("dubbo");
+        outgoing.connector("tcp") //
+                .protocol("dubbo");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();
@@ -229,8 +233,12 @@ public class DubboTlsScenarioTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void secureClientNeverFallsBackToPlaintext() throws Exception {
         // 服务器只有明文 Dubbo，客户端却要求 TLS。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("dubbo").setDefaultTimeout(10000);
-        incoming.connector("tcp").bind("127.0.0.1", 0).protocol("dubbo");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("dubbo") //
+                .setDefaultTimeout(10000);
+        incoming.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("dubbo");
         MetConfiguration outgoing = this.client(null, "trust", "TLSv1.3,TLSv1.2");
         DubboInteropServiceImpl provider = new DubboInteropServiceImpl();
         try (MetContext server = incoming.buildContext(); //
@@ -258,8 +266,11 @@ public class DubboTlsScenarioTest {
     public void secureListenerRejectsPlaintextClient() throws Exception {
         // 服务器只有 TLS Dubbo，客户端只准备明文连接。
         MetConfiguration incoming = this.server("server", "NONE", "TLSv1.3,TLSv1.2");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("dubbo").setDefaultTimeout(10000);
-        outgoing.connector("tcp").protocol("dubbo");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("dubbo") //
+                .setDefaultTimeout(10000);
+        outgoing.connector("tcp") //
+                .protocol("dubbo");
         DubboInteropServiceImpl provider = new DubboInteropServiceImpl();
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
@@ -282,8 +293,11 @@ public class DubboTlsScenarioTest {
     }
 
     private MetConfiguration server(String identity, String clientAuth, String protocols) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("dubbo").setDefaultTimeout(10000);
-        ConnectorSettings connector = configuration.connector("tcp").bind("127.0.0.1", 0);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("dubbo") //
+                .setDefaultTimeout(10000);
+        ConnectorSettings connector = configuration.connector("tcp") //
+                .bind("127.0.0.1", 0);
         connector.option("tlsEnabled", true) //
                 .option("tlsKeyStore", "classpath:/certs/acceptance/" + identity + ".p12") //
                 .option("tlsKeyStorePassword", "meteor-test") //
@@ -291,12 +305,15 @@ public class DubboTlsScenarioTest {
                 .option("tlsTrustStorePassword", "meteor-test") //
                 .option("tlsClientAuth", clientAuth) //
                 .option("tlsProtocols", protocols);
-        connector.protocol("dubbo").addressScheme("dubbos");
+        connector.protocol("dubbo") //
+                .addressScheme("dubbos");
         return configuration;
     }
 
     private MetConfiguration client(String identity, String trust, String protocols) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("dubbo").setDefaultTimeout(10000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("dubbo") //
+                .setDefaultTimeout(10000);
         ConnectorSettings connector = configuration.connector("tcp");
         connector.option("tlsEnabled", true) //
                 .option("tlsTrustStore", "classpath:/certs/acceptance/" + trust + ".p12") //
@@ -306,7 +323,8 @@ public class DubboTlsScenarioTest {
             connector.option("tlsKeyStore", "classpath:/certs/acceptance/" + identity + ".p12") //
                     .option("tlsKeyStorePassword", "meteor-test");
         }
-        connector.protocol("dubbo").addressScheme("dubbos");
+        connector.protocol("dubbo") //
+                .addressScheme("dubbos");
         return configuration;
     }
 }

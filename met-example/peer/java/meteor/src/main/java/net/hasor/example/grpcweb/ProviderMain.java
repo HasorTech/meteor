@@ -21,9 +21,13 @@ public final class ProviderMain {
 
     public static void main(String[] arguments) throws Exception {
         // 配置本地协议端点。
-        MetConfiguration configuration = new MetConfiguration().setUnitName("local");
-        configuration.connector("http").bind("127.0.0.1", 8080) //
-                .protocol("grpc-web").contextPath("/grpc-web") //
+        MetConfiguration configuration = new MetConfiguration() //
+                .setUnitName("local") //
+                .setApplicationName("grpcweb-order-provider");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 8080) //
+                .protocol("grpc-web") //
+                .contextPath("/grpc-web") //
                 .option("serializeType", "Protobuf") //
                 .option("corsOrigins", "http://127.0.0.1:8090,http://localhost:8090");
 

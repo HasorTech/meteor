@@ -11,6 +11,7 @@ import java.net.URL;
 import java.util.Map;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.hasor.example.protocol.grpc.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
@@ -36,9 +37,10 @@ public class GrpcAnySiblingImportTest {
         JsonNode value = MAPPER.readTree("""
                 {"payload":{"@type":"type.googleapis.com/sibling_any.Payload","value":"sibling"}}
                 """);
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         configuration.setDefaultProtocol("grpc");
-        configuration.connector("http").protocol("grpc");
+        configuration.connector("http") //
+                .protocol("grpc");
 
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<EnvelopeService> service = context.publisher() //

@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.connect;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URL;
 import java.util.ArrayList;
@@ -441,13 +442,17 @@ public class ConnectFlowScenarioTest {
     }
 
     private MetConfiguration configuration(boolean listener, int version) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("connect");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("connect");
         configuration.setDefaultTimeout(5000);
-        var http = configuration.connector("http").option("httpVersion", version);
+        var http = configuration.connector("http") //
+                .option("httpVersion", version);
         if (listener) {
             http.bind("127.0.0.1", 0);
         }
-        http.protocol("connect").contextPath("/rpc").option("streamBody", true);
+        http.protocol("connect") //
+                .contextPath("/rpc") //
+                .option("streamBody", true);
         return configuration;
     }
 }

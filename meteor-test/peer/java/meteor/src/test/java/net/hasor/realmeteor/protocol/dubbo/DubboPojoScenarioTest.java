@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.dubbo;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -32,8 +33,10 @@ public class DubboPojoScenarioTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void multipleArgumentsRetainTheirDeclaredPositions() throws Exception {
         // 只在服务端开放监听，两个容器均通过公开 bootstrap 创建。
-        try (MetContext server = this.configuration(true).buildContext(); //
-             MetContext client = this.configuration(false).buildContext()) {
+        try (MetContext server = this.configuration(true) //
+                .buildContext(); //
+             MetContext client = this.configuration(false) //
+                     .buildContext()) {
             // 启动后发布和订阅相同 Java 接口，未指定编码时采用 Dubbo 的 Hessian2 默认值。
             server.start();
             client.start();
@@ -53,8 +56,10 @@ public class DubboPojoScenarioTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void stringOverloadUsesItsDeclaredSignature() throws Exception {
         // 只在服务端开放监听，两个容器均通过公开 bootstrap 创建。
-        try (MetContext server = this.configuration(true).buildContext(); //
-             MetContext client = this.configuration(false).buildContext()) {
+        try (MetContext server = this.configuration(true) //
+                .buildContext(); //
+             MetContext client = this.configuration(false) //
+                     .buildContext()) {
             // 启动后发布和订阅相同 Java 接口，未指定编码时采用 Dubbo 的 Hessian2 默认值。
             server.start();
             client.start();
@@ -74,8 +79,10 @@ public class DubboPojoScenarioTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void primitiveOverloadUsesItsDeclaredSignature() throws Exception {
         // 只在服务端开放监听，两个容器均通过公开 bootstrap 创建。
-        try (MetContext server = this.configuration(true).buildContext(); //
-             MetContext client = this.configuration(false).buildContext()) {
+        try (MetContext server = this.configuration(true) //
+                .buildContext(); //
+             MetContext client = this.configuration(false) //
+                     .buildContext()) {
             // 启动后发布和订阅相同 Java 接口，未指定编码时采用 Dubbo 的 Hessian2 默认值。
             server.start();
             client.start();
@@ -95,8 +102,10 @@ public class DubboPojoScenarioTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void noArgumentMethodReturnsItsBusinessValue() throws Exception {
         // 只在服务端开放监听，两个容器均通过公开 bootstrap 创建。
-        try (MetContext server = this.configuration(true).buildContext(); //
-             MetContext client = this.configuration(false).buildContext()) {
+        try (MetContext server = this.configuration(true) //
+                .buildContext(); //
+             MetContext client = this.configuration(false) //
+                     .buildContext()) {
             // 启动后发布和订阅相同 Java 接口，未指定编码时采用 Dubbo 的 Hessian2 默认值。
             server.start();
             client.start();
@@ -116,8 +125,10 @@ public class DubboPojoScenarioTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void binaryParameterPreservesZeroAndSignedBytes() throws Exception {
         // 只在服务端开放监听，两个容器均通过公开 bootstrap 创建。
-        try (MetContext server = this.configuration(true).buildContext(); //
-             MetContext client = this.configuration(false).buildContext()) {
+        try (MetContext server = this.configuration(true) //
+                .buildContext(); //
+             MetContext client = this.configuration(false) //
+                     .buildContext()) {
             // 启动后发布和订阅相同 Java 接口，未指定编码时采用 Dubbo 的 Hessian2 默认值。
             server.start();
             client.start();
@@ -138,8 +149,10 @@ public class DubboPojoScenarioTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void dtoResultUsesTheDeclaredBusinessClass() throws Exception {
         // 只在服务端开放监听，两个容器均通过公开 bootstrap 创建。
-        try (MetContext server = this.configuration(true).buildContext(); //
-             MetContext client = this.configuration(false).buildContext()) {
+        try (MetContext server = this.configuration(true) //
+                .buildContext(); //
+             MetContext client = this.configuration(false) //
+                     .buildContext()) {
             // 启动后发布和订阅相同 Java 接口，未指定编码时采用 Dubbo 的 Hessian2 默认值。
             server.start();
             client.start();
@@ -161,8 +174,10 @@ public class DubboPojoScenarioTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void genericListRestoresEachBusinessElement() throws Exception {
         // 只在服务端开放监听，两个容器均通过公开 bootstrap 创建。
-        try (MetContext server = this.configuration(true).buildContext(); //
-             MetContext client = this.configuration(false).buildContext()) {
+        try (MetContext server = this.configuration(true) //
+                .buildContext(); //
+             MetContext client = this.configuration(false) //
+                     .buildContext()) {
             // 启动后发布和订阅相同 Java 接口，未指定编码时采用 Dubbo 的 Hessian2 默认值。
             server.start();
             client.start();
@@ -187,8 +202,10 @@ public class DubboPojoScenarioTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void mapResultPreservesItsValueTypes() throws Exception {
         // 只在服务端开放监听，两个容器均通过公开 bootstrap 创建。
-        try (MetContext server = this.configuration(true).buildContext(); //
-             MetContext client = this.configuration(false).buildContext()) {
+        try (MetContext server = this.configuration(true) //
+                .buildContext(); //
+             MetContext client = this.configuration(false) //
+                     .buildContext()) {
             // 启动后发布和订阅相同 Java 接口，未指定编码时采用 Dubbo 的 Hessian2 默认值。
             server.start();
             client.start();
@@ -213,8 +230,10 @@ public class DubboPojoScenarioTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void nullArgumentAndResultRemainNull() throws Exception {
         // 只在服务端开放监听，两个容器均通过公开 bootstrap 创建。
-        try (MetContext server = this.configuration(true).buildContext(); //
-             MetContext client = this.configuration(false).buildContext()) {
+        try (MetContext server = this.configuration(true) //
+                .buildContext(); //
+             MetContext client = this.configuration(false) //
+                     .buildContext()) {
             // 启动后发布和订阅相同 Java 接口，未指定编码时采用 Dubbo 的 Hessian2 默认值。
             server.start();
             client.start();
@@ -234,8 +253,10 @@ public class DubboPojoScenarioTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void voidOrdinaryCallWaitsForAResponse() throws Exception {
         // 只在服务端开放监听，两个容器均通过公开 bootstrap 创建。
-        try (MetContext server = this.configuration(true).buildContext(); //
-             MetContext client = this.configuration(false).buildContext()) {
+        try (MetContext server = this.configuration(true) //
+                .buildContext(); //
+             MetContext client = this.configuration(false) //
+                     .buildContext()) {
             // 启动后发布和订阅相同 Java 接口，未指定编码时采用 Dubbo 的 Hessian2 默认值。
             server.start();
             client.start();
@@ -257,8 +278,10 @@ public class DubboPojoScenarioTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void businessFailureDoesNotPoisonFollowingCalls() throws Exception {
         // 只在服务端开放监听，两个容器均通过公开 bootstrap 创建。
-        try (MetContext server = this.configuration(true).buildContext(); //
-             MetContext client = this.configuration(false).buildContext()) {
+        try (MetContext server = this.configuration(true) //
+                .buildContext(); //
+             MetContext client = this.configuration(false) //
+                     .buildContext()) {
             // 启动后发布和订阅相同 Java 接口，未指定编码时采用 Dubbo 的 Hessian2 默认值。
             server.start();
             client.start();
@@ -291,8 +314,10 @@ public class DubboPojoScenarioTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void concurrentRequestsCorrelateResponsesByRequestId() throws Exception {
         // 只在服务端开放监听，两个容器均通过公开 bootstrap 创建。
-        try (MetContext server = this.configuration(true).buildContext(); //
-             MetContext client = this.configuration(false).buildContext()) {
+        try (MetContext server = this.configuration(true) //
+                .buildContext(); //
+             MetContext client = this.configuration(false) //
+                     .buildContext()) {
             // 启动后发布和订阅相同 Java 接口，未指定编码时采用 Dubbo 的 Hessian2 默认值。
             server.start();
             client.start();
@@ -317,7 +342,8 @@ public class DubboPojoScenarioTest {
     }
 
     private MetConfiguration configuration(boolean listener) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("dubbo");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("dubbo");
         configuration.setDefaultTimeout(5000);
         var tcp = configuration.connector("tcp");
         if (listener) {

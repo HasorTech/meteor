@@ -19,6 +19,7 @@ import com.caucho.hessian.io.Hessian2Output;
 import net.hasor.cobble.concurrent.future.BasicFuture;
 import net.hasor.cobble.concurrent.future.Cancellable;
 import net.hasor.cobble.concurrent.future.Future;
+import net.hasor.example.protocol.dubbo.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
@@ -728,8 +729,10 @@ public class DubboSessionTest {
 
         private Fixture(Map<String, String> options) throws Exception {
             // 会话单测借用真实元信息容器，不建立监听和真实网络线程。
-            MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("dubbo");
-            configuration.connector("tcp").protocol("dubbo");
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setDefaultProtocol("dubbo");
+            configuration.connector("tcp") //
+                    .protocol("dubbo");
             this.context = configuration.buildContext();
             this.context.publisher().rsfService(Echo.class, value -> value) //
                     .aliasName("dubbo", Echo.class.getName()) //

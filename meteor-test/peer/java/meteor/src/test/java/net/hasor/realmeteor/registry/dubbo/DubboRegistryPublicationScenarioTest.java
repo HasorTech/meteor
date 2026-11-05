@@ -41,7 +41,9 @@ public class DubboRegistryPublicationScenarioTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration provider = application(registryUrl, "meteor-runtime-identity-provider");
-            provider.connector("tcp").bind("0.0.0.0", 0).protocol("dubbo");
+            provider.connector("tcp") //
+                    .bind("0.0.0.0", 0) //
+                    .protocol("dubbo");
             try (MetContext server = provider.buildContext(); //
                  CuratorFramework observer = CuratorFrameworkFactory.newClient( //
                          zookeeper.getConnectString(), new RetryOneTime(1000))) {

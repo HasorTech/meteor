@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import net.hasor.cobble.concurrent.future.BasicFuture;
 import net.hasor.cobble.concurrent.future.Future;
+import net.hasor.example.protocol.connect.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
@@ -572,8 +573,11 @@ public class ConnectSessionTest {
     }
 
     private static MetContext context() throws Exception {
-        MetConfiguration configuration = new MetConfiguration().setDefaultGroup("wire");
-        configuration.connector("http").protocol("connect").contextPath("/connect");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultGroup("wire");
+        configuration.connector("http") //
+                .protocol("connect") //
+                .contextPath("/connect");
         MetContext context = configuration.buildContext();
         context.publisher().rsfService(Echo.class, value -> value) //
                 .name("Echo") //

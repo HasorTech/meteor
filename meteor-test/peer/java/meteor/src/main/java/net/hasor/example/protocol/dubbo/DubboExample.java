@@ -13,6 +13,7 @@ import net.hasor.example.protocol.dubbo.interop.DubboInteropServiceImpl;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 
 /** 普通 Java 接口通过 Dubbo 二进制协议调用，默认使用 Hessian2，不需要 Dubbo SDK。 */
@@ -22,10 +23,15 @@ public final class DubboExample {
 
     public static void main(String[] arguments) throws Exception {
         // 服务器显式开放监听，客户端只配置向外发起调用所需的 TCP 与 Dubbo 能力。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("dubbo");
-        incoming.connector("tcp").bind("127.0.0.1", 0).protocol("dubbo");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("dubbo");
-        outgoing.connector("tcp").protocol("dubbo");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("dubbo");
+        incoming.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("dubbo");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("dubbo");
+        outgoing.connector("tcp") //
+                .protocol("dubbo");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             // 容器均启动后再发布与订阅；协议别名对应原生 Dubbo 的服务接口名。

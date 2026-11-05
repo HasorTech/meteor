@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ProtocolSettings;
 
@@ -18,12 +19,17 @@ public class JsonRpcExample {
     public static void main(String[] arguments) throws Exception {
         // 应用只选择传输与协议，协议实现通过插件 SPI 自动发现。
         boolean websocket = arguments.length > 0 && StringUtils.equalsIgnoreCase("ws", arguments[0]);
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("jsonrpc");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("jsonrpc");
-        ProtocolSettings listener = incoming.connector("http").bind("127.0.0.1", 0) //
-                .protocol("jsonrpc").contextPath("/rpc");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("jsonrpc");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("jsonrpc");
+        ProtocolSettings listener = incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("jsonrpc") //
+                .contextPath("/rpc");
         ProtocolSettings sender = outgoing.connector("http") //
-                .protocol("jsonrpc").contextPath("/rpc");
+                .protocol("jsonrpc") //
+                .contextPath("/rpc");
         if (websocket) {
             listener.option("upgrade", "websocket");
             sender.option("upgrade", "websocket");

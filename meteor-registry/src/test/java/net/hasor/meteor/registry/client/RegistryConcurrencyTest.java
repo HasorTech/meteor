@@ -23,6 +23,7 @@ import net.hasor.meteor.registry.memory.MemoryRegistryConfiguration;
 import net.hasor.meteor.registry.shared.DecoratedRegistryConfiguration;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
 import org.junit.jupiter.api.Test;
+import static net.hasor.meteor.registry.shared.RegistryTestUtils.createConfiguration;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RegistryConcurrencyTest {
@@ -51,10 +52,14 @@ public class RegistryConcurrencyTest {
             });
         });
         registry.setRefreshMillis(600000);
-        MetConfiguration serverConfig = new MetConfiguration().addExtension(registry);
-        serverConfig.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        MetConfiguration callerConfig = new MetConfiguration();
-        callerConfig.connector("tcp").protocol("rsf");
+        MetConfiguration serverConfig = createConfiguration() //
+                .addExtension(registry);
+        serverConfig.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        MetConfiguration callerConfig = createConfiguration();
+        callerConfig.connector("tcp") //
+                .protocol("rsf");
         ExecutorService submissions = Executors.newFixedThreadPool(2);
         try (MetContext server = serverConfig.buildContext(); //
              MetContext caller = callerConfig.buildContext()) {

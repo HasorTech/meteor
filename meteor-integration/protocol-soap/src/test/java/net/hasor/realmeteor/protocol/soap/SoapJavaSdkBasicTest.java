@@ -14,6 +14,7 @@ import jakarta.xml.ws.Service;
 import net.hasor.example.protocol.soap.EchoService;
 import net.hasor.example.protocol.soap.EchoServiceImpl;
 import net.hasor.example.protocol.soap.SoapJavaSdkEcho;
+import net.hasor.example.protocol.soap.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
@@ -30,11 +31,15 @@ public class SoapJavaSdkBasicTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialJavaSdkCallsPublishedService() throws Exception {
         // 当前 JUnit 进程通过正式入口启动 Meteor，并发布本插件的普通业务接口。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("soap").contextPath("/services") //
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("soap") //
+                .contextPath("/services") //
                 .option("soapVersion", "1.1") //
-                .option("soapStyle", "rpc").option("soapUse", "literal") //
+                .option("soapStyle", "rpc") //
+                .option("soapUse", "literal") //
                 .option("soapParameterStyle", "wrapped");
         try (MetContext server = configuration.buildContext()) {
             server.start();
@@ -63,12 +68,15 @@ public class SoapJavaSdkBasicTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorConsumerCallsOfficialJavaSdkServer() throws Exception {
         // SDK 服务与 Meteor 消费者均由测试持有，关闭顺序与创建顺序相反。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
         configuration.setRequestTimeout(10000);
         configuration.connector("http") //
-                .protocol("soap").contextPath("/services") //
+                .protocol("soap") //
+                .contextPath("/services") //
                 .option("soapVersion", "1.1") //
-                .option("soapStyle", "rpc").option("soapUse", "literal") //
+                .option("soapStyle", "rpc") //
+                .option("soapUse", "literal") //
                 .option("soapParameterStyle", "wrapped");
         try (SoapJavaSdkServer server = SoapJavaSdkServer.start(); //
              MetContext client = configuration.buildContext()) {

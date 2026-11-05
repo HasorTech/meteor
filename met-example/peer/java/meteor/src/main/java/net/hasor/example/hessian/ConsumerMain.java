@@ -21,9 +21,12 @@ public final class ConsumerMain {
 
     public static void main(String[] arguments) throws Exception {
         // 配置协议，消费者无需监听端口。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.setUnitName("local");
-        configuration.connector("http").protocol("hessian").contextPath("/hessian");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setApplicationName("hessian-order-consumer") //
+                .setUnitName("local");
+        configuration.connector("http") //
+                .protocol("hessian") //
+                .contextPath("/hessian");
 
         try (MetContext context = configuration.buildContext()) {
             // 启动容器并订阅订单服务。

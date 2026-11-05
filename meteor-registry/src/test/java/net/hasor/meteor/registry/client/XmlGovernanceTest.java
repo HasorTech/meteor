@@ -19,6 +19,7 @@ import net.hasor.meteor.registry.shared.storage.StorageAccess;
 import net.hasor.meteor.registry.shared.storage.domain.EntRuleConfigurationData;
 import net.hasor.meteor.registry.shared.storage.domain.RuleKind;
 import org.junit.jupiter.api.Test;
+import static net.hasor.meteor.registry.shared.RegistryTestUtils.createConfiguration;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class XmlGovernanceTest {
@@ -31,8 +32,10 @@ public class XmlGovernanceTest {
         MemoryRegistryConfiguration registry = new MemoryRegistryConfiguration();
         registry.setManagementToken("secret");
         registry.setRefreshMillis(600000);
-        MetConfiguration configuration = new MetConfiguration().addExtension(registry);
-        configuration.connector("tcp").protocol("rsf");
+        MetConfiguration configuration = createConfiguration() //
+                .addExtension(registry);
+        configuration.connector("tcp") //
+                .protocol("rsf");
         try (MetContext application = configuration.buildContext(); //
              StorageAccess observer = registry.openStorage()) {
             // 正式扩展启动后，由管理接口写入，客户端通过存储订阅应用配置。

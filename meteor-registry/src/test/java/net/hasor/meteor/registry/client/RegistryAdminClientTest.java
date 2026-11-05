@@ -23,6 +23,7 @@ import net.hasor.meteor.domain.ProtocolStatus;
 import net.hasor.meteor.registry.RegistryAdmin;
 import net.hasor.meteor.registry.RegistryConfiguration;
 import net.hasor.meteor.registry.admin.MetInstanceAdmin;
+import net.hasor.meteor.registry.admin.MetInstanceEndpoint;
 import net.hasor.meteor.registry.admin.MetServiceAdmin;
 import net.hasor.meteor.registry.admin.MetServiceMember;
 import net.hasor.meteor.registry.memory.MemoryRegistryConfiguration;
@@ -35,6 +36,7 @@ import net.hasor.meteor.registry.shared.storage.StorageAccess;
 import net.hasor.meteor.registry.shared.storage.domain.*;
 import net.hasor.meteor.registry.shared.utils.RegistryJson;
 import org.junit.jupiter.api.Test;
+import static net.hasor.meteor.registry.shared.RegistryTestUtils.createConfiguration;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** 使用真实 Meteor 调用验证存储接入、管理 RPC 生命周期和治理订阅。 */
@@ -50,10 +52,12 @@ public class RegistryAdminClientTest {
         RegistryConfiguration registryConfig = new DecoratedRegistryConfiguration(storageConfiguration, probe::observe);
         registryConfig.setManagementToken("secret");
         registryConfig.setRefreshMillis(60000);
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("tcp").protocol("rsf").option("serializeType", "Json");
-        configuration.addExtension(registryConfig);
-        configuration.setRequestOption("marker", "local");
+        MetConfiguration configuration = createConfiguration();
+        configuration.connector("tcp") //
+                .protocol("rsf") //
+                .option("serializeType", "Json");
+        configuration.addExtension(registryConfig) //
+                .setRequestOption("marker", "local");
 
         try (MetContext context = configuration.buildContext(); //
              StorageAccess storage = storageConfiguration.openStorage()) {
@@ -129,10 +133,12 @@ public class RegistryAdminClientTest {
         RegistryConfiguration registryConfig = new DecoratedRegistryConfiguration(storageConfiguration, probe::observe);
         registryConfig.setManagementToken("secret");
         registryConfig.setRefreshMillis(60000);
-        MetConfiguration clientConfiguration = new MetConfiguration();
-        clientConfiguration.connector("tcp").protocol("rsf").option("serializeType", "Json");
-        clientConfiguration.addExtension(registryConfig);
-        clientConfiguration.setRequestOption("marker", "local");
+        MetConfiguration clientConfiguration = createConfiguration();
+        clientConfiguration.connector("tcp") //
+                .protocol("rsf") //
+                .option("serializeType", "Json");
+        clientConfiguration.addExtension(registryConfig) //
+                .setRequestOption("marker", "local");
 
         try (MetContext context = clientConfiguration.buildContext(); //
              StorageAccess storage = storageConfiguration.openStorage()) {
@@ -190,8 +196,10 @@ public class RegistryAdminClientTest {
         RegistryConfiguration registryConfig = new DecoratedRegistryConfiguration(storageConfiguration, probe::observe);
         registryConfig.setManagementToken("secret");
         registryConfig.setRefreshMillis(60000);
-        MetConfiguration clientConfiguration = new MetConfiguration();
-        clientConfiguration.connector("tcp").protocol("rsf").option("serializeType", "Json");
+        MetConfiguration clientConfiguration = createConfiguration();
+        clientConfiguration.connector("tcp") //
+                .protocol("rsf") //
+                .option("serializeType", "Json");
         clientConfiguration.addExtension(registryConfig);
 
         try (MetContext context = clientConfiguration.buildContext()) {
@@ -227,11 +235,16 @@ public class RegistryAdminClientTest {
         RegistryConfiguration registryConfig = new DecoratedRegistryConfiguration(storageConfiguration, probe::observe);
         registryConfig.setManagementToken("secret");
         registryConfig.setRefreshMillis(60000);
-        MetConfiguration serverConfiguration = new MetConfiguration();
-        serverConfiguration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf").option("serializeType", "Json");
+        MetConfiguration serverConfiguration = createConfiguration();
+        serverConfiguration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf") //
+                .option("serializeType", "Json");
         serverConfiguration.addExtension(registryConfig);
-        MetConfiguration clientConfiguration = new MetConfiguration();
-        clientConfiguration.connector("tcp").protocol("rsf").option("serializeType", "Json");
+        MetConfiguration clientConfiguration = createConfiguration();
+        clientConfiguration.connector("tcp") //
+                .protocol("rsf") //
+                .option("serializeType", "Json");
         clientConfiguration.addExtension(registryConfig);
 
         try (MetContext server = serverConfiguration.buildContext(); //
@@ -259,15 +272,22 @@ public class RegistryAdminClientTest {
             // 等待两端上报，使用独立管理上下文检查监听与公告地址。
             provider.pushSync().get(5, TimeUnit.SECONDS);
             consumer.pushSync().get(5, TimeUnit.SECONDS);
-            MetConfiguration adminConfiguration = new MetConfiguration().addExtension(registryConfig);
+            MetConfiguration adminConfiguration = createConfiguration() //
+                    .addExtension(registryConfig);
 
             try (MetContext adminContext = adminConfiguration.buildContext()) {
                 RegistryAdmin admin = adminContext.getExtension(RegistryAdmin.class);
                 MetInstanceAdmin serverAdmin = admin.getInstanceAdmin(server.getInstanceID());
-                Map<String, String> management = serverAdmin.instance().getManagementAddress();
-                assertEquals(Map.of("tcp-0#rsf", server.getListenAddress("rsf").toString()), management);
+                MetInstanceEndpoint[] endpoints = serverAdmin.instance().getEndpoints();
+                assertEquals(1, endpoints.length);
+                assertEquals("tcp-0", endpoints[0].getConnectorName());
+                assertEquals("tcp", endpoints[0].getTransport());
+                assertEquals("rsf", endpoints[0].getProtocolName());
+                assertEquals("rsf", endpoints[0].getScheme());
+                assertEquals(server.getListenAddress("rsf").toString(), endpoints[0].getListenAddress());
+                assertEquals(server.getListenAddress("rsf").toString(), endpoints[0].getManagementAddress());
                 MetInstanceAdmin callerAdmin = admin.getInstanceAdmin(caller.getInstanceID());
-                assertTrue(callerAdmin.instance().getManagementAddress().isEmpty());
+                assertEquals(0, callerAdmin.instance().getEndpoints().length);
                 MetServiceAdmin service = admin.getServiceAdmin(binding.getBindID());
                 MetServiceMember member = service.providers(null, null).getItems().get(0);
                 assertTrue(StringUtils.equals("rsf", member.getEndpoints()[0].getProtocolName()));
@@ -298,11 +318,16 @@ public class RegistryAdminClientTest {
         RegistryConfiguration registryConfig = new DecoratedRegistryConfiguration(storageConfiguration, probe::observe);
         registryConfig.setManagementToken("secret");
         registryConfig.setRefreshMillis(60000);
-        MetConfiguration serverConfiguration = new MetConfiguration();
-        serverConfiguration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf").option("serializeType", "Json");
+        MetConfiguration serverConfiguration = createConfiguration();
+        serverConfiguration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf") //
+                .option("serializeType", "Json");
         serverConfiguration.addExtension(registryConfig);
-        MetConfiguration clientConfiguration = new MetConfiguration();
-        clientConfiguration.connector("tcp").protocol("rsf").option("serializeType", "Json");
+        MetConfiguration clientConfiguration = createConfiguration();
+        clientConfiguration.connector("tcp") //
+                .protocol("rsf") //
+                .option("serializeType", "Json");
         clientConfiguration.addExtension(registryConfig);
 
         serverConfiguration.setRequestOption("baseline", "local");
@@ -426,11 +451,16 @@ public class RegistryAdminClientTest {
         RegistryConfiguration registryConfig = new DecoratedRegistryConfiguration(storageConfiguration, probe::observe);
         registryConfig.setManagementToken("secret");
         registryConfig.setRefreshMillis(60000);
-        MetConfiguration serverConfiguration = new MetConfiguration();
-        serverConfiguration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf").option("serializeType", "Json");
+        MetConfiguration serverConfiguration = createConfiguration();
+        serverConfiguration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf") //
+                .option("serializeType", "Json");
         serverConfiguration.addExtension(registryConfig);
-        MetConfiguration clientConfiguration = new MetConfiguration();
-        clientConfiguration.connector("tcp").protocol("rsf").option("serializeType", "Json");
+        MetConfiguration clientConfiguration = createConfiguration();
+        clientConfiguration.connector("tcp") //
+                .protocol("rsf") //
+                .option("serializeType", "Json");
         clientConfiguration.addExtension(registryConfig);
 
         try (MetContext server = serverConfiguration.buildContext(); //
@@ -471,8 +501,10 @@ public class RegistryAdminClientTest {
         RegistryConfiguration registryConfig = new DecoratedRegistryConfiguration(storageConfiguration, probe::observe);
         registryConfig.setManagementToken("secret");
         registryConfig.setRefreshMillis(60000);
-        MetConfiguration clientConfiguration = new MetConfiguration();
-        clientConfiguration.connector("tcp").protocol("rsf").option("serializeType", "Json");
+        MetConfiguration clientConfiguration = createConfiguration();
+        clientConfiguration.connector("tcp") //
+                .protocol("rsf") //
+                .option("serializeType", "Json");
         clientConfiguration.addExtension(registryConfig);
 
         try (MetContext context = clientConfiguration.buildContext()) {
@@ -515,8 +547,10 @@ public class RegistryAdminClientTest {
         RegistryConfiguration registryConfig = new DecoratedRegistryConfiguration(storageConfiguration, probe::observe);
         registryConfig.setManagementToken("secret");
         registryConfig.setRefreshMillis(60000);
-        MetConfiguration clientConfiguration = new MetConfiguration();
-        clientConfiguration.connector("tcp").protocol("rsf").option("serializeType", "Json");
+        MetConfiguration clientConfiguration = createConfiguration();
+        clientConfiguration.connector("tcp") //
+                .protocol("rsf") //
+                .option("serializeType", "Json");
         clientConfiguration.addExtension(registryConfig);
 
         try (MetContext context = clientConfiguration.buildContext()) {
@@ -540,11 +574,15 @@ public class RegistryAdminClientTest {
         RegistryConfiguration registryConfig = new DecoratedRegistryConfiguration(storageConfiguration, probe::observe);
         registryConfig.setManagementToken("secret");
         registryConfig.setRefreshMillis(60000);
-        MetConfiguration clientConfiguration = new MetConfiguration();
-        clientConfiguration.connector("tcp").protocol("rsf").option("serializeType", "Json");
+        MetConfiguration clientConfiguration = createConfiguration();
+        clientConfiguration.connector("tcp") //
+                .protocol("rsf") //
+                .option("serializeType", "Json");
         clientConfiguration.addExtension(registryConfig);
-        MetConfiguration baseConfiguration = new MetConfiguration();
-        baseConfiguration.connector("tcp").protocol("rsf").option("serializeType", "Json");
+        MetConfiguration baseConfiguration = createConfiguration();
+        baseConfiguration.connector("tcp") //
+                .protocol("rsf") //
+                .option("serializeType", "Json");
 
         // 场景一：客户端刷新间隔无效，在构建阶段失败。
         RegistryConfiguration invalid = registryConfig.setRefreshMillis(0);
@@ -570,8 +608,10 @@ public class RegistryAdminClientTest {
         registryConfig.setRefreshMillis(60000);
 
         // 场景一：监听通配地址却未指定发布主机，启动失败并清理资源。
-        MetConfiguration missing = new MetConfiguration();
-        missing.connector("tcp").bind("0.0.0.0", 0).protocol("rsf");
+        MetConfiguration missing = createConfiguration();
+        missing.connector("tcp") //
+                .bind("0.0.0.0", 0) //
+                .protocol("rsf");
         missing.addExtension(registryConfig);
 
         try (MetContext context = missing.buildContext()) {
@@ -589,8 +629,10 @@ public class RegistryAdminClientTest {
         }
 
         // 场景二：补充发布主机后，能正常注册可用地址。
-        MetConfiguration published = new MetConfiguration();
-        published.connector("tcp").bind("0.0.0.0", 0).protocol("rsf");
+        MetConfiguration published = createConfiguration();
+        published.connector("tcp") //
+                .bind("0.0.0.0", 0) //
+                .protocol("rsf");
         published.addExtension(registryConfig.setPublishHost("127.0.0.1"));
 
         try (MetContext context = published.buildContext()) {

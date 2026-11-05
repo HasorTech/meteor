@@ -4,6 +4,7 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.protocol.oncrpc.python;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.example.protocol.oncrpc.OncRpcDemoCodecs;
 import net.hasor.example.protocol.oncrpc.OncRpcDemoService;
@@ -27,8 +28,10 @@ public class OncRpcPythonInteropTest {
     @Timeout(value = 45000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void pythonSunrpcCallsMeteor() throws Exception {
         // 从公开 bootstrap 创建 ONC RPC 监听，复用现有业务过程和协议编号。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("tcp").bind(ContainerProcess.runnerHost(), 0).protocol("oncrpc");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("tcp") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("oncrpc");
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
             provider.publisher().rsfService(OncRpcDemoService.class, new OncRpcDemoServiceImpl()) //
@@ -50,8 +53,9 @@ public class OncRpcPythonInteropTest {
         // Python SDK 发布程序 0x31234567、版本 1、过程 1，不使用模拟报文服务端。
         try (PythonSdkPeerProcess provider = PythonSdkPeerProcess.start("oncrpc", "provider")) {
             int port = provider.awaitPort();
-            MetConfiguration configuration = new MetConfiguration();
-            configuration.connector("tcp").protocol("oncrpc");
+            MetConfiguration configuration = TestConfigurationUtils.create();
+            configuration.connector("tcp") //
+                    .protocol("oncrpc");
             try (MetContext consumer = configuration.buildContext()) {
                 consumer.start();
                 MetBindInfo<OncRpcDemoService> service = consumer.publisher().rsfService(OncRpcDemoService.class) //

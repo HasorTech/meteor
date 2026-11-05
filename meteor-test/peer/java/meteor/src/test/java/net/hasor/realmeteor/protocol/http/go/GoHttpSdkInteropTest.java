@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.http.go;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.ParameterizedClass;
@@ -81,13 +82,16 @@ public class GoHttpSdkInteropTest {
     }
 
     private MetConfiguration configuration(boolean listening) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol(this.protocol);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol(this.protocol);
         configuration.setDefaultTimeout(10000);
-        ConnectorSettings connector = configuration.connector("http").option("httpVersion", 1);
+        ConnectorSettings connector = configuration.connector("http") //
+                .option("httpVersion", 1);
         if (listening) {
             connector.bind(ContainerProcess.runnerHost(), 0);
         }
-        connector.protocol(this.protocol).contextPath("/rpc");
+        connector.protocol(this.protocol) //
+                .contextPath("/rpc");
         return configuration;
     }
 

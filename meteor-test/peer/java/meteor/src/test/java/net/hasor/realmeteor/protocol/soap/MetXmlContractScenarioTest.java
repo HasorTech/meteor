@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
 import java.net.URI;
@@ -445,8 +446,11 @@ public class MetXmlContractScenarioTest {
     public void meteorClientCanImportThePublishedMultiNamespaceContract() throws Exception {
         // 先启动两个容器，再发布带自定义命名空间及 xml:lang 的普通 Java 服务。
         MetConfiguration incoming = this.configuration("1.1");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("soap");
-        outgoing.connector("http").protocol("soap").contextPath("/services");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
+        outgoing.connector("http") //
+                .protocol("soap") //
+                .contextPath("/services");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();
@@ -485,7 +489,8 @@ public class MetXmlContractScenarioTest {
     }
 
     private MetConfiguration configuration(String version) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
         configuration.connector("http") //
                 .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("soap") //

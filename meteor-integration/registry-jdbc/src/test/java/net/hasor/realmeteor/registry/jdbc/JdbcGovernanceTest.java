@@ -24,6 +24,7 @@ import net.hasor.meteor.registry.admin.MetServiceAdmin;
 import net.hasor.meteor.registry.jdbc.JdbcRegistryConfiguration;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
+import static net.hasor.example.registry.jdbc.JdbcTestSupport.createConfiguration;
 import static net.hasor.example.registry.jdbc.JdbcTestSupport.createDatabase;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -35,10 +36,14 @@ public class JdbcGovernanceTest {
         dataSource.setURL(createDatabase());
         JdbcRegistryConfiguration registry = new JdbcRegistryConfiguration();
         registry.setDataSource(dataSource);
-        MetConfiguration configuration = new MetConfiguration().addExtension(registry);
+        registry.setManagementToken("jdbc-test-token");
+        MetConfiguration firstConfiguration = createConfiguration() //
+                .addExtension(registry);
+        MetConfiguration secondConfiguration = createConfiguration() //
+                .addExtension(registry);
         ExecutorService workers = Executors.newFixedThreadPool(2);
-        try (MetContext first = configuration.buildContext(); //
-             MetContext second = configuration.buildContext()) {
+        try (MetContext first = firstConfiguration.buildContext(); //
+             MetContext second = secondConfiguration.buildContext()) {
             RegistryAdmin firstAdmin = first.getExtension(RegistryAdmin.class);
             RegistryAdmin secondAdmin = second.getExtension(RegistryAdmin.class);
             MetServiceAdmin firstService = firstAdmin.getServiceAdmin("echo");
@@ -74,7 +79,9 @@ public class JdbcGovernanceTest {
         dataSource.setURL(url);
         JdbcRegistryConfiguration registry = new JdbcRegistryConfiguration();
         registry.setDataSource(dataSource);
-        MetConfiguration configuration = new MetConfiguration().addExtension(registry);
+        registry.setManagementToken("jdbc-test-token");
+        MetConfiguration configuration = createConfiguration() //
+                .addExtension(registry);
         try (MetContext context = configuration.buildContext(); //
              Connection connection = DriverManager.getConnection(url, "", "")) {
             RegistryAdmin manager = context.getExtension(RegistryAdmin.class);
@@ -106,9 +113,12 @@ public class JdbcGovernanceTest {
         dataSource.setURL(createDatabase());
         JdbcRegistryConfiguration registry = new JdbcRegistryConfiguration();
         registry.setDataSource(dataSource);
+        registry.setManagementToken("jdbc-test-token");
         registry.setRefreshMillis(60000);
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        MetConfiguration configuration = createConfiguration();
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
         configuration.addExtension(registry);
 
         try (MetContext server = configuration.buildContext()) {
@@ -140,9 +150,12 @@ public class JdbcGovernanceTest {
         dataSource.setURL(createDatabase());
         JdbcRegistryConfiguration registry = new JdbcRegistryConfiguration();
         registry.setDataSource(dataSource);
+        registry.setManagementToken("jdbc-test-token");
         registry.setRefreshMillis(60000);
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        MetConfiguration configuration = createConfiguration();
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
         configuration.addExtension(registry);
 
         try (MetContext server = configuration.buildContext()) {

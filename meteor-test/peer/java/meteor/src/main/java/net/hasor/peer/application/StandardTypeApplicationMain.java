@@ -111,8 +111,10 @@ public final class StandardTypeApplicationMain {
         if (!List.of("rsf", "jsonrpc", "hessian").contains(protocol)) {
             throw new IllegalArgumentException("Unknown standard type protocol: " + protocol);
         }
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.setUnitName("nxn_types").setDefaultProtocol(protocol).setDefaultGroup("nxn-types");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setUnitName("nxn_types") //
+                .setDefaultProtocol(protocol) //
+                .setDefaultGroup("nxn-types");
         String role = "consumer";
         if (provider) {
             role = "provider";

@@ -15,6 +15,7 @@ import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.protocol.grpc.Echo;
 import net.hasor.example.protocol.grpc.EchoImpl;
+import net.hasor.example.protocol.grpc.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
@@ -110,16 +111,22 @@ public class GrpcBuiltinNamingScenarioTest {
     }
 
     private MetConfiguration serverConfiguration() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc");
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("grpc") //
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc") //
                 .option("streamBody", true);
         configuration.addExtension(new GrpcBuiltinServicesFactory());
         return configuration;
     }
 
     private MetConfiguration clientConfiguration() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc");
-        configuration.connector("http").option("httpVersion", 2).protocol("grpc") //
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        configuration.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("grpc") //
                 .option("streamBody", true);
         return configuration;
     }

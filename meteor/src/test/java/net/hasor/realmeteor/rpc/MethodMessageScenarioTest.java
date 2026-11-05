@@ -9,6 +9,7 @@ package net.hasor.realmeteor.rpc;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import net.hasor.example.bootstrap.TestConfigurationUtils;
 import net.hasor.meteor.*;
 import net.hasor.meteor.annotation.MetMessage;
 import net.hasor.meteor.bootstrap.MetConfiguration;
@@ -21,12 +22,15 @@ public class MethodMessageScenarioTest {
     @Test
     public void annotatedMethodReturnsBeforeBusinessCompletion() throws Exception {
         // 两个上下文发布和订阅同一混合接口，整个服务不配置消息模式。
-        MetConfiguration serverConfig = new MetConfiguration();
-        serverConfig.setDefaultTimeout(10000);
-        serverConfig.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        MetConfiguration clientConfig = new MetConfiguration();
-        clientConfig.setDefaultTimeout(10000);
-        clientConfig.connector("tcp").protocol("rsf");
+        MetConfiguration serverConfig = TestConfigurationUtils.create() //
+                .setDefaultTimeout(10000);
+        serverConfig.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        MetConfiguration clientConfig = TestConfigurationUtils.create() //
+                .setDefaultTimeout(10000);
+        clientConfig.connector("tcp") //
+                .protocol("rsf");
         BlockingService provider = new BlockingService();
         try (MetContext server = serverConfig.buildContext(); //
              MetContext client = clientConfig.buildContext()) {
@@ -58,12 +62,15 @@ public class MethodMessageScenarioTest {
     @Test
     public void unannotatedMethodWaitsForItsBusinessResult() throws Exception {
         // 同一接口保留消息方法，但普通方法没有注解且服务未配置消息模式。
-        MetConfiguration serverConfig = new MetConfiguration();
-        serverConfig.setDefaultTimeout(10000);
-        serverConfig.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        MetConfiguration clientConfig = new MetConfiguration();
-        clientConfig.setDefaultTimeout(10000);
-        clientConfig.connector("tcp").protocol("rsf");
+        MetConfiguration serverConfig = TestConfigurationUtils.create() //
+                .setDefaultTimeout(10000);
+        serverConfig.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        MetConfiguration clientConfig = TestConfigurationUtils.create() //
+                .setDefaultTimeout(10000);
+        clientConfig.connector("tcp") //
+                .protocol("rsf");
         BlockingService provider = new BlockingService();
         try (MetContext server = serverConfig.buildContext(); //
              MetContext client = clientConfig.buildContext()) {

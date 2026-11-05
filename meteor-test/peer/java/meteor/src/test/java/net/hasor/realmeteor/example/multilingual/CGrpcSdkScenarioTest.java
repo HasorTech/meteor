@@ -15,6 +15,7 @@ import net.hasor.example.echo.TextEchoService;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
@@ -47,9 +48,13 @@ public class CGrpcSdkScenarioTest {
     @Timeout(value = 60000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void sdkToMeteorGrpcEcho() throws Exception {
         // 普通 Java 接口经 bootstrap 发布，共用测试契约中的标准 StringValue 方法。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind("0.0.0.0", 0).option("httpVersion", 2) //
-                .protocol("grpc").contextPath("/");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind("0.0.0.0", 0) //
+                .option("httpVersion", 2) //
+                .protocol("grpc") //
+                .contextPath("/");
         URL contract = this.getClass().getResource("/protocol/proto/java-sdk-echo.proto");
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
@@ -74,8 +79,12 @@ public class CGrpcSdkScenarioTest {
     @Timeout(value = 60000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorToSdkGrpcEcho() throws Exception {
         // Core C server 独占动态端口；Meteor 只创建出站 HTTP/2 通道。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").option("httpVersion", 2).protocol("grpc").contextPath("/");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("grpc") //
+                .contextPath("/");
         URL contract = this.getClass().getResource("/protocol/proto/java-sdk-echo.proto");
         List<String> command = List.of(this.executable, "provider");
         try (OrderPeerProcess provider = OrderPeerProcess.start("native", command, null); //

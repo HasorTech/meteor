@@ -21,6 +21,7 @@ import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetFuture;
 import net.hasor.meteor.address.InterAddress;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.protocol.oncrpc.binding.OncRpcServiceResource;
@@ -40,13 +41,18 @@ public class SocketCompositionScenarioTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void concurrentProtocolsShareOneTcpListenerWithoutCrossedResponses() throws Exception {
         // 一个 TCP 端点挂载四个协议；客户端也一次性准备四条协议分支。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("rsf").setDefaultTimeout(15000);
-        ConnectorSettings listener = incoming.connector("tcp").bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("rsf") //
+                .setDefaultTimeout(15000);
+        ConnectorSettings listener = incoming.connector("tcp") //
+                .bind("127.0.0.1", 0);
         listener.protocol("rsf");
         listener.protocol("dubbo");
         listener.protocol("thrift");
         listener.protocol("oncrpc");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("rsf").setDefaultTimeout(15000);
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("rsf") //
+                .setDefaultTimeout(15000);
         ConnectorSettings connector = outgoing.connector("tcp");
         connector.protocol("rsf");
         connector.protocol("dubbo");
@@ -118,13 +124,18 @@ public class SocketCompositionScenarioTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void rejectedProbeConnectionDoesNotPoisonSharedTcpListener() throws Exception {
         // 一个 TCP 端点挂载四个协议；客户端也一次性准备四条协议分支。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("rsf").setDefaultTimeout(15000);
-        ConnectorSettings listener = incoming.connector("tcp").bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("rsf") //
+                .setDefaultTimeout(15000);
+        ConnectorSettings listener = incoming.connector("tcp") //
+                .bind("127.0.0.1", 0);
         listener.protocol("rsf");
         listener.protocol("dubbo");
         listener.protocol("thrift");
         listener.protocol("oncrpc");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("rsf").setDefaultTimeout(15000);
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("rsf") //
+                .setDefaultTimeout(15000);
         ConnectorSettings connector = outgoing.connector("tcp");
         connector.protocol("rsf");
         connector.protocol("dubbo");
@@ -185,14 +196,19 @@ public class SocketCompositionScenarioTest {
     public void cancellingThriftCallDoesNotCancelOtherProtocolCalls() throws Exception {
         // 一个 TCP 端点挂载四个协议；客户端也一次性准备四条协议分支。
         // 两个业务线程允许其它协议在 Thrift 仍被 latch 阻塞时完成。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("rsf") //
-                .setDefaultTimeout(15000).setQueueMinPoolSize(2);
-        ConnectorSettings listener = incoming.connector("tcp").bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("rsf") //
+                .setDefaultTimeout(15000) //
+                .setQueueMinPoolSize(2);
+        ConnectorSettings listener = incoming.connector("tcp") //
+                .bind("127.0.0.1", 0);
         listener.protocol("rsf");
         listener.protocol("dubbo");
         listener.protocol("thrift");
         listener.protocol("oncrpc");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("rsf").setDefaultTimeout(15000);
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("rsf") //
+                .setDefaultTimeout(15000);
         ConnectorSettings connector = outgoing.connector("tcp");
         connector.protocol("rsf");
         connector.protocol("dubbo");
@@ -280,12 +296,20 @@ public class SocketCompositionScenarioTest {
         try (DatagramSocket reservation = new DatagramSocket(0, InetAddress.getLoopbackAddress())) {
             udpPort = reservation.getLocalPort();
         }
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("rsf");
-        incoming.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        incoming.connector("udp").bind("127.0.0.1", udpPort).protocol("oncrpc-udp");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("rsf");
-        outgoing.connector("tcp").protocol("rsf");
-        outgoing.connector("udp").protocol("oncrpc-udp");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("rsf");
+        incoming.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        incoming.connector("udp") //
+                .bind("127.0.0.1", udpPort) //
+                .protocol("oncrpc-udp");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("rsf");
+        outgoing.connector("tcp") //
+                .protocol("rsf");
+        outgoing.connector("udp") //
+                .protocol("oncrpc-udp");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             // 容器启动后发布并订阅两个明确的协议入口。
@@ -327,19 +351,24 @@ public class SocketCompositionScenarioTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void closingThriftClientLeavesOtherProtocolClientsConnected() throws Exception {
         // 四协议共享服务端监听，Thrift 与其它协议分别由两个客户端实例持有。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("rsf");
-        ConnectorSettings listener = incoming.connector("tcp").bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("rsf");
+        ConnectorSettings listener = incoming.connector("tcp") //
+                .bind("127.0.0.1", 0);
         listener.protocol("rsf");
         listener.protocol("dubbo");
         listener.protocol("thrift");
         listener.protocol("oncrpc");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("rsf");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("rsf");
         ConnectorSettings connector = outgoing.connector("tcp");
         connector.protocol("rsf");
         connector.protocol("dubbo");
         connector.protocol("oncrpc");
-        MetConfiguration thriftConfiguration = new MetConfiguration().setDefaultProtocol("thrift");
-        thriftConfiguration.connector("tcp").protocol("thrift");
+        MetConfiguration thriftConfiguration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift");
+        thriftConfiguration.connector("tcp") //
+                .protocol("thrift");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext(); //
              MetContext exiting = thriftConfiguration.buildContext()) {
@@ -393,14 +422,18 @@ public class SocketCompositionScenarioTest {
     @Timeout(value = 60000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void twoRuntimesConcurrentlyProvideAndConsumeAllFourTcpProtocols() throws Exception {
         // 两个运行实例各自以同一 TCP 端口挂载四协议，同时接受和发起请求。
-        MetConfiguration leftConfiguration = new MetConfiguration().setDefaultProtocol("rsf");
-        ConnectorSettings leftListener = leftConfiguration.connector("tcp").bind("127.0.0.1", 0);
+        MetConfiguration leftConfiguration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("rsf");
+        ConnectorSettings leftListener = leftConfiguration.connector("tcp") //
+                .bind("127.0.0.1", 0);
         leftListener.protocol("rsf");
         leftListener.protocol("dubbo");
         leftListener.protocol("thrift");
         leftListener.protocol("oncrpc");
-        MetConfiguration rightConfiguration = new MetConfiguration().setDefaultProtocol("rsf");
-        ConnectorSettings rightListener = rightConfiguration.connector("tcp").bind("127.0.0.1", 0);
+        MetConfiguration rightConfiguration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("rsf");
+        ConnectorSettings rightListener = rightConfiguration.connector("tcp") //
+                .bind("127.0.0.1", 0);
         rightListener.protocol("rsf");
         rightListener.protocol("dubbo");
         rightListener.protocol("thrift");

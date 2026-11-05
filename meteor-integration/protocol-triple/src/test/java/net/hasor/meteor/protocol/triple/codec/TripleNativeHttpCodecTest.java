@@ -20,6 +20,7 @@ import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
 import net.hasor.cobble.StringUtils;
+import net.hasor.example.protocol.triple.TestConfigurationUtils;
 import net.hasor.example.protocol.triple.TripleFlowService;
 import net.hasor.example.protocol.triple.TripleFlowServiceImpl;
 import net.hasor.example.protocol.triple.TripleMessage;
@@ -685,7 +686,8 @@ public class TripleNativeHttpCodecTest {
     }
 
     private MetConfiguration configuration(String mode) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("triple");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("triple");
         configuration.connector("http") //
                 .option("httpVersion", StringUtils.equals("grpc", mode) ? 2 : 1) //
                 .protocol("triple") //

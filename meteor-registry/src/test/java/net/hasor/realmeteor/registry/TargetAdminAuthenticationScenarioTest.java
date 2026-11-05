@@ -24,6 +24,7 @@ import net.hasor.meteor.registry.admin.MetServiceAdmin;
 import net.hasor.meteor.registry.shared.RegistryTestUtils.Echo;
 import net.hasor.meteor.registry.shared.rpc.ManagementRPC;
 import org.junit.jupiter.api.Test;
+import static net.hasor.meteor.registry.shared.RegistryTestUtils.createConfiguration;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** 从正式离线扩展通过真实 RSF 验证实例管理认证，不依赖注册中心存储。 */
@@ -31,9 +32,10 @@ public class TargetAdminAuthenticationScenarioTest {
     private static MetConfiguration configuration(RegistryTokenProvider tokens, boolean listen) {
         RegistryConfiguration registry = new RegistryConfiguration().setOnline(false);
         registry.setTokenProvider(tokens);
-        MetConfiguration configuration = new MetConfiguration().addExtension(registry);
-        configuration.setDefaultTimeout(3000);
-        configuration.setConnectTimeout(1000);
+        MetConfiguration configuration = createConfiguration() //
+                .addExtension(registry) //
+                .setDefaultTimeout(3000) //
+                .setConnectTimeout(1000);
         var connector = configuration.connector("tcp");
         if (listen) {
             connector.bind("127.0.0.1", 0);

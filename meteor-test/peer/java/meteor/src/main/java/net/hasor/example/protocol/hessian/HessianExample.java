@@ -8,6 +8,7 @@
 package net.hasor.example.protocol.hessian;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 
 /** 启动后发布与订阅 Hessian 服务的完整应用入口。 */
@@ -17,11 +18,19 @@ public final class HessianExample {
 
     public static void main(String[] args) throws Exception {
         // 选择 HTTP 端点、Hessian 协议挂载和 Hessian 2 线格式。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("hessian");
-        incoming.connector("http").bind("127.0.0.1", 0) //
-                .protocol("hessian").contextPath("/rpc").option("version", 2);
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("hessian");
-        outgoing.connector("http").protocol("hessian").contextPath("/rpc").option("version", 2);
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("hessian");
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("hessian") //
+                .contextPath("/rpc") //
+                .option("version", 2);
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("hessian");
+        outgoing.connector("http") //
+                .protocol("hessian") //
+                .contextPath("/rpc") //
+                .option("version", 2);
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             // 容器先启动，再发布接口与订阅远程服务。

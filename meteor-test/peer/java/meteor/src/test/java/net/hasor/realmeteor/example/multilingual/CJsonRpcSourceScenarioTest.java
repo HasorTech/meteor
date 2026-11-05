@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.hasor.example.echo.TextEchoService;
 import net.hasor.meteor.MetContext;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
@@ -25,9 +26,13 @@ public class CJsonRpcSourceScenarioTest {
     @Timeout(value = 60000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void sourceCJsonRpcConsumerCallsMeteorProvider() throws Exception {
         // Meteor 从 bootstrap 发布普通文本接口，HTTP 地址对应同一条 JSON-RPC 挂载。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind("0.0.0.0", 0).option("httpVersion", 1) //
-                .protocol("jsonrpc").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind("0.0.0.0", 0) //
+                .option("httpVersion", 1) //
+                .protocol("jsonrpc") //
+                .contextPath("/rpc");
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
             provider.publisher().rsfService(TextEchoService.class, text -> text) //

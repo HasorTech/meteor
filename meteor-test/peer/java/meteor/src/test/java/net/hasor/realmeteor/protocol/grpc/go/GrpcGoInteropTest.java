@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc.go;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.ParameterizedClass;
@@ -295,9 +296,11 @@ public class GrpcGoInteropTest {
     }
 
     private MetConfiguration configuration(boolean provider) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
         configuration.setDefaultTimeout(10000);
-        var http = configuration.connector("http").option("httpVersion", 2);
+        var http = configuration.connector("http") //
+                .option("httpVersion", 2);
         if (provider) {
             http.bind(ContainerProcess.runnerHost(), 0);
         }
@@ -318,7 +321,8 @@ public class GrpcGoInteropTest {
                         .option("tlsKeyStorePassword", "meteor-test");
             }
         }
-        http.protocol("grpc").addressScheme(this.scheme());
+        http.protocol("grpc") //
+                .addressScheme(this.scheme());
         return configuration;
     }
 

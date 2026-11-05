@@ -128,8 +128,10 @@ public class DubboServiceUrlsTest {
     public void logicalDubboSelectionIncludesPlainAndSecureMounts() throws Exception {
         // 同一逻辑协议预先配置明文与安全挂载，构建上下文不打开监听。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("tcp").option("tlsEnabled", true) //
-                .protocol("dubbo").addressScheme("dubbos");
+        configuration.connector("tcp") //
+                .option("tlsEnabled", true) //
+                .protocol("dubbo") //
+                .addressScheme("dubbos");
         try (MetContext context = configuration.buildContext()) {
             // 选择逻辑协议表示使用它的全部挂载，而不是偷偷只保留明文端点。
             MetBindInfo<RegistryEchoService> service = context.publisher() //
@@ -142,8 +144,10 @@ public class DubboServiceUrlsTest {
     public void secureAddressSchemeCannotSelectTheServiceProtocol() throws Exception {
         // 明文与安全挂载共用 Dubbo 协议名，安全地址使用独立前缀。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("tcp").option("tlsEnabled", true) //
-                .protocol("dubbo").addressScheme("dubbos");
+        configuration.connector("tcp") //
+                .option("tlsEnabled", true) //
+                .protocol("dubbo") //
+                .addressScheme("dubbos");
         try (MetContext context = configuration.buildContext()) {
             // 服务协议选择只接受 SPI 名称，不把安全地址前缀解释成协议。
             var binding = context.publisher().rsfService(RegistryEchoService.class);
@@ -155,8 +159,10 @@ public class DubboServiceUrlsTest {
     public void customAddressSchemeCannotSelectTheServiceProtocol() throws Exception {
         // 自定义地址前缀只标识安全挂载的公开地址。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("tcp").option("tlsEnabled", true) //
-                .protocol("dubbo").addressScheme("native-secure");
+        configuration.connector("tcp") //
+                .option("tlsEnabled", true) //
+                .protocol("dubbo") //
+                .addressScheme("native-secure");
         try (MetContext context = configuration.buildContext()) {
             // 未注册同名协议时，自定义前缀不能成为服务协议选择条件。
             var binding = context.publisher().rsfService(RegistryEchoService.class);
@@ -351,8 +357,10 @@ public class DubboServiceUrlsTest {
     public void sslProviderUsesConfiguredSecureMountScheme() throws Exception {
         // 自定义安全挂载与明文挂载同时在正式配置中声明。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("tcp").option("tlsEnabled", true) //
-                .protocol("dubbo").addressScheme("dubbo+tls");
+        configuration.connector("tcp") //
+                .option("tlsEnabled", true) //
+                .protocol("dubbo") //
+                .addressScheme("dubbo+tls");
         try (MetContext context = configuration.buildContext()) {
             // 注册中心上的 ssl-enabled 映射到消费方实际已配置的安全挂载。
             MetBindInfo<RegistryEchoService> service = this.consumer(context);
@@ -365,10 +373,14 @@ public class DubboServiceUrlsTest {
     @Test
     public void secureOnlyServiceIgnoresPlainProviderNotifications() throws Exception {
         // 消费方只配置安全挂载，服务仍按唯一的 Dubbo 协议名订阅。
-        MetConfiguration configuration = new MetConfiguration().setApplicationName("url-mapping-test");
-        configuration.setBindAddress("127.0.0.1").setUnitName("consumer_zone");
-        configuration.connector("tcp").option("tlsEnabled", true) //
-                .protocol("dubbo").addressScheme("dubbos");
+        MetConfiguration configuration = DubboTestUtils.createConfiguration() //
+                .setApplicationName("url-mapping-test");
+        configuration.setBindAddress("127.0.0.1") //
+                .setUnitName("consumer_zone");
+        configuration.connector("tcp") //
+                .option("tlsEnabled", true) //
+                .protocol("dubbo") //
+                .addressScheme("dubbos");
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<RegistryEchoService> service = context.publisher() //
                     .rsfService(RegistryEchoService.class).group("blue").version("1.2") //
@@ -404,8 +416,10 @@ public class DubboServiceUrlsTest {
     public void logicalDubboServiceDiscoversBothConfiguredTransportModes() throws Exception {
         // 服务选择逻辑协议时允许使用当前已配置的明文和 TLS 挂载。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("tcp").option("tlsEnabled", true) //
-                .protocol("dubbo").addressScheme("dubbos");
+        configuration.connector("tcp") //
+                .option("tlsEnabled", true) //
+                .protocol("dubbo") //
+                .addressScheme("dubbos");
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<RegistryEchoService> service = context.publisher() //
                     .rsfService(RegistryEchoService.class).group("blue").version("1.2") //
@@ -734,10 +748,14 @@ public class DubboServiceUrlsTest {
     }
 
     private MetConfiguration configuration() {
-        MetConfiguration configuration = new MetConfiguration().setApplicationName("url-mapping-test");
-        configuration.setBindAddress("127.0.0.1").setUnitName("consumer_zone");
-        configuration.connector("tcp").protocol("dubbo");
-        configuration.connector("tcp").protocol("rsf");
+        MetConfiguration configuration = DubboTestUtils.createConfiguration() //
+                .setApplicationName("url-mapping-test");
+        configuration.setBindAddress("127.0.0.1") //
+                .setUnitName("consumer_zone");
+        configuration.connector("tcp") //
+                .protocol("dubbo");
+        configuration.connector("tcp") //
+                .protocol("rsf");
         return configuration;
     }
 

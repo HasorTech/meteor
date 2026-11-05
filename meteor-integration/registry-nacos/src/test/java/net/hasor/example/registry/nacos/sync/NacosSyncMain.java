@@ -75,7 +75,8 @@ public class NacosSyncMain extends AbstractNacosExample {
     public void fullPullRestoresGovernanceForAllServices() throws Exception {
         // 当前场景独占应用和注册分组，不复用其他场景的同步结果。
         NacosRegistryConfiguration registry = this.createRegistryConfiguration();
-        MetConfiguration administration = new MetConfiguration().addExtension(registry);
+        MetConfiguration administration = createConfiguration() //
+                .addExtension(registry);
         MetConfiguration consumer = this.createConsumerConfiguration(registry);
         try (MetContext administrationContext = administration.buildContext(); //
              MetContext context = consumer.buildContext()) {
@@ -115,7 +116,8 @@ public class NacosSyncMain extends AbstractNacosExample {
     public void servicePushPreservesRuntimeGovernanceAndUnrelatedRegistrations() throws Exception {
         // 当前场景独占应用和注册分组，不复用其他场景的同步结果。
         NacosRegistryConfiguration registry = this.createRegistryConfiguration();
-        MetConfiguration administration = new MetConfiguration().addExtension(registry);
+        MetConfiguration administration = createConfiguration() //
+                .addExtension(registry);
         MetConfiguration consumer = this.createConsumerConfiguration(registry);
         consumer.setRequestOption("marker", "local");
         try (MetContext administrationContext = administration.buildContext(); //
@@ -179,7 +181,8 @@ public class NacosSyncMain extends AbstractNacosExample {
     public void servicePullChangesOnlyTheRequestedService() throws Exception {
         // 当前场景独占应用和注册分组，不复用其他场景的同步结果。
         NacosRegistryConfiguration registry = this.createRegistryConfiguration();
-        MetConfiguration administration = new MetConfiguration().addExtension(registry);
+        MetConfiguration administration = createConfiguration() //
+                .addExtension(registry);
         MetConfiguration consumer = this.createConsumerConfiguration(registry);
         consumer.setRequestOption("marker", "local");
         try (MetContext administrationContext = administration.buildContext(); //
@@ -258,10 +261,11 @@ public class NacosSyncMain extends AbstractNacosExample {
     }
 
     private MetConfiguration createConsumerConfiguration(NacosRegistryConfiguration registry) {
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = createConfiguration();
         configuration.setApplicationName("nacos-example-client");
         configuration.addExtension(registry);
-        configuration.connector("tcp").protocol("rsf");
+        configuration.connector("tcp") //
+                .protocol("rsf");
         return configuration;
     }
 }

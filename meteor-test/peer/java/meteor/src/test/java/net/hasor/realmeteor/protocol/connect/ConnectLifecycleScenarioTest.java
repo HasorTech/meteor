@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.connect;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.util.concurrent.*;
 import net.hasor.cobble.StringUtils;
@@ -32,8 +33,10 @@ public class ConnectLifecycleScenarioTest {
     public void unaryDeadlineCompletesTheCallerFuture() throws Exception {
         // 两端从 bootstrap 创建，用较短的调用期限验证等待及时结束。
         ConnectDemoServiceImpl implementation = new ConnectDemoServiceImpl();
-        try (MetContext server = this.configuration(true, 5000).buildContext(); //
-             MetContext client = this.configuration(false, 400).buildContext()) {
+        try (MetContext server = this.configuration(true, 5000) //
+                .buildContext(); //
+             MetContext client = this.configuration(false, 400) //
+                     .buildContext()) {
             // 所有容器先启动，再通过正式发布入口绑定业务接口。
             server.start();
             client.start();
@@ -65,8 +68,10 @@ public class ConnectLifecycleScenarioTest {
     public void cancellingTheResponseStreamReleasesItsRemoteSource() throws Exception {
         // 两端从 bootstrap 创建，客户端调用期限独立于服务端业务。
         ConnectDemoServiceImpl implementation = new ConnectDemoServiceImpl();
-        try (MetContext server = this.configuration(true, 5000).buildContext(); //
-             MetContext client = this.configuration(false, 5000).buildContext()) {
+        try (MetContext server = this.configuration(true, 5000) //
+                .buildContext(); //
+             MetContext client = this.configuration(false, 5000) //
+                     .buildContext()) {
             // 所有容器先启动，再通过正式发布入口绑定业务接口。
             server.start();
             client.start();
@@ -98,8 +103,10 @@ public class ConnectLifecycleScenarioTest {
     public void streamDeadlineReleasesTheRemoteSourceWithoutDemand() throws Exception {
         // 两端从 bootstrap 创建，客户端调用期限独立于服务端业务。
         ConnectDemoServiceImpl implementation = new ConnectDemoServiceImpl();
-        try (MetContext server = this.configuration(true, 5000).buildContext(); //
-             MetContext client = this.configuration(false, 600).buildContext()) {
+        try (MetContext server = this.configuration(true, 5000) //
+                .buildContext(); //
+             MetContext client = this.configuration(false, 600) //
+                     .buildContext()) {
             // 所有容器先启动，再通过正式发布入口绑定业务接口。
             server.start();
             client.start();
@@ -125,8 +132,10 @@ public class ConnectLifecycleScenarioTest {
     public void closingTheClientFailsItsPendingResponseStream() throws Exception {
         // 两端从 bootstrap 创建，客户端调用期限独立于服务端业务。
         ConnectDemoServiceImpl implementation = new ConnectDemoServiceImpl();
-        try (MetContext server = this.configuration(true, 5000).buildContext(); //
-             MetContext client = this.configuration(false, 5000).buildContext()) {
+        try (MetContext server = this.configuration(true, 5000) //
+                .buildContext(); //
+             MetContext client = this.configuration(false, 5000) //
+                     .buildContext()) {
             // 所有容器先启动，再通过正式发布入口绑定业务接口。
             server.start();
             client.start();
@@ -153,8 +162,10 @@ public class ConnectLifecycleScenarioTest {
     public void sourceFailureIsDeliveredAsStreamFailure() throws Exception {
         // 两端从 bootstrap 创建，客户端调用期限独立于服务端业务。
         ConnectDemoServiceImpl implementation = new ConnectDemoServiceImpl();
-        try (MetContext server = this.configuration(true, 5000).buildContext(); //
-             MetContext client = this.configuration(false, 5000).buildContext()) {
+        try (MetContext server = this.configuration(true, 5000) //
+                .buildContext(); //
+             MetContext client = this.configuration(false, 5000) //
+                     .buildContext()) {
             // 所有容器先启动，再通过正式发布入口绑定业务接口。
             server.start();
             client.start();
@@ -180,8 +191,10 @@ public class ConnectLifecycleScenarioTest {
     public void responseDemandControlsDeliveryAcrossHttp2Windows() throws Exception {
         // 两端从 bootstrap 创建，客户端调用期限独立于服务端业务。
         ConnectDemoServiceImpl implementation = new ConnectDemoServiceImpl();
-        try (MetContext server = this.configuration(true, 5000).buildContext(); //
-             MetContext client = this.configuration(false, 10000).buildContext()) {
+        try (MetContext server = this.configuration(true, 5000) //
+                .buildContext(); //
+             MetContext client = this.configuration(false, 10000) //
+                     .buildContext()) {
             // 所有容器先启动，再通过正式发布入口绑定业务接口。
             server.start();
             client.start();
@@ -224,8 +237,10 @@ public class ConnectLifecycleScenarioTest {
     public void invalidDemandDoesNotPoisonFollowingCalls() throws Exception {
         // 两端从 bootstrap 创建，客户端调用期限独立于服务端业务。
         ConnectDemoServiceImpl implementation = new ConnectDemoServiceImpl();
-        try (MetContext server = this.configuration(true, 5000).buildContext(); //
-             MetContext client = this.configuration(false, 5000).buildContext()) {
+        try (MetContext server = this.configuration(true, 5000) //
+                .buildContext(); //
+             MetContext client = this.configuration(false, 5000) //
+                     .buildContext()) {
             // 所有容器先启动，再通过正式发布入口绑定业务接口。
             server.start();
             client.start();
@@ -252,13 +267,17 @@ public class ConnectLifecycleScenarioTest {
     }
 
     private MetConfiguration configuration(boolean listener, int timeout) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("connect");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("connect");
         configuration.setDefaultTimeout(timeout);
-        var http = configuration.connector("http").option("httpVersion", 2);
+        var http = configuration.connector("http") //
+                .option("httpVersion", 2);
         if (listener) {
             http.bind("127.0.0.1", 0);
         }
-        http.protocol("connect").contextPath("/rpc").option("streamBody", true);
+        http.protocol("connect") //
+                .contextPath("/rpc") //
+                .option("streamBody", true);
         return configuration;
     }
 

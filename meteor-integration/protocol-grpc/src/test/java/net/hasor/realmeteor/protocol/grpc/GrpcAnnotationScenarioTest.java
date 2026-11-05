@@ -9,6 +9,7 @@ package net.hasor.realmeteor.protocol.grpc;
 import net.hasor.example.protocol.grpc.AnnotatedEcho;
 import net.hasor.example.protocol.grpc.AnnotatedEchoImpl;
 import net.hasor.example.protocol.grpc.AnnotatedMessage;
+import net.hasor.example.protocol.grpc.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
@@ -94,14 +95,20 @@ public class GrpcAnnotationScenarioTest {
     }
 
     private MetConfiguration serverConfiguration() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc");
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("grpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc");
         return configuration;
     }
 
     private MetConfiguration clientConfiguration() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc");
-        configuration.connector("http").option("httpVersion", 2).protocol("grpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        configuration.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("grpc");
         return configuration;
     }
 

@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Set;
+import net.hasor.example.bootstrap.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetSettings;
@@ -35,10 +36,14 @@ public class StandaloneMetConfigurationTest {
     @Test
     public void configuredAddressBookRoutesEachServiceVersion(@TempDir Path directory) throws Exception {
         // 两个提供者使用同一服务名、不同版本，分别绑定临时端口。
-        MetConfiguration firstConfig = new MetConfiguration();
-        firstConfig.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        MetConfiguration secondConfig = new MetConfiguration();
-        secondConfig.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        MetConfiguration firstConfig = TestConfigurationUtils.create();
+        firstConfig.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        MetConfiguration secondConfig = TestConfigurationUtils.create();
+        secondConfig.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
         try (MetContext first = firstConfig.buildContext(); // 两个独立的服务提供者。
              MetContext second = secondConfig.buildContext()) {
             first.publisher().rsfService(Echo.class, value -> "v1:" + value) // 第一版服务。
@@ -63,8 +68,10 @@ public class StandaloneMetConfigurationTest {
                     </address-book>
                     """.formatted(first.getListenAddress("rsf"), second.getListenAddress("rsf"));
             Files.writeString(book, xml);
-            MetConfiguration clientConfig = new MetConfiguration().setAddressBook(book.toUri().toString());
-            clientConfig.connector("tcp").protocol("rsf");
+            MetConfiguration clientConfig = TestConfigurationUtils.create() //
+                    .setAddressBook(book.toUri().toString());
+            clientConfig.connector("tcp") //
+                    .protocol("rsf");
             try (MetContext client = clientConfig.buildContext()) {
                 MetBindInfo<Echo> firstService = client.publisher().rsfService(Echo.class) // 订阅第一版。
                         .group("billing").name("order-query").version("1.0").register();
@@ -85,15 +92,15 @@ public class StandaloneMetConfigurationTest {
     @Test
     public void defaultsUseAnAvailableCoderWithoutOpeningAListener() throws Exception {
         // 未指定可选插件和监听地址，默认配置只构建内核能力。
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         try (MetContext context = configuration.buildContext()) {
             // 默认应用、序列化和 RSF 计划可用，但没有插件或已启动的网络资源。
             assertEquals("application", context.getApplicationName());
             assertEquals("application", context.getSettings().getApplicationName());
             var endpoint = context.getSettings().getConnectorConfigs().iterator().next();
             assertEquals("Json", endpoint.protocol("rsf").option("serializeType", null));
-            assertTrue(context.getSerializeCoder("Json") instanceof JsonSerializeCoder);
-            assertTrue(context.getSerializeCoder("Java") instanceof JavaSerializeCoder);
+            assertInstanceOf(JsonSerializeCoder.class, context.getSerializeCoder("Json"));
+            assertInstanceOf(JavaSerializeCoder.class, context.getSerializeCoder("Java"));
             assertNull(context.getSerializeCoder("Hessian"));
             assertNull(context.getSerializeCoder("Hprose"));
             String hproseClass = "net/hasor/meteor/protocol/hprose/HproseProtocol.class";
@@ -107,10 +114,13 @@ public class StandaloneMetConfigurationTest {
     @Test
     public void defaultSerializationCompletesRealRpcWithoutPlugins() throws Exception {
         // 分别配置 RSF 的 TCP 服务端监听和客户端出站连接。
-        MetConfiguration serverConfig = new MetConfiguration();
-        serverConfig.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        MetConfiguration clientConfig = new MetConfiguration();
-        clientConfig.connector("tcp").protocol("rsf");
+        MetConfiguration serverConfig = TestConfigurationUtils.create();
+        serverConfig.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        MetConfiguration clientConfig = TestConfigurationUtils.create();
+        clientConfig.connector("tcp") //
+                .protocol("rsf");
         try (MetContext server = serverConfig.buildContext(); //
              MetContext client = clientConfig.buildContext()) {
             // 两个上下文分别发布与订阅，通过 TCP 验证默认序列化器。
@@ -129,8 +139,9 @@ public class StandaloneMetConfigurationTest {
     @Test
     public void absentPluginIsRejectedRatherThanSubstitutedByTheBuiltinProtocol() {
         // 只提供内核依赖时，显式选择未安装的 Hprose 协议。
-        MetConfiguration config = new MetConfiguration();
-        config.connector("http").protocol("hprose");
+        MetConfiguration config = TestConfigurationUtils.create();
+        config.connector("http") //
+                .protocol("hprose");
 
         // 构建直接指出未知协议，不能静默替换成内置 RSF。
         IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, config::buildContext);
@@ -141,8 +152,10 @@ public class StandaloneMetConfigurationTest {
     @Test
     public void builtSettingsDoNotRediscoverSpiThroughAnotherThreadClassLoader() throws Exception {
         // 构建时准备 SPI，随后切换到禁止扫描资源的线程类加载器。
-        MetConfiguration source = new MetConfiguration();
-        source.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        MetConfiguration source = TestConfigurationUtils.create();
+        source.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
         Thread thread = Thread.currentThread();
         ClassLoader original = thread.getContextClassLoader();
         ClassLoader unavailable = new ClassLoader(this.getClass().getClassLoader()) {
@@ -168,11 +181,16 @@ public class StandaloneMetConfigurationTest {
     @Test
     public void settingsExposeConfiguredConnectorsWithoutRuntimeMountSelectors() throws Exception {
         // 同一协议配置两个监听端点，第二个挂载使用独立的公开地址前缀。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("RSF");
-        configuration.connector("tcp").bind("127.0.0.1", 2101).protocol("rsf");
-        configuration.connector("tcp").bind("127.0.0.1", 2102) //
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("RSF");
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 2101) //
+                .protocol("rsf");
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 2102) //
                 .option("tlsEnabled", true) //
-                .protocol("rsf").addressScheme("rsfs");
+                .protocol("rsf") //
+                .addressScheme("rsfs");
 
         try (MetContext context = configuration.buildContext()) {
             // 设置只公开用户配置过的连接器、协议和地址，不提供运行期挂载查询。
@@ -191,10 +209,14 @@ public class StandaloneMetConfigurationTest {
     @Test
     public void defaultProtocolRejectsAnAddressScheme() {
         // RSF 的两个端点分别公开 rsf 与 rsfs 前缀，默认协议仍只能使用 rsf 名称。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("rsfs");
-        configuration.connector("tcp").protocol("rsf");
-        configuration.connector("tcp").option("tlsEnabled", true) //
-                .protocol("rsf").addressScheme("rsfs");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("rsfs");
+        configuration.connector("tcp") //
+                .protocol("rsf");
+        configuration.connector("tcp") //
+                .option("tlsEnabled", true) //
+                .protocol("rsf") //
+                .addressScheme("rsfs");
 
         // 前缀不属于协议名称，构建时报告未配置的默认协议。
         IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, configuration::buildContext);
@@ -204,18 +226,23 @@ public class StandaloneMetConfigurationTest {
     @Test
     public void sameProtocolProviderCanListenOnPlainAndTlsEndpoints() throws Exception {
         // 同一个 RSF 实现挂载到一个明文和两个 TLS 端点，地址前缀可使用 rsf 或 rsfs。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        configuration.connector("tcp").bind("127.0.0.1", 0) //
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
                 .option("tlsEnabled", true) //
                 .option("tlsKeyStore", "classpath:/tls/acceptance/server.p12") //
                 .option("tlsKeyStorePassword", "meteor-test") //
                 .protocol("rsf");
-        configuration.connector("tcp").bind("127.0.0.1", 0) //
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
                 .option("tlsEnabled", true) //
                 .option("tlsKeyStore", "classpath:/tls/acceptance/server.p12") //
                 .option("tlsKeyStorePassword", "meteor-test") //
-                .protocol("rsf").addressScheme("rsfs");
+                .protocol("rsf") //
+                .addressScheme("rsfs");
 
         try (MetContext context = configuration.buildContext()) {
             context.start();
@@ -244,11 +271,16 @@ public class StandaloneMetConfigurationTest {
     @Test
     public void protocolNameSelectsItsMountRegardlessOfOtherAddressSchemes() throws Exception {
         // 首个挂载的地址前缀与第二个挂载的协议名称相同。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("wireb");
-        configuration.connector("tcp").bind("127.0.0.1", 0) //
-                .protocol("wirea").addressScheme("wireb");
-        configuration.connector("tcp").bind("127.0.0.1", 0) //
-                .protocol("wireb").addressScheme("wireb-public");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("wireb");
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("wirea") //
+                .addressScheme("wireb");
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("wireb") //
+                .addressScheme("wireb-public");
 
         try (MetContext context = configuration.buildContext()) {
             context.start();
@@ -266,10 +298,15 @@ public class StandaloneMetConfigurationTest {
     @Test
     public void outboundProtocolNameDoesNotSelectAnotherBoundAddressScheme() throws Exception {
         // 已监听挂载的地址前缀与另一个仅出站挂载的协议名称相同。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("wireb");
-        configuration.connector("tcp").bind("127.0.0.1", 0) //
-                .protocol("wirea").addressScheme("wireb");
-        configuration.connector("tcp").protocol("wireb").addressScheme("wireb-public");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("wireb");
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("wirea") //
+                .addressScheme("wireb");
+        configuration.connector("tcp") //
+                .protocol("wireb") //
+                .addressScheme("wireb-public");
 
         try (MetContext context = configuration.buildContext()) {
             context.start();
@@ -283,9 +320,11 @@ public class StandaloneMetConfigurationTest {
     @Test
     public void applicationNameBelongsToEachContextConfigurationSnapshot() throws Exception {
         // 使用同一配置先构建 orders，再修改名称构建 inventory。
-        MetConfiguration source = new MetConfiguration().setApplicationName("orders");
+        MetConfiguration source = TestConfigurationUtils.create() //
+                .setApplicationName("orders");
         try (MetContext orders = source.buildContext()) {
-            source.setApplicationName("inventory");
+            source.setApplicationName("inventory") //
+                    .setDataHome(TestConfigurationUtils.newDataHome());
             try (MetContext inventory = source.buildContext()) {
                 // 已构建上下文及其设置保留原应用名称，新上下文使用修改后的值。
                 assertEquals("orders", orders.getApplicationName());
@@ -299,7 +338,8 @@ public class StandaloneMetConfigurationTest {
     @Test
     public void blankApplicationNameUsesTheDefaultInBuiltContext() throws Exception {
         // 空白应用名称在构建时使用默认应用名。
-        MetConfiguration configuration = new MetConfiguration().setApplicationName(" ");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setApplicationName(" ");
         try (MetContext context = configuration.buildContext()) {
             assertEquals("application", context.getApplicationName());
         }
@@ -308,7 +348,8 @@ public class StandaloneMetConfigurationTest {
     @Test
     public void nullApplicationNameUsesDefaultWithoutChangingAnExistingContext() throws Exception {
         // 将配置名称清空会恢复默认值，但不影响已经构建的命名上下文。
-        MetConfiguration configuration = new MetConfiguration().setApplicationName("orders");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setApplicationName("orders");
         try (MetContext context = configuration.buildContext()) {
             configuration.setApplicationName(null);
             assertEquals("application", configuration.getApplicationName());
@@ -318,11 +359,11 @@ public class StandaloneMetConfigurationTest {
 
     @Test
     public void contextRequestOptionsRejectEditsAndRemainIndependentOfTheSource() throws Exception {
-        // 同一配置创建两个带有初始请求选项的上下文。
-        MetConfiguration source = new MetConfiguration();
-        source.setRequestOption("trace", "initial");
+        // 复用配置并使用独立数据目录，构建两个带有初始请求选项的上下文。
+        MetConfiguration source = TestConfigurationUtils.create() //
+                .setRequestOption("trace", "initial");
         try (MetContext first = source.buildContext(); //
-             MetContext second = source.buildContext()) {
+             MetContext second = source.setDataHome(TestConfigurationUtils.newDataHome()).buildContext()) {
             // Context 暴露只读选项，不能修改其构建结果。
             assertThrows(UnsupportedOperationException.class, () -> {
                 first.getSettings().getRequestOptions().addOption("trace", "first");
@@ -340,11 +381,11 @@ public class StandaloneMetConfigurationTest {
 
     @Test
     public void contextResponseOptionsRejectRemovalAndRemainIndependentOfTheSource() throws Exception {
-        // 同一配置构建两个上下文，各自保存只读响应选项。
-        MetConfiguration source = new MetConfiguration();
-        source.setResponseOption("tag", "initial");
+        // 复用配置并使用独立数据目录，两个上下文各自保存只读响应选项。
+        MetConfiguration source = TestConfigurationUtils.create() //
+                .setResponseOption("tag", "initial");
         try (MetContext first = source.buildContext(); //
-             MetContext second = source.buildContext()) {
+             MetContext second = source.setDataHome(TestConfigurationUtils.newDataHome()).buildContext()) {
             // 删除操作明确失败，原配置和两个上下文的值均保持不变。
             assertThrows(UnsupportedOperationException.class, () -> {
                 first.getSettings().getResponseOptions().removeOption("tag");
@@ -363,11 +404,15 @@ public class StandaloneMetConfigurationTest {
     @Test
     public void protocolPreparationMergesConnectorDefaultsAndProtocolOverrides() throws Exception {
         // 两个协议共享端点参数，首个协议覆盖限制、序列化器和上下文路径。
-        MetConfiguration source = new MetConfiguration();
+        MetConfiguration source = TestConfigurationUtils.create();
         MetConfiguration.ConnectorSettings http = source.connector("http");
-        http.option("workerThread", 1).option("limit", 10).option("serializeType", "Json");
+        http.option("workerThread", 1) //
+                .option("limit", 10) //
+                .option("serializeType", "Json");
         http.protocol("httpa") //
-                .option("limit", 20).option("serializeType", "Java").contextPath("/first///");
+                .option("limit", 20) //
+                .option("serializeType", "Java") //
+                .contextPath("/first///");
         http.protocol("httpb");
 
         try (MetContext context = source.buildContext()) {
@@ -389,7 +434,7 @@ public class StandaloneMetConfigurationTest {
     @Test
     public void transportSecurityMaterialDoesNotEnterProtocolOptions() throws Exception {
         // TLS 配置属于连接端点；协议只能看到端点最终是否启用安全传输。
-        MetConfiguration source = new MetConfiguration();
+        MetConfiguration source = TestConfigurationUtils.create();
         source.connector("http") //
                 .option("tlsEnabled", true) //
                 .option("tlsKeyStore", "server.p12") //
@@ -414,7 +459,8 @@ public class StandaloneMetConfigurationTest {
     public void protocolCannotOverrideTransportSecurityOptions() {
         // 安全传输参数必须通过 ConnectorSettings 配置，协议挂载不能形成另一份冲突状态。
         MetConfiguration configuration = new MetConfiguration();
-        MetConfiguration.ProtocolSettings protocol = configuration.connector("http").protocol("httpa");
+        MetConfiguration.ProtocolSettings protocol = configuration.connector("http") //
+                .protocol("httpa");
 
         IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, () -> {
             protocol.option("tlsEnabled", true);
@@ -425,11 +471,12 @@ public class StandaloneMetConfigurationTest {
     @Test
     public void editingProtocolConfigurationLeavesPreviousContextAndOtherProtocolUnchanged() throws Exception {
         // 同一 HTTP 端点挂载两个协议，构建后继续编辑第一个协议。
-        MetConfiguration source = new MetConfiguration();
+        MetConfiguration source = TestConfigurationUtils.create();
         MetConfiguration.ConnectorSettings http = source.connector("http");
         http.option("limit", 10);
         MetConfiguration.ProtocolSettings editable = http.protocol("httpa");
-        editable.option("limit", 20).contextPath("/first///");
+        editable.option("limit", 20) //
+                .contextPath("/first///");
         http.protocol("httpb");
 
         try (MetContext before = source.buildContext()) {
@@ -438,7 +485,9 @@ public class StandaloneMetConfigurationTest {
             ProtocolConfig second = original.protocol("httpb");
 
             // 再次构建得到新快照，已有上下文以及另一协议都保持自己的原值。
-            editable.option("limit", 30).contextPath("/later/");
+            editable.option("limit", 30) //
+                    .contextPath("/later/");
+            source.setDataHome(TestConfigurationUtils.newDataHome());
             try (MetContext after = source.buildContext()) {
                 ConnectorConfig updated = after.getSettings().getConnectorConfigs().iterator().next();
                 ProtocolConfig changed = updated.protocol("httpa");

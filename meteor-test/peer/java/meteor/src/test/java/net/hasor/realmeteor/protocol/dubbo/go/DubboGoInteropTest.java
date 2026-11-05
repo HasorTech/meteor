@@ -4,6 +4,7 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.protocol.dubbo.go;
+import net.hasor.example.support.TestConfigurationUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.echo.TextEchoService;
@@ -83,7 +84,8 @@ public class DubboGoInteropTest {
     }
 
     private MetConfiguration configuration(String protocol, boolean listening) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol(protocol);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol(protocol);
         configuration.setDefaultTimeout(10000);
         boolean triple = StringUtils.equals("triple", protocol);
         String transport = triple ? "http" : "tcp";
@@ -92,7 +94,9 @@ public class DubboGoInteropTest {
             connector.bind(ContainerProcess.runnerHost(), 0);
         }
         if (triple) {
-            connector.option("httpVersion", 2).protocol("triple").contextPath("/");
+            connector.option("httpVersion", 2) //
+                    .protocol("triple") //
+                    .contextPath("/");
         } else {
             connector.protocol("dubbo");
         }

@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hprose;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -32,7 +33,8 @@ public class HproseHttpsSemanticsTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void httpsHttp2ReturnsFunctionDiscovery() throws Exception {
         // HTTPS 仅协商 h2，服务仍由 bootstrap 启动后通过普通发布接口注册。
-        MetConfiguration incoming = new MetConfiguration().setQueueMinPoolSize(4);
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setQueueMinPoolSize(4);
         incoming.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .option("tlsEnabled", true) //
@@ -42,7 +44,9 @@ public class HproseHttpsSemanticsTest {
                 .option("tlsKeyStore", "classpath:/certs/acceptance/server.p12") //
                 .option("tlsKeyStorePassword", "meteor-test") //
                 .option("tlsAlpn", "h2") //
-                .protocol("hprose").addressScheme("https").contextPath("/rpc");
+                .protocol("hprose") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
         try (MetContext server = incoming.buildContext()) {
             server.start();
             server.publisher() //
@@ -74,7 +78,8 @@ public class HproseHttpsSemanticsTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void httpsHttp2ReturnsByRefArguments() throws Exception {
         // HTTPS 仅协商 h2，服务仍由 bootstrap 启动后通过普通发布接口注册。
-        MetConfiguration incoming = new MetConfiguration().setQueueMinPoolSize(4);
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setQueueMinPoolSize(4);
         incoming.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .option("tlsEnabled", true) //
@@ -84,7 +89,9 @@ public class HproseHttpsSemanticsTest {
                 .option("tlsKeyStore", "classpath:/certs/acceptance/server.p12") //
                 .option("tlsKeyStorePassword", "meteor-test") //
                 .option("tlsAlpn", "h2") //
-                .protocol("hprose").addressScheme("https").contextPath("/rpc");
+                .protocol("hprose") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
         try (MetContext server = incoming.buildContext()) {
             server.start();
             server.publisher() //
@@ -116,7 +123,8 @@ public class HproseHttpsSemanticsTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void httpsHttp2BatchKeepsOrderAndIsolatesBusinessFailure() throws Exception {
         // HTTPS 仅协商 h2，服务仍由 bootstrap 启动后通过普通发布接口注册。
-        MetConfiguration incoming = new MetConfiguration().setQueueMinPoolSize(4);
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setQueueMinPoolSize(4);
         incoming.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .option("tlsEnabled", true) //
@@ -126,7 +134,9 @@ public class HproseHttpsSemanticsTest {
                 .option("tlsKeyStore", "classpath:/certs/acceptance/server.p12") //
                 .option("tlsKeyStorePassword", "meteor-test") //
                 .option("tlsAlpn", "h2") //
-                .protocol("hprose").addressScheme("https").contextPath("/rpc");
+                .protocol("hprose") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
         try (MetContext server = incoming.buildContext()) {
             server.start();
             server.publisher() //

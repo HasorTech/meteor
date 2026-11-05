@@ -15,6 +15,7 @@ import java.util.function.BooleanSupplier;
 import net.hasor.cobble.concurrent.future.BasicFuture;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.registry.dubbo.DubboRegistryConfiguration;
@@ -34,7 +35,8 @@ final class DubboRegistryScenarioSupport {
         DubboRegistryConfiguration registry = new DubboRegistryConfiguration().setAddress(registryUrl);
         // 原生 SDK 位于另一个容器，注册主机必须是应用在测试网络中的可达地址。
         registry.setPublishHost(ContainerProcess.runnerHost());
-        MetConfiguration configuration = new MetConfiguration().addExtension(registry);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .addExtension(registry);
         configuration.setApplicationName(applicationName);
         return configuration;
     }

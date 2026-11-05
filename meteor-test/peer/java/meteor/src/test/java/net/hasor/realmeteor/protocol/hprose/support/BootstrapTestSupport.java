@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hprose.support;
+import java.util.UUID;
 import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -46,7 +47,10 @@ public abstract class BootstrapTestSupport {
     protected final MetConfiguration configuration(int port) {
         // 只准备 TCP/RSF 配置，实际构建与启动由当前场景负责。
         MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("tcp").bind("127.0.0.1", port).protocol("rsf");
+        configuration.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", port) //
+                .protocol("rsf");
         return configuration;
     }
 

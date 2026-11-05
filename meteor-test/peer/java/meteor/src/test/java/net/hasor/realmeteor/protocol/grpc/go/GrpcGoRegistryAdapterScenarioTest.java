@@ -146,17 +146,23 @@ public class GrpcGoRegistryAdapterScenarioTest {
     }
 
     private MetConfiguration configuration(RegistryConfiguration registry, boolean provider) throws Exception {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc").setDefaultTimeout(10000);
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDefaultProtocol("grpc") //
+                .setDefaultTimeout(10000);
         configuration.setApplicationName(provider ? "go-grpc-adapter-provider" : "go-grpc-adapter-consumer");
         configuration.setDataHome(Files.createDirectory(this.data.resolve("application")));
         configuration.addExtension(registry);
-        configuration.connector("tcp").protocol("rsf"); // 注册扩展的内部管理出口。
-        ConnectorSettings http = configuration.connector("http").option("httpVersion", 2);
+        configuration.connector("tcp") //
+                .protocol("rsf"); // 注册扩展的内部管理出口。
+        ConnectorSettings http = configuration.connector("http") //
+                .option("httpVersion", 2);
         if (provider) {
             http.bind(ContainerProcess.runnerHost(), 0);
         }
         if (StringUtils.equals("mtls", this.tlsMode)) {
-            http.option("tlsEnabled", true).option("httpScheme", "https").option("tlsAlpn", "h2") //
+            http.option("tlsEnabled", true) //
+                    .option("httpScheme", "https") //
+                    .option("tlsAlpn", "h2") //
                     .option("tlsTrustStore", "classpath:/certs/acceptance/trust.p12") //
                     .option("tlsTrustStorePassword", "meteor-test");
             String identity = provider ? "server.p12" : "client.p12";
@@ -166,7 +172,9 @@ public class GrpcGoRegistryAdapterScenarioTest {
                 http.option("tlsClientAuth", "REQUIRE");
             }
         }
-        http.protocol("grpc").addressScheme(this.scheme()).contextPath("/");
+        http.protocol("grpc") //
+                .addressScheme(this.scheme()) //
+                .contextPath("/");
         return configuration;
     }
 

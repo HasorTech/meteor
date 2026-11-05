@@ -20,6 +20,8 @@ import net.hasor.meteor.registry.shared.DecoratedRegistryConfiguration;
 import net.hasor.meteor.registry.shared.RegistryTestUtils.Echo;
 import net.hasor.meteor.registry.shared.StorageProbe;
 import org.junit.jupiter.api.Test;
+import static net.hasor.meteor.registry.shared.RegistryTestUtils.createConfiguration;
+import static net.hasor.meteor.registry.shared.RegistryTestUtils.createDataHome;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RegistryExtensionTest {
@@ -30,8 +32,10 @@ public class RegistryExtensionTest {
         MemoryRegistryConfiguration storageConfiguration = new MemoryRegistryConfiguration();
         RegistryConfiguration registry = new DecoratedRegistryConfiguration(storageConfiguration, probe::observe);
         registry.setManagementToken("secret");
-        MetConfiguration configuration = new MetConfiguration().addExtension(registry);
-        configuration.connector("tcp").protocol("rsf");
+        MetConfiguration configuration = createConfiguration() //
+                .addExtension(registry);
+        configuration.connector("tcp") //
+                .protocol("rsf");
 
         try (MetContext context = configuration.buildContext()) {
             // 构建时只创建扩展服务；重复获取返回同一个对象。
@@ -77,8 +81,10 @@ public class RegistryExtensionTest {
         StorageProbe probe = new StorageProbe();
         MemoryRegistryConfiguration storageConfiguration = new MemoryRegistryConfiguration();
         RegistryConfiguration registry = new DecoratedRegistryConfiguration(storageConfiguration, probe::observe);
-        MetConfiguration configuration = new MetConfiguration().addExtension(registry);
-        configuration.connector("tcp").protocol("rsf");
+        MetConfiguration configuration = createConfiguration() //
+                .addExtension(registry);
+        configuration.connector("tcp") //
+                .protocol("rsf");
 
         try (MetContext context = configuration.buildContext()) {
             // 缺少凭据只阻止管理操作，不打开管理会话。
@@ -104,8 +110,10 @@ public class RegistryExtensionTest {
         MemoryRegistryConfiguration storageConfiguration = new MemoryRegistryConfiguration();
         RegistryConfiguration registry = new DecoratedRegistryConfiguration(storageConfiguration, probe::observe);
         registry.setManagementToken("secret");
-        MetConfiguration configuration = new MetConfiguration().addExtension(registry);
-        configuration.connector("tcp").protocol("rsf");
+        MetConfiguration configuration = createConfiguration() //
+                .addExtension(registry);
+        configuration.connector("tcp") //
+                .protocol("rsf");
 
         try (MetContext context = configuration.buildContext()) {
             // 启动前先使用管理入口，打开管理会话。
@@ -131,13 +139,16 @@ public class RegistryExtensionTest {
         AtomicReference<String> firstToken = new AtomicReference<>("first");
         AtomicReference<String> secondToken = new AtomicReference<>("second");
         registry.setTokenProvider(firstToken::get);
-        MetConfiguration configuration = new MetConfiguration().addExtension(registry);
-        configuration.connector("tcp").protocol("rsf");
+        MetConfiguration configuration = createConfiguration() //
+                .addExtension(registry);
+        configuration.connector("tcp") //
+                .protocol("rsf");
 
         try (MetContext first = configuration.buildContext()) {
             // 第二个上下文捕获新的凭据来源。
             registry.setTokenProvider(secondToken::get);
 
+            configuration.setDataHome(createDataHome());
             try (MetContext second = configuration.buildContext()) {
                 RegistryAdmin firstAdmin = first.getExtension(RegistryAdmin.class);
                 RegistryAdmin secondAdmin = second.getExtension(RegistryAdmin.class);

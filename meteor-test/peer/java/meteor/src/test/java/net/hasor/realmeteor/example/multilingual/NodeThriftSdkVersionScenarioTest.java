@@ -14,6 +14,7 @@ import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.annotation.MetParam;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.node.NodeRpcPeer;
@@ -126,13 +127,16 @@ public class NodeThriftSdkVersionScenarioTest {
     }
 
     private MetConfiguration configuration(boolean listening) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift");
         configuration.setDefaultTimeout(10000);
         MetConfiguration.ConnectorSettings tcp = configuration.connector("tcp");
         if (listening) {
             tcp.bind(ContainerProcess.runnerHost(), 0);
         }
-        tcp.protocol("thrift").option("encoding", this.encoding).option("framed", true);
+        tcp.protocol("thrift") //
+                .option("encoding", this.encoding) //
+                .option("framed", true);
         return configuration;
     }
 

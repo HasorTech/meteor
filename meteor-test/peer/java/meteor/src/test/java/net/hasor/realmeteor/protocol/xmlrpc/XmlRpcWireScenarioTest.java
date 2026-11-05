@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.xmlrpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.io.StringReader;
 import java.net.InetSocketAddress;
@@ -529,9 +530,13 @@ public class XmlRpcWireScenarioTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void explicitlyEnabledNilRoundTripsANullValue() throws Exception {
         // nil 是显式启用的扩展，两端通过同一 HTTP 端点交换空值。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("xmlrpc");
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("xmlrpc").contextPath("/rpc").option("allowNil", true);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("xmlrpc");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("xmlrpc") //
+                .contextPath("/rpc") //
+                .option("allowNil", true);
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher() //
@@ -642,9 +647,12 @@ public class XmlRpcWireScenarioTest {
     }
 
     private MetConfiguration configuration() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("xmlrpc");
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("xmlrpc").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("xmlrpc");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("xmlrpc") //
+                .contextPath("/rpc");
         return configuration;
     }
 

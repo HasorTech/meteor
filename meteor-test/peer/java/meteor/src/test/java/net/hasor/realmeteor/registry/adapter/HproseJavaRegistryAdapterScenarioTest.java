@@ -71,12 +71,18 @@ public class HproseJavaRegistryAdapterScenarioTest {
         try (RegistryDiscoveryEnvironment environment = RegistryDiscoveryEnvironment.open(this.backend, directory)) {
             RegistryConfiguration registry = environment.configuration();
             registry.setPublishHost(ContainerProcess.runnerHost());
-            MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("hprose");
-            configuration.addExtension(registry).setApplicationName("hprose-java-adapter-provider");
+            MetConfiguration configuration = new MetConfiguration() //
+                    .setDefaultProtocol("hprose");
+            configuration.addExtension(registry) //
+                    .setApplicationName("hprose-java-adapter-provider");
             configuration.setDataHome(Files.createDirectory(this.data.resolve("hprose-provider-data")));
-            configuration.connector("tcp").protocol("rsf"); // 注册扩展的内部管理出口，不开放监听。
-            configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                    .protocol("hprose").addressScheme("http").contextPath("/orders");
+            configuration.connector("tcp") //
+                    .protocol("rsf"); // 注册扩展的内部管理出口，不开放监听。
+            configuration.connector("http") //
+                    .bind(ContainerProcess.runnerHost(), 0) //
+                    .protocol("hprose") //
+                    .addressScheme("http") //
+                    .contextPath("/orders");
             try (MetContext provider = configuration.buildContext()) {
                 provider.start();
                 MetBindInfo<OrderDemoService> service = provider.publisher() //
@@ -113,12 +119,17 @@ public class HproseJavaRegistryAdapterScenarioTest {
         try (RegistryDiscoveryEnvironment environment = RegistryDiscoveryEnvironment.open(this.backend, directory)) {
             RegistryConfiguration registry = environment.configuration();
             registry.setPublishHost(ContainerProcess.runnerHost());
-            MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("hprose");
-            configuration.addExtension(registry).setApplicationName("hprose-java-adapter-consumer");
+            MetConfiguration configuration = new MetConfiguration() //
+                    .setDefaultProtocol("hprose");
+            configuration.addExtension(registry) //
+                    .setApplicationName("hprose-java-adapter-consumer");
             configuration.setDataHome(Files.createDirectory(this.data.resolve("hprose-consumer-data")));
-            configuration.connector("tcp").protocol("rsf"); // 注册扩展的内部管理出口，不开放监听。
+            configuration.connector("tcp") //
+                    .protocol("rsf"); // 注册扩展的内部管理出口，不开放监听。
             configuration.connector("http") //
-                    .protocol("hprose").addressScheme("http").contextPath("/orders");
+                    .protocol("hprose") //
+                    .addressScheme("http") //
+                    .contextPath("/orders");
             try (MetContext consumer = configuration.buildContext()) {
                 consumer.start();
                 MetBindInfo<OrderDemoService> service = consumer.publisher().rsfService(OrderDemoService.class) //

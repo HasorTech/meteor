@@ -76,7 +76,9 @@ public class OncRpcRegistryAdapterScenarioTest {
             RegistryConfiguration registry = environment.configuration();
             MetConfiguration configuration = this.configuration(registry, "native-consumer-target");
             int port = this.listenPort();
-            configuration.connector(this.transport).bind(ContainerProcess.runnerHost(), port).protocol(this.protocol);
+            configuration.connector(this.transport) //
+                    .bind(ContainerProcess.runnerHost(), port) //
+                    .protocol(this.protocol);
             try (MetContext provider = configuration.buildContext()) {
                 provider.start();
                 MetBindInfo<OncRpcDemoService> service = provider.publisher() //
@@ -109,7 +111,8 @@ public class OncRpcRegistryAdapterScenarioTest {
         try (RegistryDiscoveryEnvironment environment = RegistryDiscoveryEnvironment.open(this.backend, home)) {
             RegistryConfiguration registry = environment.configuration();
             MetConfiguration configuration = this.configuration(registry, "native-provider-consumer");
-            configuration.connector(this.transport).protocol(this.protocol);
+            configuration.connector(this.transport) //
+                    .protocol(this.protocol);
             try (MetContext consumer = configuration.buildContext()) {
                 consumer.start();
                 MetBindInfo<OncRpcDemoService> service = consumer.publisher() //
@@ -141,7 +144,8 @@ public class OncRpcRegistryAdapterScenarioTest {
         configuration.setApplicationName(application);
         configuration.setDataHome(Files.createDirectory(this.data.resolve(application)));
         configuration.addExtension(registry);
-        configuration.connector("tcp").protocol("rsf"); // 内部管理出口不对外监听。
+        configuration.connector("tcp") //
+                .protocol("rsf"); // 内部管理出口不对外监听。
         return configuration;
     }
 

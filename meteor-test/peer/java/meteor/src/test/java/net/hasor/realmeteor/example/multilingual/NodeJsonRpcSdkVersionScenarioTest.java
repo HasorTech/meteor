@@ -14,6 +14,7 @@ import net.hasor.example.protocol.jsonrpc.JsonRpcInteropServiceImpl;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.node.NodeRpcPeer;
@@ -51,9 +52,12 @@ public class NodeJsonRpcSdkVersionScenarioTest {
 
     private void sdkCallsMeteor() throws Exception {
         // 从公开 bootstrap 启动当前协议，再发布命名服务。
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("jsonrpc").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("jsonrpc") //
+                .contextPath("/rpc");
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
             provider.publisher().rsfService(JsonRpcInteropService.class, new JsonRpcInteropServiceImpl()) //
@@ -70,8 +74,11 @@ public class NodeJsonRpcSdkVersionScenarioTest {
 
     private void meteorCallsSdk() throws Exception {
         // 对端使用当前版本 Jayson 的服务分派和 HTTP 监听，独占自己的临时端口。
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(10000);
-        configuration.connector("http").protocol("jsonrpc").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(10000);
+        configuration.connector("http") //
+                .protocol("jsonrpc") //
+                .contextPath("/rpc");
         try (NodeRpcPeer peer = NodeRpcPeer.startVersion(this.profile, "server", "http"); //
              MetContext consumer = configuration.buildContext()) {
             int port = peer.awaitPort();

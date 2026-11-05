@@ -14,6 +14,7 @@ import net.hasor.example.echo.TextEchoService;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
@@ -44,8 +45,10 @@ public class CThriftSdkScenarioTest {
     @Timeout(value = 60000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void sdkToMeteorThriftEcho() throws Exception {
         // 普通 Java 接口从 bootstrap 发布，参数公共注解编号1对应测试自有 IDL。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("tcp").bind("0.0.0.0", 0).protocol("thrift");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("tcp") //
+                .bind("0.0.0.0", 0) //
+                .protocol("thrift");
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
             provider.publisher().rsfService(TextEchoService.class, value -> value) //
@@ -67,8 +70,9 @@ public class CThriftSdkScenarioTest {
     public void meteorToSdkThriftEcho() throws Exception {
         // 官方 C GLib SimpleServer 独立监听；本场景只发起一次请求，不要求并发服务能力。
         List<String> command = List.of(this.executable, "provider");
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("tcp").protocol("thrift");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("tcp") //
+                .protocol("thrift");
         try (OrderPeerProcess provider = OrderPeerProcess.start("native", command, null); //
              MetContext consumer = configuration.buildContext()) {
             URI target = URI.create(provider.awaitReady("Order provider is ready: "));

@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc.web;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.hasor.example.echo.TextEchoService;
@@ -26,9 +27,13 @@ public class GrpcWebJavaInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialJavaClientCallsMeteorGrpcWebService() throws Exception {
         // 只挂载 grpc-web，不开放普通 grpc 端点，避免误测另一种线上协议。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc-web");
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("grpc-web").contextPath("/web").option("streamBody", true);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc-web");
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("grpc-web") //
+                .contextPath("/web") //
+                .option("streamBody", true);
         var resource = new GrpcProtoResource(getClass().getResource("/protocol/proto/java-sdk-echo.proto"));
         AtomicInteger calls = new AtomicInteger();
         try (MetContext server = configuration.buildContext()) {

@@ -6,6 +6,8 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,10 +20,37 @@ import net.hasor.meteor.registry.jdbc.JdbcRegistryConfiguration;
 import net.hasor.meteor.registry.memory.MemoryRegistryConfiguration;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.noear.solon.core.Props;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SolonSettingsTest {
+    @TempDir
+    Path directory;
+
+    @Test
+    void readsExplicitDataHomeFromNativeConfiguration() throws Exception {
+        // 显式目录覆盖内核按应用名推导的数据目录。
+        Map<String, Object> values = new LinkedHashMap<>();
+        values.put("meteor.application", "example");
+        values.put("meteor.data-home", "build/settings/solon-instance");
+        values.put("meteor.connectors.rsf.host", "127.0.0.1");
+        values.put("meteor.connectors.rsf.port", 0);
+        MetConfiguration config = SolonSettings.configuration(settings(values), getClass().getClassLoader());
+        assertEquals(Paths.get("build/settings/solon-instance"), config.getDataHome());
+    }
+
+    @Test
+    void derivesDefaultDataHomeFromApplicationName() throws Exception {
+        // 不设置目录时由内核统一使用用户目录及应用名。
+        Map<String, Object> values = new LinkedHashMap<>();
+        values.put("meteor.application", "example");
+        values.put("meteor.connectors.rsf.host", "127.0.0.1");
+        values.put("meteor.connectors.rsf.port", 0);
+        MetConfiguration config = SolonSettings.configuration(settings(values), getClass().getClassLoader());
+        assertEquals(Paths.get(System.getProperty("user.home"), ".meteor", "example"), config.getDataHome());
+    }
+
     @Test
     void derivesTransportFromProtocolSpiAndReadsHttpContext() throws Exception {
         // 不配置 transport 或 protocols.name，传输能力来自已安装 SPI。
@@ -154,7 +183,10 @@ class SolonSettingsTest {
             return database;
         });
         assertInstanceOf(JdbcRegistryConfiguration.class, registry);
-        try (MetContext context = new MetConfiguration().addExtension(registry).buildContext()) {
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDataHome(this.directory.resolve("meteor"));
+        configuration.addExtension(registry);
+        try (MetContext context = configuration.buildContext()) {
             assertNotNull(context.getExtension(RegistryClient.class));
             assertFalse(context.isOnline());
         }
@@ -178,7 +210,10 @@ class SolonSettingsTest {
             assertEquals(RegistryTokenProvider.class, type);
             return tokens;
         });
-        try (MetContext context = new MetConfiguration().addExtension(registry).buildContext()) {
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDataHome(this.directory.resolve("meteor"));
+        configuration.addExtension(registry);
+        try (MetContext context = configuration.buildContext()) {
             assertNull(context.getExtension(RegistryClient.class));
         }
     }
@@ -194,7 +229,10 @@ class SolonSettingsTest {
         var source = settings(Map.of("meteor.registry.provider", "nacos", "meteor.registry.address", "127.0.0.1:1", "meteor.registry.group", "example", "meteor.registry.namespace", "test", "meteor.registry.timeout-millis", 500));
         RegistryConfiguration registry = (RegistryConfiguration) SolonSettings.registry(source, getClass().getClassLoader(), List.of(), (name, type) -> null);
         assertEquals("nacos", registry.getProvider());
-        try (MetContext context = new MetConfiguration().addExtension(registry).buildContext()) {
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDataHome(this.directory.resolve("meteor"));
+        configuration.addExtension(registry);
+        try (MetContext context = configuration.buildContext()) {
             assertNotNull(context.getExtension(RegistryClient.class));
             assertFalse(context.isOnline());
         }
@@ -205,7 +243,10 @@ class SolonSettingsTest {
         var source = settings(Map.of("meteor.registry.provider", "zookeeper", "meteor.registry.address", "127.0.0.1:1", "meteor.registry.root", "/example", "meteor.registry.timeout-millis", 500, "meteor.registry.session-timeout-millis", 3000));
         RegistryConfiguration registry = (RegistryConfiguration) SolonSettings.registry(source, getClass().getClassLoader(), List.of(), (name, type) -> null);
         assertEquals("zookeeper", registry.getProvider());
-        try (MetContext context = new MetConfiguration().addExtension(registry).buildContext()) {
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDataHome(this.directory.resolve("meteor"));
+        configuration.addExtension(registry);
+        try (MetContext context = configuration.buildContext()) {
             assertNotNull(context.getExtension(RegistryClient.class));
             assertFalse(context.isOnline());
         }

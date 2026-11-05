@@ -6,18 +6,15 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor.registry.shared.rpc;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 public final class InstanceData {
-    private String              ipAddress         = null; // 应用使用的本地 IP
-    private Long                processId         = null; // 应用进程 ID
-    private String              instanceId        = null;
-    private String              applicationName   = null;
-    private boolean             block             = false;
-    private String              unitName          = null;
-    private Map<String, String> listenAddresses   = new LinkedHashMap<>(); // 连接器名称#地址 scheme -> 实际监听地址
-    private Map<String, String> managementAddress = new LinkedHashMap<>(); // 连接器名称#地址 scheme -> 管理 RPC 地址
+    private String                 ipAddress       = null; // 应用使用的本地 IP
+    private Long                   processId       = null; // 应用进程 ID
+    private String                 instanceId      = null;
+    private String                 applicationName = null;
+    private boolean                block           = false;
+    private String                 unitName        = null;
+    private InstanceEndpointData[] endpoints       = new InstanceEndpointData[0];
 
     public String getInstanceId() {
         return this.instanceId;
@@ -67,19 +64,11 @@ public final class InstanceData {
         this.unitName = unitName;
     }
 
-    public Map<String, String> getListenAddresses() {
-        return this.listenAddresses;
+    public InstanceEndpointData[] getEndpoints() {
+        return this.endpoints;
     }
 
-    public void setListenAddresses(Map<String, String> listenAddresses) {
-        this.listenAddresses = listenAddresses;
-    }
-
-    public Map<String, String> getManagementAddress() {
-        return this.managementAddress;
-    }
-
-    public void setManagementAddress(Map<String, String> managementAddress) {
-        this.managementAddress = managementAddress;
+    public void setEndpoints(InstanceEndpointData[] endpoints) {
+        this.endpoints = endpoints;
     }
 }

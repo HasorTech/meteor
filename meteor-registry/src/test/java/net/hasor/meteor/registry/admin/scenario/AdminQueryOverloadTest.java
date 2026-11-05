@@ -23,6 +23,7 @@ import net.hasor.meteor.registry.shared.storage.domain.EntServiceRuntimeData;
 import net.hasor.meteor.registry.shared.storage.domain.RefProtocolMountData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import static net.hasor.meteor.registry.shared.RegistryTestUtils.createConfiguration;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** 集群、实例和服务成员目录使用有界分页，并保留各自的查询范围与组合筛选。 */
@@ -37,7 +38,8 @@ public class AdminQueryOverloadTest {
     @Test
     public void applicationsCanBeReadAcrossDefaultSizedPages() throws Exception {
         // 保存超过默认单页数量的独立应用，不需要登记实例。
-        MetConfiguration configuration = new MetConfiguration().addExtension(this.registry);
+        MetConfiguration configuration = createConfiguration() //
+                .addExtension(this.registry);
         try (StorageAccess storage = this.registry.openStorage(); //
              MetContext context = configuration.buildContext()) {
             Set<String> expected = new HashSet<>();
@@ -70,7 +72,8 @@ public class AdminQueryOverloadTest {
     @Test
     public void instancePagesRetainApplicationScopeAcrossDefaultSizedPages() throws Exception {
         // 为目标应用登记超过一页的实例，并登记一个无关应用实例。
-        MetConfiguration configuration = new MetConfiguration().addExtension(this.registry);
+        MetConfiguration configuration = createConfiguration() //
+                .addExtension(this.registry);
         try (StorageAccess storage = this.registry.openStorage(); //
              MetContext context = configuration.buildContext()) {
             Set<String> expected = new HashSet<>();
@@ -111,7 +114,8 @@ public class AdminQueryOverloadTest {
     @Test
     public void servicePagesRetainFilterAcrossDefaultSizedPages() throws Exception {
         // 服务声明独立持久化，准备超过一页的匹配项和一个无关服务。
-        MetConfiguration configuration = new MetConfiguration().addExtension(this.registry);
+        MetConfiguration configuration = createConfiguration() //
+                .addExtension(this.registry);
         try (StorageAccess storage = this.registry.openStorage(); //
              MetContext context = configuration.buildContext()) {
             Set<String> expected = new HashSet<>();
@@ -151,7 +155,8 @@ public class AdminQueryOverloadTest {
     @Test
     public void instanceServiceListCanBeReadAcrossDefaultSizedPages() throws Exception {
         // 同一实例登记超过默认单页数量的服务。
-        MetConfiguration configuration = new MetConfiguration().addExtension(this.registry);
+        MetConfiguration configuration = createConfiguration() //
+                .addExtension(this.registry);
         try (StorageAccess storage = this.registry.openStorage(); //
              MetContext context = configuration.buildContext()) {
             storage.registerInstance(instance("node", "orders", "blue"));
@@ -193,7 +198,8 @@ public class AdminQueryOverloadTest {
     @Test
     public void providersCanBeReadAcrossDefaultSizedPages() throws Exception {
         // 每个实例登记相同服务，匹配成员数量超过默认单页大小。
-        MetConfiguration configuration = new MetConfiguration().addExtension(this.registry);
+        MetConfiguration configuration = createConfiguration() //
+                .addExtension(this.registry);
         try (StorageAccess storage = this.registry.openStorage(); //
              MetContext context = configuration.buildContext()) {
             Set<String> expected = new HashSet<>();
@@ -234,7 +240,8 @@ public class AdminQueryOverloadTest {
     @Test
     public void consumersCanBeReadAcrossDefaultSizedPages() throws Exception {
         // 每个消费实例登记相同服务，匹配成员数量超过默认单页大小。
-        MetConfiguration configuration = new MetConfiguration().addExtension(this.registry);
+        MetConfiguration configuration = createConfiguration() //
+                .addExtension(this.registry);
         try (StorageAccess storage = this.registry.openStorage(); //
              MetContext context = configuration.buildContext()) {
             Set<String> expected = new HashSet<>();
@@ -275,7 +282,8 @@ public class AdminQueryOverloadTest {
     @Test
     public void pagedServiceQueryUsesTheExistingFilterArgument() throws Exception {
         // 保存两个匹配服务和一个无关服务。
-        MetConfiguration configuration = new MetConfiguration().addExtension(this.registry);
+        MetConfiguration configuration = createConfiguration() //
+                .addExtension(this.registry);
         try (StorageAccess storage = this.registry.openStorage(); //
              MetContext context = configuration.buildContext()) {
             storage.saveService(service("echo-a", MetServiceType.Provider, "public"));
@@ -306,7 +314,8 @@ public class AdminQueryOverloadTest {
     @Test
     public void pagedInstanceServiceListKeepsTheTargetInstanceAndRoleFilter() throws Exception {
         // 目标实例提供两个服务、订阅另一个服务，无关实例也提供服务。
-        MetConfiguration configuration = new MetConfiguration().addExtension(this.registry);
+        MetConfiguration configuration = createConfiguration() //
+                .addExtension(this.registry);
         try (StorageAccess storage = this.registry.openStorage(); //
              MetContext context = configuration.buildContext()) {
             storage.registerInstance(instance("target", "orders", "blue"));
@@ -339,7 +348,8 @@ public class AdminQueryOverloadTest {
     @Test
     public void pagedProvidersCombineEndpointAndDirectoryFiltersBeforePaging() throws Exception {
         // 有效提供者之间插入端点不匹配项，并放入其他单元的同端点实例。
-        MetConfiguration configuration = new MetConfiguration().addExtension(this.registry);
+        MetConfiguration configuration = createConfiguration() //
+                .addExtension(this.registry);
         try (StorageAccess storage = this.registry.openStorage(); //
              MetContext context = configuration.buildContext()) {
             for (int index = 0; index < 6; index++) {
@@ -380,7 +390,8 @@ public class AdminQueryOverloadTest {
     @Test
     public void pagedConsumersCombineEndpointAndDirectoryFiltersBeforePaging() throws Exception {
         // 消费实例同样交错登记匹配和不匹配的连接器。
-        MetConfiguration configuration = new MetConfiguration().addExtension(this.registry);
+        MetConfiguration configuration = createConfiguration() //
+                .addExtension(this.registry);
         try (StorageAccess storage = this.registry.openStorage(); //
              MetContext context = configuration.buildContext()) {
             for (int index = 0; index < 6; index++) {

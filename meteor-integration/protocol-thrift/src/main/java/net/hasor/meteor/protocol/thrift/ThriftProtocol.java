@@ -44,6 +44,7 @@ public final class ThriftProtocol implements TcpProtocolProvider {
         // 从本端点已准备的契约导出描述，再一次创建完整绑定。
         ObjectNode description = meta.createServiceDescription(config, this.defaultSerialize());
         definition.describeContract(description);
+        description.put("framed", Boolean.parseBoolean(config.option("framed", "true")));
         return meta.build(config, definition, description);
     }
 

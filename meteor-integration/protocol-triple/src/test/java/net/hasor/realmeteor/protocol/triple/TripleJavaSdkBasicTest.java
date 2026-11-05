@@ -9,6 +9,7 @@ package net.hasor.realmeteor.protocol.triple;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.util.concurrent.atomic.AtomicInteger;
+import net.hasor.example.protocol.triple.TestConfigurationUtils;
 import net.hasor.example.protocol.triple.WireEcho;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
@@ -32,9 +33,12 @@ public class TripleJavaSdkBasicTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialJavaSdkCallsPublishedHessian2Service() throws Exception {
         // SDK 会规范化普通 loopback 直连地址，因此 Meteor 监听本机接口的随机端口。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("triple");
-        configuration.connector("http").bind("0.0.0.0", 0) //
-                .protocol("triple").option("streamBody", true);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("triple");
+        configuration.connector("http") //
+                .bind("0.0.0.0", 0) //
+                .protocol("triple") //
+                .option("streamBody", true);
         try (MetContext server = configuration.buildContext()) {
             server.start();
             AtomicInteger calls = new AtomicInteger();
@@ -112,8 +116,11 @@ public class TripleJavaSdkBasicTest {
                 // start 返回后读取实际导出端口，消费者不依赖预选端口或固定休眠猜测就绪。
                 bootstrap.protocol(protocol).service(sdkService).start();
                 int actualPort = sdkService.getExportedUrls().get(0).getPort();
-                MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("triple");
-                configuration.connector("http").option("httpVersion", 2).protocol("triple");
+                MetConfiguration configuration = TestConfigurationUtils.create() //
+                        .setDefaultProtocol("triple");
+                configuration.connector("http") //
+                        .option("httpVersion", 2) //
+                        .protocol("triple");
                 try (MetContext client = configuration.buildContext()) {
                     client.start();
                     MetBindInfo<WireEcho> service = client.publisher().rsfService(WireEcho.class) //

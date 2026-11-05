@@ -4,6 +4,7 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.protocol.triple.python;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.example.protocol.triple.interop.TripleInteropProtoService;
 import net.hasor.example.protocol.triple.interop.TripleInteropProtoServiceImpl;
@@ -27,9 +28,15 @@ public class TriplePythonInteropTest {
     @Timeout(value = 45000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void pythonDubboSdkCallsMeteorTripleProtobuf() throws Exception {
         // Meteor 仅发布 Triple 的标准 Protobuf 路径，SDK 自行完成真实 HTTP/2 调用。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("triple");
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0).option("httpVersion", 2) //
-                .protocol("triple").contextPath("/").option("httpMode", "grpc").option("streamBody", true);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("triple");
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .option("httpVersion", 2) //
+                .protocol("triple") //
+                .contextPath("/") //
+                .option("httpMode", "grpc") //
+                .option("streamBody", true);
         var resource = new GrpcProtoResource(this.getClass().getResource("/protocol/proto/triple-interop.proto"));
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
@@ -52,9 +59,14 @@ public class TriplePythonInteropTest {
         // 官方 Python SDK 用 ServiceConfig 发布真实 Triple 服务，场景只管理其专属进程。
         try (PythonSdkPeerProcess provider = PythonSdkPeerProcess.start("triple", "provider")) {
             int port = provider.awaitPort();
-            MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("triple");
-            configuration.connector("http").option("httpVersion", 2) //
-                    .protocol("triple").contextPath("/").option("httpMode", "grpc").option("streamBody", true);
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setDefaultProtocol("triple");
+            configuration.connector("http") //
+                    .option("httpVersion", 2) //
+                    .protocol("triple") //
+                    .contextPath("/") //
+                    .option("httpMode", "grpc") //
+                    .option("streamBody", true);
             var resource = new GrpcProtoResource(this.getClass().getResource("/protocol/proto/triple-interop.proto"));
             try (MetContext consumer = configuration.buildContext()) {
                 consumer.start();

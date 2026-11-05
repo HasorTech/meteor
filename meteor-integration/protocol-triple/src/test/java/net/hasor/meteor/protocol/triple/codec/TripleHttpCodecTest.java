@@ -16,6 +16,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.zip.GZIPOutputStream;
 import com.caucho.hessian.io.Hessian2Output;
 import com.google.protobuf.CodedOutputStream;
+import net.hasor.example.protocol.triple.TestConfigurationUtils;
 import net.hasor.example.protocol.triple.TripleDemoService;
 import net.hasor.example.protocol.triple.TripleDemoServiceImpl;
 import net.hasor.example.protocol.triple.TripleMessage;
@@ -1276,8 +1277,12 @@ public class TripleHttpCodecTest {
     }
 
     private MetConfiguration configuration() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("triple");
-        configuration.connector("http").option("httpVersion", 2).protocol("triple").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("triple");
+        configuration.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("triple") //
+                .contextPath("/rpc");
         return configuration;
     }
 

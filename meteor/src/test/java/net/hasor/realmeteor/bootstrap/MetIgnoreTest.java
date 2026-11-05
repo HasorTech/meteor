@@ -6,12 +6,13 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.bootstrap;
-import net.hasor.meteor.MetBindInfo;
-import net.hasor.meteor.MetContext;
-import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.example.bootstrap.SelectiveServiceExample.Published;
 import net.hasor.example.bootstrap.SelectiveServiceExample.RemoteView;
 import net.hasor.example.bootstrap.SelectiveServiceExample.Service;
+import net.hasor.example.bootstrap.TestConfigurationUtils;
+import net.hasor.meteor.MetBindInfo;
+import net.hasor.meteor.MetContext;
+import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.domain.MetException;
 import net.hasor.meteor.domain.ProtocolStatus;
 import org.junit.jupiter.api.Test;
@@ -22,7 +23,7 @@ public class MetIgnoreTest {
     @Test
     public void localProxyCallsPublishedOverloadAndInheritedDefaults() throws Exception {
         // 通过公开发布入口创建本地代理，验证允许暴露的方法。
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         Service target = new Service();
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<Published> service = context.publisher().rsfService(Published.class, target).register();
@@ -40,7 +41,7 @@ public class MetIgnoreTest {
     @Test
     public void localProxyRejectsIgnoredOverload() throws Exception {
         // 公开发布契约包含带注解的整型重载。
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         Service target = new Service();
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<Published> service = context.publisher().rsfService(Published.class, target).register();
@@ -56,7 +57,7 @@ public class MetIgnoreTest {
     @Test
     public void localProxyRejectsIgnoredMethod() throws Exception {
         // 公开发布契约包含带注解的普通方法。
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         Service target = new Service();
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<Published> service = context.publisher().rsfService(Published.class, target).register();
@@ -72,7 +73,7 @@ public class MetIgnoreTest {
     @Test
     public void localProxyRejectsIgnoredInheritedDefault() throws Exception {
         // 公开发布契约包含继承的带注解默认方法。
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         Service target = new Service();
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<Published> service = context.publisher().rsfService(Published.class, target).register();
@@ -88,10 +89,13 @@ public class MetIgnoreTest {
     @Test
     public void unrestrictedClientCallsPublishedOverloadAndInheritedDefaults() throws Exception {
         // 客户端使用不带注解的独立接口，通过 TCP 访问服务端的公开方法。
-        MetConfiguration serverConfig = new MetConfiguration();
-        serverConfig.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        MetConfiguration clientConfig = new MetConfiguration();
-        clientConfig.connector("tcp").protocol("rsf");
+        MetConfiguration serverConfig = TestConfigurationUtils.create();
+        serverConfig.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        MetConfiguration clientConfig = TestConfigurationUtils.create();
+        clientConfig.connector("tcp") //
+                .protocol("rsf");
         Service target = new Service();
         try (MetContext server = serverConfig.buildContext(); //
              MetContext client = clientConfig.buildContext()) {
@@ -116,10 +120,13 @@ public class MetIgnoreTest {
     @Test
     public void serverRejectsIgnoredOverloadWithoutPoisoningLaterCalls() throws Exception {
         // 不受客户端注解过滤限制的接口尝试调用带注解的整型重载。
-        MetConfiguration serverConfig = new MetConfiguration();
-        serverConfig.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        MetConfiguration clientConfig = new MetConfiguration();
-        clientConfig.connector("tcp").protocol("rsf");
+        MetConfiguration serverConfig = TestConfigurationUtils.create();
+        serverConfig.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        MetConfiguration clientConfig = TestConfigurationUtils.create();
+        clientConfig.connector("tcp") //
+                .protocol("rsf");
         Service target = new Service();
         try (MetContext server = serverConfig.buildContext(); //
              MetContext client = clientConfig.buildContext()) {
@@ -143,10 +150,13 @@ public class MetIgnoreTest {
     @Test
     public void serverRejectsIgnoredMethodWithoutPoisoningLaterCalls() throws Exception {
         // 不受客户端注解过滤限制的接口尝试调用带注解的普通方法。
-        MetConfiguration serverConfig = new MetConfiguration();
-        serverConfig.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        MetConfiguration clientConfig = new MetConfiguration();
-        clientConfig.connector("tcp").protocol("rsf");
+        MetConfiguration serverConfig = TestConfigurationUtils.create();
+        serverConfig.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        MetConfiguration clientConfig = TestConfigurationUtils.create();
+        clientConfig.connector("tcp") //
+                .protocol("rsf");
         Service target = new Service();
         try (MetContext server = serverConfig.buildContext(); //
              MetContext client = clientConfig.buildContext()) {
@@ -170,10 +180,13 @@ public class MetIgnoreTest {
     @Test
     public void serverRejectsIgnoredInheritedDefaultWithoutPoisoningLaterCalls() throws Exception {
         // 不受客户端注解过滤限制的接口尝试调用继承的带注解默认方法。
-        MetConfiguration serverConfig = new MetConfiguration();
-        serverConfig.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        MetConfiguration clientConfig = new MetConfiguration();
-        clientConfig.connector("tcp").protocol("rsf");
+        MetConfiguration serverConfig = TestConfigurationUtils.create();
+        serverConfig.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        MetConfiguration clientConfig = TestConfigurationUtils.create();
+        clientConfig.connector("tcp") //
+                .protocol("rsf");
         Service target = new Service();
         try (MetContext server = serverConfig.buildContext(); //
              MetContext client = clientConfig.buildContext()) {
@@ -197,10 +210,13 @@ public class MetIgnoreTest {
     @Test
     public void serverRejectsStaticMethodWithoutPoisoningLaterCalls() throws Exception {
         // 不受客户端注解过滤限制的接口尝试调用接口静态方法。
-        MetConfiguration serverConfig = new MetConfiguration();
-        serverConfig.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        MetConfiguration clientConfig = new MetConfiguration();
-        clientConfig.connector("tcp").protocol("rsf");
+        MetConfiguration serverConfig = TestConfigurationUtils.create();
+        serverConfig.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        MetConfiguration clientConfig = TestConfigurationUtils.create();
+        clientConfig.connector("tcp") //
+                .protocol("rsf");
         Service target = new Service();
         try (MetContext server = serverConfig.buildContext(); //
              MetContext client = clientConfig.buildContext()) {
@@ -224,10 +240,13 @@ public class MetIgnoreTest {
     @Test
     public void serverRejectsImplementationOnlyMethodWithoutPoisoningLaterCalls() throws Exception {
         // 不受客户端注解过滤限制的接口尝试调用仅实现类提供的方法。
-        MetConfiguration serverConfig = new MetConfiguration();
-        serverConfig.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        MetConfiguration clientConfig = new MetConfiguration();
-        clientConfig.connector("tcp").protocol("rsf");
+        MetConfiguration serverConfig = TestConfigurationUtils.create();
+        serverConfig.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        MetConfiguration clientConfig = TestConfigurationUtils.create();
+        clientConfig.connector("tcp") //
+                .protocol("rsf");
         Service target = new Service();
         try (MetContext server = serverConfig.buildContext(); //
              MetContext client = clientConfig.buildContext()) {
@@ -254,7 +273,7 @@ public class MetIgnoreTest {
         while (!(failure instanceof MetException) && failure.getCause() != null) {
             failure = failure.getCause();
         }
-        assertTrue(failure instanceof MetException, failure.toString());
+        assertInstanceOf(MetException.class, failure, failure.toString());
         assertEquals(ProtocolStatus.Forbidden, ((MetException) failure).getStatus());
     }
 }

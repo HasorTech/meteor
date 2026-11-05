@@ -10,6 +10,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 
 /** 通过公开启动、发布、订阅 API 执行 ONC RPC UDP 调用。 */
@@ -23,10 +24,15 @@ public final class OncRpcUdpExample {
         try (DatagramSocket reservation = new DatagramSocket(0, InetAddress.getLoopbackAddress())) {
             port = reservation.getLocalPort();
         }
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("oncrpc-udp");
-        incoming.connector("udp").bind("127.0.0.1", port).protocol("oncrpc-udp");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("oncrpc-udp");
-        outgoing.connector("udp").protocol("oncrpc-udp");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc-udp");
+        incoming.connector("udp") //
+                .bind("127.0.0.1", port) //
+                .protocol("oncrpc-udp");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc-udp");
+        outgoing.connector("udp") //
+                .protocol("oncrpc-udp");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             // 两端启动后发布 Java 服务，再订阅同一程序和版本。

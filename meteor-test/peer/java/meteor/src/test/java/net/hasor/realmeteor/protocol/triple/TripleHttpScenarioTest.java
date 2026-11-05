@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.triple;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.triple.TripleDemoService;
@@ -208,13 +209,17 @@ public class TripleHttpScenarioTest {
     }
 
     private MetConfiguration configuration(boolean listener, int version, String mode) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("triple");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("triple");
         configuration.setDefaultTimeout(5000);
-        var http = configuration.connector("http").option("httpVersion", version);
+        var http = configuration.connector("http") //
+                .option("httpVersion", version);
         if (listener) {
             http.bind("127.0.0.1", 0);
         }
-        http.protocol("triple").contextPath("/rpc").option("httpMode", mode);
+        http.protocol("triple") //
+                .contextPath("/rpc") //
+                .option("httpMode", mode);
         return configuration;
     }
 }

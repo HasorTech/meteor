@@ -4,6 +4,7 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.protocol.grpc.python;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.example.Order;
@@ -27,10 +28,15 @@ public class TriplePythonGrpcInteropTest {
     @Timeout(value = 40000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void pythonGrpcClientCallsMeteorTripleProtobuf() throws Exception {
         // Meteor 仅安装 Triple，显式选择 gRPC 传输和普通订单 Protobuf 契约。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("triple");
-        var connector = configuration.connector("http").option("httpVersion", 2);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("triple");
+        var connector = configuration.connector("http") //
+                .option("httpVersion", 2);
         connector.bind(ContainerProcess.runnerHost(), 0);
-        connector.protocol("triple").contextPath("/").option("httpMode", "grpc").option("streamBody", true);
+        connector.protocol("triple") //
+                .contextPath("/") //
+                .option("httpMode", "grpc") //
+                .option("streamBody", true);
         var resource = new GrpcProtoResource(this.getClass().getResource("/protocol/proto/order.proto"));
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
@@ -54,9 +60,14 @@ public class TriplePythonGrpcInteropTest {
     @Timeout(value = 40000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorTripleClientCallsPythonGrpcProtobuf() throws Exception {
         // grpcio 发布标准 Protobuf 服务；Meteor 仅配置 Triple 出站能力。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("triple");
-        configuration.connector("http").option("httpVersion", 2) //
-                .protocol("triple").contextPath("/").option("httpMode", "grpc").option("streamBody", true);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("triple");
+        configuration.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("triple") //
+                .contextPath("/") //
+                .option("httpMode", "grpc") //
+                .option("streamBody", true);
         var resource = new GrpcProtoResource(this.getClass().getResource("/protocol/proto/order.proto"));
         try (PythonGrpcPeer peer = PythonGrpcPeer.provider("clear"); //
              MetContext consumer = configuration.buildContext()) {

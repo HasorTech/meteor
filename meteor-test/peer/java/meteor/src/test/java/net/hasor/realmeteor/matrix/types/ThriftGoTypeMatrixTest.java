@@ -109,13 +109,16 @@ public class ThriftGoTypeMatrixTest {
         // 缓存和服务分组独占，容器端点使用 runner 的真实 DNS 名称。
         MetConfiguration configuration = new MetConfiguration();
         configuration.setDefaultGroup("types-thrift-" + UUID.randomUUID());
-        configuration.setUnitName("type_contract").setDefaultProtocol("thrift");
+        configuration.setUnitName("type_contract") //
+                .setDefaultProtocol("thrift");
         configuration.setDataHome(Files.createDirectory(this.data.resolve(listener ? "provider" : "consumer")));
         var connector = configuration.connector("tcp");
         if (listener) {
             connector.bind(ContainerProcess.runnerHost(), 0);
         }
-        connector.protocol("thrift").option("encoding", this.encoding).option("framed", true);
+        connector.protocol("thrift") //
+                .option("encoding", this.encoding) //
+                .option("framed", true);
         return configuration;
     }
 

@@ -6,8 +6,11 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor.registry.shared;
+import java.nio.file.Path;
+import java.util.UUID;
 import java.util.function.BooleanSupplier;
 import net.hasor.meteor.annotation.MetService;
+import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.domain.MetServiceType;
 import net.hasor.meteor.registry.RegistryConfiguration;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
@@ -17,6 +20,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /** 供管理、客户端和启动场景复用的测试服务与等待工具。 */
 public final class RegistryTestUtils {
     private RegistryTestUtils() {
+    }
+
+    public static Path createDataHome() {
+        return Path.of(System.getProperty("java.io.tmpdir"), "meteor-" + UUID.randomUUID());
+    }
+
+    public static MetConfiguration createConfiguration() {
+        return new MetConfiguration().setDataHome(createDataHome());
     }
 
     @MetService(group = "registry-client", version = "1")

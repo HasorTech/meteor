@@ -10,6 +10,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.hasor.cobble.StringUtils;
 import net.hasor.cobble.concurrent.future.FutureCallback;
+import net.hasor.example.bootstrap.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
@@ -27,8 +28,9 @@ public class RequestTimeoutTest {
     public void configuredRequestTimeoutExpiresAnAsynchronousCall() throws Exception {
         // 请求默认值覆盖服务默认值，两个上下文通过真实 TCP 连接。
         MetConfiguration serverConfig = this.serverConfiguration();
-        MetConfiguration clientConfig = this.clientConfiguration();
-        clientConfig.setDefaultTimeout(5000).setRequestTimeout(1000);
+        MetConfiguration clientConfig = this.clientConfiguration() //
+                .setDefaultTimeout(5000) //
+                .setRequestTimeout(1000);
         BlockingEcho provider = new BlockingEcho();
         try (MetContext server = serverConfig.buildContext(); //
              MetContext client = clientConfig.buildContext()) {
@@ -48,7 +50,7 @@ public class RequestTimeoutTest {
                 assertTrue(provider.entered.await(3, TimeUnit.SECONDS));
                 Executable awaitTimeout = () -> invocation.getData(3, TimeUnit.SECONDS);
                 ExecutionException failure = assertThrows(ExecutionException.class, awaitTimeout);
-                assertTrue(failure.getCause() instanceof MetTimeoutException);
+                assertInstanceOf(MetTimeoutException.class, failure.getCause());
             } finally {
                 provider.release.countDown();
             }
@@ -59,8 +61,8 @@ public class RequestTimeoutTest {
     public void defaultTimeoutRemainsTheFallbackForExistingConfigurations() throws Exception {
         // 只配置原有 defaultTimeout，未显式设置请求超时。
         MetConfiguration serverConfig = this.serverConfiguration();
-        MetConfiguration clientConfig = this.clientConfiguration();
-        clientConfig.setDefaultTimeout(1700);
+        MetConfiguration clientConfig = this.clientConfiguration() //
+                .setDefaultTimeout(1700);
         try (MetContext server = serverConfig.buildContext(); //
              MetContext client = clientConfig.buildContext()) {
             server.publisher().rsfService(Echo.class, value -> value).register();
@@ -81,10 +83,10 @@ public class RequestTimeoutTest {
     @Test
     public void serviceTimeoutCanExtendASynchronousCallBeyondTheRequestDefault() throws Exception {
         // 服务显式超时高于客户端请求默认值，服务端的出站默认值更短。
-        MetConfiguration serverConfig = this.serverConfiguration();
-        serverConfig.setRequestTimeout(100);
-        MetConfiguration clientConfig = this.clientConfiguration();
-        clientConfig.setRequestTimeout(200);
+        MetConfiguration serverConfig = this.serverConfiguration() //
+                .setRequestTimeout(100);
+        MetConfiguration clientConfig = this.clientConfiguration() //
+                .setRequestTimeout(200);
         BlockingEcho provider = new BlockingEcho();
         ExecutorService caller = Executors.newSingleThreadExecutor();
         try (MetContext server = serverConfig.buildContext(); //
@@ -124,8 +126,8 @@ public class RequestTimeoutTest {
     public void annotationTimeoutOverridesTheRequestDefault() throws Exception {
         // 接口注解声明调用超时，应用只设置更短的请求默认值。
         MetConfiguration serverConfig = this.serverConfiguration();
-        MetConfiguration clientConfig = this.clientConfiguration();
-        clientConfig.setRequestTimeout(200);
+        MetConfiguration clientConfig = this.clientConfiguration() //
+                .setRequestTimeout(200);
         try (MetContext server = serverConfig.buildContext(); //
              MetContext client = clientConfig.buildContext()) {
             server.publisher().rsfService(AnnotatedEcho.class, value -> value).register();
@@ -147,8 +149,9 @@ public class RequestTimeoutTest {
     public void synchronousCallReportsTheConfiguredRequestTimeout() throws Exception {
         // 保留较长服务默认值，只缩短调用端的请求超时。
         MetConfiguration serverConfig = this.serverConfiguration();
-        MetConfiguration clientConfig = this.clientConfiguration();
-        clientConfig.setDefaultTimeout(5000).setRequestTimeout(1000);
+        MetConfiguration clientConfig = this.clientConfiguration() //
+                .setDefaultTimeout(5000) //
+                .setRequestTimeout(1000);
         BlockingEcho provider = new BlockingEcho();
         ExecutorService caller = Executors.newSingleThreadExecutor();
         try (MetContext server = serverConfig.buildContext(); //
@@ -187,8 +190,9 @@ public class RequestTimeoutTest {
     public void callbackReceivesTheConfiguredRequestTimeout() throws Exception {
         // 回调调用与同步、Future 调用共用请求默认超时。
         MetConfiguration serverConfig = this.serverConfiguration();
-        MetConfiguration clientConfig = this.clientConfiguration();
-        clientConfig.setDefaultTimeout(5000).setRequestTimeout(1000);
+        MetConfiguration clientConfig = this.clientConfiguration() //
+                .setDefaultTimeout(5000) //
+                .setRequestTimeout(1000);
         BlockingEcho provider = new BlockingEcho();
         try (MetContext server = serverConfig.buildContext(); //
              MetContext client = clientConfig.buildContext()) {
@@ -218,7 +222,7 @@ public class RequestTimeoutTest {
                 assertTrue(provider.entered.await(3, TimeUnit.SECONDS));
                 Executable awaitTimeout = () -> completion.get(3, TimeUnit.SECONDS);
                 ExecutionException failure = assertThrows(ExecutionException.class, awaitTimeout);
-                assertTrue(failure.getCause() instanceof MetTimeoutException);
+                assertInstanceOf(MetTimeoutException.class, failure.getCause());
             } finally {
                 provider.release.countDown();
             }
@@ -228,10 +232,11 @@ public class RequestTimeoutTest {
     @Test
     public void timeoutReleasesTheOutstandingRequestPermit() throws Exception {
         // 客户端最多允许一个未完成请求，服务端保留线程处理后续调用。
-        MetConfiguration serverConfig = this.serverConfiguration();
-        serverConfig.setQueueMinPoolSize(2);
-        MetConfiguration clientConfig = this.clientConfiguration();
-        clientConfig.setRequestTimeout(1000).setMaximumRequest(1);
+        MetConfiguration serverConfig = this.serverConfiguration() //
+                .setQueueMinPoolSize(2);
+        MetConfiguration clientConfig = this.clientConfiguration() //
+                .setRequestTimeout(1000) //
+                .setMaximumRequest(1);
         BlockingEcho provider = new BlockingEcho();
         try (MetContext server = serverConfig.buildContext(); //
              MetContext client = clientConfig.buildContext()) {
@@ -250,7 +255,7 @@ public class RequestTimeoutTest {
                 assertTrue(provider.entered.await(3, TimeUnit.SECONDS));
                 Executable awaitTimeout = () -> expired.getData(3, TimeUnit.SECONDS);
                 ExecutionException failure = assertThrows(ExecutionException.class, awaitTimeout);
-                assertTrue(failure.getCause() instanceof MetTimeoutException);
+                assertInstanceOf(MetTimeoutException.class, failure.getCause());
 
                 Object[] nextArguments = { "after-timeout" };
                 MetFuture next = remote.asyncInvoke(service, "echo", parameterTypes, nextArguments);
@@ -262,14 +267,17 @@ public class RequestTimeoutTest {
     }
 
     private MetConfiguration serverConfiguration() {
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
         return configuration;
     }
 
     private MetConfiguration clientConfiguration() {
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("tcp").protocol("rsf");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("tcp") //
+                .protocol("rsf");
         return configuration;
     }
 

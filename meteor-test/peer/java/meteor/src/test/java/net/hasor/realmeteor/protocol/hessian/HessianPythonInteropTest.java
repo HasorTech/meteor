@@ -4,6 +4,7 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.protocol.hessian;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.example.protocol.hessian.HessianInteropDemo;
 import net.hasor.example.protocol.hessian.HessianInteropDemoImpl;
 import net.hasor.meteor.MetContext;
@@ -23,9 +24,12 @@ public class HessianPythonInteropTest {
     @Timeout(value = 45000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void pythonSdkCallsMeteor() throws Exception {
         // 从 bootstrap 发布 Hessian 2 服务，不使用 Java SDK 代理转发 Python 的调用。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("hessian").contextPath("/hessian").option("version", 2);
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("hessian") //
+                .contextPath("/hessian") //
+                .option("version", 2);
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
             provider.publisher().rsfService(HessianInteropDemo.class, new HessianInteropDemoImpl()) //

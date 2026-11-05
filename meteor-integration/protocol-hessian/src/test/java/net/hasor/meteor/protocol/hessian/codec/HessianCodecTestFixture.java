@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import com.caucho.hessian.io.*;
 import com.caucho.services.server.AbstractSkeleton;
+import net.hasor.example.protocol.hessian.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.annotation.MetIgnore;
 import net.hasor.meteor.bootstrap.MetConfiguration;
@@ -32,9 +33,14 @@ final class HessianCodecTestFixture implements AutoCloseable {
 
     HessianCodecTestFixture() throws Exception {
         // 只构建元信息，不绑定端口或启动网络。
-        MetConfiguration configuration = new MetConfiguration().setDefaultGroup("wire");
-        configuration.connector("tcp").protocol("rsf");
-        configuration.connector("http").protocol("hessian").contextPath("/rpc").addContextPath("/private");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultGroup("wire");
+        configuration.connector("tcp") //
+                .protocol("rsf");
+        configuration.connector("http") //
+                .protocol("hessian") //
+                .contextPath("/rpc") //
+                .addContextPath("/private");
         this.context = configuration.buildContext();
         this.context.publisher().rsfService(Methods.class, new Methods()) //
                 .name("Methods").aliasName("hessian", "math").register();

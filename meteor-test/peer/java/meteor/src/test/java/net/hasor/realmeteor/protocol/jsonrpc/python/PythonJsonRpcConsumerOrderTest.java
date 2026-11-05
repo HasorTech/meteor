@@ -48,9 +48,12 @@ public class PythonJsonRpcConsumerOrderTest {
         // Python 自己绑定动态端口；Meteor 仅从启动通知取得直连地址。
         this.provider = PythonJsonRpcOrderPeer.provider();
         int port = this.provider.awaitPort();
-        MetConfiguration outgoing = new MetConfiguration().setDefaultTimeout(5000);
+        MetConfiguration outgoing = new MetConfiguration() //
+                .setDefaultTimeout(5000);
         outgoing.setDataHome(Files.createDirectory(this.data.resolve("consumer")));
-        outgoing.connector("http").protocol("jsonrpc").contextPath("/jsonrpc");
+        outgoing.connector("http") //
+                .protocol("jsonrpc") //
+                .contextPath("/jsonrpc");
         this.consumer = outgoing.buildContext();
         this.consumer.start();
 

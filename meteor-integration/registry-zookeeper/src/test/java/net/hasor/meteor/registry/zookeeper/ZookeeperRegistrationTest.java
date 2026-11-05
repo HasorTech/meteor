@@ -26,6 +26,52 @@ import static org.junit.jupiter.api.Assertions.*;
 /** 登记身份、会话所有权、临时成员与持久目录的边界。 */
 public class ZookeeperRegistrationTest {
     @Test
+    public void instanceEndpointsSurviveRoundTripAcrossSessions() throws Exception {
+        // 嵌入 ZooKeeper，分别打开登记和读取会话。
+        try (TestingServer server = new TestingServer()) {
+            ZookeeperRegistryConfiguration configuration = new ZookeeperRegistryConfiguration();
+            configuration.setAddress(server.getConnectString());
+            try (StorageAccess writer = configuration.openStorage(); //
+                 StorageAccess reader = configuration.openStorage()) {
+                EntInstanceRuntimeData registered = instance("one", "orders", "east");
+                EntInstanceEndpointData publicEndpoint = new EntInstanceEndpointData();
+                publicEndpoint.setConnectorName("public-http");
+                publicEndpoint.setTransport("http");
+                publicEndpoint.setProtocolName("jsonrpc");
+                publicEndpoint.setScheme("orders-rpc");
+                publicEndpoint.setContextPath("/orders");
+                publicEndpoint.setListenAddress("orders-rpc://127.0.0.1:8080/orders");
+                EntInstanceEndpointData internalEndpoint = new EntInstanceEndpointData();
+                internalEndpoint.setConnectorName("internal-http");
+                internalEndpoint.setTransport("http");
+                internalEndpoint.setProtocolName("jsonrpc");
+                internalEndpoint.setScheme("jsonrpc");
+                internalEndpoint.setContextPath("/internal");
+                internalEndpoint.setListenAddress("jsonrpc://127.0.0.1:8081/internal");
+                internalEndpoint.setManagementAddress("jsonrpc://127.0.0.1:8081/internal/management");
+                EntInstanceEndpointData[] expected = { publicEndpoint, internalEndpoint };
+                registered.setEndpoints(expected);
+                writer.registerInstance(registered);
+
+                // ZooKeeper 正文往返后保留所有端点，不以 scheme 代替协议名。
+                EntInstanceRuntimeData runtime = reader.getInstance("one").getRuntime();
+                EntInstanceEndpointData[] actual = runtime.getEndpoints();
+                assertEquals(2, actual.length);
+                // 按登记顺序逐字段核对，不能将同协议的两个连接器合并。
+                for (int index = 0; index < expected.length; index++) {
+                    assertEquals(expected[index].getConnectorName(), actual[index].getConnectorName());
+                    assertEquals(expected[index].getTransport(), actual[index].getTransport());
+                    assertEquals(expected[index].getProtocolName(), actual[index].getProtocolName());
+                    assertEquals(expected[index].getScheme(), actual[index].getScheme());
+                    assertEquals(expected[index].getContextPath(), actual[index].getContextPath());
+                    assertEquals(expected[index].getListenAddress(), actual[index].getListenAddress());
+                    assertEquals(expected[index].getManagementAddress(), actual[index].getManagementAddress());
+                }
+            }
+        }
+    }
+
+    @Test
     public void zeroContractServiceIdSurvivesStorageRoundTrip() throws Exception {
         // 契约编号为零保存在实例描述中，字符串服务 ID 继续用于目录定位。
         try (TestingServer server = new TestingServer()) {

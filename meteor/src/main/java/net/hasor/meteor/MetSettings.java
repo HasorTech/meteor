@@ -20,7 +20,7 @@ public interface MetSettings {
     /** 获取应用名称，默认 application。 */
     String getApplicationName();
 
-    /**获取本地数据目录。*/
+    /** 获取已解析的绝对数据目录；默认使用用户目录下的 .meteor/应用名。 */
     Path getDataHome();
 
     /** 消费端 XML 静态地址本位置；null 表示未配置。 */

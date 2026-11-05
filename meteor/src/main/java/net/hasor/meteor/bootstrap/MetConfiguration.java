@@ -43,7 +43,7 @@ public final class MetConfiguration {
     // 地址缓存与路由
     private       String                    unitName              = "default";
     private       String                    addressBook           = null;
-    private       Path                      dataHome              = Paths.get("meteor-data");
+    private       Path                      dataHome              = null;
     private       long                      invalidWaitTime       = 120000L;
     private       long                      refreshCacheTime      = 60000L;
     private       boolean                   localDiskCache        = false;
@@ -178,6 +178,7 @@ public final class MetConfiguration {
         return this;
     }
 
+    /** 指定实例数据目录；同一目录同时只允许一个上下文持有，null 恢复 ~/.meteor/应用名。 */
     public MetConfiguration setDataHome(Path value) {
         this.dataHome = value;
         return this;
@@ -200,7 +201,7 @@ public final class MetConfiguration {
         return this;
     }
 
-    /** Builds the components; start() on the returned context opens its listeners. */
+    /** 构建组件并锁定实例数据目录；返回的上下文由调用方关闭，start() 开启监听。 */
     public MetContext buildContext() throws IOException {
         return MetContextFactory.create(this);
     }
@@ -314,8 +315,20 @@ public final class MetConfiguration {
         return this.unitName;
     }
 
+    /** 原始数据目录；未指定时使用当前用户目录下的 .meteor/应用名。 */
     public Path getDataHome() {
-        return this.dataHome;
+        if (this.dataHome != null) {
+            return this.dataHome;
+        }
+
+        Path application = Paths.get(this.applicationName);
+        if (application.isAbsolute() || application.getNameCount() != 1 //
+                || StringUtils.equals(".", this.applicationName) || StringUtils.equals("..", this.applicationName) //
+                || this.applicationName.indexOf('/') >= 0 || this.applicationName.indexOf('\\') >= 0) {
+            throw new IllegalArgumentException("Application name must be a single directory name when no data home is configured: " //
+                    + this.applicationName);
+        }
+        return Paths.get(System.getProperty("user.home"), ".meteor").resolve(application);
     }
 
     public boolean isAutomaticOnline() {

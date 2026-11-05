@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.thrift;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import javax.net.ssl.SSLHandshakeException;
@@ -398,43 +399,58 @@ public class ThriftOfficialSecureScenarioTest {
     }
 
     private MetConfiguration tlsServer(String encoding, String clientAuth, String protocols) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift");
         configuration.setDefaultTimeout(10000);
-        ConnectorSettings listener = configuration.connector("tcp").bind(ContainerProcess.runnerHost(), 0);
+        ConnectorSettings listener = configuration.connector("tcp") //
+                .bind(ContainerProcess.runnerHost(), 0);
         ThriftTlsUtils.serverTls(listener, "server", clientAuth, protocols);
-        listener.protocol("thrift").addressScheme("thrifts") //
-                .option("encoding", encoding).option("framed", true);
+        listener.protocol("thrift") //
+                .addressScheme("thrifts") //
+                .option("encoding", encoding) //
+                .option("framed", true);
         return configuration;
     }
 
     private MetConfiguration tlsClient(String encoding, String identity, String trust) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift");
         configuration.setDefaultTimeout(10000);
         ConnectorSettings sender = configuration.connector("tcp");
         ThriftTlsUtils.clientTls(sender, identity, trust, "TLSv1.3,TLSv1.2");
-        sender.protocol("thrift").addressScheme("thrifts") //
-                .option("encoding", encoding).option("framed", true);
+        sender.protocol("thrift") //
+                .addressScheme("thrifts") //
+                .option("encoding", encoding) //
+                .option("framed", true);
         return configuration;
     }
 
     private MetConfiguration httpsServer(String encoding, String clientAuth, String identity) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift-http");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift-http");
         configuration.setDefaultTimeout(10000);
-        ConnectorSettings listener = configuration.connector("http").bind(ContainerProcess.runnerHost(), 0);
+        ConnectorSettings listener = configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0);
         ThriftTlsUtils.serverTls(listener, identity, clientAuth, "TLSv1.3,TLSv1.2");
         ThriftTlsUtils.https(listener, 1);
-        listener.protocol("thrift-http").addressScheme("https").contextPath("/thrift") //
+        listener.protocol("thrift-http") //
+                .addressScheme("https") //
+                .contextPath("/thrift") //
                 .option("encoding", encoding);
         return configuration;
     }
 
     private MetConfiguration httpsClient(String encoding, String identity, String trust) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift-http");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift-http");
         configuration.setDefaultTimeout(10000);
-        ConnectorSettings sender = configuration.connector("http").option("httpVersion", 1);
+        ConnectorSettings sender = configuration.connector("http") //
+                .option("httpVersion", 1);
         ThriftTlsUtils.clientTls(sender, identity, trust, "TLSv1.3,TLSv1.2");
         ThriftTlsUtils.https(sender, 1);
-        sender.protocol("thrift-http").addressScheme("https").contextPath("/thrift") //
+        sender.protocol("thrift-http") //
+                .addressScheme("https") //
+                .contextPath("/thrift") //
                 .option("encoding", encoding);
         return configuration;
     }

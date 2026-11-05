@@ -19,6 +19,7 @@ import com.google.protobuf.DynamicMessage;
 import net.hasor.example.protocol.connect.ConnectDemoService;
 import net.hasor.example.protocol.connect.ConnectDemoServiceImpl;
 import net.hasor.example.protocol.connect.ConnectMessage;
+import net.hasor.example.protocol.connect.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.annotation.MetMessage;
@@ -377,9 +378,11 @@ public class ConnectProtoMappingTest {
     }
 
     private MetConfiguration configuration() {
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         configuration.setDefaultProtocol("connect");
-        configuration.connector("http").option("httpVersion", 2).protocol("connect");
+        configuration.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("connect");
         return configuration;
     }
 

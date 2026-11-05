@@ -17,6 +17,7 @@ import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetContextEventType;
 import net.hasor.meteor.MetExtension;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -69,10 +70,13 @@ public class LifecycleScenarioTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void reusingConfigurationCreatesIndependentSettingsSnapshots() throws Exception {
         MetConfiguration configuration = DirectRpcExample.client("rsf");
-        configuration.setApplicationName("first").setRequestOption("tenant", "original");
+        configuration.setApplicationName("first") //
+                .setRequestOption("tenant", "original");
         try (MetContext first = configuration.buildContext()) {
             // 修改配置只影响此后构建的上下文，先前构建的设置保持不变。
-            configuration.setApplicationName("second").setRequestOption("tenant", "changed");
+            configuration.setApplicationName("second") //
+                    .setRequestOption("tenant", "changed");
+            configuration.setDataHome(TestConfigurationUtils.create().getDataHome());
             try (MetContext second = configuration.buildContext()) {
                 first.start();
                 second.start();
@@ -110,22 +114,24 @@ public class LifecycleScenarioTest {
     public void eachContextOwnsItsExtensionInstanceAndLifecycle() throws Exception {
         MetConfiguration configuration = DirectRpcExample.client("rsf");
         configuration.addExtension(context -> new LifecycleProbe());
-        try (MetContext first = configuration.buildContext(); //
-             MetContext second = configuration.buildContext()) {
-            // 工厂为每个上下文创建独立扩展；测试探针不进入正式示例产物。
-            LifecycleProbe one = first.getExtension(LifecycleProbe.class);
-            LifecycleProbe two = second.getExtension(LifecycleProbe.class);
-            assertNotSame(one, two);
-            first.start();
-            second.start();
-            assertEquals(List.of("beforeStart", "afterStart"), one.steps());
-            assertEquals(List.of("beforeStart", "afterStart"), two.steps());
+        try (MetContext first = configuration.buildContext()) {
+            configuration.setDataHome(TestConfigurationUtils.create().getDataHome());
+            try (MetContext second = configuration.buildContext()) {
+                // 工厂为每个上下文创建独立扩展；测试探针不进入正式示例产物。
+                LifecycleProbe one = first.getExtension(LifecycleProbe.class);
+                LifecycleProbe two = second.getExtension(LifecycleProbe.class);
+                assertNotSame(one, two);
+                first.start();
+                second.start();
+                assertEquals(List.of("beforeStart", "afterStart"), one.steps());
+                assertEquals(List.of("beforeStart", "afterStart"), two.steps());
 
-            // 关闭一个上下文只关闭它持有的扩展，不影响另一个运行中的实例。
-            first.close();
-            assertEquals(List.of("beforeStart", "afterStart", "close"), one.steps());
-            assertEquals(List.of("beforeStart", "afterStart"), two.steps());
-            assertTrue(second.isOnline());
+                // 关闭一个上下文只关闭它持有的扩展，不影响另一个运行中的实例。
+                first.close();
+                assertEquals(List.of("beforeStart", "afterStart", "close"), one.steps());
+                assertEquals(List.of("beforeStart", "afterStart"), two.steps());
+                assertTrue(second.isOnline());
+            }
         }
     }
 
@@ -133,8 +139,9 @@ public class LifecycleScenarioTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void anUnknownProtocolFailsWhileBuildingTheContext() {
         // 名称选择已有 SPI 能力，不存在的名称在 bootstrap 阶段直接报错。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("tcp").protocol("missing-demo-protocol");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("tcp") //
+                .protocol("missing-demo-protocol");
         IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, configuration::buildContext);
         assertTrue(failure.getMessage().contains("missing-demo-protocol"));
     }

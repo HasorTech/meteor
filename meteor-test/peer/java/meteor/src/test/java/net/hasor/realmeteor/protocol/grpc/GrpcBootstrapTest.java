@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.example.protocol.grpc.DemoTlsPipeline;
 import net.hasor.example.protocol.grpc.Echo;
@@ -28,10 +29,16 @@ public class GrpcBootstrapTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void oneGrpcMountSupportsJsonAndProtobufServices() throws Exception {
         // 两端挂载同一个 gRPC 协议，服务声明分别决定其序列化方式。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("grpc");
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("grpc");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("grpc");
-        outgoing.connector("http").option("httpVersion", 2).protocol("grpc");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        outgoing.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("grpc");
         GrpcProtoResource resource = new GrpcProtoResource(this.getClass().getResource("/protocol/proto/grpc/echo.proto"));
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
@@ -76,22 +83,31 @@ public class GrpcBootstrapTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void tlsAlpnRoutesGrpcAndHproseOnOneListener() throws Exception {
         // 同一个 TLS 监听通过 ALPN 选择 HTTP 版本，再按路径选择协议。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("grpc");
-        var listener = incoming.connector("http").bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        var listener = incoming.connector("http") //
+                .bind("127.0.0.1", 0);
         listener.option("transportPipeline", DemoTlsPipeline.class.getName());
-        listener.protocol("grpc").addressScheme("https").contextPath("/rpc");
-        listener.protocol("hprose").addressScheme("https").contextPath("/legacy");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("grpc");
+        listener.protocol("grpc") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
+        listener.protocol("hprose") //
+                .addressScheme("https") //
+                .contextPath("/legacy");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
         var grpc = outgoing.connector("http") //
                 .option("transportPipeline", DemoTlsPipeline.class.getName());
         grpc.option("httpVersion", 2) //
                 .option("tlsAlpn", "h2") //
-                .protocol("grpc").addressScheme("https") //
+                .protocol("grpc") //
+                .addressScheme("https") //
                 .contextPath("/rpc");
         var hprose = outgoing.connector("http") //
                 .option("transportPipeline", DemoTlsPipeline.class.getName());
         hprose.option("tlsAlpn", "http/1.1") //
-                .protocol("hprose").addressScheme("https") //
+                .protocol("hprose") //
+                .addressScheme("https") //
                 .contextPath("/legacy");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {

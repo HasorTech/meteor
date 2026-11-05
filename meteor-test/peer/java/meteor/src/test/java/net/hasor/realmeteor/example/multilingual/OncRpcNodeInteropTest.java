@@ -14,6 +14,7 @@ import net.hasor.example.protocol.oncrpc.OncRpcDemoServiceImpl;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
@@ -28,8 +29,11 @@ public class OncRpcNodeInteropTest {
     @Timeout(value = 60000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void nodeSdkConsumerCallsMeteorProvider() throws Exception {
         // Meteor 经公开 bootstrap 监听 TCP，绑定测试自有的标准 ONC RPC 程序与过程编号。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc");
-        configuration.connector("tcp").bind(ContainerProcess.runnerHost(), 0).protocol("oncrpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc");
+        configuration.connector("tcp") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("oncrpc");
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
             provider.publisher().rsfService(OncRpcDemoService.class, new OncRpcDemoServiceImpl()) //
@@ -54,8 +58,10 @@ public class OncRpcNodeInteropTest {
         // Node 使用 SDK 的 RpcServer 独立发布过程，动态端口与其它测试隔离。
         String script = "/opt/meteor-peer/node/oncrpc/peer.js";
         List<String> command = List.of("node", script, "provider");
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc");
-        configuration.connector("tcp").protocol("oncrpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc");
+        configuration.connector("tcp") //
+                .protocol("oncrpc");
         try (OrderPeerProcess provider = OrderPeerProcess.start("node", command, null); //
              MetContext consumer = configuration.buildContext()) {
             URI target = URI.create(provider.awaitReady("ONC RPC provider is ready: "));

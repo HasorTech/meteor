@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.concurrent.Flow;
 import hprose.io.HproseReader;
 import hprose.io.HproseWriter;
+import net.hasor.example.protocol.hprose.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
@@ -251,7 +252,7 @@ public class HproseContextPathTest {
     }
 
     private MetConfiguration configuration() {
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         configuration.connector("http") //
                 .protocol("hprose") //
                 .contextPath("/rpc") //

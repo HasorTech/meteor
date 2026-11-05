@@ -9,6 +9,7 @@ package net.hasor.realmeteor.protocol.grpc;
 import net.hasor.example.protocol.grpc.Echo;
 import net.hasor.example.protocol.grpc.EchoImpl;
 import net.hasor.example.protocol.grpc.Message;
+import net.hasor.example.protocol.grpc.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
@@ -24,10 +25,16 @@ public class GrpcBasicScenarioTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void bootstrapPublishesAndConsumesProtobufService() throws Exception {
         // 声明服务端监听和客户端通道，两端使用同一份本地 proto 契约。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("grpc");
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("grpc");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("grpc");
-        outgoing.connector("http").option("httpVersion", 2).protocol("grpc");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        outgoing.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("grpc");
         GrpcProtoResource resource = new GrpcProtoResource(this.getClass().getResource("/proto/echo.proto"));
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {

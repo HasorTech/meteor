@@ -13,6 +13,7 @@ import net.hasor.example.echo.TextEchoService;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
@@ -44,9 +45,12 @@ public class JsonRpcCppInteropTest {
     @Timeout(value = 60000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void sdkToMeteorJsonRpcEcho() throws Exception {
         // 通过 bootstrap 启动 Meteor，发布普通 Java 接口到一个 JSON-RPC HTTP 挂载点。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("jsonrpc").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("jsonrpc") //
+                .contextPath("/rpc");
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
             provider.publisher().rsfService(TextEchoService.class, text -> text) //
@@ -68,8 +72,11 @@ public class JsonRpcCppInteropTest {
     @Timeout(value = 60000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorToSdkJsonRpcEcho() throws Exception {
         // libjson-rpc-cpp 自行发布 HTTP 服务，Meteor 只配置出站连接器。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").protocol("jsonrpc").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .protocol("jsonrpc") //
+                .contextPath("/rpc");
         List<String> command = List.of(this.executable, "provider");
         try (OrderPeerProcess provider = OrderPeerProcess.start("native", command, null); //
              MetContext consumer = configuration.buildContext()) {

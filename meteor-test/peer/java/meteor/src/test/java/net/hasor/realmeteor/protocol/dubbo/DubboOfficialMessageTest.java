@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.dubbo;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -189,7 +190,8 @@ public class DubboOfficialMessageTest {
     }
 
     private MetConfiguration configuration(boolean listen) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("dubbo");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("dubbo");
         configuration.setDefaultTimeout(5000);
         var connector = configuration.connector("tcp");
         if (listen) {

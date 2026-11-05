@@ -11,8 +11,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import net.hasor.example.bootstrap.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
-import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.serialize.coder.JsonSerializeCoder;
 import net.hasor.meteor.serialize.coder.JsonSerializeDelegate;
 import org.junit.jupiter.api.Test;
@@ -23,8 +23,8 @@ public class JsonDelegateScenarioTest {
     public void delegateBelongsOnlyToTheConfiguredContext() throws Exception {
         // 经正式入口获取编码器，仅为一个 Context 替换 JSON 序列化实现。
         Gson gson = new GsonBuilder().serializeNulls().create();
-        try (MetContext first = new MetConfiguration().buildContext(); //
-             MetContext second = new MetConfiguration().buildContext()) {
+        try (MetContext first = TestConfigurationUtils.create().buildContext(); //
+             MetContext second = TestConfigurationUtils.create().buildContext()) {
             JsonSerializeCoder coder = (JsonSerializeCoder) first.getSerializeCoder("Json");
             coder.setDelegate(new JsonSerializeDelegate() {
                 @Override

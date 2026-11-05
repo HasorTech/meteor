@@ -17,6 +17,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import com.caucho.hessian.io.Hessian2Input;
 import com.caucho.hessian.io.Hessian2Output;
+import net.hasor.example.protocol.dubbo.TestConfigurationUtils;
 import net.hasor.example.protocol.dubbo.WireEcho;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropService;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropServiceImpl;
@@ -127,12 +128,16 @@ public class DubboBootstrapTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void rejectedDubboEncodingKeepsTheRsfPublicationCallable() throws Exception {
         // 同一 TCP 端点挂载 RSF 和 Dubbo，两端仅以 JSON 调用普通服务。
-        MetConfiguration serverConfig = new MetConfiguration().setDefaultProtocol("rsf");
-        var serverTcp = serverConfig.connector("tcp").bind("127.0.0.1", 0);
+        MetConfiguration serverConfig = TestConfigurationUtils.create() //
+                .setDefaultProtocol("rsf");
+        var serverTcp = serverConfig.connector("tcp") //
+                .bind("127.0.0.1", 0);
         serverTcp.protocol("rsf");
         serverTcp.protocol("dubbo");
-        MetConfiguration clientConfig = new MetConfiguration().setDefaultProtocol("rsf");
-        clientConfig.connector("tcp").protocol("rsf");
+        MetConfiguration clientConfig = TestConfigurationUtils.create() //
+                .setDefaultProtocol("rsf");
+        clientConfig.connector("tcp") //
+                .protocol("rsf");
         try (MetContext server = serverConfig.buildContext(); //
              MetContext client = clientConfig.buildContext()) {
             server.start();
@@ -176,7 +181,8 @@ public class DubboBootstrapTest {
     }
 
     private MetConfiguration configuration(boolean listener) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("dubbo");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("dubbo");
         configuration.setDefaultTimeout(5000);
         var tcp = configuration.connector("tcp");
         if (listener) {

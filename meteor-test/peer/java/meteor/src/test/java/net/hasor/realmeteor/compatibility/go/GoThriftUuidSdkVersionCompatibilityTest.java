@@ -13,6 +13,7 @@ import net.hasor.cobble.StringUtils;
 import net.hasor.example.echo.UuidEchoService;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
@@ -48,13 +49,16 @@ public class GoThriftUuidSdkVersionCompatibilityTest {
     public void nativeUuidWireTypeRoundTrip() throws Exception {
         // 沿用测试自有的普通 Java 注解接口，UUID 不转换成字符串或二进制别名。
         boolean sdkConsumer = StringUtils.equals("SDK-to-Meteor", this.direction);
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift");
         configuration.setDefaultTimeout(10000);
         var connector = configuration.connector("tcp");
         if (sdkConsumer) {
             connector.bind(ContainerProcess.runnerHost(), 0);
         }
-        connector.protocol("thrift").option("encoding", "binary").option("framed", true);
+        connector.protocol("thrift") //
+                .option("encoding", "binary") //
+                .option("framed", true);
         try (MetContext context = configuration.buildContext()) {
             context.start();
             UuidEchoService implementation = sdkConsumer ? value -> value : null;

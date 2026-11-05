@@ -80,7 +80,8 @@ public class JsonRpcManagementScenarioTest {
         RegistryConfiguration registry = new RegistryConfiguration().setOnline(false);
         registry.setManagementProtocols("jsonrpc");
         registry.setTokenProvider(tokens);
-        MetConfiguration configuration = new MetConfiguration().addExtension(registry);
+        MetConfiguration configuration = new MetConfiguration() //
+                .addExtension(registry);
         configuration.setDefaultTimeout(3000);
         configuration.setConnectTimeout(1000);
         if (listen) {

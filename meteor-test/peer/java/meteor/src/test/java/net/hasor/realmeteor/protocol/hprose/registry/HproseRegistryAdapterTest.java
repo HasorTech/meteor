@@ -73,8 +73,11 @@ public class HproseRegistryAdapterTest {
         try (RegistryDiscoveryEnvironment environment = RegistryDiscoveryEnvironment.open(this.backend, registryHome)) {
             RegistryConfiguration registry = environment.configuration();
             MetConfiguration incoming = this.configuration(registry, "hprose-provider");
-            incoming.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                    .protocol("hprose").addressScheme("http").contextPath("/orders");
+            incoming.connector("http") //
+                    .bind(ContainerProcess.runnerHost(), 0) //
+                    .protocol("hprose") //
+                    .addressScheme("http") //
+                    .contextPath("/orders");
             try (MetContext provider = incoming.buildContext()) {
                 provider.start();
                 MetBindInfo<OrderDemoService> service = provider.publisher() //
@@ -107,7 +110,9 @@ public class HproseRegistryAdapterTest {
             RegistryConfiguration registry = environment.configuration();
             MetConfiguration outgoing = this.configuration(registry, "hprose-consumer");
             outgoing.connector("http") //
-                    .protocol("hprose").addressScheme("http").contextPath("/orders");
+                    .protocol("hprose") //
+                    .addressScheme("http") //
+                    .contextPath("/orders");
             try (MetContext consumer = outgoing.buildContext()) {
                 consumer.start();
                 MetBindInfo<OrderDemoService> service = consumer.publisher() //
@@ -149,8 +154,11 @@ public class HproseRegistryAdapterTest {
         try (RegistryDiscoveryEnvironment environment = RegistryDiscoveryEnvironment.open(this.backend, registryHome)) {
             RegistryConfiguration registry = environment.configuration();
             MetConfiguration incoming = this.configuration(registry, "hprose-provider");
-            incoming.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                    .protocol("hprose").addressScheme("http").contextPath("/orders");
+            incoming.connector("http") //
+                    .bind(ContainerProcess.runnerHost(), 0) //
+                    .protocol("hprose") //
+                    .addressScheme("http") //
+                    .contextPath("/orders");
             try (MetContext provider = incoming.buildContext()) {
                 provider.start();
                 MetBindInfo<OrderDemoService> service = provider.publisher() //
@@ -183,7 +191,9 @@ public class HproseRegistryAdapterTest {
             RegistryConfiguration registry = environment.configuration();
             MetConfiguration outgoing = this.configuration(registry, "hprose-consumer");
             outgoing.connector("http") //
-                    .protocol("hprose").addressScheme("http").contextPath("/orders");
+                    .protocol("hprose") //
+                    .addressScheme("http") //
+                    .contextPath("/orders");
             try (MetContext consumer = outgoing.buildContext()) {
                 consumer.start();
                 MetBindInfo<OrderDemoService> service = consumer.publisher() //
@@ -225,8 +235,11 @@ public class HproseRegistryAdapterTest {
         try (RegistryDiscoveryEnvironment environment = RegistryDiscoveryEnvironment.open(this.backend, registryHome)) {
             RegistryConfiguration registry = environment.configuration();
             MetConfiguration incoming = this.configuration(registry, "hprose-provider");
-            incoming.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                    .protocol("hprose").addressScheme("http").contextPath("/orders");
+            incoming.connector("http") //
+                    .bind(ContainerProcess.runnerHost(), 0) //
+                    .protocol("hprose") //
+                    .addressScheme("http") //
+                    .contextPath("/orders");
             try (MetContext provider = incoming.buildContext()) {
                 provider.start();
                 MetBindInfo<OrderDemoService> service = provider.publisher() //
@@ -259,7 +272,9 @@ public class HproseRegistryAdapterTest {
             RegistryConfiguration registry = environment.configuration();
             MetConfiguration outgoing = this.configuration(registry, "hprose-consumer");
             outgoing.connector("http") //
-                    .protocol("hprose").addressScheme("http").contextPath("/orders");
+                    .protocol("hprose") //
+                    .addressScheme("http") //
+                    .contextPath("/orders");
             try (MetContext consumer = outgoing.buildContext()) {
                 consumer.start();
                 MetBindInfo<OrderDemoService> service = consumer.publisher() //
@@ -298,7 +313,8 @@ public class HproseRegistryAdapterTest {
         configuration.setApplicationName(applicationName);
         configuration.setDataHome(Files.createDirectory(this.data.resolve(applicationName)));
         configuration.addExtension(registry);
-        configuration.connector("tcp").protocol("rsf"); // 内部管理出口不开放监听或暴露给 Node。
+        configuration.connector("tcp") //
+                .protocol("rsf"); // 内部管理出口不开放监听或暴露给 Node。
         return configuration;
     }
 

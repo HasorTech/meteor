@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -209,7 +210,8 @@ public class GrpcFlowInteropTest {
                 .addMethod(exchange, exchangeHandler) //
                 .build();
         Server server = NettyServerBuilder.forPort(0).addService(definition).build().start();
-        try (MetContext client = this.configuration(false).buildContext()) {
+        try (MetContext client = this.configuration(false) //
+                .buildContext()) {
             // 启动 Meteor 客户端，通过公开 API 订阅官方对端的服务。
             client.start();
 
@@ -253,7 +255,8 @@ public class GrpcFlowInteropTest {
                 .addMethod(exchange, exchangeHandler) //
                 .build();
         Server server = NettyServerBuilder.forPort(0).addService(definition).build().start();
-        try (MetContext client = this.configuration(false).buildContext()) {
+        try (MetContext client = this.configuration(false) //
+                .buildContext()) {
             // 启动 Meteor 客户端，通过公开 API 订阅官方对端的服务。
             client.start();
 
@@ -295,7 +298,8 @@ public class GrpcFlowInteropTest {
                 .addMethod(exchange, exchangeHandler) //
                 .build();
         Server server = NettyServerBuilder.forPort(0).addService(definition).build().start();
-        try (MetContext client = this.configuration(false).buildContext()) {
+        try (MetContext client = this.configuration(false) //
+                .buildContext()) {
             // 启动 Meteor 客户端，通过公开 API 订阅官方对端的服务。
             client.start();
 
@@ -347,14 +351,16 @@ public class GrpcFlowInteropTest {
 
     private MetConfiguration configuration(boolean server) {
         // 统一启用 HTTP/2 流式正文，仅服务端开启监听。
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         configuration.setDefaultProtocol("grpc");
         configuration.setDefaultTimeout(5000);
-        var http = configuration.connector("http").option("httpVersion", 2);
+        var http = configuration.connector("http") //
+                .option("httpVersion", 2);
         if (server) {
             http.bind("127.0.0.1", 0);
         }
-        http.protocol("grpc").option("streamBody", true);
+        http.protocol("grpc") //
+                .option("streamBody", true);
         return configuration;
     }
 

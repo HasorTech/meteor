@@ -211,7 +211,10 @@ class SolonIntegrationTest {
         try {
             MetConfiguration config = new MetConfiguration();
             config.setApplicationName("custom");
-            config.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+            config.setDataHome(this.directory.resolve("custom"));
+            config.connector("tcp") //
+                    .bind("127.0.0.1", 0) //
+                    .protocol("rsf");
             app.putWrap(MetConfiguration.class, new BeanWrap(app, MetConfiguration.class, config));
             app.start();
             assertEquals("custom", app.getBean(MetContext.class).getApplicationName());
@@ -231,6 +234,7 @@ class SolonIntegrationTest {
     void usesSolonStartupPackageWhenMeteorPackagesAreAbsent() {
         // 不手动装载插件，由 META-INF/solon 自动发现。
         SolonApp app = Solon.start(ProviderMain.class, new String[0], boot -> {
+            boot.cfg().setProperty("meteor.data-home", this.directory.resolve("meteor").toString());
             boot.cfg().setProperty("meteor.connectors.rsf.host", "127.0.0.1");
             boot.cfg().setProperty("meteor.connectors.rsf.port", "0");
         });
@@ -286,6 +290,7 @@ class SolonIntegrationTest {
     private AppContext application(String name, String address) throws Throwable {
         Props properties = new Props();
         properties.setProperty("meteor.application", name);
+        properties.setProperty("meteor.data-home", this.directory.resolve(name).toString());
         properties.setProperty("meteor.unit", "framework");
         properties.setProperty("meteor.scan-packages", "net.hasor.example.services");
         properties.setProperty("meteor.connectors.rsf.host", "127.0.0.1");

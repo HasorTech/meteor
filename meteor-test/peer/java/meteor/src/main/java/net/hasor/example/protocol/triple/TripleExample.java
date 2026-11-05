@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.rpc.MetCaller;
 
@@ -20,12 +21,21 @@ public final class TripleExample {
 
     public static void main(String[] arguments) throws Exception {
         // 服务端监听，客户端只配置出站能力；默认 Hessian2 在 wrapper 内编码业务对象。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("triple");
-        incoming.connector("http").bind("127.0.0.1", 0).option("httpVersion", 2) //
-                .protocol("triple").contextPath("/rpc").option("streamBody", true);
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("triple");
-        outgoing.connector("http").option("httpVersion", 2) //
-                .protocol("triple").contextPath("/rpc").option("streamBody", true);
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("triple");
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .option("httpVersion", 2) //
+                .protocol("triple") //
+                .contextPath("/rpc") //
+                .option("streamBody", true);
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("triple");
+        outgoing.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("triple") //
+                .contextPath("/rpc") //
+                .option("streamBody", true);
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             // 两端容器启动后再发布和订阅同一组普通 Java 接口。

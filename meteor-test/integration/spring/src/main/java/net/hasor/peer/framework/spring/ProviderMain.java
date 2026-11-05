@@ -27,6 +27,8 @@ import org.springframework.core.env.PropertiesPropertySource;
 public class ProviderMain {
     public static void main(String[] args) throws Exception {
         Properties settings = FrameworkPeerUtils.settings(args[0]);
+        Path dataHome = Path.of(args[0]).toAbsolutePath().getParent().resolve("spring-provider");
+        settings.setProperty("meteor.data-home", dataHome.toString());
         try (AnnotationConfigApplicationContext app = new AnnotationConfigApplicationContext()) {
             app.getEnvironment().getPropertySources().addFirst(new PropertiesPropertySource("scenario", settings));
             if (StringUtils.equals(settings.getProperty("test.backend"), "jdbc")) {

@@ -8,6 +8,7 @@
 package net.hasor.realmeteor.protocol.hprose;
 import net.hasor.example.protocol.hprose.NamedEcho;
 import net.hasor.example.protocol.hprose.WireEcho;
+import net.hasor.example.protocol.hprose.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
@@ -56,7 +57,8 @@ public class HproseCommonNamesTest {
     }
 
     private MetConfiguration configuration(boolean listen) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("hprose");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("hprose");
         var connector = configuration.connector("http");
         if (listen) {
             connector.bind("127.0.0.1", 0);

@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -127,9 +128,12 @@ public class GrpcPublicationTest {
     @Test
     public void explicitProtobufAfterStartupKeepsTheLocalService() throws Exception {
         // 挂载默认 JSON，服务显式选择 Protobuf 并省略 proto 资源。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("grpc").contextPath("/rpc").option("serializeType", "Json");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc") //
+                .contextPath("/rpc") //
+                .option("serializeType", "Json");
         try (MetContext context = configuration.buildContext()) {
             context.start();
             ConfigurationBuilder<Echo> service = context.publisher().rsfService(Echo.class, new EchoImpl());
@@ -153,8 +157,10 @@ public class GrpcPublicationTest {
     @Test
     public void connectorLevelProtobufKeepsAnUnboundLocalService() throws Exception {
         // 连接器选择 Protobuf，同样不能让缺少资源的服务进入 gRPC 路由。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("http").option("serializeType", "pRoToBuF").protocol("grpc");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("http") //
+                .option("serializeType", "pRoToBuF") //
+                .protocol("grpc");
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<Echo> info = context.publisher().rsfService(Echo.class, new EchoImpl()) //
                     .aliasName("grpc", "example.Echo").register();
@@ -176,11 +182,18 @@ public class GrpcPublicationTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void jsonMountAcceptsAnOrdinaryJavaProviderWithoutProto() throws Exception {
         // JSON 挂载不需要 proto，两端仍使用独立容器验证真实网络能力。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("grpc");
-        incoming.connector("http").bind("127.0.0.1", 0) //
-                .protocol("grpc").option("serializeType", "Json");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("grpc");
-        outgoing.connector("http").option("httpVersion", 2).protocol("grpc").option("serializeType", "Json");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc") //
+                .option("serializeType", "Json");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        outgoing.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("grpc") //
+                .option("serializeType", "Json");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             MetBindInfo<Echo> provider = server.publisher().rsfService(Echo.class, new EchoImpl()) //
@@ -204,7 +217,8 @@ public class GrpcPublicationTest {
     public void selectingAnotherProtocolSkipsGrpcResourceValidation() throws Exception {
         // 同时配置 gRPC 与 RSF，随后将服务限制为 RSF。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("tcp").protocol("rsf");
+        configuration.connector("tcp") //
+                .protocol("rsf");
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<Echo> info = context.publisher().rsfService(Echo.class, new EchoImpl()) //
                     .aliasName("grpc", "example.Echo").protocol("rsf").register();
@@ -229,9 +243,12 @@ public class GrpcPublicationTest {
     public void missingProtoDoesNotWithdrawTheRsfPublication() throws Exception {
         // 服务允许 RSF 与 gRPC，两种协议独立判断是否能接受这个 Java 接口。
         MetConfiguration incoming = this.configuration();
-        incoming.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        MetConfiguration outgoing = new MetConfiguration();
-        outgoing.connector("tcp").protocol("rsf");
+        incoming.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        MetConfiguration outgoing = TestConfigurationUtils.create();
+        outgoing.connector("tcp") //
+                .protocol("rsf");
         EchoImpl implementation = new EchoImpl();
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
@@ -254,7 +271,7 @@ public class GrpcPublicationTest {
     @Test
     public void grpcOnTheClasspathDoesNotValidateAnUnmountedProtocol() throws Exception {
         // 类路径中存在 gRPC 插件，但当前实例并未挂载该协议。
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<Echo> info = context.publisher().rsfService(Echo.class, new EchoImpl()) //
                     .aliasName("grpc", "example.Echo").register();
@@ -291,8 +308,11 @@ public class GrpcPublicationTest {
     public void boundProtoAllowsProviderRegistrationAndStartup() throws Exception {
         // 两端绑定同一个 proto，在容器启动前发布和订阅接口。
         MetConfiguration incoming = this.configuration();
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("grpc");
-        outgoing.connector("http").option("httpVersion", 2).protocol("grpc");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        outgoing.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("grpc");
         GrpcProtoResource proto = new GrpcProtoResource(this.getClass().getResource("/protocol/proto/grpc/echo.proto"));
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
@@ -322,8 +342,10 @@ public class GrpcPublicationTest {
 
     private MetConfiguration configuration() {
         // 共用最小 gRPC 监听配置，保留插件默认的 Protobuf 选择。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("grpc");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc");
         return configuration;
     }
 }

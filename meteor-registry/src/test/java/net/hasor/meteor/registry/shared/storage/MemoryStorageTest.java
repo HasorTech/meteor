@@ -112,7 +112,13 @@ public class MemoryStorageTest {
         MemoryRegistryConfiguration configuration = new MemoryRegistryConfiguration();
         try (StorageAccess storage = configuration.openStorage()) {
             EntInstanceRuntimeData instance = instance("one", "orders", "east");
-            instance.getListenAddresses().put("primary#rsf", "rsf://127.0.0.1:8000");
+            EntInstanceEndpointData instanceEndpoint = new EntInstanceEndpointData();
+            instanceEndpoint.setConnectorName("primary");
+            instanceEndpoint.setTransport("tcp");
+            instanceEndpoint.setProtocolName("rsf");
+            instanceEndpoint.setScheme("rsf");
+            instanceEndpoint.setListenAddress("rsf://127.0.0.1:8000");
+            instance.setEndpoints(new EntInstanceEndpointData[] { instanceEndpoint });
             instance.setRoles(new MetServiceType[] { MetServiceType.Provider });
             storage.registerInstance(instance);
             EntServiceRuntimeData service = service("A", MetServiceType.Provider, "rsf://127.0.0.1:8000");
@@ -125,7 +131,8 @@ public class MemoryStorageTest {
 
             // 调用方继续改写原对象，不能改到任一内部索引。
             instance.setIpAddress("changed");
-            instance.getListenAddresses().clear();
+            instanceEndpoint.setListenAddress("changed");
+            instance.setEndpoints(new EntInstanceEndpointData[0]);
             instance.getRoles()[0] = MetServiceType.Consumer;
             service.getAddresses()[0] = "rsf://127.0.0.1:9000";
             endpoint.setPublishedAddress("rsf://127.0.0.1:9000");
@@ -136,9 +143,19 @@ public class MemoryStorageTest {
             EntServiceRuntimeData storedService = storage.getInstanceService("one", "A");
             assertEquals("127.0.0.1", storedInstance.getIpAddress());
             assertEquals(MetServiceType.Provider, storedInstance.getRoles()[0]);
-            assertEquals("rsf://127.0.0.1:8000", storedInstance.getListenAddresses().get("primary#rsf"));
+            assertEquals(1, storedInstance.getEndpoints().length);
+            EntInstanceEndpointData storedEndpoint = storedInstance.getEndpoints()[0];
+            assertEquals("primary", storedEndpoint.getConnectorName());
+            assertEquals("tcp", storedEndpoint.getTransport());
+            assertEquals("rsf", storedEndpoint.getProtocolName());
+            assertEquals("rsf", storedEndpoint.getScheme());
+            assertEquals("rsf://127.0.0.1:8000", storedEndpoint.getListenAddress());
             assertEquals("127.0.0.1", member.getInstance().getIpAddress());
-            assertEquals(storedInstance.getListenAddresses(), member.getInstance().getListenAddresses());
+            assertEquals(1, member.getInstance().getEndpoints().length);
+            EntInstanceEndpointData memberEndpoint = member.getInstance().getEndpoints()[0];
+            assertEquals(storedEndpoint.getConnectorName(), memberEndpoint.getConnectorName());
+            assertEquals(storedEndpoint.getProtocolName(), memberEndpoint.getProtocolName());
+            assertEquals(storedEndpoint.getListenAddress(), memberEndpoint.getListenAddress());
             assertEquals("rsf://127.0.0.1:8000", storedService.getAddresses()[0]);
             assertEquals("rsf://127.0.0.1:8000", storedService.getEndpoints()[0].getPublishedAddress());
             assertEquals("example.OriginalService", storedService.getDescription().path("javaType").asText());
@@ -183,7 +200,13 @@ public class MemoryStorageTest {
         MemoryRegistryConfiguration configuration = new MemoryRegistryConfiguration();
         try (StorageAccess storage = configuration.openStorage()) {
             EntInstanceRuntimeData first = instance("first", "orders", "east");
-            first.getManagementAddresses().put("primary#rsf", "rsf://127.0.0.1:8000");
+            EntInstanceEndpointData endpoint = new EntInstanceEndpointData();
+            endpoint.setConnectorName("primary");
+            endpoint.setTransport("tcp");
+            endpoint.setProtocolName("rsf");
+            endpoint.setScheme("rsf");
+            endpoint.setManagementAddress("rsf://127.0.0.1:8000");
+            first.setEndpoints(new EntInstanceEndpointData[] { endpoint });
             storage.registerInstance(first);
             storage.registerInstance(instance("second", "orders", "east"));
             storage.registerService("first", service("A", MetServiceType.Provider, "rsf://127.0.0.1:8000"));
@@ -193,24 +216,27 @@ public class MemoryStorageTest {
 
             // 身份更新传播到本实例的成员，继续隔离调用方后续的修改。
             first.setUnitName("west");
-            first.getManagementAddresses().put("primary#rsf", "rsf://127.0.0.1:8100");
+            endpoint.setManagementAddress("rsf://127.0.0.1:8100");
             storage.registerInstance(first);
-            first.getManagementAddresses().clear();
+            endpoint.setManagementAddress("changed");
+            first.setEndpoints(new EntInstanceEndpointData[0]);
             RefServiceRelationData current = storage.getMember("A", MetServiceType.Provider, "first");
             RefServiceRelationData anotherService = storage.getMember("B", MetServiceType.Provider, "first");
             RefServiceRelationData otherInstance = storage.getMember("A", MetServiceType.Provider, "second");
             assertEquals("west", current.getInstance().getUnitName());
             assertEquals("west", anotherService.getInstance().getUnitName());
-            Map<String, String> currentAddresses = current.getInstance().getManagementAddresses();
-            Map<String, String> otherServiceAddresses = anotherService.getInstance().getManagementAddresses();
-            assertEquals("rsf://127.0.0.1:8100", currentAddresses.get("primary#rsf"));
-            assertEquals(currentAddresses, otherServiceAddresses);
+            EntInstanceEndpointData currentEndpoint = current.getInstance().getEndpoints()[0];
+            EntInstanceEndpointData otherServiceEndpoint = anotherService.getInstance().getEndpoints()[0];
+            assertEquals("primary", currentEndpoint.getConnectorName());
+            assertEquals("rsf", currentEndpoint.getProtocolName());
+            assertEquals("rsf://127.0.0.1:8100", currentEndpoint.getManagementAddress());
+            assertEquals(currentEndpoint.getManagementAddress(), otherServiceEndpoint.getManagementAddress());
             assertEquals("east", otherInstance.getInstance().getUnitName());
-            assertTrue(otherInstance.getInstance().getManagementAddresses().isEmpty());
+            assertEquals(0, otherInstance.getInstance().getEndpoints().length);
 
             // 历史查询结果和原服务正文都不随身份更新改变。
             assertEquals("east", previous.getInstance().getUnitName());
-            assertEquals("rsf://127.0.0.1:8000", previous.getInstance().getManagementAddresses().get("primary#rsf"));
+            assertEquals("rsf://127.0.0.1:8000", previous.getInstance().getEndpoints()[0].getManagementAddress());
             assertEquals("rsf://127.0.0.1:8000", current.getService().getAddresses()[0]);
             assertEquals("rsf://127.0.0.1:8000", storage.getInstanceService("first", "A").getAddresses()[0]);
         }

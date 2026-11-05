@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
+import java.util.UUID;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.nio.file.Files;
 import org.junit.jupiter.api.io.TempDir;
@@ -84,8 +85,12 @@ public class MetroRegistryAdapterTest {
             RegistryConfiguration registry = environment.configuration();
             registry.setPublishHost(ContainerProcess.runnerHost());
             MetConfiguration configuration = this.configuration(registry, "meteor-soap-adapter-provider");
-            configuration.connector("http").bind(ContainerProcess.runnerHost(), 0).protocol("soap") //
-                    .addressScheme("http").contextPath("/services").option("soapVersion", this.version);
+            configuration.connector("http") //
+                    .bind(ContainerProcess.runnerHost(), 0) //
+                    .protocol("soap") //
+                    .addressScheme("http") //
+                    .contextPath("/services") //
+                    .option("soapVersion", this.version);
             try (MetContext provider = configuration.buildContext()) {
                 provider.start();
                 var publication = provider.publisher().rsfService(EchoService.class, new EchoServiceImpl()) //
@@ -133,8 +138,11 @@ public class MetroRegistryAdapterTest {
             RegistryConfiguration registry = environment.configuration();
             registry.setPublishHost(ContainerProcess.runnerHost());
             MetConfiguration configuration = this.configuration(registry, "meteor-soap-adapter-consumer");
-            configuration.connector("http").protocol("soap") //
-                    .addressScheme("http").contextPath("/services").option("soapVersion", this.version);
+            configuration.connector("http") //
+                    .protocol("soap") //
+                    .addressScheme("http") //
+                    .contextPath("/services") //
+                    .option("soapVersion", this.version);
             try (MetContext consumer = configuration.buildContext()) {
                 consumer.start();
                 var subscription = consumer.publisher().rsfService(EchoService.class) //
@@ -165,9 +173,13 @@ public class MetroRegistryAdapterTest {
     }
 
     private MetConfiguration configuration(RegistryConfiguration registry, String application) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
-        configuration.setApplicationName(application).addExtension(registry);
-        configuration.connector("tcp").protocol("rsf");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDefaultProtocol("soap");
+        configuration.setDataHome(this.data.resolve("meteor-" + UUID.randomUUID()));
+        configuration.setApplicationName(application) //
+                .addExtension(registry);
+        configuration.connector("tcp") //
+                .protocol("rsf");
         return configuration;
     }
 

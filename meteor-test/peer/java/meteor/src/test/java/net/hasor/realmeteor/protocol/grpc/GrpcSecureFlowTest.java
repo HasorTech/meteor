@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.util.ArrayList;
 import java.util.List;
@@ -768,9 +769,11 @@ public class GrpcSecureFlowTest {
 
     private MetConfiguration configuration(boolean server, boolean mutual) {
         // 复用无资源配置；双向认证同时要求服务端验客户端证书、客户端装载独立身份。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
         configuration.setDefaultTimeout(5000);
-        var http = configuration.connector("http").option("httpVersion", 2);
+        var http = configuration.connector("http") //
+                .option("httpVersion", 2);
         http.option("tlsEnabled", true);
         http.option("httpScheme", "https");
         http.option("tlsAlpn", "h2");
@@ -787,7 +790,9 @@ public class GrpcSecureFlowTest {
             http.option("tlsKeyStore", "classpath:/certs/acceptance/" + identity + ".p12");
             http.option("tlsKeyStorePassword", "meteor-test");
         }
-        http.protocol("grpc").addressScheme("https").option("streamBody", true);
+        http.protocol("grpc") //
+                .addressScheme("https") //
+                .option("streamBody", true);
         return configuration;
     }
 

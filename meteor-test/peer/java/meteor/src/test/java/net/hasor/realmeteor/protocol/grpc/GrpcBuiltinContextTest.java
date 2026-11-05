@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -44,8 +45,12 @@ public class GrpcBuiltinContextTest {
     public void reflectionListsOnlyTheCurrentEndpointsProtoBindings() throws Exception {
         // 一个服务同时接入 JSON 和 Protobuf 两个端点，只有后者具备 proto 描述。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("grpc") // 独立物理端点。
-                .contextPath("/rpc").option("streamBody", true).option("serializeType", "Json");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc") // 独立物理端点。
+                .contextPath("/rpc") //
+                .option("streamBody", true) //
+                .option("serializeType", "Json");
         try (MetContext context = configuration.buildContext()) {
             context.start();
             context.publisher().rsfService(ReflectionQueryService.class, query -> query) //
@@ -89,8 +94,12 @@ public class GrpcBuiltinContextTest {
     public void reflectionDescriptorLookupDoesNotUseAnotherEndpointsDefinition() throws Exception {
         // 首个端点使用 Protobuf，后一个端点只给该业务接口提供 JSON 编码。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("grpc") // 保留标准内建服务。
-                .contextPath("/rpc").option("streamBody", true).option("serializeType", "Json");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc") // 保留标准内建服务。
+                .contextPath("/rpc") //
+                .option("streamBody", true) //
+                .option("serializeType", "Json");
         try (MetContext context = configuration.buildContext()) {
             context.start();
             context.publisher().rsfService(ReflectionQueryService.class, query -> query) //
@@ -282,9 +291,13 @@ public class GrpcBuiltinContextTest {
     }
 
     private MetConfiguration configuration() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(10000);
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("grpc") // 只声明业务默认目录。
-                .contextPath("/rpc").option("streamBody", true);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(10000);
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc") // 只声明业务默认目录。
+                .contextPath("/rpc") //
+                .option("streamBody", true);
         configuration.addExtension(new GrpcBuiltinServicesFactory());
         return configuration;
     }

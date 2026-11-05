@@ -126,14 +126,20 @@ public class GrpcWebRegistryAdapterScenarioTest {
     }
 
     private MetConfiguration configuration(RegistryConfiguration registry, String origin) throws Exception {
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(5000);
+        MetConfiguration configuration = new MetConfiguration() //
+                .setRequestTimeout(5000);
         configuration.setApplicationName("meteor-grpc-web-provider");
         configuration.setDataHome(Files.createDirectory(this.data.resolve("provider")));
         configuration.addExtension(registry);
-        configuration.connector("tcp").protocol("rsf"); // 注册扩展的内部管理出口，不监听。
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("grpc-web").addressScheme("http").contextPath("/web") //
-                .option("streamBody", true).option("corsOrigins", origin) //
+        configuration.connector("tcp") //
+                .protocol("rsf"); // 注册扩展的内部管理出口，不监听。
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("grpc-web") //
+                .addressScheme("http") //
+                .contextPath("/web") //
+                .option("streamBody", true) //
+                .option("corsOrigins", origin) //
                 .option("corsHeaders", "content-type,x-grpc-web,x-user-agent,custom-header,grpc-timeout");
         return configuration;
     }

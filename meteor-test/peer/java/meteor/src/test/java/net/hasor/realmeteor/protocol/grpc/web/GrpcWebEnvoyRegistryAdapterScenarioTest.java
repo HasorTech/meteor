@@ -111,14 +111,20 @@ public class GrpcWebEnvoyRegistryAdapterScenarioTest {
     }
 
     private MetConfiguration configuration(RegistryConfiguration registry) throws Exception {
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(5000);
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDefaultTimeout(5000);
         configuration.setDefaultProtocol("grpc-web");
         configuration.setApplicationName("meteor-grpc-web-consumer");
         configuration.setDataHome(Files.createDirectory(this.data.resolve("consumer")));
         configuration.addExtension(registry);
-        configuration.connector("tcp").protocol("rsf"); // 注册扩展内部管理出口，不监听。
-        configuration.connector("http").protocol("grpc-web").addressScheme("http") //
-                .contextPath("/web").option("webText", false).option("streamBody", true);
+        configuration.connector("tcp") //
+                .protocol("rsf"); // 注册扩展内部管理出口，不监听。
+        configuration.connector("http") //
+                .protocol("grpc-web") //
+                .addressScheme("http") //
+                .contextPath("/web") //
+                .option("webText", false) //
+                .option("streamBody", true);
         return configuration;
     }
 }

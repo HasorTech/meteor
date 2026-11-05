@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor.bootstrap;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
@@ -37,7 +38,7 @@ public final class MetContextImpl implements MetContext {
     private final        List<MetContextListener> listeners       = new CopyOnWriteArrayList<>();
     private final        MetSettings              settings;
     private final        ClassLoader              classLoader;
-    private final        String                   instanceID      = UUID.randomUUID().toString().replace("-", "");
+    private final        MetDataDirectory         dataDirectory;
     private final        SerializeFactory         serializeFactory;
     private final        CacheAddressPool         addresses;
     private final        MetContainer             rsfContainer;
@@ -86,15 +87,25 @@ public final class MetContextImpl implements MetContext {
     }
 
     /** 组装配置、服务容器、序列化器和地址管理组件。 */
-    MetContextImpl(MetSettings settings, ClassLoader classLoader) {
+    MetContextImpl(MetSettings settings, ClassLoader classLoader) throws IOException {
         this.settings = Objects.requireNonNull(settings, "settings");
         this.classLoader = Objects.requireNonNull(classLoader, "classLoader");
+        this.dataDirectory = MetDataDirectory.open(this.settings.getDataHome());
 
         // 组装服务注册、序列化和地址管理能力。
-        this.serializeFactory = this.createSerializeFactory();
-        this.addresses = new CacheAddressPool(this.settings);
-        this.rsfContainer = new MetContainer(this.addresses, this.settings);
-        this.publisher = new Publisher(this.rsfContainer.createPublisher());
+        try {
+            this.serializeFactory = this.createSerializeFactory();
+            this.addresses = new CacheAddressPool(this.settings);
+            this.rsfContainer = new MetContainer(this.addresses, this.settings);
+            this.publisher = new Publisher(this.rsfContainer.createPublisher());
+        } catch (RuntimeException | Error failure) {
+            try {
+                this.dataDirectory.close();
+            } catch (Throwable cleanup) {
+                failure.addSuppressed(cleanup);
+            }
+            throw failure;
+        }
     }
 
     /** 构建入口在返回上下文前完成初始化；监听仍由 start() 开启。 */
@@ -105,34 +116,20 @@ public final class MetContextImpl implements MetContext {
         ContextConnectorManager connectorManager = new ContextConnectorManager();
         this.connectors = connectorManager;
 
-        try {
-            this.connectors.init();
+        this.connectors.init();
 
-            // 服务路由同步校验必须先于普通事件通知，异常由容器负责回滚服务登记。
-            this.rsfContainer.subscribe(connectorManager::onServiceEvent);
-            this.rsfContainer.subscribe(this::notifyEvent);
-            this.rsfCaller = new MetCaller(this.connectors, this.rsfContainer::getFilterProviders);
-        } catch (RuntimeException | Error failure) {
-            try {
-                this.connectors.close();
-            } catch (Throwable cleanup) {
-                failure.addSuppressed(cleanup);
-            }
-            throw failure;
-        }
+        // 服务路由同步校验必须先于普通事件通知，异常由容器负责回滚服务登记。
+        this.rsfContainer.subscribe(connectorManager::onServiceEvent);
+        this.rsfContainer.subscribe(this::notifyEvent);
+        this.rsfCaller = new MetCaller(this.connectors, this.rsfContainer::getFilterProviders);
 
-        // 核心组件就绪后再创建扩展，扩展失败时回收已完成初始化的组件。
+        // 核心组件就绪后再创建扩展，初始化失败统一由构建入口关闭上下文。
         try {
             for (MetExtensionFactory factory : extensionFactory) {
                 MetExtension extension = factory.create(this);
                 this.extensions.add(Objects.requireNonNull(extension, "extension"));
             }
         } catch (Exception | Error failure) {
-            try {
-                this.close();
-            } catch (Throwable cleanup) {
-                failure.addSuppressed(cleanup);
-            }
             if (failure instanceof Error error) {
                 throw error;
             }
@@ -235,8 +232,13 @@ public final class MetContextImpl implements MetContext {
         // Context 创建并持有连接管理器和调用器；先排空网络，再释放 RPC 自有资源。
         resources.add(this.connectors);
         resources.add(this.rsfCaller);
+        // 扩展和网络完全退出后才允许另一个实例接管相同目录与身份。
+        resources.add(this.dataDirectory);
         Throwable failure = null;
         for (AutoCloseable resource : resources) {
+            if (resource == null) {
+                continue;
+            }
             try {
                 resource.close();
             } catch (Throwable cleanup) {
@@ -437,7 +439,7 @@ public final class MetContextImpl implements MetContext {
                 }
 
                 try {
-                    if (delivery.event.getType() == MetContextEventType.CLOSED) {
+                    if (delivery.event.getType() == MetContextEventType.CLOSED && this.rsfCaller != null) {
                         this.rsfCaller.stopAdmission();
                     }
                     this.notifyEvent(delivery.event);
@@ -499,7 +501,7 @@ public final class MetContextImpl implements MetContext {
 
     @Override
     public String getInstanceID() {
-        return this.instanceID;
+        return this.dataDirectory.getInstanceID();
     }
 
     /**获取运行着哪些协议*/
@@ -629,56 +631,51 @@ public final class MetContextImpl implements MetContext {
         });
     }
 
-    private static final class Publisher implements MetPublisher {
-        private final MetPublisher publisher;
-
-        private Publisher(MetPublisher publisher) {
-            this.publisher = publisher;
-        }
+    private record Publisher(MetPublisher publisher) implements MetPublisher {
 
         @Override
-        public MetSettings getSettings() {
-            return this.publisher.getSettings();
-        }
+            public MetSettings getSettings() {
+                return this.publisher.getSettings();
+            }
 
-        @Override
-        public MetPublisher bindFilter(String filterID, MetFilter instance) {
-            this.publisher.bindFilter(filterID, instance);
-            return this;
-        }
+            @Override
+            public MetPublisher bindFilter(String filterID, MetFilter instance) {
+                this.publisher.bindFilter(filterID, instance);
+                return this;
+            }
 
-        @Override
-        public MetPublisher bindFilter(String filterID, Supplier<? extends MetFilter> provider) {
-            this.publisher.bindFilter(filterID, provider);
-            return this;
-        }
+            @Override
+            public MetPublisher bindFilter(String filterID, Supplier<? extends MetFilter> provider) {
+                this.publisher.bindFilter(filterID, provider);
+                return this;
+            }
 
-        @Override
-        public MetPublisher bindFilter(String filterID, Class<? extends MetFilter> filterType) {
-            this.publisher.bindFilter(filterID, filterType);
-            return this;
-        }
+            @Override
+            public MetPublisher bindFilter(String filterID, Class<? extends MetFilter> filterType) {
+                this.publisher.bindFilter(filterID, filterType);
+                return this;
+            }
 
-        @Override
-        public <T> LinkedBuilder<T> rsfService(Class<T> type) {
-            LinkedBuilder<T> builder = this.publisher.rsfService(type);
-            builder.aliasName("Hprose", StringUtils.firstCharToLowerCase(type.getSimpleName()));
-            return builder;
-        }
+            @Override
+            public <T> LinkedBuilder<T> rsfService(Class<T> type) {
+                LinkedBuilder<T> builder = this.publisher.rsfService(type);
+                builder.aliasName("Hprose", StringUtils.firstCharToLowerCase(type.getSimpleName()));
+                return builder;
+            }
 
-        @Override
-        public <T> ConfigurationBuilder<T> rsfService(Class<T> type, T instance) {
-            return this.rsfService(type).toInstance(instance);
-        }
+            @Override
+            public <T> ConfigurationBuilder<T> rsfService(Class<T> type, T instance) {
+                return this.rsfService(type).toInstance(instance);
+            }
 
-        @Override
-        public <T> ConfigurationBuilder<T> rsfService(Class<T> type, Class<? extends T> implementation) {
-            return this.rsfService(type).to(implementation);
-        }
+            @Override
+            public <T> ConfigurationBuilder<T> rsfService(Class<T> type, Class<? extends T> implementation) {
+                return this.rsfService(type).to(implementation);
+            }
 
-        @Override
-        public <T> ConfigurationBuilder<T> rsfService(Class<T> type, Supplier<T> provider) {
-            return this.rsfService(type).toProvider(provider);
+            @Override
+            public <T> ConfigurationBuilder<T> rsfService(Class<T> type, Supplier<T> provider) {
+                return this.rsfService(type).toProvider(provider);
+            }
         }
-    }
 }

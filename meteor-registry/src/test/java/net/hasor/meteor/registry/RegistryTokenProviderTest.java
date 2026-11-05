@@ -21,6 +21,7 @@ import net.hasor.meteor.registry.shared.DecoratedRegistryConfiguration;
 import net.hasor.meteor.registry.shared.RegistryTestUtils.Echo;
 import net.hasor.meteor.registry.shared.StorageProbe;
 import org.junit.jupiter.api.Test;
+import static net.hasor.meteor.registry.shared.RegistryTestUtils.createConfiguration;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RegistryTokenProviderTest {
@@ -82,8 +83,11 @@ public class RegistryTokenProviderTest {
         AtomicReference<String> token = new AtomicReference<>("initial");
         MemoryRegistryConfiguration registry = new MemoryRegistryConfiguration();
         registry.setTokenProvider(token::get);
-        MetConfiguration configuration = new MetConfiguration().addExtension(registry);
-        configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        MetConfiguration configuration = createConfiguration() //
+                .addExtension(registry);
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class).register();
             context.start();

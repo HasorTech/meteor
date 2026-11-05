@@ -28,6 +28,8 @@ import net.hasor.meteor.registry.shared.storage.StorageAccess;
 import net.hasor.meteor.registry.shared.storage.domain.*;
 import net.hasor.meteor.registry.shared.utils.RegistryJson;
 import org.junit.jupiter.api.Test;
+import static net.hasor.meteor.registry.shared.RegistryTestUtils.createConfiguration;
+import static net.hasor.meteor.registry.shared.RegistryTestUtils.createDataHome;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class GovernanceSubscriptionTest {
@@ -42,13 +44,15 @@ public class GovernanceSubscriptionTest {
         MemoryRegistryConfiguration registry = new MemoryRegistryConfiguration();
         registry.setManagementToken("secret");
         registry.setRefreshMillis(600000);
-        MetConfiguration application = new MetConfiguration();
-        application.connector("tcp").protocol("rsf").option("serializeType", "Json");
+        MetConfiguration application = createConfiguration();
+        application.connector("tcp") //
+                .protocol("rsf") //
+                .option("serializeType", "Json");
         application.addExtension(registry);
 
         // 管理端使用同一配置；独立存储会话仅用于检查记录版本。
         try (MetContext a = application.buildContext(); //
-             MetContext b = application.buildContext(); //
+             MetContext b = application.setDataHome(createDataHome()).buildContext(); //
              StorageAccess storage = registry.openStorage()) {
             RegistryAdmin admin = a.getExtension(RegistryAdmin.class);
             MetBindInfo<Echo> echo = a.publisher().rsfService(Echo.class).register();
@@ -90,11 +94,14 @@ public class GovernanceSubscriptionTest {
         RegistryConfiguration registryConfig = storageConfiguration;
         registryConfig.setManagementToken("secret");
         registryConfig.setRefreshMillis(600000);
-        MetConfiguration application = new MetConfiguration();
-        application.connector("tcp").protocol("rsf").option("serializeType", "Json");
+        MetConfiguration application = createConfiguration();
+        application.connector("tcp") //
+                .protocol("rsf") //
+                .option("serializeType", "Json");
         application.addExtension(registryConfig);
 
-        MetConfiguration adminConfiguration = new MetConfiguration().addExtension(registryConfig);
+        MetConfiguration adminConfiguration = createConfiguration() //
+                .addExtension(registryConfig);
 
         try (MetContext context = application.buildContext(); //
              MetContext adminContext = adminConfiguration.buildContext(); //
@@ -144,8 +151,10 @@ public class GovernanceSubscriptionTest {
         RegistryConfiguration registryConfig = storageConfiguration;
         registryConfig.setManagementToken("secret");
         registryConfig.setRefreshMillis(600000);
-        MetConfiguration application = new MetConfiguration();
-        application.connector("tcp").protocol("rsf").option("serializeType", "Json");
+        MetConfiguration application = createConfiguration();
+        application.connector("tcp") //
+                .protocol("rsf") //
+                .option("serializeType", "Json");
         application.addExtension(registryConfig);
 
         try (MetContext context = application.buildContext(); //
@@ -232,8 +241,10 @@ public class GovernanceSubscriptionTest {
         RegistryConfiguration registryConfig = new DecoratedRegistryConfiguration(storageConfiguration, probe::observe);
         registryConfig.setManagementToken("secret");
         registryConfig.setRefreshMillis(600000);
-        MetConfiguration application = new MetConfiguration();
-        application.connector("tcp").protocol("rsf").option("serializeType", "Json");
+        MetConfiguration application = createConfiguration();
+        application.connector("tcp") //
+                .protocol("rsf") //
+                .option("serializeType", "Json");
         application.addExtension(registryConfig);
 
         try (MetContext context = application.buildContext(); //

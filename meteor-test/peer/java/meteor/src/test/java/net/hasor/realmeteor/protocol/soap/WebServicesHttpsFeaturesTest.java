@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.net.URI;
 import java.net.URL;
 import java.net.http.HttpClient;
@@ -100,9 +101,11 @@ public class WebServicesHttpsFeaturesTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void directoryIsFetchedOverRealHttpsHttp2() throws Exception {
         // 目录和业务协议挂在同一个 HTTPS h2 端口。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
         SoapTlsSupport.server(configuration, "h2", false) //
-                .protocol("soap").addressScheme("https") //
+                .protocol("soap") //
+                .addressScheme("https") //
                 .contextPath("/services") //
                 .option("soapVersion", "1.2") //
                 .option("directoryEnabled", true) //
@@ -242,9 +245,11 @@ public class WebServicesHttpsFeaturesTest {
     }
 
     private MetConfiguration server(String version, String alpn, boolean mutual, String attachmentMode) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
         SoapTlsSupport.server(configuration, alpn, mutual) //
-                .protocol("soap").addressScheme("https") //
+                .protocol("soap") //
+                .addressScheme("https") //
                 .contextPath("/services") //
                 .option("soapVersion", version) //
                 .option("attachmentMode", attachmentMode) //
@@ -254,11 +259,12 @@ public class WebServicesHttpsFeaturesTest {
 
     private MetConfiguration client(String version, int httpVersion, String alpn, boolean mutual, //
             String attachmentMode) {
-        MetConfiguration configuration = new MetConfiguration() //
+        MetConfiguration configuration = TestConfigurationUtils.create() //
                 .setDefaultProtocol("soap") //
                 .setRequestTimeout(5000);
         SoapTlsSupport.client(configuration, httpVersion, alpn, mutual) //
-                .protocol("soap").addressScheme("https") //
+                .protocol("soap") //
+                .addressScheme("https") //
                 .contextPath("/services") //
                 .option("soapVersion", version) //
                 .option("attachmentMode", attachmentMode) //

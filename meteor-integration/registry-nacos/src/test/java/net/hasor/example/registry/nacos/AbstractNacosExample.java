@@ -6,16 +6,24 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.example.registry.nacos;
+import java.nio.file.Path;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import net.hasor.cobble.StringUtils;
 import net.hasor.cobble.setting.DefaultSettings;
 import net.hasor.cobble.setting.Settings;
+import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.registry.nacos.NacosRegistryConfiguration;
 
 /** 共享外部 Nacos 配置读取和等待方法；各场景自行管理应用与存储会话。 */
 public abstract class AbstractNacosExample {
+    protected static MetConfiguration createConfiguration() {
+        Path dataHome = Path.of("build", "meteor-instances", UUID.randomUUID().toString());
+        return new MetConfiguration() //
+                .setDataHome(dataHome);
+    }
+
     protected NacosRegistryConfiguration createRegistryConfiguration() throws Exception {
         // 读取外部连接参数，未提供地址时明确报错。
         Settings settings = new DefaultSettings("classpath:/nacos-test.properties");

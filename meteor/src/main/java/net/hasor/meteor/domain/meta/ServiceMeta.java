@@ -7,6 +7,7 @@
  */
 package net.hasor.meteor.domain.meta;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -100,6 +101,7 @@ public final class ServiceMeta {
             description.put("contractServiceId", this.contractServiceId);
         }
         description.put("javaType", this.javaType.getName());
+        description.put("javaSourceType", this.javaType.getCanonicalName());
         ArrayNode methods = description.putArray("methods");
         ObjectNode types = description.putObject("types");
         description.put("message", this.message);
@@ -155,8 +157,12 @@ public final class ServiceMeta {
         ObjectNode description = types.putObject(reference);
         description.put("name", meta.getName());
         description.put("javaType", raw.getTypeName());
+        description.put("javaSourceType", raw.getCanonicalName());
         String kind = typeKind(type, raw);
         description.put("kind", kind);
+        if (StringUtils.equals("object", kind)) {
+            description.put("javaDefaultConstructor", hasDefaultConstructor(raw));
+        }
         if (type.isArray()) {
             description.put("elementType", this.describeType(type.getComponentType(), types));
             return reference;
@@ -194,6 +200,30 @@ public final class ServiceMeta {
             }
         }
         return reference;
+    }
+
+    /** 只报告可以在普通 Java 源码中直接创建的类型，不执行构造方法。 */
+    private static boolean hasDefaultConstructor(Class<?> type) {
+        if (type.isInterface() || Modifier.isAbstract(type.getModifiers()) || type.getCanonicalName() == null) {
+            return false;
+        }
+        for (Class<?> enclosing = type; enclosing != null; enclosing = enclosing.getEnclosingClass()) {
+            if (!Modifier.isPublic(enclosing.getModifiers())) {
+                return false;
+            }
+        }
+        try {
+            var constructor = type.getConstructor();
+            // 示例实现不能为接口未声明的受检异常扩大 throws。
+            for (Class<?> exception : constructor.getExceptionTypes()) {
+                if (!RuntimeException.class.isAssignableFrom(exception) && !Error.class.isAssignableFrom(exception)) {
+                    return false;
+                }
+            }
+            return Modifier.isPublic(constructor.getModifiers());
+        } catch (NoSuchMethodException | SecurityException unavailable) {
+            return false;
+        }
     }
 
     private static String typeKind(ResolvableType type, Class<?> raw) {

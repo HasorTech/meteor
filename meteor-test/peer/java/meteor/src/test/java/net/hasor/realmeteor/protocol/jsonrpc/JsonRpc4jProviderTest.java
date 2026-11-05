@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.jsonrpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -111,9 +112,12 @@ public class JsonRpc4jProviderTest {
     }
 
     private MetConfiguration configuration() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(5000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("jsonrpc").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(5000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("jsonrpc") //
+                .contextPath("/rpc");
         return configuration;
     }
 

@@ -13,6 +13,7 @@ import net.hasor.example.protocol.dubbo.interop.DubboInteropServiceImpl;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.registry.dubbo.DubboRegistryClient;
 import net.hasor.meteor.registry.dubbo.DubboRegistryConfiguration;
@@ -41,7 +42,8 @@ public class DubboRegistryOfficialInteropTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration consumer = application(registryUrl, "meteor-native-default-consumer");
-            consumer.connector("tcp").protocol("dubbo");
+            consumer.connector("tcp") //
+                    .protocol("dubbo");
             try (DubboProcess provider = DubboProcess.start( //
                     "--command=server", "--registry=" + registryUrl); //
                  MetContext client = consumer.buildContext()) {
@@ -67,7 +69,8 @@ public class DubboRegistryOfficialInteropTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration consumer = application(registryUrl, "meteor-legacy-default-consumer");
-            consumer.connector("tcp").protocol("dubbo");
+            consumer.connector("tcp") //
+                    .protocol("dubbo");
             try (DubboProcess provider = DubboProcess.startLegacy( //
                     "--command=server", "--registry=" + registryUrl); //
                  MetContext client = consumer.buildContext()) {
@@ -93,7 +96,9 @@ public class DubboRegistryOfficialInteropTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration provider = application(registryUrl, "meteor-native-default-provider");
-            provider.connector("tcp").bind("0.0.0.0", 0).protocol("dubbo");
+            provider.connector("tcp") //
+                    .bind("0.0.0.0", 0) //
+                    .protocol("dubbo");
             try (MetContext server = provider.buildContext()) {
                 MetBindInfo<DubboInteropService> service = server.publisher() //
                         .rsfService(DubboInteropService.class, new DubboInteropServiceImpl()) //
@@ -120,7 +125,9 @@ public class DubboRegistryOfficialInteropTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration provider = application(registryUrl, "meteor-native-default-provider");
-            provider.connector("tcp").bind("0.0.0.0", 0).protocol("dubbo");
+            provider.connector("tcp") //
+                    .bind("0.0.0.0", 0) //
+                    .protocol("dubbo");
             try (MetContext server = provider.buildContext()) {
                 MetBindInfo<DubboInteropService> service = server.publisher() //
                         .rsfService(DubboInteropService.class, new DubboInteropServiceImpl()) //
@@ -148,7 +155,8 @@ public class DubboRegistryOfficialInteropTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration consumer = application(registryUrl, "meteor-registry-consumer");
-            consumer.connector("tcp").protocol("dubbo");
+            consumer.connector("tcp") //
+                    .protocol("dubbo");
             try (DubboProcess provider = DubboProcess.startLegacy( //
                     "--command=server", "--registry=" + registryUrl, //
                     "--group=default", "--version=1.0.0"); //
@@ -176,7 +184,9 @@ public class DubboRegistryOfficialInteropTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration provider = application(registryUrl, "meteor-registry-provider");
-            provider.connector("tcp").bind("0.0.0.0", 0).protocol("dubbo");
+            provider.connector("tcp") //
+                    .bind("0.0.0.0", 0) //
+                    .protocol("dubbo");
             try (MetContext server = provider.buildContext()) {
                 server.start();
                 server.publisher() //
@@ -207,7 +217,8 @@ public class DubboRegistryOfficialInteropTest {
             ConnectorSettings endpoint = consumer.connector("tcp");
             tlsClient(endpoint, false);
             endpoint.option("tlsTrustStore", certificate.trustStore());
-            endpoint.protocol("dubbo").addressScheme("dubbos");
+            endpoint.protocol("dubbo") //
+                    .addressScheme("dubbos");
             try (DubboProcess provider = DubboProcess.startLegacy( //
                     "--command=server", "--registry=" + registryUrl, //
                     "--group=default", "--version=1.0.0", //
@@ -237,9 +248,11 @@ public class DubboRegistryOfficialInteropTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration provider = application(registryUrl, "meteor-registry-provider");
-            ConnectorSettings endpoint = provider.connector("tcp").bind("0.0.0.0", 0);
+            ConnectorSettings endpoint = provider.connector("tcp") //
+                    .bind("0.0.0.0", 0);
             tlsServer(endpoint, false);
-            endpoint.protocol("dubbo").addressScheme("dubbos");
+            endpoint.protocol("dubbo") //
+                    .addressScheme("dubbos");
             try (MetContext server = provider.buildContext()) {
                 server.start();
                 server.publisher() //
@@ -273,7 +286,8 @@ public class DubboRegistryOfficialInteropTest {
             ConnectorSettings endpoint = consumer.connector("tcp");
             tlsClient(endpoint, true);
             endpoint.option("tlsTrustStore", certificate.trustStore());
-            endpoint.protocol("dubbo").addressScheme("dubbos");
+            endpoint.protocol("dubbo") //
+                    .addressScheme("dubbos");
             try (DubboProcess provider = DubboProcess.startLegacy( //
                     "--command=server", "--registry=" + registryUrl, //
                     "--group=default", "--version=1.0.0", //
@@ -304,9 +318,11 @@ public class DubboRegistryOfficialInteropTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration provider = application(registryUrl, "meteor-registry-provider");
-            ConnectorSettings endpoint = provider.connector("tcp").bind("0.0.0.0", 0);
+            ConnectorSettings endpoint = provider.connector("tcp") //
+                    .bind("0.0.0.0", 0);
             tlsServer(endpoint, true);
-            endpoint.protocol("dubbo").addressScheme("dubbos");
+            endpoint.protocol("dubbo") //
+                    .addressScheme("dubbos");
             try (MetContext server = provider.buildContext()) {
                 server.start();
                 server.publisher() //
@@ -335,7 +351,8 @@ public class DubboRegistryOfficialInteropTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration consumer = application(registryUrl, "meteor-registry-consumer");
-            consumer.connector("tcp").protocol("dubbo");
+            consumer.connector("tcp") //
+                    .protocol("dubbo");
             try (DubboProcess provider = DubboProcess.start( //
                     "--command=server", "--registry=" + registryUrl, //
                     "--group=default", "--version=1.0.0"); //
@@ -362,7 +379,9 @@ public class DubboRegistryOfficialInteropTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration provider = application(registryUrl, "meteor-registry-provider");
-            provider.connector("tcp").bind("0.0.0.0", 0).protocol("dubbo");
+            provider.connector("tcp") //
+                    .bind("0.0.0.0", 0) //
+                    .protocol("dubbo");
             try (MetContext server = provider.buildContext()) {
                 server.start();
                 server.publisher() //
@@ -392,7 +411,8 @@ public class DubboRegistryOfficialInteropTest {
             ConnectorSettings endpoint = consumer.connector("tcp");
             tlsClient(endpoint, false);
             endpoint.option("tlsTrustStore", certificate.trustStore());
-            endpoint.protocol("dubbo").addressScheme("dubbos");
+            endpoint.protocol("dubbo") //
+                    .addressScheme("dubbos");
             try (DubboProcess provider = DubboProcess.start( //
                     "--command=server", "--registry=" + registryUrl, //
                     "--group=default", "--version=1.0.0", //
@@ -421,9 +441,11 @@ public class DubboRegistryOfficialInteropTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration provider = application(registryUrl, "meteor-registry-provider");
-            ConnectorSettings endpoint = provider.connector("tcp").bind("0.0.0.0", 0);
+            ConnectorSettings endpoint = provider.connector("tcp") //
+                    .bind("0.0.0.0", 0);
             tlsServer(endpoint, false);
-            endpoint.protocol("dubbo").addressScheme("dubbos");
+            endpoint.protocol("dubbo") //
+                    .addressScheme("dubbos");
             try (MetContext server = provider.buildContext()) {
                 server.start();
                 server.publisher() //
@@ -456,7 +478,8 @@ public class DubboRegistryOfficialInteropTest {
             ConnectorSettings endpoint = consumer.connector("tcp");
             tlsClient(endpoint, true);
             endpoint.option("tlsTrustStore", certificate.trustStore());
-            endpoint.protocol("dubbo").addressScheme("dubbos");
+            endpoint.protocol("dubbo") //
+                    .addressScheme("dubbos");
             try (DubboProcess provider = DubboProcess.start( //
                     "--command=server", "--registry=" + registryUrl, //
                     "--group=default", "--version=1.0.0", //
@@ -486,9 +509,11 @@ public class DubboRegistryOfficialInteropTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration provider = application(registryUrl, "meteor-registry-provider");
-            ConnectorSettings endpoint = provider.connector("tcp").bind("0.0.0.0", 0);
+            ConnectorSettings endpoint = provider.connector("tcp") //
+                    .bind("0.0.0.0", 0);
             tlsServer(endpoint, true);
-            endpoint.protocol("dubbo").addressScheme("dubbos");
+            endpoint.protocol("dubbo") //
+                    .addressScheme("dubbos");
             try (MetContext server = provider.buildContext()) {
                 server.start();
                 server.publisher() //
@@ -517,7 +542,8 @@ public class DubboRegistryOfficialInteropTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration consumer = application(registryUrl, "meteor-application-consumer");
-            consumer.connector("tcp").protocol("dubbo");
+            consumer.connector("tcp") //
+                    .protocol("dubbo");
             try (DubboProcess provider = DubboProcess.start( //
                     "--command=server", "--registry=" + registryUrl, //
                     "--group=default", "--version=1.0.0", "--register-mode=instance"); //
@@ -546,7 +572,9 @@ public class DubboRegistryOfficialInteropTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration provider = application(registryUrl, "meteor-application-provider");
-            provider.connector("tcp").bind("0.0.0.0", 0).protocol("dubbo");
+            provider.connector("tcp") //
+                    .bind("0.0.0.0", 0) //
+                    .protocol("dubbo");
             try (MetContext server = provider.buildContext()) {
                 server.start();
                 server.publisher() //
@@ -575,12 +603,14 @@ public class DubboRegistryOfficialInteropTest {
             DubboRegistryConfiguration registryConfiguration = new DubboRegistryConfiguration() //
                     .setAddress(registryUrl) //
                     .setMetadataTrustCertificate(certificate.certificate());
-            MetConfiguration consumer = new MetConfiguration().addExtension(registryConfiguration);
+            MetConfiguration consumer = TestConfigurationUtils.create() //
+                    .addExtension(registryConfiguration);
             consumer.setApplicationName("meteor-application-secure-consumer");
             ConnectorSettings endpoint = consumer.connector("tcp");
             tlsClient(endpoint, false);
             endpoint.option("tlsTrustStore", certificate.trustStore());
-            endpoint.protocol("dubbo").addressScheme("dubbos");
+            endpoint.protocol("dubbo") //
+                    .addressScheme("dubbos");
             try (DubboProcess provider = DubboProcess.start( //
                     "--command=server", "--registry=" + registryUrl, //
                     "--group=default", "--version=1.0.0", "--register-mode=instance", //
@@ -611,9 +641,11 @@ public class DubboRegistryOfficialInteropTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration provider = application(registryUrl, "meteor-application-secure-provider");
-            ConnectorSettings endpoint = provider.connector("tcp").bind("0.0.0.0", 0);
+            ConnectorSettings endpoint = provider.connector("tcp") //
+                    .bind("0.0.0.0", 0);
             tlsServer(endpoint, false);
-            endpoint.protocol("dubbo").addressScheme("dubbos");
+            endpoint.protocol("dubbo") //
+                    .addressScheme("dubbos");
             try (MetContext server = provider.buildContext()) {
                 server.start();
                 server.publisher() //
@@ -647,12 +679,14 @@ public class DubboRegistryOfficialInteropTest {
                     .setMetadataTrustCertificate(certificate.certificate());
             registryConfiguration.setMetadataClientCertificate(pem("client"));
             registryConfiguration.setMetadataClientPrivateKey(pem("client-key"));
-            MetConfiguration consumer = new MetConfiguration().addExtension(registryConfiguration);
+            MetConfiguration consumer = TestConfigurationUtils.create() //
+                    .addExtension(registryConfiguration);
             consumer.setApplicationName("meteor-application-secure-consumer");
             ConnectorSettings endpoint = consumer.connector("tcp");
             tlsClient(endpoint, true);
             endpoint.option("tlsTrustStore", certificate.trustStore());
-            endpoint.protocol("dubbo").addressScheme("dubbos");
+            endpoint.protocol("dubbo") //
+                    .addressScheme("dubbos");
             try (DubboProcess provider = DubboProcess.start( //
                     "--command=server", "--registry=" + registryUrl, //
                     "--group=default", "--version=1.0.0", "--register-mode=instance", //
@@ -684,9 +718,11 @@ public class DubboRegistryOfficialInteropTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration provider = application(registryUrl, "meteor-application-secure-provider");
-            ConnectorSettings endpoint = provider.connector("tcp").bind("0.0.0.0", 0);
+            ConnectorSettings endpoint = provider.connector("tcp") //
+                    .bind("0.0.0.0", 0);
             tlsServer(endpoint, true);
-            endpoint.protocol("dubbo").addressScheme("dubbos");
+            endpoint.protocol("dubbo") //
+                    .addressScheme("dubbos");
             try (MetContext server = provider.buildContext()) {
                 server.start();
                 server.publisher() //
@@ -715,7 +751,8 @@ public class DubboRegistryOfficialInteropTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration consumer = application(registryUrl, "meteor-identity-consumer");
-            consumer.connector("tcp").protocol("dubbo");
+            consumer.connector("tcp") //
+                    .protocol("dubbo");
             try (DubboProcess provider = DubboProcess.start( //
                     "--command=server", "--registry=" + registryUrl, //
                     "--group=blue", "--version=2.1"); //

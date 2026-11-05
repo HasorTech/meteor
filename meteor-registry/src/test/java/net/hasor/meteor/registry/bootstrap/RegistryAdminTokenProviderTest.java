@@ -18,6 +18,7 @@ import net.hasor.meteor.registry.memory.MemoryRegistryConfiguration;
 import net.hasor.meteor.registry.shared.RegistryTestUtils.Echo;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
 import org.junit.jupiter.api.Test;
+import static net.hasor.meteor.registry.shared.RegistryTestUtils.createConfiguration;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RegistryAdminTokenProviderTest {
@@ -31,8 +32,9 @@ public class RegistryAdminTokenProviderTest {
             reads.incrementAndGet();
             return expected.get();
         });
-        MetConfiguration application = new MetConfiguration();
-        application.connector("tcp").protocol("rsf");
+        MetConfiguration application = createConfiguration();
+        application.connector("tcp") //
+                .protocol("rsf");
         application.addExtension(configuration);
 
         try (MetContext context = application.buildContext()) {
@@ -80,7 +82,8 @@ public class RegistryAdminTokenProviderTest {
         AtomicReference<String> expected = new AtomicReference<>();
         MemoryRegistryConfiguration configuration = new MemoryRegistryConfiguration();
         configuration.setTokenProvider(expected::get);
-        MetConfiguration adminConfiguration = new MetConfiguration().addExtension(configuration);
+        MetConfiguration adminConfiguration = createConfiguration() //
+                .addExtension(configuration);
 
         try (MetContext adminContext = adminConfiguration.buildContext()) {
             RegistryAdmin admin = adminContext.getExtension(RegistryAdmin.class);
@@ -107,7 +110,8 @@ public class RegistryAdminTokenProviderTest {
             }
             return "secret";
         });
-        MetConfiguration adminConfiguration = new MetConfiguration().addExtension(configuration);
+        MetConfiguration adminConfiguration = createConfiguration() //
+                .addExtension(configuration);
 
         try (MetContext adminContext = adminConfiguration.buildContext()) {
             RegistryAdmin admin = adminContext.getExtension(RegistryAdmin.class);
@@ -135,8 +139,9 @@ public class RegistryAdminTokenProviderTest {
         registry.setTokenProvider(() -> {
             throw new AssertionError("Application and storage entrypoints must not request management tokens");
         });
-        MetConfiguration application = new MetConfiguration();
-        application.connector("tcp").protocol("rsf");
+        MetConfiguration application = createConfiguration();
+        application.connector("tcp") //
+                .protocol("rsf");
         application.addExtension(registry);
 
         try (StorageAccess storage = registry.openStorage(); //

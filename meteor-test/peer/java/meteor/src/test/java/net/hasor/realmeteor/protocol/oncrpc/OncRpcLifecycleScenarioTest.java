@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.oncrpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -419,9 +420,13 @@ public class OncRpcLifecycleScenarioTest {
                 port = socket.getLocalPort();
             }
         }
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol(protocol);
-        configuration.setDefaultTimeout(10000).setQueueMinPoolSize(4);
-        configuration.connector(transport).bind("127.0.0.1", port).protocol(protocol);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol(protocol);
+        configuration.setDefaultTimeout(10000) //
+                .setQueueMinPoolSize(4);
+        configuration.connector(transport) //
+                .bind("127.0.0.1", port) //
+                .protocol(protocol);
         return configuration;
     }
 
@@ -430,8 +435,10 @@ public class OncRpcLifecycleScenarioTest {
         if (StringUtils.equals("udp", transport)) {
             protocol = "oncrpc-udp";
         }
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol(protocol);
-        configuration.connector(transport).protocol(protocol);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol(protocol);
+        configuration.connector(transport) //
+                .protocol(protocol);
         return configuration;
     }
 

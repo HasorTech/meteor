@@ -18,6 +18,7 @@ import com.google.protobuf.DynamicMessage;
 import net.hasor.example.protocol.grpc.Echo;
 import net.hasor.example.protocol.grpc.EchoImpl;
 import net.hasor.example.protocol.grpc.Message;
+import net.hasor.example.protocol.grpc.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.connector.RouteMountIndex;
@@ -494,8 +495,10 @@ public class GrpcCompletenessTest {
     }
 
     private static MetConfiguration configuration() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc");
-        configuration.connector("http").protocol("grpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        configuration.connector("http") //
+                .protocol("grpc");
         return configuration;
     }
 

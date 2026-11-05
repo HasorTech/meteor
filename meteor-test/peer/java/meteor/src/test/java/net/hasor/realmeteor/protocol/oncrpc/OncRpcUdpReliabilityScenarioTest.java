@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.oncrpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -227,18 +228,25 @@ public class OncRpcUdpReliabilityScenarioTest {
     }
 
     private MetConfiguration incoming(int port, int cacheTtl) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc-udp");
-        configuration.connector("udp").bind("127.0.0.1", port).protocol("oncrpc-udp") //
-                .option("duplicateCacheSize", 1024).option("duplicateCacheTtl", cacheTtl);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc-udp");
+        configuration.connector("udp") //
+                .bind("127.0.0.1", port) //
+                .protocol("oncrpc-udp") //
+                .option("duplicateCacheSize", 1024) //
+                .option("duplicateCacheTtl", cacheTtl);
         return configuration;
     }
 
     private MetConfiguration outgoing(int attempts, int timeout) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc-udp");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc-udp");
         configuration.setRequestTimeout(timeout);
-        configuration.connector("udp").protocol("oncrpc-udp") //
+        configuration.connector("udp") //
+                .protocol("oncrpc-udp") //
                 .option("retryInitialDelay", 20) //
-                .option("retryMaxDelay", 80).option("retryAttempts", attempts);
+                .option("retryMaxDelay", 80) //
+                .option("retryAttempts", attempts);
         return configuration;
     }
 

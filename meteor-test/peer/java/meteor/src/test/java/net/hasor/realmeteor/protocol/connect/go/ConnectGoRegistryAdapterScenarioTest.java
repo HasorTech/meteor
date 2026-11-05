@@ -154,27 +154,35 @@ public class ConnectGoRegistryAdapterScenarioTest {
     }
 
     private MetConfiguration configuration(RegistryConfiguration registry, String application, boolean listening) throws Exception {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("connect").setDefaultTimeout(10000);
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDefaultProtocol("connect") //
+                .setDefaultTimeout(10000);
         configuration.setApplicationName(application);
         configuration.setDataHome(Files.createDirectory(this.data.resolve(application)));
         configuration.addExtension(registry);
-        configuration.connector("tcp").protocol("rsf"); // 注册扩展内部管理出口，不绑定监听端口。
-        ConnectorSettings connector = configuration.connector("http").option("httpVersion", 1);
+        configuration.connector("tcp") //
+                .protocol("rsf"); // 注册扩展内部管理出口，不绑定监听端口。
+        ConnectorSettings connector = configuration.connector("http") //
+                .option("httpVersion", 1);
         if (listening) {
             connector.bind(ContainerProcess.runnerHost(), 0);
         }
         if (StringUtils.equals("mtls", this.tlsMode)) {
             String identity = listening ? "server" : "client";
-            connector.option("tlsEnabled", true).option("httpScheme", "https") //
+            connector.option("tlsEnabled", true) //
+                    .option("httpScheme", "https") //
                     .option("tlsTrustStore", "classpath:/certs/acceptance/trust.p12") //
-                    .option("tlsTrustStorePassword", "meteor-test").option("tlsAlpn", "http/1.1") //
+                    .option("tlsTrustStorePassword", "meteor-test") //
+                    .option("tlsAlpn", "http/1.1") //
                     .option("tlsKeyStore", "classpath:/certs/acceptance/" + identity + ".p12") //
                     .option("tlsKeyStorePassword", "meteor-test");
             if (listening) {
                 connector.option("tlsClientAuth", "REQUIRE");
             }
         }
-        connector.protocol("connect").addressScheme(this.scheme()).contextPath("/");
+        connector.protocol("connect") //
+                .addressScheme(this.scheme()) //
+                .contextPath("/");
         return configuration;
     }
 

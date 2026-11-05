@@ -18,6 +18,7 @@ import io.grpc.stub.ClientCalls;
 import net.hasor.example.protocol.grpc.Echo;
 import net.hasor.example.protocol.grpc.EchoImpl;
 import net.hasor.example.protocol.grpc.Message;
+import net.hasor.example.protocol.grpc.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
@@ -35,9 +36,12 @@ public class GrpcJavaSdkBasicTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialJavaSdkCallsPublishedProtobufService() throws Exception {
         // 只挂载当前被测协议，不能以其它协议成功代替本协议可用。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc");
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("grpc").option("streamBody", true);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc") //
+                .option("streamBody", true);
         GrpcProtoResource resource = new GrpcProtoResource(getClass().getResource("/proto/echo.proto"));
         EchoImpl implementation = new EchoImpl();
         try (MetContext server = configuration.buildContext()) {
@@ -72,9 +76,12 @@ public class GrpcJavaSdkBasicTest {
         Server server = NettyServerBuilder.forAddress(new InetSocketAddress("127.0.0.1", 0)) //
                 .addService(contract.service("grpc-sdk:")).build().start();
         try {
-            MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc");
-            configuration.connector("http").option("httpVersion", 2) //
-                    .protocol("grpc").option("streamBody", true);
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setDefaultProtocol("grpc");
+            configuration.connector("http") //
+                    .option("httpVersion", 2) //
+                    .protocol("grpc") //
+                    .option("streamBody", true);
             GrpcProtoResource resource = new GrpcProtoResource(getClass().getResource("/proto/echo.proto"));
             try (MetContext client = configuration.buildContext()) {
                 client.start();

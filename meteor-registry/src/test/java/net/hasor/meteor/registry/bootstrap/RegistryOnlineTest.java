@@ -22,14 +22,18 @@ import net.hasor.meteor.registry.shared.StorageProbe;
 import net.hasor.meteor.registry.shared.rpc.ManagementRPC;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
 import org.junit.jupiter.api.Test;
+import static net.hasor.meteor.registry.shared.RegistryTestUtils.createConfiguration;
+import static net.hasor.meteor.registry.shared.RegistryTestUtils.createDataHome;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RegistryOnlineTest {
     @Test
     public void onlineModeAlsoProvidesDirectManagement() throws Exception {
         // 准备只提供直连管理的目标应用。
-        MetConfiguration server = new MetConfiguration();
-        server.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        MetConfiguration server = createConfiguration();
+        server.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
         server.addExtension(new RegistryConfiguration().setOnline(false).setManagementToken("secret"));
 
         // 准备连接注册中心的调用方，观察其独立存储会话。
@@ -37,8 +41,9 @@ public class RegistryOnlineTest {
         RegistryConfiguration registry = new DecoratedRegistryConfiguration(new MemoryRegistryConfiguration(), probe::observe);
         registry.setManagementToken("secret");
         assertTrue(registry.isOnline());
-        MetConfiguration application = new MetConfiguration();
-        application.connector("tcp").protocol("rsf");
+        MetConfiguration application = createConfiguration();
+        application.connector("tcp") //
+                .protocol("rsf");
         application.addExtension(registry);
 
         try (MetContext target = server.buildContext(); //
@@ -84,10 +89,11 @@ public class RegistryOnlineTest {
                 StorageProbe probe = new StorageProbe();
                 RegistryConfiguration registry = new DecoratedRegistryConfiguration(new MemoryRegistryConfiguration(), probe::observe);
                 registry.setOnline(firstOnline);
-                MetConfiguration application = new MetConfiguration();
-                application.connector("tcp").protocol("rsf");
-                application.addExtension(registry);
-                application.addExtension(new MemoryRegistryConfiguration().setOnline(secondOnline));
+                MetConfiguration application = createConfiguration();
+                application.connector("tcp") //
+                        .protocol("rsf");
+                application.addExtension(registry) //
+                        .addExtension(new MemoryRegistryConfiguration().setOnline(secondOnline));
 
                 // 构建时拒绝重复安装，且未产生存储会话。
                 IllegalStateException failure = assertThrows(IllegalStateException.class, application::buildContext);
@@ -101,8 +107,9 @@ public class RegistryOnlineTest {
     @Test
     public void offlineModeProvidesManagementRpcWithoutOpeningListener() throws Exception {
         // 准备离线注册中心扩展，传输层仅用于主动连接。
-        MetConfiguration application = new MetConfiguration();
-        application.connector("tcp").protocol("rsf");
+        MetConfiguration application = createConfiguration();
+        application.connector("tcp") //
+                .protocol("rsf");
         application.addExtension(new RegistryConfiguration().setOnline(false));
 
         try (MetContext caller = application.buildContext()) {
@@ -152,8 +159,9 @@ public class RegistryOnlineTest {
         // 将无效的在线配置用于离线扩展，仍应能正常启动。
         registry.setOnline(false);
         assertFalse(registry.isOnline());
-        MetConfiguration application = new MetConfiguration();
-        application.connector("tcp").protocol("rsf");
+        MetConfiguration application = createConfiguration();
+        application.connector("tcp") //
+                .protocol("rsf");
         application.addExtension(registry);
 
         try (MetContext context = application.buildContext()) {
@@ -175,14 +183,16 @@ public class RegistryOnlineTest {
         StorageProbe probe = new StorageProbe();
         RegistryConfiguration registry = new DecoratedRegistryConfiguration(new MemoryRegistryConfiguration(), probe::observe);
         registry.setOnline(false);
-        MetConfiguration application = new MetConfiguration();
-        application.connector("tcp").protocol("rsf");
+        MetConfiguration application = createConfiguration();
+        application.connector("tcp") //
+                .protocol("rsf");
         application.addExtension(registry);
 
         try (MetContext standalone = application.buildContext()) {
             // 切换在线后创建第二个上下文，再次修改配置不影响已有实例。
             registry.setOnline(true);
 
+            application.setDataHome(createDataHome());
             try (MetContext connected = application.buildContext()) {
                 registry.setOnline(false);
                 assertEquals(0, probe.openedSessions());
@@ -207,8 +217,8 @@ public class RegistryOnlineTest {
         // 基础配置默认为在线，但没有具体存储提供者。
         RegistryConfiguration registry = new RegistryConfiguration();
         assertTrue(registry.isOnline());
-        MetConfiguration application = new MetConfiguration();
-        application.addExtension(registry);
+        MetConfiguration application = createConfiguration() //
+                .addExtension(registry);
 
         // 构建扩展时明确报告缺少存储配置。
         IllegalStateException failure = assertThrows(IllegalStateException.class, application::buildContext);

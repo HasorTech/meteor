@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.hasor.example.protocol.jsonrpc.TestConfigurationUtils;
 import net.hasor.cobble.concurrent.future.BasicFuture;
 import net.hasor.cobble.concurrent.future.Cancellable;
 import net.hasor.cobble.concurrent.future.Future;
@@ -361,8 +362,11 @@ public class JsonRpcSessionTest {
     }
 
     private static MetConfiguration applicationConfiguration() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("jsonrpc");
-        configuration.connector("http").protocol("jsonrpc").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("jsonrpc");
+        configuration.connector("http") //
+                .protocol("jsonrpc") //
+                .contextPath("/rpc");
         return configuration;
     }
 

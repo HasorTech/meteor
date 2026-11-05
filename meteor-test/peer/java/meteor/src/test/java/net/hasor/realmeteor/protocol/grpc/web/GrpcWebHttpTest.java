@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc.web;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -375,15 +376,28 @@ public class GrpcWebHttpTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void grpcAndGrpcWebUseSeparateContextsOnOneHttpPort() throws Exception {
         // 原生 gRPC 与 gRPC-Web 在相同端口发布同一个接口，分别使用各自挂载点。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("grpc-web");
-        var endpoint = incoming.connector("http").bind("127.0.0.1", 0);
-        endpoint.protocol("grpc").contextPath("/native").option("streamBody", true);
-        endpoint.protocol("grpc-web").contextPath("/web").option("streamBody", true);
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("grpc-web");
-        outgoing.connector("http").option("httpVersion", 2).protocol("grpc") //
-                .contextPath("/native").option("streamBody", true);
-        outgoing.connector("http").option("httpVersion", 1).protocol("grpc-web") //
-                .contextPath("/web").option("streamBody", true);
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc-web");
+        var endpoint = incoming.connector("http") //
+                .bind("127.0.0.1", 0);
+        endpoint.protocol("grpc") //
+                .contextPath("/native") //
+                .option("streamBody", true);
+        endpoint.protocol("grpc-web") //
+                .contextPath("/web") //
+                .option("streamBody", true);
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc-web");
+        outgoing.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("grpc") //
+                .contextPath("/native") //
+                .option("streamBody", true);
+        outgoing.connector("http") //
+                .option("httpVersion", 1) //
+                .protocol("grpc-web") //
+                .contextPath("/web") //
+                .option("streamBody", true);
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();
@@ -409,16 +423,25 @@ public class GrpcWebHttpTest {
     }
 
     private MetConfiguration incoming() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc-web");
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("grpc-web") //
-                .contextPath("/web").option("streamBody", true);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc-web");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc-web") //
+                .contextPath("/web") //
+                .option("streamBody", true);
         return configuration;
     }
 
     private MetConfiguration outgoing(int version, boolean text) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc-web");
-        configuration.connector("http").option("httpVersion", version).protocol("grpc-web") //
-                .contextPath("/web").option("streamBody", true).option("webText", text);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc-web");
+        configuration.connector("http") //
+                .option("httpVersion", version) //
+                .protocol("grpc-web") //
+                .contextPath("/web") //
+                .option("streamBody", true) //
+                .option("webText", text);
         return configuration;
     }
 }

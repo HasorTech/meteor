@@ -17,6 +17,7 @@ import net.hasor.example.composition.CompositionEchoService;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.ConnectorSpiTest;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.connector.ProtocolProvider;
 import net.hasor.meteor.connector.transport.TransportFactory;
@@ -92,10 +93,15 @@ public class SpiCompositionScenarioTest {
         assertEquals(expectedTestTransports, testTransports);
 
         // 所有 SPI 同时存在时，仍从公开 bootstrap 启动并执行一次网络调用。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("rsf");
-        incoming.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("rsf");
-        outgoing.connector("tcp").protocol("rsf");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("rsf");
+        incoming.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("rsf");
+        outgoing.connector("tcp") //
+                .protocol("rsf");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();

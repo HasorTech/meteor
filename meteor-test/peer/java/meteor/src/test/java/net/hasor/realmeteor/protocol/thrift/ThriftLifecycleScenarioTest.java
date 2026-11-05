@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.thrift;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -397,32 +398,49 @@ public class ThriftLifecycleScenarioTest {
     }
 
     private MetConfiguration tcpServerConfiguration(boolean framed) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift");
-        configuration.setDefaultTimeout(10000).setQueueMinPoolSize(4);
-        configuration.connector("tcp").bind("127.0.0.1", 0) //
-                .protocol("thrift").option("encoding", "binary").option("framed", framed);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift");
+        configuration.setDefaultTimeout(10000) //
+                .setQueueMinPoolSize(4);
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("thrift") //
+                .option("encoding", "binary") //
+                .option("framed", framed);
         return configuration;
     }
 
     private MetConfiguration tcpClientConfiguration(boolean framed) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift");
-        configuration.connector("tcp").protocol("thrift") //
-                .option("encoding", "binary").option("framed", framed);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift");
+        configuration.connector("tcp") //
+                .protocol("thrift") //
+                .option("encoding", "binary") //
+                .option("framed", framed);
         return configuration;
     }
 
     private MetConfiguration httpServerConfiguration() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift-http");
-        configuration.setDefaultTimeout(10000).setQueueMinPoolSize(4);
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("thrift-http").contextPath("/thrift").option("encoding", "binary");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift-http");
+        configuration.setDefaultTimeout(10000) //
+                .setQueueMinPoolSize(4);
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("thrift-http") //
+                .contextPath("/thrift") //
+                .option("encoding", "binary");
         return configuration;
     }
 
     private MetConfiguration httpClientConfiguration(int version) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift-http");
-        configuration.connector("http").option("httpVersion", version) //
-                .protocol("thrift-http").contextPath("/thrift").option("encoding", "binary");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift-http");
+        configuration.connector("http") //
+                .option("httpVersion", version) //
+                .protocol("thrift-http") //
+                .contextPath("/thrift") //
+                .option("encoding", "binary");
         return configuration;
     }
 

@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.xmlrpc;
+import net.hasor.example.protocol.xmlrpc.TestConfigurationUtils;
 import net.hasor.example.protocol.xmlrpc.XmlRpcDemoService;
 import net.hasor.example.protocol.xmlrpc.XmlRpcDemoServiceImpl;
 import net.hasor.meteor.MetBindInfo;
@@ -45,16 +46,22 @@ public class XmlRpcBasicTest {
     }
 
     private MetConfiguration serverConfiguration() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("xmlrpc");
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("xmlrpc").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("xmlrpc");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("xmlrpc") //
+                .contextPath("/rpc");
         return configuration;
     }
 
     private MetConfiguration clientConfiguration(int httpVersion) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("xmlrpc");
-        configuration.connector("http").option("httpVersion", httpVersion) //
-                .protocol("xmlrpc").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("xmlrpc");
+        configuration.connector("http") //
+                .option("httpVersion", httpVersion) //
+                .protocol("xmlrpc") //
+                .contextPath("/rpc");
         return configuration;
     }
 }

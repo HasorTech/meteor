@@ -8,6 +8,7 @@
 package net.hasor.example.protocol.oncrpc;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 
 /** 通过公开启动、发布、订阅 API 执行 ONC RPC TCP 调用。 */
@@ -17,10 +18,15 @@ public final class OncRpcTcpExample {
 
     public static void main(String[] args) throws Exception {
         // 选择 TCP 和 ONC RPC；监听端口 0 由操作系统分配。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("oncrpc");
-        incoming.connector("tcp").bind("127.0.0.1", 0).protocol("oncrpc");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("oncrpc");
-        outgoing.connector("tcp").protocol("oncrpc");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc");
+        incoming.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("oncrpc");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc");
+        outgoing.connector("tcp") //
+                .protocol("oncrpc");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             // 两端启动后发布 Java 服务，再订阅同一程序和版本。

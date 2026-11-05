@@ -19,6 +19,7 @@ import net.hasor.example.composition.http.grpc.GrpcFamilyService;
 import net.hasor.example.composition.http.grpc.GrpcFamilyServiceImpl;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
@@ -168,19 +169,32 @@ public class GrpcFamilyCompositionTest {
     }
 
     private MetConfiguration incoming() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc");
-        ConnectorSettings endpoint = configuration.connector("http").bind("127.0.0.1", 0);
-        endpoint.protocol("grpc").contextPath("/grpc").addContextPath("/grpc/private");
-        endpoint.protocol("grpc-web").contextPath("/grpc-web").addContextPath("/grpc-web/private");
-        endpoint.protocol("connect").contextPath("/connect").addContextPath("/connect/private");
-        endpoint.protocol("triple").contextPath("/triple").addContextPath("/triple/private");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        ConnectorSettings endpoint = configuration.connector("http") //
+                .bind("127.0.0.1", 0);
+        endpoint.protocol("grpc") //
+                .contextPath("/grpc") //
+                .addContextPath("/grpc/private");
+        endpoint.protocol("grpc-web") //
+                .contextPath("/grpc-web") //
+                .addContextPath("/grpc-web/private");
+        endpoint.protocol("connect") //
+                .contextPath("/connect") //
+                .addContextPath("/connect/private");
+        endpoint.protocol("triple") //
+                .contextPath("/triple") //
+                .addContextPath("/triple/private");
         return configuration;
     }
 
     private MetConfiguration outgoing(String protocol, String path, int httpVersion) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol(protocol);
-        configuration.connector("http").option("httpVersion", httpVersion) //
-                .protocol(protocol).contextPath(path);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol(protocol);
+        configuration.connector("http") //
+                .option("httpVersion", httpVersion) //
+                .protocol(protocol) //
+                .contextPath(path);
         return configuration;
     }
 

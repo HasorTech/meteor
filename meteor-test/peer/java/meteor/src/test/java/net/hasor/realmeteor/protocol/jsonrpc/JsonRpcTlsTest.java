@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.jsonrpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -45,14 +46,21 @@ public class JsonRpcTlsTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void httpsHttp1UsesServerAuthentication() throws Exception {
         // 两端显式配置 HTTP/1 与测试 CA，传输参数通过正式 bootstrap 入口生效。
-        MetConfiguration incoming = new MetConfiguration();
-        ConnectorSettings listener = incoming.connector("http").bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        ConnectorSettings listener = incoming.connector("http") //
+                .bind("127.0.0.1", 0);
         JsonRpcTlsUtils.serverTls(listener, 1, "NONE");
-        listener.protocol("jsonrpc").addressScheme("https").contextPath("/rpc");
-        MetConfiguration outgoing = new MetConfiguration().setRequestTimeout(5000);
-        ConnectorSettings sender = outgoing.connector("http").option("httpVersion", 1);
+        listener.protocol("jsonrpc") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setRequestTimeout(5000);
+        ConnectorSettings sender = outgoing.connector("http") //
+                .option("httpVersion", 1);
         JsonRpcTlsUtils.clientTls(sender, 1, null);
-        sender.protocol("jsonrpc").addressScheme("https").contextPath("/rpc");
+        sender.protocol("jsonrpc") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
 
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
@@ -74,14 +82,21 @@ public class JsonRpcTlsTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void httpsHttp2UsesAlpn() throws Exception {
         // 两端显式配置 HTTP/2 与测试 CA，传输参数通过正式 bootstrap 入口生效。
-        MetConfiguration incoming = new MetConfiguration();
-        ConnectorSettings listener = incoming.connector("http").bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        ConnectorSettings listener = incoming.connector("http") //
+                .bind("127.0.0.1", 0);
         JsonRpcTlsUtils.serverTls(listener, 2, "NONE");
-        listener.protocol("jsonrpc").addressScheme("https").contextPath("/rpc");
-        MetConfiguration outgoing = new MetConfiguration().setRequestTimeout(5000);
-        ConnectorSettings sender = outgoing.connector("http").option("httpVersion", 2);
+        listener.protocol("jsonrpc") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setRequestTimeout(5000);
+        ConnectorSettings sender = outgoing.connector("http") //
+                .option("httpVersion", 2);
         JsonRpcTlsUtils.clientTls(sender, 2, null);
-        sender.protocol("jsonrpc").addressScheme("https").contextPath("/rpc");
+        sender.protocol("jsonrpc") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
 
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
@@ -103,14 +118,21 @@ public class JsonRpcTlsTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void httpsHttp1UsesMutualAuthentication() throws Exception {
         // 两端显式配置 HTTP/1 与测试 CA，传输参数通过正式 bootstrap 入口生效。
-        MetConfiguration incoming = new MetConfiguration();
-        ConnectorSettings listener = incoming.connector("http").bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        ConnectorSettings listener = incoming.connector("http") //
+                .bind("127.0.0.1", 0);
         JsonRpcTlsUtils.serverTls(listener, 1, "REQUIRE");
-        listener.protocol("jsonrpc").addressScheme("https").contextPath("/rpc");
-        MetConfiguration outgoing = new MetConfiguration().setRequestTimeout(5000);
-        ConnectorSettings sender = outgoing.connector("http").option("httpVersion", 1);
+        listener.protocol("jsonrpc") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setRequestTimeout(5000);
+        ConnectorSettings sender = outgoing.connector("http") //
+                .option("httpVersion", 1);
         JsonRpcTlsUtils.clientTls(sender, 1, "client");
-        sender.protocol("jsonrpc").addressScheme("https").contextPath("/rpc");
+        sender.protocol("jsonrpc") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
 
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
@@ -132,14 +154,21 @@ public class JsonRpcTlsTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void httpsHttp2UsesMutualAuthentication() throws Exception {
         // 两端显式配置 HTTP/2 与测试 CA，传输参数通过正式 bootstrap 入口生效。
-        MetConfiguration incoming = new MetConfiguration();
-        ConnectorSettings listener = incoming.connector("http").bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        ConnectorSettings listener = incoming.connector("http") //
+                .bind("127.0.0.1", 0);
         JsonRpcTlsUtils.serverTls(listener, 2, "REQUIRE");
-        listener.protocol("jsonrpc").addressScheme("https").contextPath("/rpc");
-        MetConfiguration outgoing = new MetConfiguration().setRequestTimeout(5000);
-        ConnectorSettings sender = outgoing.connector("http").option("httpVersion", 2);
+        listener.protocol("jsonrpc") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setRequestTimeout(5000);
+        ConnectorSettings sender = outgoing.connector("http") //
+                .option("httpVersion", 2);
         JsonRpcTlsUtils.clientTls(sender, 2, "client");
-        sender.protocol("jsonrpc").addressScheme("https").contextPath("/rpc");
+        sender.protocol("jsonrpc") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
 
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
@@ -161,10 +190,13 @@ public class JsonRpcTlsTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void independentHttpsClientNegotiatesHttp2WithAlpn() throws Exception {
         // 服务端只宣告 h2，独立客户端必须通过 TLS ALPN 选择 HTTP/2。
-        MetConfiguration configuration = new MetConfiguration();
-        ConnectorSettings listener = configuration.connector("http").bind("127.0.0.1", 0);
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        ConnectorSettings listener = configuration.connector("http") //
+                .bind("127.0.0.1", 0);
         JsonRpcTlsUtils.serverTls(listener, 2, "NONE");
-        listener.protocol("jsonrpc").addressScheme("https").contextPath("/rpc");
+        listener.protocol("jsonrpc") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
@@ -191,10 +223,13 @@ public class JsonRpcTlsTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void http1MutualTlsRejectsMissingClientCertificate() throws Exception {
         // 使用不同身份或信任配置触发真实 TLS 拒绝，不通过业务超时模拟握手失败。
-        MetConfiguration configuration = new MetConfiguration();
-        ConnectorSettings listener = configuration.connector("http").bind("127.0.0.1", 0);
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        ConnectorSettings listener = configuration.connector("http") //
+                .bind("127.0.0.1", 0);
         JsonRpcTlsUtils.serverTls(listener, 1, "REQUIRE");
-        listener.protocol("jsonrpc").addressScheme("https").contextPath("/rpc");
+        listener.protocol("jsonrpc") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
         JsonRpcDemoServiceImpl implementation = new JsonRpcDemoServiceImpl();
         try (MetContext server = configuration.buildContext()) {
             server.start();
@@ -225,10 +260,13 @@ public class JsonRpcTlsTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void http2MutualTlsRejectsMissingClientCertificate() throws Exception {
         // 只允许 h2 的监听器要求客户端身份，服务从公开 bootstrap 入口发布。
-        MetConfiguration configuration = new MetConfiguration();
-        ConnectorSettings listener = configuration.connector("http").bind("127.0.0.1", 0);
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        ConnectorSettings listener = configuration.connector("http") //
+                .bind("127.0.0.1", 0);
         JsonRpcTlsUtils.serverTls(listener, 2, "REQUIRE");
-        listener.protocol("jsonrpc").addressScheme("https").contextPath("/rpc");
+        listener.protocol("jsonrpc") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
         JsonRpcDemoServiceImpl implementation = new JsonRpcDemoServiceImpl();
         try (MetContext server = configuration.buildContext()) {
             server.start();
@@ -266,10 +304,13 @@ public class JsonRpcTlsTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void mutualTlsRejectsUntrustedClientCertificate() throws Exception {
         // 使用不同身份或信任配置触发真实 TLS 拒绝，不通过业务超时模拟握手失败。
-        MetConfiguration configuration = new MetConfiguration();
-        ConnectorSettings listener = configuration.connector("http").bind("127.0.0.1", 0);
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        ConnectorSettings listener = configuration.connector("http") //
+                .bind("127.0.0.1", 0);
         JsonRpcTlsUtils.serverTls(listener, 1, "REQUIRE");
-        listener.protocol("jsonrpc").addressScheme("https").contextPath("/rpc");
+        listener.protocol("jsonrpc") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
         JsonRpcDemoServiceImpl implementation = new JsonRpcDemoServiceImpl();
         try (MetContext server = configuration.buildContext()) {
             server.start();
@@ -300,10 +341,13 @@ public class JsonRpcTlsTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void clientRejectsUntrustedServerCertificate() throws Exception {
         // 使用不同身份或信任配置触发真实 TLS 拒绝，不通过业务超时模拟握手失败。
-        MetConfiguration configuration = new MetConfiguration();
-        ConnectorSettings listener = configuration.connector("http").bind("127.0.0.1", 0);
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        ConnectorSettings listener = configuration.connector("http") //
+                .bind("127.0.0.1", 0);
         JsonRpcTlsUtils.serverTls(listener, 1, "NONE");
-        listener.protocol("jsonrpc").addressScheme("https").contextPath("/rpc");
+        listener.protocol("jsonrpc") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
         JsonRpcDemoServiceImpl implementation = new JsonRpcDemoServiceImpl();
         try (MetContext server = configuration.buildContext()) {
             server.start();
@@ -334,14 +378,21 @@ public class JsonRpcTlsTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void incompatibleAlpnFailsBeforeRpcTimeout() throws Exception {
         // 服务端仅支持 HTTP/1.1，客户端仅请求 h2；双方没有可用的 ALPN 交集。
-        MetConfiguration incoming = new MetConfiguration();
-        ConnectorSettings listener = incoming.connector("http").bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        ConnectorSettings listener = incoming.connector("http") //
+                .bind("127.0.0.1", 0);
         JsonRpcTlsUtils.serverTls(listener, 1, "NONE");
-        listener.protocol("jsonrpc").addressScheme("https").contextPath("/rpc");
-        MetConfiguration outgoing = new MetConfiguration().setRequestTimeout(10000);
-        ConnectorSettings sender = outgoing.connector("http").option("httpVersion", 2);
+        listener.protocol("jsonrpc") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        ConnectorSettings sender = outgoing.connector("http") //
+                .option("httpVersion", 2);
         JsonRpcTlsUtils.clientTls(sender, 2, null);
-        sender.protocol("jsonrpc").addressScheme("https").contextPath("/rpc");
+        sender.protocol("jsonrpc") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();

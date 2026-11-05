@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc.web.go;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URI;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -87,13 +88,17 @@ public class GrpcWebGoInteropTest {
     }
 
     private MetConfiguration configuration(boolean listening) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc-web");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc-web");
         configuration.setDefaultTimeout(10000);
-        ConnectorSettings connector = configuration.connector("http").option("httpVersion", 1);
+        ConnectorSettings connector = configuration.connector("http") //
+                .option("httpVersion", 1);
         if (listening) {
             connector.bind(ContainerProcess.runnerHost(), 0);
         }
-        connector.protocol("grpc-web").addressScheme("http").contextPath("/");
+        connector.protocol("grpc-web") //
+                .addressScheme("http") //
+                .contextPath("/");
         return configuration;
     }
 }

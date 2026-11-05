@@ -12,6 +12,7 @@ import net.hasor.cobble.StringUtils;
 import net.hasor.example.protocol.oncrpc.IdlPoint;
 import net.hasor.example.protocol.oncrpc.IdlService;
 import net.hasor.example.protocol.oncrpc.IdlServiceImpl;
+import net.hasor.example.protocol.oncrpc.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
@@ -70,7 +71,8 @@ public class OncRpcIdlScenarioTest {
     }
 
     private MetConfiguration configuration(String transport, String protocol, boolean listen) throws Exception {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol(protocol);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol(protocol);
         MetConfiguration.ConnectorSettings connector = configuration.connector(transport);
         if (listen) {
             int port = 0;

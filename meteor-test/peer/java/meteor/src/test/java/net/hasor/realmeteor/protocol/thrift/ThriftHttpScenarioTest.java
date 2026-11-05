@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.thrift;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -195,16 +196,22 @@ public class ThriftHttpScenarioTest {
     }
 
     private MetConfiguration serverConfiguration() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift-http");
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("thrift-http").contextPath("/thrift");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift-http");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("thrift-http") //
+                .contextPath("/thrift");
         return configuration;
     }
 
     private MetConfiguration clientConfiguration(int version, String encoding) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift-http");
-        MetConfiguration.ProtocolSettings protocol = configuration.connector("http").option("httpVersion", version) //
-                .protocol("thrift-http").contextPath("/thrift");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift-http");
+        MetConfiguration.ProtocolSettings protocol = configuration.connector("http") //
+                .option("httpVersion", version) //
+                .protocol("thrift-http") //
+                .contextPath("/thrift");
         if (!StringUtils.equals("binary", encoding)) {
             protocol.option("encoding", encoding);
         }

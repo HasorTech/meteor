@@ -22,8 +22,10 @@ import org.noear.solon.core.BeanWrap;
 public class ConsumerMain {
     public static void main(String[] args) throws Exception {
         Properties settings = FrameworkPeerUtils.settings(args[0]);
+        Path dataHome = Path.of(args[0]).toAbsolutePath().getParent().resolve("solon-consumer");
         SolonApp app = Solon.start(ConsumerMain.class, new String[0], boot -> {
             boot.cfg().loadAdd(Path.of(args[0]).toUri().toString());
+            boot.cfg().setProperty("meteor.data-home", dataHome.toString());
             boot.context().beanMake(OrderClient.class);
             if (StringUtils.equals(settings.getProperty("test.backend"), "jdbc")) {
                 DataSource database = FrameworkPeerUtils.database(settings);

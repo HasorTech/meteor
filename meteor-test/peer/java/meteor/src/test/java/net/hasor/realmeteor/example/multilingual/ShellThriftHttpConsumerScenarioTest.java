@@ -15,6 +15,7 @@ import net.hasor.meteor.MetContext;
 import net.hasor.meteor.annotation.MetMethod;
 import net.hasor.meteor.annotation.MetParam;
 import net.hasor.meteor.annotation.MetService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
@@ -51,10 +52,14 @@ public class ShellThriftHttpConsumerScenarioTest {
             Files.write(request, Arrays.copyOf(output.getArray(), output.length()));
 
             // 仅创建真实 HTTP/1 监听，通过 bootstrap 启动后发布注解接口，不使用内部编解码器。
-            MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift-http");
-            configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                    .option("httpVersion", 1).protocol("thrift-http") //
-                    .contextPath("/thrift").option("encoding", "json");
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setDefaultProtocol("thrift-http");
+            configuration.connector("http") //
+                    .bind(ContainerProcess.runnerHost(), 0) //
+                    .option("httpVersion", 1) //
+                    .protocol("thrift-http") //
+                    .contextPath("/thrift") //
+                    .option("encoding", "json");
             try (MetContext server = configuration.buildContext()) {
                 server.start();
                 server.publisher().rsfService(EchoService.class, text -> text).register();

@@ -21,9 +21,14 @@ public final class ProviderMain {
 
     public static void main(String[] arguments) throws Exception {
         // 配置本地协议端点。
-        MetConfiguration configuration = new MetConfiguration().setUnitName("local");
-        configuration.connector("http").bind("0.0.0.0", 8080).option("httpVersion", 2) //
-                .protocol("triple").contextPath("/") //
+        MetConfiguration configuration = new MetConfiguration() //
+                .setUnitName("local") //
+                .setApplicationName("triple-order-provider");
+        configuration.connector("http") //
+                .bind("0.0.0.0", 8080) //
+                .option("httpVersion", 2) //
+                .protocol("triple") //
+                .contextPath("/") //
                 .option("serializeType", "Protobuf");
 
         try (MetContext context = configuration.buildContext()) {

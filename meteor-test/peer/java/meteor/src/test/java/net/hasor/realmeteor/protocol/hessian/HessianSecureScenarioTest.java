@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hessian;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
@@ -313,11 +314,15 @@ public class HessianSecureScenarioTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void clientRejectsWrongServerHostname() throws Exception {
         // 证书由受信 CA 签发，但名称不属于当前访问地址，HTTPS 必须拒绝它。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("hessian");
-        ConnectorSettings listener = configuration.connector("http").bind("127.0.0.1", 0);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("hessian");
+        ConnectorSettings listener = configuration.connector("http") //
+                .bind("127.0.0.1", 0);
         HessianTlsUtils.serverTls(listener, 1, "NONE");
         listener.option("tlsKeyStore", "classpath:/certs/acceptance/wrong-host-server.p12");
-        listener.protocol("hessian").addressScheme("https").contextPath("/rpc");
+        listener.protocol("hessian") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(HessianDemoService.class, new HessianDemoServiceImpl()) //
@@ -367,33 +372,50 @@ public class HessianSecureScenarioTest {
     }
 
     private MetConfiguration incoming() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("hessian");
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("hessian").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("hessian");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("hessian") //
+                .contextPath("/rpc");
         return configuration;
     }
 
     private MetConfiguration outgoing(int httpVersion, int hessianVersion) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("hessian");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("hessian");
         configuration.setDefaultTimeout(5000);
-        configuration.connector("http").option("httpVersion", httpVersion) //
-                .protocol("hessian").contextPath("/rpc").option("version", hessianVersion);
+        configuration.connector("http") //
+                .option("httpVersion", httpVersion) //
+                .protocol("hessian") //
+                .contextPath("/rpc") //
+                .option("version", hessianVersion);
         return configuration;
     }
 
     private MetConfiguration secureIncoming(int httpVersion, String clientAuth) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("hessian");
-        ConnectorSettings listener = configuration.connector("http").bind("127.0.0.1", 0);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("hessian");
+        ConnectorSettings listener = configuration.connector("http") //
+                .bind("127.0.0.1", 0);
         HessianTlsUtils.serverTls(listener, httpVersion, clientAuth);
-        listener.protocol("hessian").addressScheme("https").contextPath("/rpc");
+        listener.protocol("hessian") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
         return configuration;
     }
 
     private MetConfiguration secureOutgoing(int httpVersion, int hessianVersion, String identity) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("hessian");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("hessian");
         configuration.setDefaultTimeout(5000);
-        ConnectorSettings sender = configuration.connector("http").option("httpVersion", httpVersion);
+        ConnectorSettings sender = configuration.connector("http") //
+                .option("httpVersion", httpVersion);
         HessianTlsUtils.clientTls(sender, httpVersion, identity);
-        sender.protocol("hessian").addressScheme("https").contextPath("/rpc").option("version", hessianVersion);
+        sender.protocol("hessian") //
+                .addressScheme("https") //
+                .contextPath("/rpc") //
+                .option("version", hessianVersion);
         return configuration;
     }
 

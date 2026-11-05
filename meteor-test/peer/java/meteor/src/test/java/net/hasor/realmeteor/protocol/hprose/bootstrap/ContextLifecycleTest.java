@@ -149,7 +149,8 @@ public class ContextLifecycleTest extends BootstrapTestSupport {
     @Test
     public void repeatedOnlineKeepsRemoteAdmission() throws Exception {
         // 禁用自动上线，准备只能由显式上线操作开放的服务。
-        MetConfiguration incoming = this.configuration().setAutomaticOnline(false);
+        MetConfiguration incoming = this.configuration() //
+                .setAutomaticOnline(false);
         MetConfiguration outgoing = this.configuration();
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
@@ -275,7 +276,8 @@ public class ContextLifecycleTest extends BootstrapTestSupport {
         // 缺失 SPI 在构建阶段报错，不得占用监听端口。
         MetConfiguration config = this.configuration(this.port());
         int firstPort = config.getConnectors().get(0).getPort();
-        config.connector("missing-factory").protocol("hprose");
+        config.connector("missing-factory") //
+                .protocol("hprose");
         config.setLocalDiskCache(true);
         config.setDataHome(Files.createTempDirectory(this.temporary, "case-"));
 

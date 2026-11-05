@@ -16,6 +16,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import net.hasor.example.bootstrap.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetContextEvent;
 import net.hasor.meteor.MetContextEventType;
@@ -122,8 +123,8 @@ public class ExtensionLifecycleTest {
     public void reentrantCloseReleasesExtensionsAfterClosedEventDelivery() throws Exception {
         // 手动上线期间由首个 ONLINE 监听器重入关闭上下文。
         List<String> order = new ArrayList<>();
-        MetConfiguration config = configuration(false);
-        config.setAutomaticOnline(false);
+        MetConfiguration config = configuration(false) //
+                .setAutomaticOnline(false);
         config.addExtension(context -> new CloseOrderExtension(order));
         try (MetContext context = config.buildContext()) {
             context.subscribe(event -> {
@@ -159,11 +160,11 @@ public class ExtensionLifecycleTest {
 
     @Test
     public void reusableConfigurationCreatesIndependentRuntimeObjects() throws Exception {
-        // 复用配置构建两个上下文，每个上下文创建自己的扩展实例。
+        // 复用配置并使用独立数据目录，每个上下文创建自己的扩展实例。
         MetConfiguration config = configuration(false);
         config.addExtension(Recording::new);
         try (MetContext first = config.buildContext(); //
-             MetContext second = config.buildContext()) {
+             MetContext second = config.setDataHome(TestConfigurationUtils.newDataHome()).buildContext()) {
             Recording one = first.getExtension(Recording.class);
             Recording two = second.getExtension(Recording.class);
             assertNotSame(one, two);
@@ -335,7 +336,7 @@ public class ExtensionLifecycleTest {
     }
 
     private static MetConfiguration configuration(boolean listen) {
-        MetConfiguration config = new MetConfiguration();
+        MetConfiguration config = TestConfigurationUtils.create();
         MetConfiguration.ConnectorSettings tcp = config.connector("tcp");
         if (listen) {
             tcp.bind("127.0.0.1", 0);
@@ -406,29 +407,24 @@ public class ExtensionLifecycleTest {
         }
     }
 
-    private static final class CloseOrderExtension implements MetExtension {
-        private final List<String> order;
-
-        private CloseOrderExtension(List<String> order) {
-            this.order = order;
-        }
+    private record CloseOrderExtension(List<String> order) implements MetExtension {
 
         @Override
-        public <T> T getService(Class<T> type) {
-            return null;
-        }
+            public <T> T getService(Class<T> type) {
+                return null;
+            }
 
-        @Override
-        public void beforeStart() {
-        }
+            @Override
+            public void beforeStart() {
+            }
 
-        @Override
-        public void afterStart() {
-        }
+            @Override
+            public void afterStart() {
+            }
 
-        @Override
-        public void close() {
-            this.order.add("extension-close");
+            @Override
+            public void close() {
+                this.order.add("extension-close");
+            }
         }
-    }
 }

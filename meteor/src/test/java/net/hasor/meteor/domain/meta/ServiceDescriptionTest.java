@@ -4,6 +4,7 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.meteor.domain.meta;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
@@ -90,9 +91,70 @@ public class ServiceDescriptionTest {
     public void serviceDescriptionPutsIdentityBeforeContentAndFlags() {
         // 服务编号与 Java 定位先于方法和类型主体，消息标记置于最后。
         ObjectNode description = ServiceMetaParser.parse(Named.class).createServiceDescription();
-        assertEquals("contractServiceId,javaType,methods,types,message", fieldNames(description));
+        assertEquals("contractServiceId,javaType,javaSourceType,methods,types,message", fieldNames(description));
         assertFalse(description.has("id"));
         assertFalse(description.has("contractId"));
+    }
+
+    @Test
+    public void nestedServiceKeepsItsBinaryIdentityAndCanonicalSourceName() {
+        // Java 二进制名称用于运行时身份，源码名称准确表达嵌套接口的所属关系。
+        ObjectNode description = ServiceMetaParser.parse(Concrete.class).createServiceDescription();
+
+        assertEquals(Concrete.class.getName(), description.path("javaType").asText());
+        assertEquals(Concrete.class.getCanonicalName(), description.path("javaSourceType").asText());
+        JsonNode dto = description.path("types").path(Dto.class.getName());
+        assertEquals(Dto.class.getName(), dto.path("javaType").asText());
+        assertEquals(Dto.class.getCanonicalName(), dto.path("javaSourceType").asText());
+        assertTrue(dto.path("javaDefaultConstructor").asBoolean());
+    }
+
+    @Test
+    public void topLevelDollarNameIsNotMistakenForANestedType() {
+        // 合法顶层名称中的美元符号属于名称本身，不能按嵌套类规则替换为点。
+        ObjectNode description = ServiceMetaParser.parse(Source$Service.class).createServiceDescription();
+
+        assertEquals(Source$Service.class.getName(), description.path("javaType").asText());
+        assertEquals(Source$Service.class.getCanonicalName(), description.path("javaSourceType").asText());
+        assertTrue(description.path("javaSourceType").asText().endsWith(".Source$Service"));
+    }
+
+    @Test
+    public void privateObjectConstructorIsNotReportedAsUsable() {
+        // DTO 只提供私有无参构造，管理描述不能声称调用方可以直接 new。
+        ObjectNode description = ServiceMetaParser.parse(PrivateConstructorService.class).createServiceDescription();
+        JsonNode dto = description.path("types").path(PrivateConstructorDto.class.getName());
+
+        assertTrue(dto.has("javaDefaultConstructor"));
+        assertFalse(dto.path("javaDefaultConstructor").asBoolean());
+    }
+
+    @Test
+    public void immutableObjectWithoutDefaultConstructorIsNotReportedAsUsable() {
+        // 不可变 DTO 只有带参构造，描述仍保留原类型，不杜撰空构造。
+        ObjectNode description = ServiceMetaParser.parse(ImmutableService.class).createServiceDescription();
+        JsonNode dto = description.path("types").path(ImmutableDto.class.getName());
+
+        assertEquals(ImmutableDto.class.getCanonicalName(), dto.path("javaSourceType").asText());
+        assertFalse(dto.path("javaDefaultConstructor").asBoolean());
+    }
+
+    @Test
+    public void abstractObjectCannotBeConstructedEvenWithAPublicDefaultConstructor() {
+        // public 无参构造不能使抽象 DTO 成为可实例化类型。
+        ObjectNode description = ServiceMetaParser.parse(AbstractService.class).createServiceDescription();
+        JsonNode dto = description.path("types").path(AbstractDto.class.getName());
+
+        assertFalse(dto.path("javaDefaultConstructor").asBoolean());
+    }
+
+    @Test
+    public void constructorWithACheckedExceptionIsNotReportedAsUsable() {
+        // DTO 构造时的受检异常不属于原服务方法契约，示例不能隐式增加它。
+        ObjectNode description = ServiceMetaParser.parse(CheckedConstructorService.class).createServiceDescription();
+        JsonNode dto = description.path("types").path(CheckedConstructorDto.class.getName());
+
+        assertFalse(dto.path("javaDefaultConstructor").asBoolean());
     }
 
     @Test
@@ -120,7 +182,7 @@ public class ServiceDescriptionTest {
         // DTO 名称在前，Java 类型、类型种类和结构主体按主次排列。
         ObjectNode description = ServiceMetaParser.parse(Concrete.class).createServiceDescription();
         JsonNode type = description.path("types").path(Dto.class.getName());
-        assertEquals("name,javaType,kind,arguments,properties", fieldNames(type));
+        assertEquals("name,javaType,javaSourceType,kind,javaDefaultConstructor,arguments,properties", fieldNames(type));
     }
 
     @Test
@@ -286,6 +348,45 @@ public class ServiceDescriptionTest {
         public Dto next;
     }
 
+    public interface PrivateConstructorService {
+        PrivateConstructorDto echo(PrivateConstructorDto value);
+    }
+
+    public static class PrivateConstructorDto {
+        private PrivateConstructorDto() {
+        }
+    }
+
+    public interface ImmutableService {
+        ImmutableDto echo(ImmutableDto value);
+    }
+
+    public static class ImmutableDto {
+        public final String value;
+
+        public ImmutableDto(String value) {
+            this.value = value;
+        }
+    }
+
+    public interface AbstractService {
+        AbstractDto echo(AbstractDto value);
+    }
+
+    public abstract static class AbstractDto {
+        public AbstractDto() {
+        }
+    }
+
+    public interface CheckedConstructorService {
+        CheckedConstructorDto echo(CheckedConstructorDto value);
+    }
+
+    public static class CheckedConstructorDto {
+        public CheckedConstructorDto() throws IOException {
+        }
+    }
+
     public interface WithIgnored {
         String visible();
 
@@ -315,4 +416,9 @@ public class ServiceDescriptionTest {
     public interface Streaming {
         Flow.Publisher<Dto> values();
     }
+}
+
+/** 名称中的美元符号是顶层接口标识的一部分。 */
+interface Source$Service {
+    String echo(String value);
 }

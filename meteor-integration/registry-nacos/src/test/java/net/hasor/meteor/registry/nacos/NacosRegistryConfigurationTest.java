@@ -251,9 +251,11 @@ public class NacosRegistryConfigurationTest {
             bootstrap.setNamespace("tenant-a");
             bootstrap.setGroup("orders");
             bootstrap.setTimeoutMillis(2000);
+            bootstrap.setManagementToken("nacos-test-management");
 
             // 从正式扩展获取管理服务，并核对 SDK 参数和公开描述。
-            MetConfiguration configuration = new MetConfiguration().addExtension(bootstrap);
+            MetConfiguration configuration = NacosTestUtils.createConfiguration() //
+                    .addExtension(bootstrap);
             try (MetContext management = configuration.buildContext()) {
                 RegistryAdmin admin = management.getExtension(RegistryAdmin.class);
                 RegistryInfo info = admin.getClusterAdmin().info();

@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.connect;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URL;
 import java.util.ArrayList;
@@ -151,17 +152,23 @@ public class ConnectMetadataScenarioTest {
     }
 
     private MetConfiguration configuration(boolean listener, boolean tls) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("connect");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("connect");
         configuration.setDefaultTimeout(5000);
-        var http = configuration.connector("http").option("httpVersion", 2);
+        var http = configuration.connector("http") //
+                .option("httpVersion", 2);
         if (listener) {
             http.bind("127.0.0.1", 0);
         }
-        var protocol = http.protocol("connect").contextPath("/rpc") //
-                .option("streamBody", true).option("compression", "gzip");
+        var protocol = http.protocol("connect") //
+                .contextPath("/rpc") //
+                .option("streamBody", true) //
+                .option("compression", "gzip");
         if (tls) {
             // 使用真实 TLS 及 h2 ALPN，证书归属本插件测试资源。
-            http.option("tlsEnabled", true).option("httpScheme", "https").option("tlsAlpn", "h2");
+            http.option("tlsEnabled", true) //
+                    .option("httpScheme", "https") //
+                    .option("tlsAlpn", "h2");
             http.option("tlsTrustStore", "classpath:/certs/acceptance/trust.p12");
             http.option("tlsTrustStorePassword", "meteor-test");
             protocol.addressScheme("https");

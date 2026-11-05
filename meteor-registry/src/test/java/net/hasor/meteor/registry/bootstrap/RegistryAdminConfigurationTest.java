@@ -6,9 +6,11 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor.registry.bootstrap;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
@@ -23,10 +25,14 @@ import net.hasor.meteor.registry.shared.DecoratedRegistryConfiguration;
 import net.hasor.meteor.registry.shared.RegistryTestUtils;
 import net.hasor.meteor.registry.shared.RegistryTestUtils.Echo;
 import net.hasor.meteor.registry.shared.StorageProbe;
+import net.hasor.meteor.registry.shared.rpc.InstanceData;
+import net.hasor.meteor.registry.shared.rpc.InstanceEndpointData;
 import net.hasor.meteor.registry.shared.rpc.ManagementRPC;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
 import net.hasor.meteor.registry.shared.storage.domain.EntServiceCatalogData;
 import org.junit.jupiter.api.Test;
+import static net.hasor.meteor.registry.shared.RegistryTestUtils.createConfiguration;
+import static net.hasor.meteor.registry.shared.RegistryTestUtils.createDataHome;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RegistryAdminConfigurationTest {
@@ -34,9 +40,14 @@ public class RegistryAdminConfigurationTest {
     public void defaultsManagementPublicationToRsf() throws Exception {
         // 业务端点包含 HTTP，默认管理服务仍只选择 RSF。
         RegistryConfiguration registry = new RegistryConfiguration().setOnline(false);
-        MetConfiguration configuration = new MetConfiguration().addExtension(registry);
-        configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("registry-http");
+        MetConfiguration configuration = createConfiguration() //
+                .addExtension(registry);
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("registry-http");
         try (MetContext context = configuration.buildContext()) {
             context.start();
             MetBindInfo<ManagementRPC> service = context.getServiceInfo(ManagementRPC.class);
@@ -44,9 +55,22 @@ public class RegistryAdminConfigurationTest {
 
             // 实例保留全部监听地址，管理地址只返回实际开放的协议。
             ManagementRPC local = context.getServiceProvider(service).get();
-            var instance = local.instance(null);
-            assertEquals(2, instance.getListenAddresses().size());
-            assertEquals(Set.of("tcp-0#rsf"), instance.getManagementAddress().keySet());
+            InstanceData instance = local.instance(null);
+            assertEquals(2, instance.getEndpoints().length);
+            InstanceEndpointData rsf = Arrays.stream(instance.getEndpoints()) //
+                    .filter(endpoint -> StringUtils.equals("rsf", endpoint.getProtocolName())).findFirst().orElseThrow();
+            assertEquals("tcp-0", rsf.getConnectorName());
+            assertEquals("tcp", rsf.getTransport());
+            assertEquals("rsf", rsf.getScheme());
+            assertEquals(context.getListenAddress("rsf").toString(), rsf.getListenAddress());
+            assertEquals(rsf.getListenAddress(), rsf.getManagementAddress());
+            InstanceEndpointData http = Arrays.stream(instance.getEndpoints()) //
+                    .filter(endpoint -> StringUtils.equals("registry-http", endpoint.getProtocolName())) //
+                    .findFirst().orElseThrow();
+            assertEquals("http-1", http.getConnectorName());
+            assertEquals("http", http.getTransport());
+            assertEquals(context.getListenAddress("registry-http").toString(), http.getListenAddress());
+            assertNull(http.getManagementAddress());
         }
     }
 
@@ -55,16 +79,31 @@ public class RegistryAdminConfigurationTest {
         // 离线扩展明确选择 HTTP；配置对象后续修改不能扩大已建上下文的发布范围。
         RegistryConfiguration registry = new RegistryConfiguration().setOnline(false);
         registry.setManagementProtocols("registry-http");
-        MetConfiguration configuration = new MetConfiguration().addExtension(registry);
-        configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("registry-http");
+        MetConfiguration configuration = createConfiguration() //
+                .addExtension(registry);
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("registry-http");
         try (MetContext context = configuration.buildContext()) {
             registry.setManagementProtocols("rsf");
             context.start();
             MetBindInfo<ManagementRPC> service = context.getServiceInfo(ManagementRPC.class);
             assertEquals(Set.of("registry-http"), service.getBindProtocols());
             ManagementRPC local = context.getServiceProvider(service).get();
-            assertEquals(Set.of("http-1#registry-http"), local.instance(null).getManagementAddress().keySet());
+            InstanceEndpointData[] endpoints = local.instance(null).getEndpoints();
+            assertEquals(2, endpoints.length);
+            InstanceEndpointData http = Arrays.stream(endpoints) //
+                    .filter(endpoint -> StringUtils.equals("registry-http", endpoint.getProtocolName())) //
+                    .findFirst().orElseThrow();
+            assertEquals("http-1", http.getConnectorName());
+            assertEquals(context.getListenAddress("registry-http").toString(), http.getManagementAddress());
+            InstanceEndpointData rsf = Arrays.stream(endpoints) //
+                    .filter(endpoint -> StringUtils.equals("rsf", endpoint.getProtocolName())).findFirst().orElseThrow();
+            assertEquals(context.getListenAddress("rsf").toString(), rsf.getListenAddress());
+            assertNull(rsf.getManagementAddress());
         }
     }
 
@@ -73,9 +112,12 @@ public class RegistryAdminConfigurationTest {
         // 在线存储客户端将同一份协议配置传给管理服务。
         MemoryRegistryConfiguration registry = new MemoryRegistryConfiguration();
         registry.setManagementProtocols("rsf", "registry-http");
-        MetConfiguration configuration = new MetConfiguration().addExtension(registry);
-        configuration.connector("tcp").protocol("rsf");
-        configuration.connector("http").protocol("registry-http");
+        MetConfiguration configuration = createConfiguration() //
+                .addExtension(registry);
+        configuration.connector("tcp") //
+                .protocol("rsf");
+        configuration.connector("http") //
+                .protocol("registry-http");
         try (MetContext context = configuration.buildContext()) {
             assertEquals(Set.of("rsf", "registry-http"), context.getServiceInfo(ManagementRPC.class).getBindProtocols());
         }
@@ -119,7 +161,8 @@ public class RegistryAdminConfigurationTest {
         // 移除凭据提供者后仍可创建扩展，但不能取得管理服务。
         registry.setManagementToken("secret");
         registry.setTokenProvider(null);
-        MetConfiguration application = new MetConfiguration().addExtension(registry);
+        MetConfiguration application = createConfiguration() //
+                .addExtension(registry);
 
         try (MetContext context = application.buildContext()) {
             RegistryAdmin admin = context.getExtension(RegistryAdmin.class);
@@ -133,7 +176,8 @@ public class RegistryAdminConfigurationTest {
         // 准备共享内存库，先按原凭据创建第一个上下文。
         MemoryRegistryConfiguration bootstrap = new MemoryRegistryConfiguration();
         bootstrap.setManagementToken("口令");
-        MetConfiguration firstConfiguration = new MetConfiguration().addExtension(bootstrap);
+        MetConfiguration firstConfiguration = createConfiguration() //
+                .addExtension(bootstrap);
 
         try (MetContext firstContext = firstConfiguration.buildContext()) {
             RegistryAdmin first = firstContext.getExtension(RegistryAdmin.class);
@@ -141,7 +185,8 @@ public class RegistryAdminConfigurationTest {
 
             // 修改配置后创建第二个上下文，两个管理入口独立。
             bootstrap.setManagementToken("changed");
-            MetConfiguration secondConfiguration = new MetConfiguration().addExtension(bootstrap);
+            MetConfiguration secondConfiguration = createConfiguration() //
+                    .addExtension(bootstrap);
 
             try (MetContext secondContext = secondConfiguration.buildContext()) {
                 RegistryAdmin second = secondContext.getExtension(RegistryAdmin.class);
@@ -163,7 +208,8 @@ public class RegistryAdminConfigurationTest {
         StorageProbe probe = new StorageProbe();
         RegistryConfiguration bootstrap = new DecoratedRegistryConfiguration(storageConfiguration, probe::observe);
         bootstrap.setManagementToken("secret");
-        MetConfiguration adminConfiguration = new MetConfiguration().addExtension(bootstrap);
+        MetConfiguration adminConfiguration = createConfiguration() //
+                .addExtension(bootstrap);
 
         try (MetContext adminContext = adminConfiguration.buildContext()) {
             RegistryAdmin admin = adminContext.getExtension(RegistryAdmin.class);
@@ -191,8 +237,10 @@ public class RegistryAdminConfigurationTest {
         // 关闭自动上线，分别配置应用传输层和注册中心扩展。
         MemoryRegistryConfiguration bootstrap = new MemoryRegistryConfiguration();
         bootstrap.setManagementToken("secret");
-        MetConfiguration application = new MetConfiguration().setAutomaticOnline(false);
-        application.connector("tcp").protocol("rsf");
+        MetConfiguration application = createConfiguration() //
+                .setAutomaticOnline(false);
+        application.connector("tcp") //
+                .protocol("rsf");
         application.addExtension(bootstrap);
 
         try (MetContext context = application.buildContext()) {
@@ -224,15 +272,18 @@ public class RegistryAdminConfigurationTest {
         // 应用和独立管理上下文使用同一注册中心配置。
         MemoryRegistryConfiguration bootstrap = new MemoryRegistryConfiguration();
         bootstrap.setManagementToken("secret");
-        MetConfiguration application = new MetConfiguration().setApplicationName("订单");
-        application.connector("tcp").protocol("rsf");
+        MetConfiguration application = createConfiguration() //
+                .setApplicationName("订单");
+        application.connector("tcp") //
+                .protocol("rsf");
         application.addExtension(bootstrap);
 
         try (MetContext context = application.buildContext()) {
             context.start();
 
             // 通过另一上下文下发阻断治理，等待应用订阅生效。
-            MetConfiguration adminConfiguration = new MetConfiguration().addExtension(bootstrap);
+            MetConfiguration adminConfiguration = createConfiguration() //
+                    .addExtension(bootstrap);
 
             try (MetContext adminContext = adminConfiguration.buildContext()) {
                 RegistryAdmin admin = adminContext.getExtension(RegistryAdmin.class);
@@ -282,14 +333,18 @@ public class RegistryAdminConfigurationTest {
         MemoryRegistryConfiguration storageConfiguration = new MemoryRegistryConfiguration();
         StorageProbe probe = new StorageProbe();
         RegistryConfiguration registry = new DecoratedRegistryConfiguration(storageConfiguration, probe::observe);
-        MetConfiguration application = new MetConfiguration().addExtension(registry);
-        application.connector("tcp").protocol("rsf");
+        MetConfiguration application = createConfiguration() //
+                .addExtension(registry);
+        application.connector("tcp") //
+                .protocol("rsf");
 
         try (MetContext first = application.buildContext()) {
             // 构建时只创建本地扩展，随后修改配置不能改变已创建客户端。
             assertEquals(0, probe.openedSessions());
             registry.setRefreshMillis(0);
-            assertThrows(IllegalStateException.class, application::buildContext);
+            application.setDataHome(createDataHome());
+            IllegalStateException failure = assertThrows(IllegalStateException.class, application::buildContext);
+            assertEquals("refreshMillis must be positive", failure.getCause().getMessage());
             first.start();
             assertEquals(1, probe.openedSessions());
 
@@ -326,8 +381,10 @@ public class RegistryAdminConfigurationTest {
         }
 
         // 相同配置用于应用扩展时，在构建阶段报告参数错误。
-        MetConfiguration application = new MetConfiguration().addExtension(registry);
-        application.connector("tcp").protocol("rsf");
+        MetConfiguration application = createConfiguration() //
+                .addExtension(registry);
+        application.connector("tcp") //
+                .protocol("rsf");
         IllegalStateException failure = assertThrows(IllegalStateException.class, application::buildContext);
         assertEquals("refreshMillis must be positive", failure.getCause().getMessage());
     }

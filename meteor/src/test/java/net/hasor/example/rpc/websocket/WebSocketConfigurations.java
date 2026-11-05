@@ -17,8 +17,10 @@ public final class WebSocketConfigurations {
     }
 
     public static ConnectorSettings http(MetConfiguration configuration, int version) {
-        configuration.setDefaultTimeout(10000).setQueueMinPoolSize(4);
-        return configuration.connector("http").option("httpVersion", version);
+        configuration.setDefaultTimeout(10000) //
+                .setQueueMinPoolSize(4);
+        return configuration.connector("http") //
+                .option("httpVersion", version);
     }
 
     public static ProtocolSettings websocket(ConnectorSettings connector, int version, boolean binary) {

@@ -181,12 +181,21 @@ public class MultiProtocolDescriptionScenarioTest {
     @Test
     public void twoGrpcEndpointsKeepDifferentJsonAndProtobufDefinitions() throws Exception {
         // 同名协议两个端点独立选择编码与挂载目录。
-        MetConfiguration config = new MetConfiguration().addExtension(registry());
-        config.connector("http").bind("127.0.0.1", 0).protocol("grpc") //
-                .contextPath("/json").option("serializeType", "Json");
-        config.connector("http").bind("127.0.0.1", 0).protocol("grpc") //
-                .contextPath("/protobuf").option("serializeType", "Protobuf");
-        config.connector("tcp").protocol("rsf");
+        MetConfiguration config = new MetConfiguration() //
+                .setDataHome(this.data.resolve("provider")) //
+                .addExtension(registry());
+        config.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc") //
+                .contextPath("/json") //
+                .option("serializeType", "Json");
+        config.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc") //
+                .contextPath("/protobuf") //
+                .option("serializeType", "Protobuf");
+        config.connector("tcp") //
+                .protocol("rsf");
         try (MetContext context = config.buildContext()) {
             context.start();
             MetBindInfo<OrderDemoService> service = context.publisher() //
@@ -220,12 +229,21 @@ public class MultiProtocolDescriptionScenarioTest {
     @Test
     public void rejectedProtobufEndpointDoesNotAppearInRegistrationDescription() throws Exception {
         // 普通未编号 DTO 可以使用 JSON，但不能隐式生成 Protobuf 字段号。
-        MetConfiguration config = new MetConfiguration().addExtension(registry());
-        config.connector("http").bind("127.0.0.1", 0).protocol("grpc") //
-                .contextPath("/json").option("serializeType", "Json");
-        config.connector("http").bind("127.0.0.1", 0).protocol("grpc") //
-                .contextPath("/protobuf").option("serializeType", "Protobuf");
-        config.connector("tcp").protocol("rsf");
+        MetConfiguration config = new MetConfiguration() //
+                .setDataHome(this.data.resolve("provider")) //
+                .addExtension(registry());
+        config.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc") //
+                .contextPath("/json") //
+                .option("serializeType", "Json");
+        config.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc") //
+                .contextPath("/protobuf") //
+                .option("serializeType", "Protobuf");
+        config.connector("tcp") //
+                .protocol("rsf");
         try (MetContext context = config.buildContext()) {
             context.start();
             MetBindInfo<Echo> service = context.publisher().rsfService(Echo.class, new EchoImpl()) //
@@ -249,10 +267,17 @@ public class MultiProtocolDescriptionScenarioTest {
         return registry;
     }
 
-    private static MetConfiguration multiProtocolRegistry(MemoryRegistryConfiguration registry, String contextPath) {
-        MetConfiguration config = new MetConfiguration().addExtension(registry);
-        config.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        config.connector("http").bind("127.0.0.1", 0).protocol("jsonrpc").contextPath(contextPath);
+    private MetConfiguration multiProtocolRegistry(MemoryRegistryConfiguration registry, String contextPath) {
+        MetConfiguration config = new MetConfiguration() //
+                .setDataHome(this.data.resolve(contextPath.substring(1))) //
+                .addExtension(registry);
+        config.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        config.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("jsonrpc") //
+                .contextPath(contextPath);
         return config;
     }
 }

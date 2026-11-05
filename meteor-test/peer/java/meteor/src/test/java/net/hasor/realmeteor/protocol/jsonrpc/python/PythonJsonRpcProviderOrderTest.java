@@ -32,10 +32,13 @@ public class PythonJsonRpcProviderOrderTest {
     @BeforeEach
     public void publishOrderService() throws Exception {
         // 每例从 bootstrap 建立独立容器，只有 HTTP JSON-RPC 业务挂载。
-        MetConfiguration incoming = new MetConfiguration().setDefaultTimeout(5000);
+        MetConfiguration incoming = new MetConfiguration() //
+                .setDefaultTimeout(5000);
         incoming.setDataHome(Files.createDirectory(this.data.resolve("provider")));
-        incoming.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("jsonrpc").contextPath("/jsonrpc");
+        incoming.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("jsonrpc") //
+                .contextPath("/jsonrpc");
         this.provider = incoming.buildContext();
         this.provider.start();
 

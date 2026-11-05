@@ -4,6 +4,7 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.protocol.oncrpc.go;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.example.protocol.oncrpc.OncRpcDemoCodecs;
@@ -26,8 +27,11 @@ public class GoOncRpcInteropTest {
     @Timeout(value = 45000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void goSunRpcConsumerCallsMeteorProvider() throws Exception {
         // 从正式入口启动 Meteor，只发布既有 interop.x 对应的 ONC 程序。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc");
-        configuration.connector("tcp").bind(ContainerProcess.runnerHost(), 0).protocol("oncrpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc");
+        configuration.connector("tcp") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("oncrpc");
         OncRpcDemoService implementation = new OncRpcDemoServiceImpl() {
             @Override
             public String echo(String value) {
@@ -53,9 +57,11 @@ public class GoOncRpcInteropTest {
     @Timeout(value = 45000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorConsumerCallsGoSunRpcProvider() throws Exception {
         // Go ServerCodec 提供程序 0x31234567、版本 1、过程 1；Meteor 只创建出站端点。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc");
         configuration.setDefaultTimeout(10000);
-        configuration.connector("tcp").protocol("oncrpc");
+        configuration.connector("tcp") //
+                .protocol("oncrpc");
         try (GoOncRpcPeer peer = GoOncRpcPeer.start("server", null); //
              MetContext client = configuration.buildContext()) {
             int port = peer.awaitPort();

@@ -4,6 +4,7 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.protocol.grpc.web;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.ParameterizedClass;
@@ -51,9 +52,13 @@ public class GrpcWebSdkVersionScenarioTest {
         // 页面先创建独立 origin，真实浏览器保留 CORS 和本地网络检查。
         try (GrpcWebBrowserProcess browser = GrpcWebBrowserProcess.startVersion(this.profile)) {
             String origin = browser.awaitOrigin();
-            MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-            configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                    .protocol("grpc-web").contextPath("/web").option("streamBody", true) //
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setRequestTimeout(10000);
+            configuration.connector("http") //
+                    .bind(ContainerProcess.runnerHost(), 0) //
+                    .protocol("grpc-web") //
+                    .contextPath("/web") //
+                    .option("streamBody", true) //
                     .option("corsOrigins", origin) //
                     .option("corsHeaders", "content-type,x-grpc-web,x-user-agent,custom-header,grpc-timeout");
             try (MetContext provider = configuration.buildContext()) {

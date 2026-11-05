@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hprose;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -32,7 +33,8 @@ public class HproseHttpsInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialNodeCallsMeteorOverMutualTls() throws Exception {
         // HTTPS 监听要求客户端身份，官方 Node.js 客户端加载受信任的客户端证书。
-        MetConfiguration incoming = new MetConfiguration().setQueueMinPoolSize(4);
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setQueueMinPoolSize(4);
         incoming.connector("http") //
                 .bind(ContainerProcess.runnerHost(), 0) //
                 .option("tlsEnabled", true) //
@@ -43,7 +45,9 @@ public class HproseHttpsInteropTest {
                 .option("tlsKeyStorePassword", "meteor-test") //
                 .option("tlsAlpn", "http/1.1") //
                 .option("tlsClientAuth", "REQUIRE") //
-                .protocol("hprose").addressScheme("https").contextPath("/rpc");
+                .protocol("hprose") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
         try (MetContext server = incoming.buildContext()) {
             // 启动后通过公开发布入口注册业务接口，外部对端使用标准 Hprose 编码。
             server.start();
@@ -73,7 +77,8 @@ public class HproseHttpsInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialNodeHttpsBatchPreservesOrderAndErrorIsolation() throws Exception {
         // HTTPS 监听要求客户端身份，官方 Node.js 客户端加载受信任的客户端证书。
-        MetConfiguration incoming = new MetConfiguration().setQueueMinPoolSize(4);
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setQueueMinPoolSize(4);
         incoming.connector("http") //
                 .bind(ContainerProcess.runnerHost(), 0) //
                 .option("tlsEnabled", true) //
@@ -84,7 +89,9 @@ public class HproseHttpsInteropTest {
                 .option("tlsKeyStorePassword", "meteor-test") //
                 .option("tlsAlpn", "http/1.1") //
                 .option("tlsClientAuth", "REQUIRE") //
-                .protocol("hprose").addressScheme("https").contextPath("/rpc");
+                .protocol("hprose") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
         try (MetContext server = incoming.buildContext()) {
             // 启动后通过公开发布入口注册业务接口，外部对端使用标准 Hprose 编码。
             server.start();
@@ -114,7 +121,8 @@ public class HproseHttpsInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialNodeHttpsByRefReturnsMutatedArguments() throws Exception {
         // HTTPS 监听要求客户端身份，官方 Node.js 客户端加载受信任的客户端证书。
-        MetConfiguration incoming = new MetConfiguration().setQueueMinPoolSize(4);
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setQueueMinPoolSize(4);
         incoming.connector("http") //
                 .bind(ContainerProcess.runnerHost(), 0) //
                 .option("tlsEnabled", true) //
@@ -125,7 +133,9 @@ public class HproseHttpsInteropTest {
                 .option("tlsKeyStorePassword", "meteor-test") //
                 .option("tlsAlpn", "http/1.1") //
                 .option("tlsClientAuth", "REQUIRE") //
-                .protocol("hprose").addressScheme("https").contextPath("/rpc");
+                .protocol("hprose") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
         try (MetContext server = incoming.buildContext()) {
             // 启动后通过公开发布入口注册业务接口，外部对端使用标准 Hprose 编码。
             server.start();
@@ -159,7 +169,8 @@ public class HproseHttpsInteropTest {
         InputStreamReader peerOutput = new InputStreamReader(peer.getInputStream(), StandardCharsets.UTF_8);
         try (BufferedReader output = new BufferedReader(peerOutput)) {
             int port = Integer.parseInt(output.readLine());
-            MetConfiguration outgoing = new MetConfiguration().setRequestTimeout(5000);
+            MetConfiguration outgoing = TestConfigurationUtils.create() //
+                    .setRequestTimeout(5000);
             outgoing.connector("http") //
                     .option("tlsEnabled", true) //
                     .option("httpScheme", "https") //
@@ -168,7 +179,9 @@ public class HproseHttpsInteropTest {
                     .option("tlsKeyStore", "classpath:/certs/acceptance/client.p12") //
                     .option("tlsKeyStorePassword", "meteor-test") //
                     .option("tlsAlpn", "http/1.1") //
-                    .protocol("hprose").addressScheme("https").contextPath("/rpc");
+                    .protocol("hprose") //
+                    .addressScheme("https") //
+                    .contextPath("/rpc");
 
             try (MetContext client = outgoing.buildContext()) {
                 // Meteor 启动后订阅普通 Java 接口，正式 TLS 配置保留服务器主机名校验。

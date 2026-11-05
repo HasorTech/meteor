@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.jsonrpc;
+import net.hasor.example.protocol.jsonrpc.TestConfigurationUtils;
 import net.hasor.example.protocol.jsonrpc.JsonRpcDemoService;
 import net.hasor.example.protocol.jsonrpc.JsonRpcDemoServiceImpl;
 import net.hasor.meteor.MetBindInfo;
@@ -45,16 +46,22 @@ public class JsonRpcBasicTest {
     }
 
     private MetConfiguration serverConfiguration() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("jsonrpc");
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("jsonrpc").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("jsonrpc");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("jsonrpc") //
+                .contextPath("/rpc");
         return configuration;
     }
 
     private MetConfiguration clientConfiguration(int httpVersion) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("jsonrpc");
-        configuration.connector("http").option("httpVersion", httpVersion) //
-                .protocol("jsonrpc").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("jsonrpc");
+        configuration.connector("http") //
+                .option("httpVersion", httpVersion) //
+                .protocol("jsonrpc") //
+                .contextPath("/rpc");
         return configuration;
     }
 }

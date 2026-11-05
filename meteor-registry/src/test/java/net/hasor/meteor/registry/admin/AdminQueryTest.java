@@ -27,6 +27,7 @@ import net.hasor.meteor.registry.shared.storage.domain.EntApplicationCatalogData
 import net.hasor.meteor.registry.shared.storage.domain.EntConfigurationData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import static net.hasor.meteor.registry.shared.RegistryTestUtils.createConfiguration;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class AdminQueryTest {
@@ -40,7 +41,8 @@ public class AdminQueryTest {
     @Test
     public void serviceQueriesKeepTheirScopeAndDirectorySurvivesMembersLeaving() throws Exception {
         // 准备管理扩展，并用独立会话模拟提供者与订阅者。
-        MetConfiguration config = new MetConfiguration().addExtension(this.configuration);
+        MetConfiguration config = createConfiguration() //
+                .addExtension(this.configuration);
 
         try (MetContext context = config.buildContext(); //
              StorageAccess provider = this.configuration.openStorage(); //
@@ -133,7 +135,8 @@ public class AdminQueryTest {
     @Test
     public void instanceQueriesAndDesiredBlockStaySeparateFromReportedState() throws Exception {
         // 准备实例登记与管理扩展。
-        MetConfiguration adminConfiguration = new MetConfiguration().addExtension(this.configuration);
+        MetConfiguration adminConfiguration = createConfiguration() //
+                .addExtension(this.configuration);
 
         try (MetContext adminContext = adminConfiguration.buildContext(); //
              StorageAccess storage = this.configuration.openStorage()) {
@@ -173,7 +176,8 @@ public class AdminQueryTest {
     @Test
     public void metadataQueriesKeepGlobalServiceAndInstanceValuesSeparate() throws Exception {
         // 通过正式扩展创建管理端，并登记一个实例服务关系。
-        MetConfiguration config = new MetConfiguration().addExtension(this.configuration);
+        MetConfiguration config = createConfiguration() //
+                .addExtension(this.configuration);
         try (MetContext context = config.buildContext(); //
              StorageAccess storage = this.configuration.openStorage()) {
             RegistryAdmin admin = context.getExtension(RegistryAdmin.class);
@@ -242,7 +246,8 @@ public class AdminQueryTest {
 
             // 通过正式扩展入口创建管理端。
             observed.setManagementToken("secret");
-            MetConfiguration adminConfiguration = new MetConfiguration().addExtension(observed);
+            MetConfiguration adminConfiguration = createConfiguration() //
+                    .addExtension(observed);
 
             try (MetContext adminContext = adminConfiguration.buildContext()) {
                 RegistryAdmin admin = adminContext.getExtension(RegistryAdmin.class);

@@ -13,6 +13,10 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import net.hasor.example.bootstrap.TestConfigurationUtils;
+import net.hasor.example.rpc.websocket.WebSocketConfigurations;
+import net.hasor.example.rpc.websocket.WebSocketSample;
+import net.hasor.example.rpc.websocket.WebSocketSampleService;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
@@ -21,13 +25,10 @@ import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.domain.MetTimeoutException;
-import net.hasor.example.rpc.websocket.WebSocketConfigurations;
-import net.hasor.example.rpc.websocket.WebSocketSample;
-import net.hasor.example.rpc.websocket.WebSocketSampleService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.function.Executable;
 import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.Timeout;
 
 /** 取消、断开和握手错误均从公开调用方观察，不把业务超时算作连接失败。 */
 public class WebSocketLifecycleTest {
@@ -35,7 +36,7 @@ public class WebSocketLifecycleTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void closingClientReleasesAnUpgradeWaitingForHttp2Settings() throws Exception {
         // 独立 TCP 对端接收 HTTP/2 前言，但故意不回复任何 SETTINGS。
-        MetConfiguration outgoing = new MetConfiguration();
+        MetConfiguration outgoing = TestConfigurationUtils.create();
         WebSocketConfigurations.websocket(WebSocketConfigurations.http(outgoing, 2), 2, false);
         try (ServerSocket listener = new ServerSocket(0); //
              MetContext client = outgoing.buildContext()) {
@@ -68,9 +69,10 @@ public class WebSocketLifecycleTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void cancellingOneRpcLeavesTheWebSocketUsable() throws Exception {
         // 一个业务方法受闩锁控制，其他方法继续使用同一个升级通道。
-        MetConfiguration incoming = new MetConfiguration();
-        MetConfiguration outgoing = new MetConfiguration();
-        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 1).bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        MetConfiguration outgoing = TestConfigurationUtils.create();
+        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 1) //
+                .bind("127.0.0.1", 0);
         WebSocketConfigurations.websocket(listener, 1, false);
         WebSocketConfigurations.websocket(WebSocketConfigurations.http(outgoing, 1), 1, false);
         WebSocketSampleService implementation = new WebSocketSampleService();
@@ -106,9 +108,10 @@ public class WebSocketLifecycleTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void closingTheServerFailsAnInFlightWebSocketRpc() throws Exception {
         // 让服务保持执行中，观察正式上下文关闭带来的连接终止。
-        MetConfiguration incoming = new MetConfiguration();
-        MetConfiguration outgoing = new MetConfiguration();
-        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 1).bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        MetConfiguration outgoing = TestConfigurationUtils.create();
+        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 1) //
+                .bind("127.0.0.1", 0);
         WebSocketConfigurations.websocket(listener, 1, false);
         WebSocketConfigurations.websocket(WebSocketConfigurations.http(outgoing, 1), 1, false);
         WebSocketSampleService implementation = new WebSocketSampleService();
@@ -142,7 +145,7 @@ public class WebSocketLifecycleTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void rejectedHttpUpgradeFailsThePublicCallerWithoutDispatch() throws Exception {
         // 独立 HTTP 对端拒绝升级；Meteor 一侧仍从正式订阅和 Caller 发起请求。
-        MetConfiguration outgoing = new MetConfiguration();
+        MetConfiguration outgoing = TestConfigurationUtils.create();
         WebSocketConfigurations.websocket(WebSocketConfigurations.http(outgoing, 1), 1, false);
         try (ServerSocket listener = new ServerSocket(0); //
              MetContext client = outgoing.buildContext()) {

@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -344,8 +345,11 @@ public class GrpcSecureInteropTest {
     @Timeout(value = 25000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialH2cUpgradeCarriesGrpcRequestAndFinalTrailers() throws Exception {
         // 官方 Netty 升级客户端从 HTTP/1.1 切换至 h2c，业务服务通过公开入口发布。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc");
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("grpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc");
         EchoImpl implementation = new EchoImpl();
         try (MetContext server = configuration.buildContext()) {
             server.start();
@@ -374,8 +378,10 @@ public class GrpcSecureInteropTest {
     }
 
     private MetConfiguration serverConfiguration(boolean clientAuth, String alpn) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc");
-        configuration.connector("http").bind("127.0.0.1", 0) //
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
                 .option("tlsEnabled", true) //
                 .option("tlsKeyStore", "classpath:/certs/acceptance/server.p12") //
                 .option("tlsKeyStorePassword", "meteor-test") //
@@ -384,12 +390,15 @@ public class GrpcSecureInteropTest {
                 .option("tlsClientAuth", clientAuth ? "REQUIRE" : "NONE") //
                 .option("tlsAlpn", alpn) //
                 .option("httpScheme", "https") //
-                .protocol("grpc").addressScheme("https").option("compression", "gzip");
+                .protocol("grpc") //
+                .addressScheme("https") //
+                .option("compression", "gzip");
         return configuration;
     }
 
     private MetConfiguration clientConfiguration(String identity) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
         configuration.setDefaultTimeout(5000);
         var connector = configuration.connector("http") //
                 .option("tlsEnabled", true) //
@@ -402,7 +411,9 @@ public class GrpcSecureInteropTest {
             connector.option("tlsKeyStore", "classpath:/certs/acceptance/" + identity + ".p12");
             connector.option("tlsKeyStorePassword", "meteor-test");
         }
-        connector.protocol("grpc").addressScheme("https").option("compression", "gzip");
+        connector.protocol("grpc") //
+                .addressScheme("https") //
+                .option("compression", "gzip");
         return configuration;
     }
 

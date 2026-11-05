@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.dubbo;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -29,8 +30,10 @@ public class DubboIdentityScenarioTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void groupSelectsTheExactProvider() throws Exception {
         // 两个提供者使用相同协议接口名，只改变本场景要验证的服务身份。
-        try (MetContext server = this.configuration(true).buildContext(); //
-             MetContext client = this.configuration(false).buildContext()) {
+        try (MetContext server = this.configuration(true) //
+                .buildContext(); //
+             MetContext client = this.configuration(false) //
+                     .buildContext()) {
             server.start();
             client.start();
             server.publisher().rsfService(DubboInteropService.class, this.implementation("blue")) //
@@ -50,8 +53,10 @@ public class DubboIdentityScenarioTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void versionSelectsTheExactProvider() throws Exception {
         // 两个提供者使用相同协议接口名，只改变本场景要验证的服务身份。
-        try (MetContext server = this.configuration(true).buildContext(); //
-             MetContext client = this.configuration(false).buildContext()) {
+        try (MetContext server = this.configuration(true) //
+                .buildContext(); //
+             MetContext client = this.configuration(false) //
+                     .buildContext()) {
             server.start();
             client.start();
             server.publisher().rsfService(DubboInteropService.class, this.implementation("old")) //
@@ -71,8 +76,10 @@ public class DubboIdentityScenarioTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void missingGroupDoesNotFallBackToAnotherProvider() throws Exception {
         // 两个提供者使用相同协议接口名，只改变本场景要验证的服务身份。
-        try (MetContext server = this.configuration(true).buildContext(); //
-             MetContext client = this.configuration(false).buildContext()) {
+        try (MetContext server = this.configuration(true) //
+                .buildContext(); //
+             MetContext client = this.configuration(false) //
+                     .buildContext()) {
             server.start();
             client.start();
             server.publisher().rsfService(DubboInteropService.class, this.implementation("blue")) //
@@ -95,8 +102,10 @@ public class DubboIdentityScenarioTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void differentServicesRemainIsolatedUnderConcurrency() throws Exception {
         // 两个提供者使用相同协议接口名，只改变本场景要验证的服务身份。
-        try (MetContext server = this.configuration(true).buildContext(); //
-             MetContext client = this.configuration(false).buildContext()) {
+        try (MetContext server = this.configuration(true) //
+                .buildContext(); //
+             MetContext client = this.configuration(false) //
+                     .buildContext()) {
             server.start();
             client.start();
             server.publisher().rsfService(DubboInteropService.class, this.implementation("first")) //
@@ -134,7 +143,8 @@ public class DubboIdentityScenarioTest {
     }
 
     private MetConfiguration configuration(boolean listener) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("dubbo");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("dubbo");
         configuration.setDefaultTimeout(5000);
         var tcp = configuration.connector("tcp");
         if (listener) {

@@ -141,15 +141,20 @@ public class TripleGrpcNativeInteropTest {
 
     private MetConfiguration configuration(boolean listen) throws Exception {
         // 根路径下显式启用 Triple 的 gRPC 模式；未安装 Meteor gRPC 协议挂载。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("triple");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDefaultProtocol("triple");
         configuration.setRequestTimeout(10000);
         configuration.setDataHome(Files.createTempDirectory(this.data, "case-"));
-        var connector = configuration.connector("http").option("httpVersion", 2);
+        var connector = configuration.connector("http") //
+                .option("httpVersion", 2);
         if (listen) {
             connector.bind("0.0.0.0", 0);
         }
-        connector.protocol("triple").contextPath("/") //
-                .option("httpMode", "grpc").option("serializeType", "Protobuf").option("streamBody", true);
+        connector.protocol("triple") //
+                .contextPath("/") //
+                .option("httpMode", "grpc") //
+                .option("serializeType", "Protobuf") //
+                .option("streamBody", true);
         return configuration;
     }
 }

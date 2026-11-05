@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.thrift;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -244,13 +245,17 @@ public class ThriftPublicationScenarioTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void framedThriftAndRsfShareOneTcpPort() throws Exception {
         // 一个 TCP 连接器挂载两个协议；探测必须保留 RSF magic 与 Thrift 长度头的区别。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("thrift");
-        ConnectorSettings listener = incoming.connector("tcp").bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift");
+        ConnectorSettings listener = incoming.connector("tcp") //
+                .bind("127.0.0.1", 0);
         listener.protocol("thrift");
         listener.protocol("rsf");
         MetConfiguration thriftConfiguration = this.outgoing(false);
-        MetConfiguration rsfConfiguration = new MetConfiguration().setDefaultProtocol("rsf");
-        rsfConfiguration.connector("tcp").protocol("rsf");
+        MetConfiguration rsfConfiguration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("rsf");
+        rsfConfiguration.connector("tcp") //
+                .protocol("rsf");
         ThriftServiceResource resource = new ThriftServiceResource(ExtendedInteropService.class);
         try (MetContext server = incoming.buildContext(); //
              MetContext thriftClient = thriftConfiguration.buildContext(); //
@@ -278,15 +283,21 @@ public class ThriftPublicationScenarioTest {
     }
 
     private MetConfiguration incoming(boolean multiplexed) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift");
-        configuration.connector("tcp").bind("127.0.0.1", 0) //
-                .protocol("thrift").option("multiplexed", multiplexed);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift");
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("thrift") //
+                .option("multiplexed", multiplexed);
         return configuration;
     }
 
     private MetConfiguration outgoing(boolean multiplexed) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift");
-        configuration.connector("tcp").protocol("thrift").option("multiplexed", multiplexed);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift");
+        configuration.connector("tcp") //
+                .protocol("thrift") //
+                .option("multiplexed", multiplexed);
         return configuration;
     }
 

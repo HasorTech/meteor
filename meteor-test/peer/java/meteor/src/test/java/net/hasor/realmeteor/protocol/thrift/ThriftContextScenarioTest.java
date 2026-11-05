@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.thrift;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -503,8 +504,11 @@ public class ThriftContextScenarioTest {
     public void typedSubscriptionUsesTheExplicitExactPath() throws Exception {
         // 发布与订阅分别选择相同完整路径，客户端不应发送协议的默认目录。
         MetConfiguration incoming = this.configuration("/thrift", "/private");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("thrift-http");
-        outgoing.connector("http").protocol("thrift-http").contextPath("/thrift");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift-http");
+        outgoing.connector("http") //
+                .protocol("thrift-http") //
+                .contextPath("/thrift");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();
@@ -523,9 +527,13 @@ public class ThriftContextScenarioTest {
     }
 
     private MetConfiguration configuration(String defaultPath, String additionalPath) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift-http");
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("thrift-http") //
-                .contextPath(defaultPath).addContextPath(additionalPath);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift-http");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("thrift-http") //
+                .contextPath(defaultPath) //
+                .addContextPath(additionalPath);
         return configuration;
     }
 

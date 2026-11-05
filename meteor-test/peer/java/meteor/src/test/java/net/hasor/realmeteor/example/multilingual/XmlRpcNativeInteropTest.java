@@ -13,6 +13,7 @@ import net.hasor.example.echo.TextEchoService;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
@@ -49,9 +50,12 @@ public class XmlRpcNativeInteropTest {
     @Timeout(value = 60000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void sdkToMeteorXmlRpcEcho() throws Exception {
         // 正式启动 Meteor 后发布文本接口，C/C++ 对端自行完成 HTTP 和 XML-RPC 编解码。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("xmlrpc").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("xmlrpc") //
+                .contextPath("/rpc");
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
             provider.publisher().rsfService(TextEchoService.class, text -> text) //
@@ -74,8 +78,11 @@ public class XmlRpcNativeInteropTest {
     @Timeout(value = 60000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorToSdkXmlRpcEcho() throws Exception {
         // 原生 SDK 提供者使用独占动态端口，Meteor 只创建出站 HTTP 通道。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").protocol("xmlrpc").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .protocol("xmlrpc") //
+                .contextPath("/rpc");
         List<String> command = List.of(this.executable, "provider");
         try (OrderPeerProcess provider = OrderPeerProcess.start("native", command, null); //
              MetContext consumer = configuration.buildContext()) {

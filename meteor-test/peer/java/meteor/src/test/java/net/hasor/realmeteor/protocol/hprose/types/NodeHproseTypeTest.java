@@ -58,10 +58,13 @@ public class NodeHproseTypeTest {
     @Timeout(value = 40000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorProviderAcceptsOneNodeTypeVector() throws Exception {
         // 从 bootstrap 启动提供者，再发布同一份类型业务接口。
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(5000);
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDefaultTimeout(5000);
         configuration.setDataHome(Files.createDirectory(this.data.resolve("provider")));
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("hprose").contextPath("/types");
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("hprose") //
+                .contextPath("/types");
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
             provider.publisher().rsfService(TypeEchoService.class, new TypeEchoServiceImpl()) //
@@ -82,9 +85,12 @@ public class NodeHproseTypeTest {
         // 官方 Node 服务端独立拥有监听，Meteor 消费者只配置出站通道。
         try (ForeignTypePeer peer = ForeignTypePeer.provider("node", "hprose")) {
             int port = peer.awaitPort();
-            MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(5000);
+            MetConfiguration configuration = new MetConfiguration() //
+                    .setDefaultTimeout(5000);
             configuration.setDataHome(Files.createDirectory(this.data.resolve("consumer")));
-            configuration.connector("http").protocol("hprose").contextPath("/types");
+            configuration.connector("http") //
+                    .protocol("hprose") //
+                    .contextPath("/types");
             try (MetContext consumer = configuration.buildContext()) {
                 consumer.start();
                 MetBindInfo<TypeEchoService> info = consumer.publisher().rsfService(TypeEchoService.class) //

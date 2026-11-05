@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.triple;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -98,14 +99,19 @@ public class TripleLimitScenarioTest {
     }
 
     private MetConfiguration configuration(boolean listener, int maximum) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("triple");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("triple");
         configuration.setDefaultTimeout(5000);
-        var http = configuration.connector("http").option("httpVersion", 2);
+        var http = configuration.connector("http") //
+                .option("httpVersion", 2);
         if (listener) {
             http.bind("127.0.0.1", 0);
         }
-        http.protocol("triple").contextPath("/rpc").option("streamBody", true) //
-                .option("maxMessageSize", maximum).option("compression", "gzip");
+        http.protocol("triple") //
+                .contextPath("/rpc") //
+                .option("streamBody", true) //
+                .option("maxMessageSize", maximum) //
+                .option("compression", "gzip");
         return configuration;
     }
 }

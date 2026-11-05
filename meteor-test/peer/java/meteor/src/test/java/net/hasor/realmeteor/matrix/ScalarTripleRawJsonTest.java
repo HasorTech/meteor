@@ -41,11 +41,15 @@ public class ScalarTripleRawJsonTest {
     @Timeout(value = 10000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void integerNegativeZeroInAnHttpArgumentReachesBusinessAsNegativeDoubleZero() throws Exception {
         // 通过正式 bootstrap 发布带显式 schema 的原生 Triple JSON 服务。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("triple");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDefaultProtocol("triple");
         configuration.setUnitName("scalar_raw_json");
         configuration.setDataHome(Files.createDirectory(this.data.resolve("provider")));
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("triple") //
-                .contextPath("/scalar").option("httpMode", "json");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("triple") //
+                .contextPath("/scalar") //
+                .option("httpMode", "json");
         GrpcProtoResource schema = new GrpcProtoResource(ScalarValueProfile.class //
                 .getResource("/protocol/proto/scalar/values.proto"));
         AtomicReference<ScalarValue> observed = new AtomicReference<>();

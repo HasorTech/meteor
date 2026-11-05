@@ -14,6 +14,7 @@ import net.hasor.example.OrderDemoService;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetPublisher.ConfigurationBuilder;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.protocol.grpc.builtin.GrpcBuiltinServicesFactory;
@@ -46,14 +47,17 @@ public final class DirectRpcExample {
     }
 
     public static MetConfiguration server(String host, int tcpPort, int httpPort) {
-        MetConfiguration configuration = new MetConfiguration().setUnitName(UNIT_NAME);
-        ConnectorSettings tcp = configuration.connector("tcp").bind(host, tcpPort);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setUnitName(UNIT_NAME);
+        ConnectorSettings tcp = configuration.connector("tcp") //
+                .bind(host, tcpPort);
         tcp.protocol("rsf");
         tcp.protocol("dubbo");
         tcp.protocol("thrift");
 
         // 九个 HTTP 协议挂载到同一个端点，路径选择具体的协议解析器。
-        ConnectorSettings http = configuration.connector("http").bind(host, httpPort);
+        ConnectorSettings http = configuration.connector("http") //
+                .bind(host, httpPort);
         for (String protocol : PROTOCOLS) {
             if (!isTcp(protocol)) {
                 mount(http, protocol);
@@ -65,7 +69,8 @@ public final class DirectRpcExample {
     }
 
     public static MetConfiguration client() {
-        MetConfiguration configuration = new MetConfiguration().setUnitName(UNIT_NAME);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setUnitName(UNIT_NAME);
         ConnectorSettings tcp = configuration.connector("tcp");
         tcp.protocol("rsf");
         tcp.protocol("dubbo");
@@ -73,7 +78,8 @@ public final class DirectRpcExample {
 
         // 出口不调用 bind；HTTP/1 和 HTTP/2 的选项属于各自的传输端点。
         ConnectorSettings http1 = configuration.connector("http");
-        ConnectorSettings http2 = configuration.connector("http").option("httpVersion", 2);
+        ConnectorSettings http2 = configuration.connector("http") //
+                .option("httpVersion", 2);
         for (String protocol : PROTOCOLS) {
             if (!isTcp(protocol)) {
                 ConnectorSettings outgoing = requiresHttp2(protocol) ? http2 : http1;
@@ -85,9 +91,11 @@ public final class DirectRpcExample {
 
     public static MetConfiguration client(String protocol) {
         String selected = selectProtocol(protocol);
-        MetConfiguration configuration = new MetConfiguration().setUnitName(UNIT_NAME);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setUnitName(UNIT_NAME);
         if (isTcp(selected)) {
-            configuration.connector("tcp").protocol(selected);
+            configuration.connector("tcp") //
+                    .protocol(selected);
         } else {
             ConnectorSettings http = configuration.connector("http");
             if (requiresHttp2(selected)) {
@@ -145,12 +153,14 @@ public final class DirectRpcExample {
     }
 
     private static void mount(ConnectorSettings connector, String protocol) {
-        var mount = connector.protocol(protocol).contextPath("/" + protocol);
+        var mount = connector.protocol(protocol) //
+                .contextPath("/" + protocol);
         if (StringUtils.equals(protocol, "triple")) {
             mount.option("serializeType", "Protobuf");
         } else if (StringUtils.equals(protocol, "soap") && connector.getHost() != null) {
             // 目录只属于监听端，消费端可独立选择服务发布的其他 context。
-            mount.option("directoryEnabled", true).option("directoryPath", "/soap");
+            mount.option("directoryEnabled", true) //
+                    .option("directoryPath", "/soap");
         } else if (StringUtils.equals(protocol, "grpc")) {
             mount.option("streamBody", true);
         }

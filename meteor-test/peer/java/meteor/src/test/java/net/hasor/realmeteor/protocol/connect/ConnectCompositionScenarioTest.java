@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.connect;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.example.protocol.connect.ConnectDemoService;
 import net.hasor.example.protocol.connect.ConnectDemoServiceImpl;
@@ -28,14 +29,25 @@ public class ConnectCompositionScenarioTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void connectAndGrpcUseSeparateContextsOnOneHttpPort() throws Exception {
         // 一个 HTTP 端点挂载两个真实协议，分别声明各自上下文。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("connect");
-        ConnectorSettings endpoint = incoming.connector("http").bind("127.0.0.1", 0);
-        endpoint.protocol("connect").contextPath("/connect");
-        endpoint.protocol("grpc").contextPath("/grpc");
-        MetConfiguration connect = new MetConfiguration().setDefaultProtocol("connect");
-        connect.connector("http").protocol("connect").contextPath("/connect");
-        MetConfiguration grpc = new MetConfiguration().setDefaultProtocol("grpc");
-        grpc.connector("http").option("httpVersion", 2).protocol("grpc").contextPath("/grpc");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("connect");
+        ConnectorSettings endpoint = incoming.connector("http") //
+                .bind("127.0.0.1", 0);
+        endpoint.protocol("connect") //
+                .contextPath("/connect");
+        endpoint.protocol("grpc") //
+                .contextPath("/grpc");
+        MetConfiguration connect = TestConfigurationUtils.create() //
+                .setDefaultProtocol("connect");
+        connect.connector("http") //
+                .protocol("connect") //
+                .contextPath("/connect");
+        MetConfiguration grpc = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        grpc.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("grpc") //
+                .contextPath("/grpc");
         try (MetContext server = incoming.buildContext(); //
              MetContext connectClient = connect.buildContext(); //
              MetContext grpcClient = grpc.buildContext()) {

@@ -4,6 +4,7 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.protocol.soap.node;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URL;
 import java.nio.file.Path;
@@ -29,9 +30,12 @@ public class SoapNodeInteropTest {
     @Timeout(value = 60000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void nodeSoapConsumerCallsMeteorProvider() throws Exception {
         // Meteor 经 bootstrap 启动并发布同一份测试 Echo 契约。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("soap").contextPath("/services");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("soap") //
+                .contextPath("/services");
         URL contract = this.getClass().getResource("/protocol/wsdl/echo.wsdl");
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
@@ -55,8 +59,11 @@ public class SoapNodeInteropTest {
         // node-soap 使用自己的监听、WSDL 解析及 SOAP 编解码，不代理 Meteor 服务。
         URL contract = this.getClass().getResource("/protocol/wsdl/echo.wsdl");
         String source = Path.of(contract.toURI()).toString();
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").protocol("soap").contextPath("/services");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .protocol("soap") //
+                .contextPath("/services");
         try (NodeRpcPeer provider = NodeRpcPeer.start("soap", "provider", source); //
              MetContext consumer = configuration.buildContext()) {
             int port = provider.awaitPort();

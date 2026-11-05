@@ -13,6 +13,7 @@ import net.hasor.cobble.StringUtils;
 import net.hasor.example.protocol.oncrpc.OncRpcDemoCodecs;
 import net.hasor.example.protocol.oncrpc.OncRpcDemoService;
 import net.hasor.example.protocol.oncrpc.OncRpcDemoServiceImpl;
+import net.hasor.example.protocol.oncrpc.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
@@ -74,9 +75,12 @@ public class OncRpcBootstrapScenarioTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void rejectedOncRpcContractKeepsLocalCallsAvailable() throws Exception {
         // 普通 Java 接口没有 ONC RPC 契约，但仍可通过本地优先调用。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("rsf");
-        configuration.connector("tcp").protocol("oncrpc");
-        configuration.connector("tcp").protocol("rsf");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("rsf");
+        configuration.connector("tcp") //
+                .protocol("oncrpc");
+        configuration.connector("tcp") //
+                .protocol("rsf");
         AtomicInteger calls = new AtomicInteger();
         try (MetContext context = configuration.buildContext()) {
             context.start();
@@ -96,11 +100,17 @@ public class OncRpcBootstrapScenarioTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void rejectedOncRpcContractKeepsRsfNetworkCallsAvailable() throws Exception {
         // 服务端同时装配 ONC RPC 和 RSF，只有 RSF 对外监听。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("rsf");
-        incoming.connector("tcp").protocol("oncrpc");
-        incoming.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("rsf");
-        outgoing.connector("tcp").protocol("rsf");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("rsf");
+        incoming.connector("tcp") //
+                .protocol("oncrpc");
+        incoming.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("rsf");
+        outgoing.connector("tcp") //
+                .protocol("rsf");
         AtomicInteger calls = new AtomicInteger();
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
@@ -129,8 +139,11 @@ public class OncRpcBootstrapScenarioTest {
                 port = socket.getLocalPort();
             }
         }
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol(protocol);
-        configuration.connector(transport).bind("127.0.0.1", port).protocol(protocol);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol(protocol);
+        configuration.connector(transport) //
+                .bind("127.0.0.1", port) //
+                .protocol(protocol);
         return configuration;
     }
 
@@ -139,8 +152,10 @@ public class OncRpcBootstrapScenarioTest {
         if (StringUtils.equals("udp", transport)) {
             protocol = "oncrpc-udp";
         }
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol(protocol);
-        configuration.connector(transport).protocol(protocol);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol(protocol);
+        configuration.connector(transport) //
+                .protocol(protocol);
         return configuration;
     }
 }

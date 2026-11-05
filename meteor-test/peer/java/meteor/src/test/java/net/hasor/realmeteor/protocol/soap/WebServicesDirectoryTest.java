@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -82,7 +83,10 @@ public class WebServicesDirectoryTest {
     public void directoryIsDisabledByDefault() throws Exception {
         // 保持 SOAP 协议的默认配置，发布服务不会隐式开启目录。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("soap").contextPath("/services");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("soap") //
+                .contextPath("/services");
         try (MetContext context = configuration.buildContext()) {
             context.start();
             context.publisher() //
@@ -102,8 +106,10 @@ public class WebServicesDirectoryTest {
     public void directoryPathAloneDoesNotEnableDirectory() throws Exception {
         // 仅声明地址，未打开目录开关。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("soap").contextPath("/services") //
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("soap") //
+                .contextPath("/services") //
                 .option("directoryPath", "/services/index");
         try (MetContext context = configuration.buildContext()) {
             context.start();
@@ -121,8 +127,10 @@ public class WebServicesDirectoryTest {
     public void directoryEnabledWithoutPathDoesNotPublishDirectory() throws Exception {
         // 仅打开开关，未指定目录地址，不会自动占用协议根路径。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("soap").contextPath("/services") //
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("soap") //
+                .contextPath("/services") //
                 .option("directoryEnabled", true);
         try (MetContext context = configuration.buildContext()) {
             context.start();
@@ -140,9 +148,12 @@ public class WebServicesDirectoryTest {
     public void explicitFalseKeepsConfiguredDirectoryPrivate() throws Exception {
         // 保留目录路径但显式关闭开关。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("soap").contextPath("/services") //
-                .option("directoryEnabled", false).option("directoryPath", "/services");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("soap") //
+                .contextPath("/services") //
+                .option("directoryEnabled", false) //
+                .option("directoryPath", "/services");
         try (MetContext context = configuration.buildContext()) {
             context.start();
 
@@ -159,9 +170,12 @@ public class WebServicesDirectoryTest {
     public void configuredChildPathIsTheOnlyDirectoryAddress() throws Exception {
         // 目录使用 context 下的独立子路径。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("soap").contextPath("/services") //
-                .option("directoryEnabled", true).option("directoryPath", "/services/index");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("soap") //
+                .contextPath("/services") //
+                .option("directoryEnabled", true) //
+                .option("directoryPath", "/services/index");
         try (MetContext context = configuration.buildContext()) {
             context.start();
             context.publisher() //
@@ -187,9 +201,12 @@ public class WebServicesDirectoryTest {
     public void directoryUsesConfiguredPublicBaseForServiceAddresses() throws Exception {
         // 反向代理部署通过 publicBaseUrl 声明外部可访问的地址前缀。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("soap").contextPath("/services") //
-                .option("directoryEnabled", true).option("directoryPath", "/services") //
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("soap") //
+                .contextPath("/services") //
+                .option("directoryEnabled", true) //
+                .option("directoryPath", "/services") //
                 .option("publicBaseUrl", "https://soap.example.test/gateway/");
         try (MetContext context = configuration.buildContext()) {
             context.start();
@@ -215,9 +232,13 @@ public class WebServicesDirectoryTest {
     public void directoryListsSelectedContextsAndExactServicePaths() throws Exception {
         // 一个 SOAP 协议挂载多个 context，目录聚合这个配置中的全部实际服务地址。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("soap").contextPath("/services").addContextPath("/private") //
-                .option("directoryEnabled", true).option("directoryPath", "/services");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("soap") //
+                .contextPath("/services") //
+                .addContextPath("/private") //
+                .option("directoryEnabled", true) //
+                .option("directoryPath", "/services");
         try (MetContext context = configuration.buildContext()) {
             context.start();
             context.publisher() //
@@ -260,9 +281,13 @@ public class WebServicesDirectoryTest {
     public void nestedContextHidesTheDefaultServiceEndpointFromDirectory() throws Exception {
         // 更具体的子 context 占用 Echo 默认地址；另一个默认服务仍然可见。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("soap").contextPath("/services").addContextPath("/services/EchoService") //
-                .option("directoryEnabled", true).option("directoryPath", "/services");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("soap") //
+                .contextPath("/services") //
+                .addContextPath("/services/EchoService") //
+                .option("directoryEnabled", true) //
+                .option("directoryPath", "/services");
         try (MetContext context = configuration.buildContext()) {
             context.start();
             context.publisher() //
@@ -331,9 +356,13 @@ public class WebServicesDirectoryTest {
     public void explicitContextSelectionDoesNotInventDefaultContextLinks() throws Exception {
         // 服务仅选择 private context，目录仍挂载在默认 services context。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("soap").contextPath("/services").addContextPath("/private") //
-                .option("directoryEnabled", true).option("directoryPath", "/services");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("soap") //
+                .contextPath("/services") //
+                .addContextPath("/private") //
+                .option("directoryEnabled", true) //
+                .option("directoryPath", "/services");
         try (MetContext context = configuration.buildContext()) {
             context.start();
             context.publisher() //
@@ -407,7 +436,9 @@ public class WebServicesDirectoryTest {
     public void providersBoundOnlyToAnotherProtocolAreExcludedFromDirectory() throws Exception {
         // 容器同时提供 SOAP 和 RSF，另一个协议的服务也有 SOAP 别名。
         MetConfiguration configuration = this.directoryConfiguration();
-        configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
         try (MetContext context = configuration.buildContext()) {
             context.start();
             context.publisher() //
@@ -503,9 +534,12 @@ public class WebServicesDirectoryTest {
     public void directoryReturnsFaultWhenAServiceOccupiesItsPath() throws Exception {
         // 目录地址与使用默认 context 和别名组合得到的服务地址相同。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("soap").contextPath("/services") //
-                .option("directoryEnabled", true).option("directoryPath", "/services/EchoService");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("soap") //
+                .contextPath("/services") //
+                .option("directoryEnabled", true) //
+                .option("directoryPath", "/services/EchoService");
         try (MetContext context = configuration.buildContext()) {
             context.start();
 
@@ -535,9 +569,12 @@ public class WebServicesDirectoryTest {
     public void directoryDetectsAnExactServicePathPublishedAfterItsFirstRequest() throws Exception {
         // 服务显式精确路径与目录地址重叠，别名本身没有重叠。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("soap").contextPath("/services") //
-                .option("directoryEnabled", true).option("directoryPath", "/services/index");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("soap") //
+                .contextPath("/services") //
+                .option("directoryEnabled", true) //
+                .option("directoryPath", "/services/index");
         try (MetContext context = configuration.buildContext()) {
             context.start();
 
@@ -568,14 +605,18 @@ public class WebServicesDirectoryTest {
     }
 
     private MetConfiguration configuration() {
-        return new MetConfiguration().setDefaultProtocol("soap");
+        return TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
     }
 
     private MetConfiguration directoryConfiguration() {
         MetConfiguration configuration = this.configuration();
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("soap").contextPath("/services") //
-                .option("directoryEnabled", true).option("directoryPath", "/services");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("soap") //
+                .contextPath("/services") //
+                .option("directoryEnabled", true) //
+                .option("directoryPath", "/services");
         return configuration;
     }
 

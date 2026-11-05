@@ -21,6 +21,7 @@ import net.hasor.example.OrderQuery;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
 import net.hasor.meteor.test.nxn.NxnRpc;
@@ -127,14 +128,16 @@ public class GoProtoSdkVersionCompatibilityTest {
     }
 
     private MetConfiguration configuration(boolean listening) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol(this.protocol);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol(this.protocol);
         configuration.setDefaultTimeout(10000);
         var connector = configuration.connector("http");
         if (listening) {
             connector.bind(ContainerProcess.runnerHost(), 0);
         }
         connector.option("httpVersion", StringUtils.equals("grpc", this.protocol) ? 2 : 1);
-        connector.protocol(this.protocol).contextPath("/");
+        connector.protocol(this.protocol) //
+                .contextPath("/");
         return configuration;
     }
 

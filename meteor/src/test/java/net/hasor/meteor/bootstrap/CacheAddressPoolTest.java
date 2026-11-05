@@ -29,7 +29,9 @@ public class CacheAddressPoolTest {
     public void connectorAddressSchemeFiltersCandidatesBeforeStartup() throws Exception {
         // 消费连接器使用自定义 scheme，筛选不能误用 SPI 协议名 rsf。
         MetConfiguration configuration = this.settings();
-        configuration.connector("tcp").protocol("rsf").addressScheme("edge-rsf");
+        configuration.connector("tcp") //
+                .protocol("rsf") //
+                .addressScheme("edge-rsf");
         try (MetContext context = configuration.buildContext()) {
             InterAddress configured = new InterAddress("edge-rsf://127.0.0.1:2111/default");
             InterAddress unsupported = new InterAddress("rsf://127.0.0.1:2112/default");
@@ -178,8 +180,8 @@ public class CacheAddressPoolTest {
     @Test
     public void invalidIntervalAbortsStartupAndPreventsRestart() {
         // 非正刷新间隔在启动阶段拒绝，并使地址池进入已关闭状态。
-        MetConfiguration configuration = this.settings();
-        configuration.setRefreshCacheTime(0);
+        MetConfiguration configuration = this.settings() //
+                .setRefreshCacheTime(0);
         try (CacheAddressPool pool = new CacheAddressPool(this.snapshot(configuration))) {
             assertThrows(IllegalArgumentException.class, () -> pool.start(new ManualScheduler()));
             assertThrows(IllegalStateException.class, () -> pool.start(new ManualScheduler()));
@@ -272,13 +274,13 @@ public class CacheAddressPoolTest {
     }
 
     private MetConfiguration settings() {
-        MetConfiguration settings = new MetConfiguration();
-        settings.setUnitName("default");
-        settings.setInvalidWaitTime(30000);
-        settings.setRefreshCacheTime(60000);
-        settings.setLocalDiskCache(false);
-        settings.setDiskCacheTimeInterval(3600000);
-        settings.setDataHome(this.temporary);
+        MetConfiguration settings = new MetConfiguration() //
+                .setUnitName("default") //
+                .setInvalidWaitTime(30000) //
+                .setRefreshCacheTime(60000) //
+                .setLocalDiskCache(false) //
+                .setDiskCacheTimeInterval(3600000) //
+                .setDataHome(this.temporary);
         return settings;
     }
 

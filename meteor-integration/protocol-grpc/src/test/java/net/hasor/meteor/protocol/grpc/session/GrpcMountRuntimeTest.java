@@ -8,6 +8,7 @@
 package net.hasor.meteor.protocol.grpc.session;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import net.hasor.example.protocol.grpc.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.connector.RouteMountIndex;
@@ -19,7 +20,7 @@ public class GrpcMountRuntimeTest {
     @Test
     public void activeSessionsShareOneMountWorkerPoolUntilTheLastRelease() throws Exception {
         // 同一挂载保留两个会话引用，取得同一个有界 worker 池。
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         try (MetContext context = configuration.buildContext()) {
             ProtocolConfig config = ProtocolConfig.newConfig("grpc", "grpc", Map.of("streamWorkers", "2"));
             RouteMountIndex routes = new RouteMountIndex("runtime-test", config);

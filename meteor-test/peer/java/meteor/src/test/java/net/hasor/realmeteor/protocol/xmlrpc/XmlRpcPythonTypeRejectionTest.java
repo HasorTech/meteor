@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.xmlrpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.ParameterizedClass;
@@ -57,9 +58,13 @@ public class XmlRpcPythonTypeRejectionTest {
     @Timeout(value = 45000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void pythonConsumerRejectsIntegerOutsideWireRange() throws Exception {
         // 发布真实 Meteor 业务服务；范围错误必须发生在 Python 标准库编码阶段。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("xmlrpc").option("allowNil", true).contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("xmlrpc") //
+                .option("allowNil", true) //
+                .contextPath("/rpc");
         AtomicInteger invocations = new AtomicInteger();
         TypeEchoService implementation = request -> {
             invocations.incrementAndGet();
@@ -84,8 +89,12 @@ public class XmlRpcPythonTypeRejectionTest {
     @Timeout(value = 45000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorConsumerRejectsIntegerOutsideWireRange() throws Exception {
         // 启动真实 Python 监听；Meteor 按公开 bootstrap 和服务订阅入口发起调用。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").protocol("xmlrpc").option("allowNil", true).contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .protocol("xmlrpc") //
+                .option("allowNil", true) //
+                .contextPath("/rpc");
         try (XmlRpcTypePeerProcess peer = XmlRpcTypePeerProcess.provider(this.vector); //
              MetContext client = configuration.buildContext()) {
             int port = peer.awaitPort();

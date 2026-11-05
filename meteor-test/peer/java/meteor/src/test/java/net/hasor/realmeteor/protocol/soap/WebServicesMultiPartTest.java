@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.net.URL;
 import java.util.Map;
 import net.hasor.example.protocol.soap.MultiPartService;
@@ -26,10 +27,15 @@ public class WebServicesMultiPartTest {
     public void multipleBodyOutputPartsBecomeOneJavaMap() throws Exception {
         // 导入两个独立输出元素的外部 WSDL，Java 使用一个 Map 结果承接各 part。
         URL wsdl = this.getClass().getResource("/protocol/wsdl/multipart-output.wsdl");
-        MetConfiguration serverConfig = new MetConfiguration();
-        serverConfig.connector("http").bind("127.0.0.1", 0).protocol("soap").contextPath("/services");
-        MetConfiguration clientConfig = new MetConfiguration();
-        clientConfig.connector("http").protocol("soap").contextPath("/services");
+        MetConfiguration serverConfig = TestConfigurationUtils.create();
+        serverConfig.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("soap") //
+                .contextPath("/services");
+        MetConfiguration clientConfig = TestConfigurationUtils.create();
+        clientConfig.connector("http") //
+                .protocol("soap") //
+                .contextPath("/services");
         try (MetContext server = serverConfig.buildContext(); //
              MetContext client = clientConfig.buildContext()) {
             server.start();

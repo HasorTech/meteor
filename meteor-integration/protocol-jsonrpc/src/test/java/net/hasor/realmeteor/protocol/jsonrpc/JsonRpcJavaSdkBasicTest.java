@@ -8,6 +8,7 @@
 package net.hasor.realmeteor.protocol.jsonrpc;
 import java.net.URI;
 import com.googlecode.jsonrpc4j.JsonRpcHttpClient;
+import net.hasor.example.protocol.jsonrpc.TestConfigurationUtils;
 import net.hasor.example.protocol.jsonrpc.JsonRpcDemoService;
 import net.hasor.example.protocol.jsonrpc.JsonRpcDemoServiceImpl;
 import net.hasor.meteor.MetBindInfo;
@@ -26,9 +27,12 @@ public class JsonRpcJavaSdkBasicTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void javaSdkCallsPublishedService() throws Throwable {
         // 当前 JUnit 进程通过正式入口启动 Meteor，并发布本插件的普通业务接口。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("jsonrpc");
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("jsonrpc").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("jsonrpc");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("jsonrpc") //
+                .contextPath("/rpc");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher() //
@@ -52,10 +56,12 @@ public class JsonRpcJavaSdkBasicTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorConsumerCallsJavaSdkServer() throws Exception {
         // SDK 服务与 Meteor 消费者均由测试持有，关闭顺序与创建顺序相反。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("jsonrpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("jsonrpc");
         configuration.setRequestTimeout(10000);
         configuration.connector("http") //
-                .protocol("jsonrpc").contextPath("/rpc");
+                .protocol("jsonrpc") //
+                .contextPath("/rpc");
         try (JsonRpcJavaSdkServer server = JsonRpcJavaSdkServer.start(); //
              MetContext client = configuration.buildContext()) {
             client.start();

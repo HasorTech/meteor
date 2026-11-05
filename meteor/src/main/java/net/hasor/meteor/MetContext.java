@@ -30,7 +30,7 @@ public interface MetContext extends OnlineStatus, AutoCloseable {
     /** 获取扩展运行对象或其提供的服务；未提供返回 null，存在多个匹配扩展时抛出异常。 */
     <T> T getExtension(Class<T> type);
 
-    /** 获取实例ID，实例ID在应用每次启动时生成一个全新的ID。 */
+    /** 获取数据目录中持久保存的实例 ID；使用同一数据目录重启时保持不变。 */
     String getInstanceID();
 
     /** 获取所属应用名称，默认 application。 */

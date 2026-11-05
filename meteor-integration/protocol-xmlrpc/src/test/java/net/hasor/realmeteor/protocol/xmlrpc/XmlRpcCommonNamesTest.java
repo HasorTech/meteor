@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.xmlrpc;
+import net.hasor.example.protocol.xmlrpc.TestConfigurationUtils;
 import net.hasor.example.protocol.xmlrpc.NamedEcho;
 import net.hasor.example.protocol.xmlrpc.WireEcho;
 import net.hasor.meteor.MetBindInfo;
@@ -56,7 +57,8 @@ public class XmlRpcCommonNamesTest {
     }
 
     private MetConfiguration configuration(boolean listen) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("xmlrpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("xmlrpc");
         var connector = configuration.connector("http");
         if (listen) {
             connector.bind("127.0.0.1", 0);

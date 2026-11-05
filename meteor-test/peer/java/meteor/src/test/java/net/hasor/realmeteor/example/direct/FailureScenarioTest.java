@@ -146,7 +146,8 @@ public class FailureScenarioTest {
         MetConfiguration incoming = DirectRpcExample.server("127.0.0.1", 0, 0);
         incoming.setQueueMinPoolSize(2);
         MetConfiguration outgoing = DirectRpcExample.client("rsf");
-        outgoing.setMaximumRequest(1).setSendLimitPolicy(SendLimitPolicy.Reject);
+        outgoing.setMaximumRequest(1) //
+                .setSendLimitPolicy(SendLimitPolicy.Reject);
         ControlledOrderService implementation = new ControlledOrderService();
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
@@ -183,7 +184,8 @@ public class FailureScenarioTest {
         MetConfiguration incoming = DirectRpcExample.server("127.0.0.1", 0, 0);
         incoming.setQueueMinPoolSize(2);
         MetConfiguration outgoing = DirectRpcExample.client("rsf");
-        outgoing.setMaximumRequest(1).setSendLimitPolicy(SendLimitPolicy.Reject);
+        outgoing.setMaximumRequest(1) //
+                .setSendLimitPolicy(SendLimitPolicy.Reject);
         ControlledOrderService implementation = new ControlledOrderService();
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {

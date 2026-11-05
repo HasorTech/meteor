@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.connect;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URL;
 import java.io.IOException;
@@ -478,11 +479,15 @@ public class ConnectSecureScenarioTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void clientRejectsWrongServerHostname() throws Exception {
         // 证书由受信 CA 签发，但它不属于当前访问地址，HTTPS 必须拒绝该身份。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("connect");
-        ConnectorSettings listener = configuration.connector("http").bind("127.0.0.1", 0);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("connect");
+        ConnectorSettings listener = configuration.connector("http") //
+                .bind("127.0.0.1", 0);
         ConnectTlsUtils.serverTls(listener, 1, "NONE");
         listener.option("tlsKeyStore", "classpath:/certs/acceptance/wrong-host-server.p12");
-        listener.protocol("connect").addressScheme("https").contextPath("/rpc");
+        listener.protocol("connect") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(ConnectDemoService.class, new ConnectDemoServiceImpl()) //
@@ -563,33 +568,48 @@ public class ConnectSecureScenarioTest {
     }
 
     private MetConfiguration incoming() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("connect");
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("connect").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("connect");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("connect") //
+                .contextPath("/rpc");
         return configuration;
     }
 
     private MetConfiguration outgoing(int httpVersion) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("connect");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("connect");
         configuration.setDefaultTimeout(5000);
-        configuration.connector("http").option("httpVersion", httpVersion) //
-                .protocol("connect").contextPath("/rpc");
+        configuration.connector("http") //
+                .option("httpVersion", httpVersion) //
+                .protocol("connect") //
+                .contextPath("/rpc");
         return configuration;
     }
 
     private MetConfiguration secureIncoming(int httpVersion, String clientAuth) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("connect");
-        ConnectorSettings listener = configuration.connector("http").bind("127.0.0.1", 0);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("connect");
+        ConnectorSettings listener = configuration.connector("http") //
+                .bind("127.0.0.1", 0);
         ConnectTlsUtils.serverTls(listener, httpVersion, clientAuth);
-        listener.protocol("connect").addressScheme("https").contextPath("/rpc");
+        listener.protocol("connect") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
         return configuration;
     }
 
     private MetConfiguration secureOutgoing(int httpVersion, String identity) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("connect");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("connect");
         configuration.setDefaultTimeout(5000);
-        ConnectorSettings sender = configuration.connector("http").option("httpVersion", httpVersion);
+        ConnectorSettings sender = configuration.connector("http") //
+                .option("httpVersion", httpVersion);
         ConnectTlsUtils.clientTls(sender, httpVersion, identity);
-        sender.protocol("connect").addressScheme("https").contextPath("/rpc");
+        sender.protocol("connect") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
         return configuration;
     }
 

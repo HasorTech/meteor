@@ -10,6 +10,7 @@ import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.example.composition.CompositionEchoService;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import org.junit.jupiter.api.Test;
@@ -24,14 +25,24 @@ public class HessianHproseCompositionTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void hessianAndHproseUseSeparateContextsOnOneHttpPort() throws Exception {
         // 两个真实协议插件挂载到同一个 HTTP 端点，复用两者都支持的普通回显接口。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("hessian");
-        ConnectorSettings endpoint = incoming.connector("http").bind("127.0.0.1", 0);
-        endpoint.protocol("hessian").contextPath("/hessian");
-        endpoint.protocol("hprose").contextPath("/hprose");
-        MetConfiguration hessian = new MetConfiguration().setDefaultProtocol("hessian");
-        hessian.connector("http").protocol("hessian").contextPath("/hessian");
-        MetConfiguration hprose = new MetConfiguration().setDefaultProtocol("hprose");
-        hprose.connector("http").protocol("hprose").contextPath("/hprose");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("hessian");
+        ConnectorSettings endpoint = incoming.connector("http") //
+                .bind("127.0.0.1", 0);
+        endpoint.protocol("hessian") //
+                .contextPath("/hessian");
+        endpoint.protocol("hprose") //
+                .contextPath("/hprose");
+        MetConfiguration hessian = TestConfigurationUtils.create() //
+                .setDefaultProtocol("hessian");
+        hessian.connector("http") //
+                .protocol("hessian") //
+                .contextPath("/hessian");
+        MetConfiguration hprose = TestConfigurationUtils.create() //
+                .setDefaultProtocol("hprose");
+        hprose.connector("http") //
+                .protocol("hprose") //
+                .contextPath("/hprose");
         try (MetContext server = incoming.buildContext(); //
              MetContext hessianClient = hessian.buildContext(); //
              MetContext hproseClient = hprose.buildContext()) {

@@ -19,6 +19,7 @@ import net.hasor.cobble.StringUtils;
 import net.hasor.cobble.concurrent.future.BasicFuture;
 import net.hasor.cobble.concurrent.future.Cancellable;
 import net.hasor.cobble.concurrent.future.Future;
+import net.hasor.example.protocol.thrift.TestConfigurationUtils;
 import net.hasor.example.protocol.thrift.ThriftDemoService;
 import net.hasor.example.protocol.thrift.ThriftDemoServiceImpl;
 import net.hasor.example.protocol.thrift.generated.DeclaredFailure;
@@ -761,9 +762,12 @@ public class ThriftHttpSessionTest {
     }
 
     private static MetContext context() throws Exception {
-        MetConfiguration configuration = new MetConfiguration() //
-                .setDefaultGroup("wire").setDefaultProtocol("thrift-http");
-        configuration.connector("http").protocol("thrift-http").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultGroup("wire") //
+                .setDefaultProtocol("thrift-http");
+        configuration.connector("http") //
+                .protocol("thrift-http") //
+                .contextPath("/rpc");
         MetContext context = configuration.buildContext();
         context.publisher().rsfService(ThriftDemoService.class, new ThriftDemoServiceImpl()) //
                 .name("Demo").aliasName("thrift-http", "Demo") //

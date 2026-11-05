@@ -9,6 +9,7 @@ package net.hasor.realmeteor.protocol.thrift;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import net.hasor.example.protocol.thrift.TestConfigurationUtils;
 import net.hasor.example.protocol.thrift.mapping.*;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
@@ -125,12 +126,14 @@ public class ThriftAnnotatedBootstrapScenarioTest {
     }
 
     private MetConfiguration configuration(boolean listen) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift");
         MetConfiguration.ConnectorSettings connector = configuration.connector("tcp");
         if (listen) {
             connector.bind("127.0.0.1", 0);
         }
-        connector.protocol("thrift").option("encoding", "compact");
+        connector.protocol("thrift") //
+                .option("encoding", "compact");
         return configuration;
     }
 }

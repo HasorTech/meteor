@@ -11,6 +11,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Flow;
+import net.hasor.example.protocol.thrift.TestConfigurationUtils;
 import net.hasor.example.protocol.thrift.ThriftDemoService;
 import net.hasor.example.protocol.thrift.ThriftDemoServiceImpl;
 import net.hasor.example.protocol.thrift.generated.DeclaredFailure;
@@ -53,8 +54,11 @@ public class ThriftCodecTest {
 
     @BeforeEach
     public void preparePublishedServiceMetadata() throws Exception {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift").setDefaultGroup("wire");
-        configuration.connector("tcp").protocol("thrift");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift") //
+                .setDefaultGroup("wire");
+        configuration.connector("tcp") //
+                .protocol("thrift");
         this.context = configuration.buildContext();
         this.service = this.context.publisher() //
                 .rsfService(ThriftDemoService.class, new ThriftDemoServiceImpl()) //
@@ -668,8 +672,12 @@ public class ThriftCodecTest {
     }
 
     private MetConfiguration httpConfiguration() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift-http");
-        configuration.connector("http").protocol("thrift-http").contextPath("/rpc").addContextPath("/private");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift-http");
+        configuration.connector("http") //
+                .protocol("thrift-http") //
+                .contextPath("/rpc") //
+                .addContextPath("/private");
         return configuration;
     }
 

@@ -16,6 +16,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import com.caucho.hessian.io.*;
+import net.hasor.example.protocol.hessian.TestConfigurationUtils;
 import net.hasor.cobble.concurrent.future.BasicFuture;
 import net.hasor.cobble.concurrent.future.Cancellable;
 import net.hasor.cobble.concurrent.future.Future;
@@ -922,8 +923,11 @@ public class HessianSessionTest {
     }
 
     private static MetContext context() throws Exception {
-        MetConfiguration configuration = new MetConfiguration().setDefaultGroup("wire");
-        configuration.connector("http").protocol("hessian").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultGroup("wire");
+        configuration.connector("http") //
+                .protocol("hessian") //
+                .contextPath("/rpc");
         MetContext context = configuration.buildContext();
         context.publisher().rsfService(Echo.class, value -> value) //
                 .name("Echo") //

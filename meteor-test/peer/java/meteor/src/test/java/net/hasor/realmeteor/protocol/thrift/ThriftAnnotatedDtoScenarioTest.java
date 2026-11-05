@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.thrift;
+import net.hasor.example.support.TestConfigurationUtils;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.ParameterizedClass;
 import java.nio.file.Path;
@@ -114,7 +115,8 @@ public class ThriftAnnotatedDtoScenarioTest {
     }
 
     private MetConfiguration configuration(boolean listen) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol(this.protocol());
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol(this.protocol());
         configuration.setDefaultTimeout(10000);
         String type = this.http() ? "http" : "tcp";
         ConnectorSettings connector = configuration.connector(type);
@@ -132,7 +134,8 @@ public class ThriftAnnotatedDtoScenarioTest {
             }
         }
         MetConfiguration.ProtocolSettings protocol = connector.protocol(this.protocol()) //
-                .addressScheme(this.scheme()).option("encoding", this.encoding) //
+                .addressScheme(this.scheme()) //
+                .option("encoding", this.encoding) //
                 .option("multiplexed", this.multiplexed);
         if (this.http()) {
             connector.option("httpVersion", 1);

@@ -94,10 +94,12 @@ public class OrderUnicodeMatrixTest {
         // 每个参数独占缓存、服务分组和注册空间，两端仅安装当前业务协议。
         String scope = "unicode-" + UUID.randomUUID();
         MetConfiguration incoming = this.protocol.providerConfiguration();
-        incoming.setDefaultGroup(scope).setApplicationName("unicode-provider");
+        incoming.setDefaultGroup(scope) //
+                .setApplicationName("unicode-provider");
         incoming.setDataHome(Files.createDirectory(this.data.resolve("provider")));
         MetConfiguration outgoing = this.protocol.consumerConfiguration();
-        outgoing.setDefaultGroup(scope).setApplicationName("unicode-consumer");
+        outgoing.setDefaultGroup(scope) //
+                .setApplicationName("unicode-consumer");
         outgoing.setDataHome(Files.createDirectory(this.data.resolve("consumer")));
 
         try {
@@ -107,8 +109,11 @@ public class OrderUnicodeMatrixTest {
                 incoming.addExtension(registry);
                 outgoing.addExtension(registry);
                 if (this.protocol != OrderProtocol.RSF) {
-                    incoming.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-                    outgoing.connector("tcp").protocol("rsf");
+                    incoming.connector("tcp") //
+                            .bind("127.0.0.1", 0) //
+                            .protocol("rsf");
+                    outgoing.connector("tcp") //
+                            .protocol("rsf");
                 }
             }
             try (MetContext provider = incoming.buildContext(); //

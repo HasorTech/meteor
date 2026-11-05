@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.jsonrpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -44,10 +45,14 @@ public class JsonRpcHttpScenarioTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void jsonRpcAndHproseShareOneHttpPortThroughContextRouting() throws Exception {
         // 两个正式协议插件通过 SPI 发现，并挂载到同一个 HTTP 监听端口。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("jsonrpc");
-        ConnectorSettings listener = configuration.connector("http").bind("127.0.0.1", 0);
-        listener.protocol("jsonrpc").contextPath("/jsonrpc");
-        listener.protocol("hprose").contextPath("/hprose");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("jsonrpc");
+        ConnectorSettings listener = configuration.connector("http") //
+                .bind("127.0.0.1", 0);
+        listener.protocol("jsonrpc") //
+                .contextPath("/jsonrpc");
+        listener.protocol("hprose") //
+                .contextPath("/hprose");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher() //
@@ -391,16 +396,22 @@ public class JsonRpcHttpScenarioTest {
     }
 
     private MetConfiguration serverConfiguration() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("jsonrpc");
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("jsonrpc").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("jsonrpc");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("jsonrpc") //
+                .contextPath("/rpc");
         return configuration;
     }
 
     private MetConfiguration clientConfiguration(int httpVersion) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("jsonrpc");
-        configuration.connector("http").option("httpVersion", httpVersion) //
-                .protocol("jsonrpc").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("jsonrpc");
+        configuration.connector("http") //
+                .option("httpVersion", httpVersion) //
+                .protocol("jsonrpc") //
+                .contextPath("/rpc");
         return configuration;
     }
 }

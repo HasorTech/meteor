@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import hprose.io.HproseWriter;
+import net.hasor.example.protocol.hprose.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.connector.RouteMountIndex;
@@ -46,8 +47,10 @@ public class HproseRequestTest {
     }
 
     private MetConfiguration configuration() {
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("http").protocol("hprose").contextPath("/hprose");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("http") //
+                .protocol("hprose") //
+                .contextPath("/hprose");
         return configuration;
     }
 
@@ -192,7 +195,8 @@ public class HproseRequestTest {
     public void directDecodedCallsRespectServiceExposure() throws Exception {
         // 同时配置 RSF 与 Hprose，服务只选择 RSF 的实际端点。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("tcp").protocol("rsf");
+        configuration.connector("tcp") //
+                .protocol("rsf");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, new EchoImpl()).protocol("rsf").register();
             HproseHttpCodec codec = this.codec(context);

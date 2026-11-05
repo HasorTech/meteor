@@ -12,6 +12,7 @@ import net.hasor.cobble.StringUtils;
 import net.hasor.example.protocol.grpc.Message;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.rpc.MetCaller;
 
@@ -20,12 +21,21 @@ public class GrpcWebExample {
     public static void main(String[] arguments) throws Exception {
         // 协议插件自己适配 gRPC-Web 帧，应用仍使用普通接口发布与订阅。
         boolean text = arguments.length > 0 && StringUtils.equalsIgnoreCase("text", arguments[0]);
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("grpc-web");
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("grpc-web") //
-                .contextPath("/web").option("streamBody", true);
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("grpc-web");
-        outgoing.connector("http").option("httpVersion", 1).protocol("grpc-web") //
-                .contextPath("/web").option("streamBody", true).option("webText", text);
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc-web");
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc-web") //
+                .contextPath("/web") //
+                .option("streamBody", true);
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc-web");
+        outgoing.connector("http") //
+                .option("httpVersion", 1) //
+                .protocol("grpc-web") //
+                .contextPath("/web") //
+                .option("streamBody", true) //
+                .option("webText", text);
 
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {

@@ -19,6 +19,7 @@ import java.util.zip.GZIPOutputStream;
 import net.hasor.example.protocol.grpc.Echo;
 import net.hasor.example.protocol.grpc.EchoImpl;
 import net.hasor.example.protocol.grpc.Message;
+import net.hasor.example.protocol.grpc.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
@@ -408,9 +409,10 @@ public class GrpcHttpCodecTest {
     }
 
     private MetConfiguration configuration() {
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         configuration.setDefaultProtocol("grpc");
-        configuration.connector("http").protocol("grpc");
+        configuration.connector("http") //
+                .protocol("grpc");
         return configuration;
     }
 

@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.hasor.example.protocol.grpc.Echo;
 import net.hasor.example.protocol.grpc.EchoImpl;
 import net.hasor.example.protocol.grpc.Messages;
+import net.hasor.example.protocol.grpc.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
@@ -264,11 +265,15 @@ public class GrpcProtocolTest {
     @Test
     public void sameProtocolKeepsEachEndpointBindingAndEffectiveContext() throws Exception {
         // 同一个协议挂到两个端点，各端点拥有独立地址前缀和默认目录。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("http").protocol("grpc") //
-                .addressScheme("grpc-primary").contextPath("/primary");
-        configuration.connector("http").protocol("grpc") //
-                .addressScheme("grpc-secondary").contextPath("/secondary");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("http") //
+                .protocol("grpc") //
+                .addressScheme("grpc-primary") //
+                .contextPath("/primary");
+        configuration.connector("http") //
+                .protocol("grpc") //
+                .addressScheme("grpc-secondary") //
+                .contextPath("/secondary");
         try (MetContext context = configuration.buildContext()) {
             context.start();
             MetBindInfo<Echo> service = context.publisher().rsfService(Echo.class, new EchoImpl()) //

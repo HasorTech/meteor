@@ -11,6 +11,7 @@ import java.util.List;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropService;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropServiceImpl;
 import net.hasor.meteor.MetContext;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.node.NodeRpcPeer;
@@ -36,8 +37,11 @@ public class NodeDubboSdkVersionScenarioTest {
     @Timeout(value = 60000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void selectedSdkConsumerPreservesUnicodeArguments() throws Exception {
         // 公开 bootstrap 先启动真实 TCP 监听，再发布现有普通接口及业务实现。
-        MetConfiguration configuration = new MetConfiguration().setApplicationName("node-dubbo-version-provider");
-        configuration.connector("tcp").bind(ContainerProcess.runnerHost(), 0).protocol("dubbo");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setApplicationName("node-dubbo-version-provider");
+        configuration.connector("tcp") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("dubbo");
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
             provider.publisher().rsfService(DubboInteropService.class, new DubboInteropServiceImpl()) //

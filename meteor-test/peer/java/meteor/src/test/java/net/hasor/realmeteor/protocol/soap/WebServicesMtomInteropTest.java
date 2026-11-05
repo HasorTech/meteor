@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -44,7 +45,8 @@ public class WebServicesMtomInteropTest {
                 proxyServer.start();
 
                 // Meteor 从 Java 接口生成调用契约，显式开启 MTOM 和零字节阈值。
-                MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+                MetConfiguration configuration = TestConfigurationUtils.create() //
+                        .setDefaultProtocol("soap");
                 configuration.connector("http") //
                         .protocol("soap") //
                         .contextPath("/services") //
@@ -101,7 +103,8 @@ public class WebServicesMtomInteropTest {
                 proxyServer.start();
 
                 // Meteor 从 Java 接口生成调用契约，显式开启 MTOM 和零字节阈值。
-                MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+                MetConfiguration configuration = TestConfigurationUtils.create() //
+                        .setDefaultProtocol("soap");
                 configuration.connector("http") //
                         .protocol("soap") //
                         .contextPath("/services") //

@@ -23,10 +23,13 @@ public final class NativeRegistryProviderMain {
         DubboRegistryConfiguration registry = new DubboRegistryConfiguration() //
                 .setAddress("zookeeper://127.0.0.1:2181");
         registry.setPublishHost("127.0.0.1");
-        MetConfiguration configuration = new MetConfiguration().setUnitName("local");
-        configuration.setApplicationName("meteor-native-dubbo-order-provider");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setUnitName("local") //
+                .setApplicationName("meteor-native-dubbo-order-provider");
         configuration.addExtension(registry);
-        configuration.connector("tcp").bind("0.0.0.0", 8080).protocol("dubbo");
+        configuration.connector("tcp") //
+                .bind("0.0.0.0", 8080) //
+                .protocol("dubbo");
 
         try (MetContext context = configuration.buildContext()) {
             // 启动容器后发布接口，扩展自动向 ZooKeeper 登记实际业务端口。

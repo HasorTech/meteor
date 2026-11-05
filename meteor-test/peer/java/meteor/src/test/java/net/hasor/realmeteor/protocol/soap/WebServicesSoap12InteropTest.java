@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.net.URI;
 import java.net.URL;
 import java.util.Map;
@@ -37,9 +38,13 @@ public class WebServicesSoap12InteropTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void metroClientUsesTheGeneratedSoap12Binding() throws Exception {
         // 用户选择 SOAP 1.2，服务仍按普通 Java 接口发布。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("soap").contextPath("/services").option("soapVersion", "1.2");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("soap") //
+                .contextPath("/services") //
+                .option("soapVersion", "1.2");
         try (MetContext context = configuration.buildContext()) {
             context.start();
             context.publisher().rsfService(EchoService.class, new EchoServiceImpl()) //
@@ -75,9 +80,12 @@ public class WebServicesSoap12InteropTest {
         // 对端使用 Metro 自己的 SOAP 1.2 binding，不经过 Meteor 协议实现。
         try (SoapPeerProcess server = SoapPeerProcess.metroServer("echo", "1.2", false)) {
             // Meteor 只启动出站通道，订阅 Java 接口后通过公开客户端调用。
-            MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
-            configuration.connector("http").protocol("soap") //
-                    .contextPath("/services").option("soapVersion", "1.2");
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setDefaultProtocol("soap");
+            configuration.connector("http") //
+                    .protocol("soap") //
+                    .contextPath("/services") //
+                    .option("soapVersion", "1.2");
             try (MetContext context = configuration.buildContext()) {
                 context.start();
                 MetBindInfo<EchoService> subscription = context.publisher().rsfService(EchoService.class) //

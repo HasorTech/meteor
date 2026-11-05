@@ -8,6 +8,7 @@ import net.hasor.meteor.test.nxn.NxnRpc;
 import java.util.List;
 import net.hasor.example.echo.TextEchoService;
 import net.hasor.meteor.MetContext;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
@@ -22,8 +23,11 @@ public class HproseCppSourceSdkScenarioTest {
     @Timeout(value = 60000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void sourceSdkWithPublicCurlTransportCallsMeteorProvider() throws Exception {
         // Meteor 仅挂载当前协议，服务实现通过公开 bootstrap 和发布 API 准备。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("http").bind("0.0.0.0", 0).protocol("hprose").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("http") //
+                .bind("0.0.0.0", 0) //
+                .protocol("hprose") //
+                .contextPath("/rpc");
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
             provider.publisher().rsfService(TextEchoService.class, text -> text) //

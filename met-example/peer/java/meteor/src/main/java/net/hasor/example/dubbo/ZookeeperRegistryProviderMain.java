@@ -20,14 +20,19 @@ public final class ZookeeperRegistryProviderMain {
 
     public static void main(String[] arguments) throws Exception {
         // 接入本地 ZooKeeper，配置业务监听。
-        MetConfiguration configuration = new MetConfiguration().setUnitName("local");
-        configuration.setApplicationName("dubbo-order-provider");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setUnitName("local") //
+                .setApplicationName("dubbo-order-provider");
         configuration.addExtension(new ZookeeperRegistryConfiguration().setAddress("127.0.0.1:2181") //
                 .setPublishHost("127.0.0.1"));
-        configuration.connector("tcp").bind("0.0.0.0", 8080).protocol("dubbo");
+        configuration.connector("tcp") //
+                .bind("0.0.0.0", 8080) //
+                .protocol("dubbo");
 
         // RSF 端点供注册中心管理调用使用。
-        configuration.connector("tcp").bind("127.0.0.1", 8081).protocol("rsf");
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 8081) //
+                .protocol("rsf");
 
         try (MetContext context = configuration.buildContext()) {
             // 启动后发布订单服务，扩展自动登记服务地址。

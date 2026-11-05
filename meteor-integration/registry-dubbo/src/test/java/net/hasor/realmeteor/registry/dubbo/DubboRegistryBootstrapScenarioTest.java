@@ -14,6 +14,7 @@ import net.hasor.example.registry.dubbo.RegistryEchoService;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.registry.dubbo.DubboTestUtils;
 import net.hasor.meteor.registry.dubbo.DubboRegistryClient;
 import net.hasor.meteor.registry.dubbo.DubboRegistryConfiguration;
 import org.apache.curator.test.TestingServer;
@@ -32,9 +33,12 @@ public class DubboRegistryBootstrapScenarioTest {
         try (TestingServer zookeeper = new TestingServer()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration provider = application(registryUrl, "meteor-discovery-provider");
-            provider.connector("tcp").bind("0.0.0.0", 0).protocol("dubbo");
+            provider.connector("tcp") //
+                    .bind("0.0.0.0", 0) //
+                    .protocol("dubbo");
             MetConfiguration consumer = application(registryUrl, "meteor-discovery-consumer");
-            consumer.connector("tcp").protocol("dubbo");
+            consumer.connector("tcp") //
+                    .protocol("dubbo");
             try (MetContext server = provider.buildContext(); //
                  MetContext client = consumer.buildContext()) {
                 server.start();
@@ -59,7 +63,8 @@ public class DubboRegistryBootstrapScenarioTest {
     private static MetConfiguration application(String registryUrl, String applicationName) {
         DubboRegistryConfiguration registry = new DubboRegistryConfiguration().setAddress(registryUrl);
         registry.setPublishHost("127.0.0.1");
-        MetConfiguration configuration = new MetConfiguration().addExtension(registry);
+        MetConfiguration configuration = DubboTestUtils.createConfiguration() //
+                .addExtension(registry);
         configuration.setApplicationName(applicationName);
         return configuration;
     }

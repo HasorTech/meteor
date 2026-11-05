@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.connect;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -84,9 +85,13 @@ public class ConnectCorsScenarioTest {
     }
 
     private MetConfiguration configuration() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("connect");
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("connect").contextPath("/connect").option("corsOrigins", "https://app.example");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("connect");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("connect") //
+                .contextPath("/connect") //
+                .option("corsOrigins", "https://app.example");
         return configuration;
     }
 

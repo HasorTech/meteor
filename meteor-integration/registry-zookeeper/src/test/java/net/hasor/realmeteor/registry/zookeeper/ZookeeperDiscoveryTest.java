@@ -9,6 +9,7 @@ import net.hasor.example.registry.zookeeper.EchoService;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.registry.zookeeper.ZookeeperTestUtils;
 import net.hasor.meteor.registry.zookeeper.ZookeeperRegistryConfiguration;
 import org.apache.curator.test.TestingServer;
 import org.junit.jupiter.api.Test;
@@ -25,10 +26,15 @@ public class ZookeeperDiscoveryTest {
         try (TestingServer zookeeper = new TestingServer()) {
             ZookeeperRegistryConfiguration registry = new ZookeeperRegistryConfiguration();
             registry.setAddress(zookeeper.getConnectString());
-            MetConfiguration provider = new MetConfiguration().addExtension(registry);
-            provider.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-            MetConfiguration consumer = new MetConfiguration().addExtension(registry);
-            consumer.connector("tcp").protocol("rsf");
+            MetConfiguration provider = ZookeeperTestUtils.createConfiguration() //
+                    .addExtension(registry);
+            provider.connector("tcp") //
+                    .bind("127.0.0.1", 0) //
+                    .protocol("rsf");
+            MetConfiguration consumer = ZookeeperTestUtils.createConfiguration() //
+                    .addExtension(registry);
+            consumer.connector("tcp") //
+                    .protocol("rsf");
             try (MetContext server = provider.buildContext(); //
                  MetContext client = consumer.buildContext()) {
                 // 两端上下文独立，消费端不配置服务端地址，也没有本地实现可调用。

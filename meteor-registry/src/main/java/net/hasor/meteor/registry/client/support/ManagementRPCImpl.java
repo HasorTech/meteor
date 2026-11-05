@@ -30,6 +30,7 @@ import net.hasor.meteor.registry.shared.storage.domain.EntServiceRuntimeData;
 import net.hasor.meteor.registry.shared.storage.domain.RefProtocolMountData;
 import net.hasor.meteor.registry.shared.utils.RegistryGovernanceUtils;
 import net.hasor.meteor.registry.shared.utils.RegistryJson;
+import net.hasor.meteor.utils.ContextPathUtils;
 
 /** 管理本地 Meteor 的运行状态、治理、快照和管理 RPC；并发控制由实际状态的持有者负责。 */
 public final class ManagementRPCImpl implements ManagementRPC {
@@ -106,7 +107,6 @@ public final class ManagementRPCImpl implements ManagementRPC {
         if (serviceId == null) {
             InstanceData instance = this.instance(null);
             EntInstanceRuntimeData registration = RegistryJson.copy(instance, EntInstanceRuntimeData.class);
-            registration.setManagementAddresses(instance.getManagementAddress());
             record.setInstance(registration);
         }
 
@@ -203,6 +203,7 @@ public final class ManagementRPCImpl implements ManagementRPC {
         result.setApplicationName(this.context.getApplicationName());
         result.setUnitName(this.context.getSettings().getUnitName());
         result.setBlock(this.governance.isBlock());
+        List<InstanceEndpointData> endpoints = new ArrayList<>();
         Map<String, ProtocolMeta> managementPublications = MetBindInfoWrap.unwrap(this.managementService).getProtocolMetas();
         for (ConnectorConfig connector : this.context.getSettings().getConnectorConfigs()) {
             if (!connector.bindEnabled()) {
@@ -216,22 +217,42 @@ public final class ManagementRPCImpl implements ManagementRPC {
                     continue;
                 }
 
-                String addressKey = connector.name() + "#" + address.getSchema();
-                result.getListenAddresses().putIfAbsent(addressKey, address.toString());
-
-                // 管理地址只公告管理服务实际接受的端点，业务监听地址仍完整保留。
                 ProtocolMeta management = managementPublications.get(protocol.name());
-                if (management == null || management.getEndpoint(connector.name()) == null) {
-                    continue;
+                ProtocolBinding binding = management == null ? null : management.getEndpoint(connector.name());
+                InterAddress managementAddress = null;
+                if (binding != null) {
+                    managementAddress = address;
+                    if (StringUtils.isNotBlank(this.publishHost)) {
+                        managementAddress = new InterAddress(//
+                                address.getSchema(), this.publishHost, address.getPort(), address.getFormUnit());
+                    }
                 }
-                InterAddress managementAddress = address;
-                if (StringUtils.isNotBlank(this.publishHost)) {
-                    managementAddress = new InterAddress(//
-                            address.getSchema(), this.publishHost, address.getPort(), address.getFormUnit());
+
+                List<String> paths = ContextPathUtils.contextPaths(protocol.options());
+                if (paths.isEmpty()) {
+                    paths = Collections.singletonList(null);
                 }
-                result.getManagementAddress().putIfAbsent(addressKey, managementAddress.toString());
+                for (String path : paths) {
+                    InstanceEndpointData endpoint = new InstanceEndpointData();
+                    endpoint.setConnectorName(connector.name());
+                    endpoint.setTransport(connector.transportType());
+                    endpoint.setProtocolName(protocol.name());
+                    endpoint.setScheme(protocol.scheme());
+                    endpoint.setContextPath(path);
+                    endpoint.setListenAddress(address.toString());
+
+                    // 同一监听器的各上下文独立上报，管理地址只属于管理服务实际接受的挂载。
+                    if (binding != null) {
+                        var managementContexts = binding.getContextPath();
+                        if (managementContexts == null || managementContexts.getPaths().contains(path)) {
+                            endpoint.setManagementAddress(managementAddress.toString());
+                        }
+                    }
+                    endpoints.add(endpoint);
+                }
             }
         }
+        result.setEndpoints(endpoints.toArray(InstanceEndpointData[]::new));
         return result;
     }
 
@@ -666,6 +687,10 @@ public final class ManagementRPCImpl implements ManagementRPC {
 
         // 多个 context 共用同一绑定描述；只复制本次实际上报的端点。
         ObjectNode protocols = description.putObject("protocols");
+        Map<String, ConnectorConfig> connectors = new HashMap<>();
+        for (ConnectorConfig connector : this.context.getSettings().getConnectorConfigs()) {
+            connectors.put(connector.name(), connector);
+        }
         for (ServiceEndpointData endpoint : endpoints) {
             String protocol = endpoint.getProtocolName();
             String connector = endpoint.getConnectorName();
@@ -677,7 +702,22 @@ public final class ManagementRPCImpl implements ManagementRPC {
                 ProtocolBinding binding = publications.get(protocol).getEndpoint(connector);
                 ObjectNode contract = binding.getDescription();
                 if (contract != null) {
-                    bindings.set(connector, contract.deepCopy());
+                    ObjectNode snapshot = contract.deepCopy();
+                    ConnectorConfig configuration = connectors.get(connector);
+                    ProtocolConfig mount = configuration.protocol(protocol);
+                    // 只上报公开连接事实，不把证书、密钥路径和密码复制进服务描述。
+                    ObjectNode connection = snapshot.putObject("connection");
+                    boolean tls = Boolean.parseBoolean(configuration.options().getOrDefault("tlsEnabled", "false"));
+                    connection.put("tlsEnabled", tls);
+                    if (StringUtils.equals(configuration.transportType(), "http")) {
+                        String transportScheme = configuration.options().getOrDefault("httpScheme", "http");
+                        connection.put("httpScheme", mount.option("httpScheme", transportScheme));
+                        String upgrade = mount.option("upgrade", null);
+                        if (StringUtils.isNotBlank(upgrade)) {
+                            connection.put("upgrade", upgrade);
+                        }
+                    }
+                    bindings.set(connector, snapshot);
                 }
             }
         }

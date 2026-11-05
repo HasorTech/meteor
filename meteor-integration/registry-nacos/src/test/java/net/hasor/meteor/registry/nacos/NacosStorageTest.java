@@ -24,6 +24,51 @@ import static org.junit.jupiter.api.Assertions.*;
 /** 新业务存储契约；只通过正式配置打开会话。 */
 public class NacosStorageTest {
     @Test
+    public void instanceEndpointsSurviveRoundTripAcrossSessions() throws Exception {
+        // 模拟 Nacos SDK，通过正式配置打开两个独立存储会话。
+        try (MockNacosSdk sdk = new MockNacosSdk()) {
+            NacosRegistryConfiguration configuration = sdk.configuration();
+            try (StorageAccess writer = configuration.openStorage(); //
+                 StorageAccess reader = configuration.openStorage()) {
+                EntInstanceRuntimeData registered = instance("one", "orders", "east");
+                EntInstanceEndpointData publicEndpoint = new EntInstanceEndpointData();
+                publicEndpoint.setConnectorName("public-http");
+                publicEndpoint.setTransport("http");
+                publicEndpoint.setProtocolName("jsonrpc");
+                publicEndpoint.setScheme("orders-rpc");
+                publicEndpoint.setContextPath("/orders");
+                publicEndpoint.setListenAddress("orders-rpc://127.0.0.1:8080/orders");
+                EntInstanceEndpointData internalEndpoint = new EntInstanceEndpointData();
+                internalEndpoint.setConnectorName("internal-http");
+                internalEndpoint.setTransport("http");
+                internalEndpoint.setProtocolName("jsonrpc");
+                internalEndpoint.setScheme("jsonrpc");
+                internalEndpoint.setContextPath("/internal");
+                internalEndpoint.setListenAddress("jsonrpc://127.0.0.1:8081/internal");
+                internalEndpoint.setManagementAddress("jsonrpc://127.0.0.1:8081/internal/management");
+                EntInstanceEndpointData[] expected = { publicEndpoint, internalEndpoint };
+                registered.setEndpoints(expected);
+                writer.registerInstance(registered);
+
+                // SDK 元数据往返后仍分别保留协议、scheme、路径及可选管理地址。
+                EntInstanceRuntimeData runtime = reader.getInstance("one").getRuntime();
+                EntInstanceEndpointData[] actual = runtime.getEndpoints();
+                assertEquals(2, actual.length);
+                // 按登记顺序逐字段核对，不能将同协议的两个连接器合并。
+                for (int index = 0; index < expected.length; index++) {
+                    assertEquals(expected[index].getConnectorName(), actual[index].getConnectorName());
+                    assertEquals(expected[index].getTransport(), actual[index].getTransport());
+                    assertEquals(expected[index].getProtocolName(), actual[index].getProtocolName());
+                    assertEquals(expected[index].getScheme(), actual[index].getScheme());
+                    assertEquals(expected[index].getContextPath(), actual[index].getContextPath());
+                    assertEquals(expected[index].getListenAddress(), actual[index].getListenAddress());
+                    assertEquals(expected[index].getManagementAddress(), actual[index].getManagementAddress());
+                }
+            }
+        }
+    }
+
+    @Test
     public void zeroContractServiceIdSurvivesStorageRoundTrip() throws Exception {
         // 数值零保存在完整服务描述中，字符串服务 ID 继续用于目录定位。
         try (MockNacosSdk sdk = new MockNacosSdk(); //

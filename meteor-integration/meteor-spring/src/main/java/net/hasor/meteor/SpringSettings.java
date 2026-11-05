@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -28,6 +29,10 @@ final class SpringSettings {
         MetConfiguration config = new MetConfiguration();
         config.setAddressBook(environment.getProperty("meteor.address-book"));
         config.setApplicationName(environment.getProperty("meteor.application", config.getApplicationName()));
+        String dataHome = environment.getProperty("meteor.data-home");
+        if (StringUtils.isNotBlank(dataHome)) {
+            config.setDataHome(Paths.get(dataHome));
+        }
         config.setUnitName(environment.getProperty("meteor.unit", config.getUnitName()));
         config.setDefaultProtocol(environment.getProperty("meteor.default-protocol", config.getDefaultProtocol()));
         config.setDefaultGroup(environment.getProperty("meteor.default-group", config.getDefaultGroup()));
@@ -50,7 +55,8 @@ final class SpringSettings {
             }
             String key = provider.transportType() + "://" + host + ":" + port;
             MetConfiguration.ConnectorSettings connector = connectors.computeIfAbsent(key, ignored -> {
-                return config.connector(provider.transportType()).bind(host, port);
+                return config.connector(provider.transportType()) //
+                        .bind(host, port);
             });
             MetConfiguration.ProtocolSettings protocol = connector.protocol(provider.name());
             String scheme = environment.getProperty(prefix + "address-scheme");

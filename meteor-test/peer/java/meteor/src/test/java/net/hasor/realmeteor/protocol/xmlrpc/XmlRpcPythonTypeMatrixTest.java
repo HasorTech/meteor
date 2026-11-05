@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.xmlrpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.ParameterizedClass;
@@ -53,9 +54,13 @@ public class XmlRpcPythonTypeMatrixTest {
     @Timeout(value = 45000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void pythonConsumerCallsMeteorProvider() throws Exception {
         // 配置真实监听和显式 nil 扩展，普通 Java DTO 由协议直接编解码。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("xmlrpc").option("allowNil", true).contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("xmlrpc") //
+                .option("allowNil", true) //
+                .contextPath("/rpc");
         try (MetContext server = configuration.buildContext()) {
             // 启动容器后发布共享接口，Python 使用 types.echo 标准方法名访问。
             server.start();
@@ -75,8 +80,12 @@ public class XmlRpcPythonTypeMatrixTest {
     @Timeout(value = 45000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorConsumerCallsPythonProvider() throws Exception {
         // Python 作为独立网络提供者；Meteor 只配置出站端点，不开放监听。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").protocol("xmlrpc").option("allowNil", true).contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .protocol("xmlrpc") //
+                .option("allowNil", true) //
+                .contextPath("/rpc");
         try (XmlRpcTypePeerProcess peer = XmlRpcTypePeerProcess.provider(this.vector); //
              MetContext client = configuration.buildContext()) {
             int port = peer.awaitPort();

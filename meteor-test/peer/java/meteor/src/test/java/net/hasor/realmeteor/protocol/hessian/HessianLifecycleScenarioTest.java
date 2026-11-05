@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hessian;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -182,7 +183,8 @@ public class HessianLifecycleScenarioTest {
     public void closingTheServerFailsPendingCallsWithoutWaitingForTimeout() throws Exception {
         // 阻塞一次业务执行，观察连接关闭对在途调用的终止通知。
         MetConfiguration incoming = this.serverConfiguration();
-        MetConfiguration outgoing = this.clientConfiguration(2).setRequestTimeout(10000);
+        MetConfiguration outgoing = this.clientConfiguration(2) //
+                .setRequestTimeout(10000);
         CountDownLatch entered = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
         HessianDemoServiceImpl implementation = new HessianDemoServiceImpl() {
@@ -291,16 +293,22 @@ public class HessianLifecycleScenarioTest {
     }
 
     private MetConfiguration serverConfiguration() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("hessian");
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("hessian").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("hessian");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("hessian") //
+                .contextPath("/rpc");
         return configuration;
     }
 
     private MetConfiguration clientConfiguration(int version) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("hessian");
-        configuration.connector("http").option("httpVersion", version) //
-                .protocol("hessian").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("hessian");
+        configuration.connector("http") //
+                .option("httpVersion", version) //
+                .protocol("hessian") //
+                .contextPath("/rpc");
         return configuration;
     }
 

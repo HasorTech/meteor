@@ -6,22 +6,30 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor;
+import java.nio.file.Path;
 import net.hasor.cobble.setting.Settings;
 import net.hasor.core.AppContext;
 import net.hasor.core.Hasor;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MeteorModuleTest {
+    @TempDir
+    Path directory;
+
     @Test
     void scansOnlyAnnotatedInterfaces() throws Throwable {
         // 通过模块入口确认注解类和普通接口不会生成服务绑定。
         try (AppContext app = Hasor.create().registerShutdownHook(false) //
                 .addSettings(Settings.DefaultNameSpace, "hasor.loadPackages", "net.hasor.meteor") //
                 .addModules(binder -> {
-                    MetConfiguration configuration = new MetConfiguration();
-                    configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+                    MetConfiguration configuration = new MetConfiguration() //
+                            .setDataHome(this.directory);
+                    configuration.connector("tcp") //
+                            .bind("127.0.0.1", 0) //
+                            .protocol("rsf");
                     binder.bindType(MetConfiguration.class).toInstance(configuration);
                 }).addModules(new MeteorModule()).build()) {
             MetContext context = app.getInstance(MetContext.class);
@@ -37,8 +45,11 @@ class MeteorModuleTest {
         try (AppContext app = Hasor.create().registerShutdownHook(false) //
                 .addSettings(Settings.DefaultNameSpace, "hasor.loadPackages", " , ") //
                 .addModules(binder -> {
-                    MetConfiguration configuration = new MetConfiguration();
-                    configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+                    MetConfiguration configuration = new MetConfiguration() //
+                            .setDataHome(this.directory);
+                    configuration.connector("tcp") //
+                            .bind("127.0.0.1", 0) //
+                            .protocol("rsf");
                     binder.bindType(MetConfiguration.class).toInstance(configuration);
                 }).addModules(new MeteorModule()).build()) {
             MetContext context = app.getInstance(MetContext.class);

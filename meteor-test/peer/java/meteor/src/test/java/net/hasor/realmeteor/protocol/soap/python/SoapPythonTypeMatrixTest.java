@@ -106,13 +106,16 @@ public class SoapPythonTypeMatrixTest {
     }
 
     private MetConfiguration configuration(boolean listen) throws Exception {
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
+        MetConfiguration configuration = new MetConfiguration() //
+                .setRequestTimeout(10000);
         configuration.setDataHome(Files.createDirectory(this.data.resolve("application")));
         var http = configuration.connector("http");
         if (listen) {
             http.bind(ContainerProcess.runnerHost(), 0);
         }
-        http.protocol("soap").addressScheme("http").contextPath("/soap");
+        http.protocol("soap") //
+                .addressScheme("http") //
+                .contextPath("/soap");
 
         // XML 包装是 SOAP 的映射配置，共享 DTO 不依赖特定 SDK 的 Schema 形状。
         XmlMapper mapper = XmlMapper.builder() //

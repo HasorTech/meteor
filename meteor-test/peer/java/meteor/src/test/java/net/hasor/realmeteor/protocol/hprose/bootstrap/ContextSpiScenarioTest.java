@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hprose.bootstrap;
+import java.util.UUID;
 import java.net.URLClassLoader;
 import net.hasor.example.protocol.hprose.Echo;
 import net.hasor.example.protocol.hprose.EchoService;
@@ -24,12 +25,16 @@ public class ContextSpiScenarioTest extends BootstrapTestSupport {
     public void spiCodersAreDiscoveredPerContextAndUsedForRemoteCalls() throws Exception {
         // 两端配置同一个 SPI 序列化器名称，并故意使用不同大小写。
         MetConfiguration serverSettings = new MetConfiguration();
+        serverSettings.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
         MetConfiguration clientSettings = new MetConfiguration();
+        clientSettings.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
         serverSettings.connector("tcp") //
                 .bind("127.0.0.1", 0) //
                 .protocol("rsf") //
                 .option("serializeType", "spi");
-        clientSettings.connector("tcp").protocol("rsf").option("serializeType", "sPi");
+        clientSettings.connector("tcp") //
+                .protocol("rsf") //
+                .option("serializeType", "sPi");
 
         // 为每端提供独立 SPI 加载器，模拟应用分别发现和创建扩展。
         try (URLClassLoader serverLoader = this.spiLoader(SpiCoder.class.getName()); //

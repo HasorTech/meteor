@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hprose;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -35,7 +36,8 @@ public class HproseInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialNodeClientUnicode() throws Exception {
         // 在 /rpc 挂载 Hprose，供独立 Node.js 客户端调用。
-        MetConfiguration configuration = new MetConfiguration().setQueueMinPoolSize(4);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setQueueMinPoolSize(4);
         configuration.connector("http") //
                 .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("hprose") //
@@ -70,7 +72,8 @@ public class HproseInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialNodeClientInteger() throws Exception {
         // 在 /rpc 挂载 Hprose，供独立 Node.js 客户端调用。
-        MetConfiguration configuration = new MetConfiguration().setQueueMinPoolSize(4);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setQueueMinPoolSize(4);
         configuration.connector("http") //
                 .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("hprose") //
@@ -105,7 +108,8 @@ public class HproseInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialNodeClientNull() throws Exception {
         // 在 /rpc 挂载 Hprose，供独立 Node.js 客户端调用。
-        MetConfiguration configuration = new MetConfiguration().setQueueMinPoolSize(4);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setQueueMinPoolSize(4);
         configuration.connector("http") //
                 .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("hprose") //
@@ -140,7 +144,8 @@ public class HproseInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialNodeClientBytes() throws Exception {
         // 在 /rpc 挂载 Hprose，供独立 Node.js 客户端调用。
-        MetConfiguration configuration = new MetConfiguration().setQueueMinPoolSize(4);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setQueueMinPoolSize(4);
         configuration.connector("http") //
                 .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("hprose") //
@@ -175,7 +180,8 @@ public class HproseInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialNodeClientDate() throws Exception {
         // 在 /rpc 挂载 Hprose，供独立 Node.js 客户端调用。
-        MetConfiguration configuration = new MetConfiguration().setQueueMinPoolSize(4);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setQueueMinPoolSize(4);
         configuration.connector("http") //
                 .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("hprose") //
@@ -210,7 +216,8 @@ public class HproseInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialNodeClientMap() throws Exception {
         // 在 /rpc 挂载 Hprose，供独立 Node.js 客户端调用。
-        MetConfiguration configuration = new MetConfiguration().setQueueMinPoolSize(4);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setQueueMinPoolSize(4);
         configuration.connector("http") //
                 .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("hprose") //
@@ -245,7 +252,8 @@ public class HproseInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialNodeClientBean() throws Exception {
         // 在 /rpc 挂载 Hprose，供独立 Node.js 客户端调用。
-        MetConfiguration configuration = new MetConfiguration().setQueueMinPoolSize(4);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setQueueMinPoolSize(4);
         configuration.connector("http") //
                 .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("hprose") //
@@ -280,7 +288,8 @@ public class HproseInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialNodeClientVoid() throws Exception {
         // 在 /rpc 挂载 Hprose，供独立 Node.js 客户端调用。
-        MetConfiguration configuration = new MetConfiguration().setQueueMinPoolSize(4);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setQueueMinPoolSize(4);
         configuration.connector("http") //
                 .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("hprose") //
@@ -315,7 +324,8 @@ public class HproseInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialNodeClientByref() throws Exception {
         // 在 /rpc 挂载 Hprose，供独立 Node.js 客户端调用。
-        MetConfiguration configuration = new MetConfiguration().setQueueMinPoolSize(4);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setQueueMinPoolSize(4);
         configuration.connector("http") //
                 .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("hprose") //
@@ -350,7 +360,8 @@ public class HproseInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialNodeClientBatch() throws Exception {
         // 在 /rpc 挂载 Hprose，供独立 Node.js 客户端调用。
-        MetConfiguration configuration = new MetConfiguration().setQueueMinPoolSize(4);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setQueueMinPoolSize(4);
         configuration.connector("http") //
                 .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("hprose") //
@@ -385,7 +396,8 @@ public class HproseInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialNodeClientDiscovery() throws Exception {
         // 在 /rpc 挂载 Hprose，供独立 Node.js 客户端调用。
-        MetConfiguration configuration = new MetConfiguration().setQueueMinPoolSize(4);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setQueueMinPoolSize(4);
         configuration.connector("http") //
                 .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("hprose") //
@@ -420,7 +432,8 @@ public class HproseInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialNodeClientCors() throws Exception {
         // 在 /rpc 挂载 Hprose，供独立 Node.js 客户端调用。
-        MetConfiguration configuration = new MetConfiguration().setQueueMinPoolSize(4);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setQueueMinPoolSize(4);
         configuration.connector("http") //
                 .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("hprose") //
@@ -461,7 +474,7 @@ public class HproseInteropTest {
             int port = Integer.parseInt(output.readLine());
 
             // 配置与对端一致的挂载路径，再从 bootstrap 创建客户端。
-            MetConfiguration configuration = new MetConfiguration();
+            MetConfiguration configuration = TestConfigurationUtils.create();
             configuration.connector("http") //
                     .protocol("hprose") //
                     .contextPath("/rpc");
@@ -495,7 +508,7 @@ public class HproseInteropTest {
             int port = Integer.parseInt(output.readLine());
 
             // 配置与对端一致的挂载路径，再从 bootstrap 创建客户端。
-            MetConfiguration configuration = new MetConfiguration();
+            MetConfiguration configuration = TestConfigurationUtils.create();
             configuration.connector("http") //
                     .protocol("hprose") //
                     .contextPath("/rpc");
@@ -529,7 +542,7 @@ public class HproseInteropTest {
             int port = Integer.parseInt(output.readLine());
 
             // 配置与对端一致的挂载路径，再从 bootstrap 创建客户端。
-            MetConfiguration configuration = new MetConfiguration();
+            MetConfiguration configuration = TestConfigurationUtils.create();
             configuration.connector("http") //
                     .protocol("hprose") //
                     .contextPath("/rpc");
@@ -565,7 +578,7 @@ public class HproseInteropTest {
             int port = Integer.parseInt(output.readLine());
 
             // 配置与对端一致的挂载路径，再从 bootstrap 创建客户端。
-            MetConfiguration configuration = new MetConfiguration();
+            MetConfiguration configuration = TestConfigurationUtils.create();
             configuration.connector("http") //
                     .protocol("hprose") //
                     .contextPath("/rpc");
@@ -600,7 +613,7 @@ public class HproseInteropTest {
             int port = Integer.parseInt(output.readLine());
 
             // 配置与对端一致的挂载路径，再从 bootstrap 创建客户端。
-            MetConfiguration configuration = new MetConfiguration();
+            MetConfiguration configuration = TestConfigurationUtils.create();
             configuration.connector("http") //
                     .protocol("hprose") //
                     .contextPath("/rpc");
@@ -636,7 +649,7 @@ public class HproseInteropTest {
             int port = Integer.parseInt(output.readLine());
 
             // 配置与对端一致的挂载路径，再从 bootstrap 创建客户端。
-            MetConfiguration configuration = new MetConfiguration();
+            MetConfiguration configuration = TestConfigurationUtils.create();
             configuration.connector("http") //
                     .protocol("hprose") //
                     .contextPath("/rpc");
@@ -675,7 +688,7 @@ public class HproseInteropTest {
             int port = Integer.parseInt(output.readLine());
 
             // 配置与对端一致的挂载路径，再从 bootstrap 创建客户端。
-            MetConfiguration configuration = new MetConfiguration();
+            MetConfiguration configuration = TestConfigurationUtils.create();
             configuration.connector("http") //
                     .protocol("hprose") //
                     .contextPath("/rpc");
@@ -715,7 +728,7 @@ public class HproseInteropTest {
             int port = Integer.parseInt(output.readLine());
 
             // 配置与对端一致的挂载路径，再从 bootstrap 创建客户端。
-            MetConfiguration configuration = new MetConfiguration();
+            MetConfiguration configuration = TestConfigurationUtils.create();
             configuration.connector("http") //
                     .protocol("hprose") //
                     .contextPath("/rpc");
@@ -749,7 +762,7 @@ public class HproseInteropTest {
             int port = Integer.parseInt(output.readLine());
 
             // 配置与对端一致的挂载路径，再从 bootstrap 创建客户端。
-            MetConfiguration configuration = new MetConfiguration();
+            MetConfiguration configuration = TestConfigurationUtils.create();
             configuration.connector("http") //
                     .protocol("hprose") //
                     .contextPath("/rpc");

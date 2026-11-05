@@ -8,6 +8,7 @@
 package net.hasor.realmeteor.protocol.dubbo;
 import java.net.InetAddress;
 import java.net.ServerSocket;
+import net.hasor.example.protocol.dubbo.TestConfigurationUtils;
 import net.hasor.example.protocol.dubbo.WireEcho;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropService;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropServiceImpl;
@@ -29,8 +30,11 @@ public class DubboJavaSdkBasicTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialJavaSdkCallsPublishedHessian2Service() throws Exception {
         // SDK 会规范化普通 loopback 直连地址，因此 Meteor 监听本机接口的随机端口。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("dubbo");
-        configuration.connector("tcp").bind("0.0.0.0", 0).protocol("dubbo");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("dubbo");
+        configuration.connector("tcp") //
+                .bind("0.0.0.0", 0) //
+                .protocol("dubbo");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             DubboInteropServiceImpl implementation = new DubboInteropServiceImpl();
@@ -103,8 +107,10 @@ public class DubboJavaSdkBasicTest {
                 // start 返回后读取实际导出端口，消费者不依赖预选端口或固定休眠猜测就绪。
                 bootstrap.protocol(protocol).service(sdkService).start();
                 int actualPort = sdkService.getExportedUrls().get(0).getPort();
-                MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("dubbo");
-                configuration.connector("tcp").protocol("dubbo");
+                MetConfiguration configuration = TestConfigurationUtils.create() //
+                        .setDefaultProtocol("dubbo");
+                configuration.connector("tcp") //
+                        .protocol("dubbo");
                 try (MetContext client = configuration.buildContext()) {
                     client.start();
                     MetBindInfo<WireEcho> service = client.publisher().rsfService(WireEcho.class) //

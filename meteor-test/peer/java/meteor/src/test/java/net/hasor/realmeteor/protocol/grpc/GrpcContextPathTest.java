@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -42,8 +43,11 @@ public class GrpcContextPathTest {
     public void serviceWithoutPathSelectionIsVisibleOnDefaultContext() throws Exception {
         // 协议拥有默认路径和额外路径，服务不声明路径选择。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("grpc") //
-                .contextPath("/rpc").addContextPath("/admin");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc") //
+                .contextPath("/rpc") //
+                .addContextPath("/admin");
         EchoImpl implementation = new EchoImpl();
         try (MetContext server = configuration.buildContext()) {
             // 从正式入口启动并发布 JSON 服务。
@@ -72,8 +76,11 @@ public class GrpcContextPathTest {
     public void serviceWithoutPathSelectionIsHiddenOnAdditionalContext() throws Exception {
         // 增加协议路径不会让未声明路径的服务自动暴露到该路径。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("grpc") //
-                .contextPath("/rpc").addContextPath("/admin");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc") //
+                .contextPath("/rpc") //
+                .addContextPath("/admin");
         EchoImpl implementation = new EchoImpl();
         try (MetContext server = configuration.buildContext()) {
             // 服务保持默认路径选择，通过公开发布入口注册。
@@ -105,8 +112,11 @@ public class GrpcContextPathTest {
     public void explicitServicePathIsVisibleOnSelectedContext() throws Exception {
         // 服务显式选择额外路径，协议默认路径仍为 /rpc。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("grpc") //
-                .contextPath("/rpc").addContextPath("/admin");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc") //
+                .contextPath("/rpc") //
+                .addContextPath("/admin");
         EchoImpl implementation = new EchoImpl();
         try (MetContext server = configuration.buildContext()) {
             // 发布时将该服务的可见范围限定为 /admin。
@@ -136,8 +146,11 @@ public class GrpcContextPathTest {
     public void explicitServicePathReplacesDefaultContextVisibility() throws Exception {
         // 额外路径的显式选择替换默认可见范围，不能叠加默认路径。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("grpc") //
-                .contextPath("/rpc").addContextPath("/admin");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc") //
+                .contextPath("/rpc") //
+                .addContextPath("/admin");
         EchoImpl implementation = new EchoImpl();
         try (MetContext server = configuration.buildContext()) {
             // 服务只声明 /admin，保留协议自身的 /rpc 默认路径。
@@ -170,8 +183,11 @@ public class GrpcContextPathTest {
     public void serviceCanSelectMultipleRouteMounts() throws Exception {
         // 同一个服务显式选择两个已配置路径。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("grpc") //
-                .contextPath("/rpc").addContextPath("/admin");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc") //
+                .contextPath("/rpc") //
+                .addContextPath("/admin");
         EchoImpl implementation = new EchoImpl();
         try (MetContext server = configuration.buildContext()) {
             // 一次发布声明完整可见范围，不重复发布服务。
@@ -203,8 +219,11 @@ public class GrpcContextPathTest {
     public void nestedRequestUsesLongestConfiguredContextPrefix() throws Exception {
         // 默认路径是额外路径的前缀，路由必须先匹配更长的路径。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("grpc") //
-                .contextPath("/rpc").addContextPath("/rpc/internal");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc") //
+                .contextPath("/rpc") //
+                .addContextPath("/rpc/internal");
         EchoImpl implementation = new EchoImpl();
         try (MetContext server = configuration.buildContext()) {
             // 服务仅在嵌套路径可见，短路径不能用于解析该请求的方法名。
@@ -235,8 +254,11 @@ public class GrpcContextPathTest {
     public void nestedContextDoesNotInheritParentServiceVisibility() throws Exception {
         // 嵌套路径拥有独立可见范围，父路径的服务不能自动继承到子路径。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("grpc") //
-                .contextPath("/rpc").addContextPath("/rpc/internal");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc") //
+                .contextPath("/rpc") //
+                .addContextPath("/rpc/internal");
         EchoImpl implementation = new EchoImpl();
         try (MetContext server = configuration.buildContext()) {
             // 未声明路径的服务只属于默认父路径。
@@ -275,8 +297,11 @@ public class GrpcContextPathTest {
         ServerServiceDefinition service = ServerServiceDefinition.builder("admin/example.Echo") //
                 .addMethod(method, handler).build();
         MetConfiguration configuration = this.configuration();
-        configuration.connector("http").option("httpVersion", 2).protocol("grpc") //
-                .contextPath("/rpc").addContextPath("/admin");
+        configuration.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("grpc") //
+                .contextPath("/rpc") //
+                .addContextPath("/admin");
         Server server = NettyServerBuilder.forPort(0).addService(service).build().start();
         try (MetContext client = configuration.buildContext()) {
             // 消费者通过公开发布入口选择 /admin，路径不是由地址或协议默认值决定。
@@ -311,8 +336,12 @@ public class GrpcContextPathTest {
         ServerServiceDefinition service = ServerServiceDefinition.builder("admin/example.Messages") //
                 .addMethod(method, handler).build();
         MetConfiguration configuration = this.configuration();
-        configuration.connector("http").option("httpVersion", 2).protocol("grpc") //
-                .contextPath("/rpc").addContextPath("/admin").option("streamBody", true);
+        configuration.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("grpc") //
+                .contextPath("/rpc") //
+                .addContextPath("/admin") //
+                .option("streamBody", true);
         Server server = NettyServerBuilder.forPort(0).addService(service).build().start();
         try (MetContext client = configuration.buildContext()) {
             // 通过公开消费者声明将流式服务限定为 /admin。
@@ -339,7 +368,7 @@ public class GrpcContextPathTest {
 
     private MetConfiguration configuration() {
         // 公共配置不创建资源，监听、路径和调用模式由各个场景声明。
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         configuration.setDefaultProtocol("grpc");
         configuration.setDefaultTimeout(5000);
         configuration.setQueueMinPoolSize(2);

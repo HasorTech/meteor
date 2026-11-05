@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.util.ArrayList;
 import java.util.List;
@@ -379,8 +380,10 @@ public class GrpcFlowTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void demandControlsDeliveryAcrossHttp2Windows() throws Exception {
         // 配置可持续生成大消息的服务，验证需求量与 HTTP/2 窗口配合。
-        try (MetContext server = this.configuration(true, 10000).buildContext(); //
-             MetContext client = this.configuration(false, 10000).buildContext()) {
+        try (MetContext server = this.configuration(true, 10000) //
+                .buildContext(); //
+             MetContext client = this.configuration(false, 10000) //
+                     .buildContext()) {
             MessageService implementation = new MessageService();
             // 先启动两端容器，再通过公开 API 发布和订阅流式服务。
             server.start();
@@ -427,8 +430,10 @@ public class GrpcFlowTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void secondSubscriberIsRejected() throws Exception {
         // 配置服务端流，验证单个远程响应流只允许一个订阅者。
-        try (MetContext server = this.configuration(true, 10000).buildContext(); //
-             MetContext client = this.configuration(false, 10000).buildContext()) {
+        try (MetContext server = this.configuration(true, 10000) //
+                .buildContext(); //
+             MetContext client = this.configuration(false, 10000) //
+                     .buildContext()) {
             MessageService implementation = new MessageService();
             // 先启动两端容器，再通过公开 API 发布和订阅流式服务。
             server.start();
@@ -462,8 +467,10 @@ public class GrpcFlowTest {
     public void cancellationReleasesTheRemoteSource() throws Exception {
         // 准备可观察取消信号的消息源和两端流式配置。
         MessageService implementation = new MessageService();
-        try (MetContext server = this.configuration(true, 5000).buildContext(); //
-             MetContext client = this.configuration(false, 5000).buildContext()) {
+        try (MetContext server = this.configuration(true, 5000) //
+                .buildContext(); //
+             MetContext client = this.configuration(false, 5000) //
+                     .buildContext()) {
             // 先启动两端容器，再通过公开 API 发布和订阅流式服务。
             server.start();
             client.start();
@@ -494,8 +501,10 @@ public class GrpcFlowTest {
     public void sourceFailureIsDeliveredToSubscriber() throws Exception {
         // 准备会主动失败的远端消息源。
         MessageService implementation = new MessageService();
-        try (MetContext server = this.configuration(true, 5000).buildContext(); //
-             MetContext client = this.configuration(false, 5000).buildContext()) {
+        try (MetContext server = this.configuration(true, 5000) //
+                .buildContext(); //
+             MetContext client = this.configuration(false, 5000) //
+                     .buildContext()) {
             // 先启动两端容器，再通过公开 API 发布和订阅流式服务。
             server.start();
             client.start();
@@ -525,8 +534,10 @@ public class GrpcFlowTest {
     public void invalidDemandDoesNotPoisonLaterCalls() throws Exception {
         // 准备服务端流，用非法需求量验证调用之间的隔离。
         MessageService implementation = new MessageService();
-        try (MetContext server = this.configuration(true, 5000).buildContext(); //
-             MetContext client = this.configuration(false, 5000).buildContext()) {
+        try (MetContext server = this.configuration(true, 5000) //
+                .buildContext(); //
+             MetContext client = this.configuration(false, 5000) //
+                     .buildContext()) {
             // 先启动两端容器，再通过公开 API 发布和订阅流式服务。
             server.start();
             client.start();
@@ -563,8 +574,10 @@ public class GrpcFlowTest {
     public void deadlineFailsAStreamWithoutDemand() throws Exception {
         // 将双端调用期限设为 600 毫秒，准备永不产出消息的流。
         MessageService implementation = new MessageService();
-        try (MetContext server = this.configuration(true, 600).buildContext(); //
-             MetContext client = this.configuration(false, 600).buildContext()) {
+        try (MetContext server = this.configuration(true, 600) //
+                .buildContext(); //
+             MetContext client = this.configuration(false, 600) //
+                     .buildContext()) {
             // 先启动两端容器，再通过公开 API 发布和订阅流式服务。
             server.start();
             client.start();
@@ -592,8 +605,10 @@ public class GrpcFlowTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void contextCloseFailsAStreamWithoutDemand() throws Exception {
         // 准备未发出需求的响应流，验证上下文关闭时的清理。
-        try (MetContext server = this.configuration(true, 5000).buildContext(); //
-             MetContext client = this.configuration(false, 5000).buildContext()) {
+        try (MetContext server = this.configuration(true, 5000) //
+                .buildContext(); //
+             MetContext client = this.configuration(false, 5000) //
+                     .buildContext()) {
             // 先启动两端容器，再通过公开 API 发布和订阅流式服务。
             server.start();
             client.start();
@@ -622,10 +637,12 @@ public class GrpcFlowTest {
     public void blockedConsumerDoesNotPreventDeadlineFromReleasingTheRequestPermit() throws Exception {
         // 将客户端并发配额设为一，利用闩锁阻塞首个消息的处理。
         MetConfiguration configuration = this.configuration(false, 700);
-        configuration.setMaximumRequest(1).setSendLimitPolicy(SendLimitPolicy.WaitSecond);
+        configuration.setMaximumRequest(1) //
+                .setSendLimitPolicy(SendLimitPolicy.WaitSecond);
         CountDownLatch processing = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
-        try (MetContext server = this.configuration(true, 3000).buildContext(); //
+        try (MetContext server = this.configuration(true, 3000) //
+                .buildContext(); //
              MetContext client = configuration.buildContext()) {
             // 先启动两端容器，再通过公开 API 发布和订阅流式服务。
             server.start();
@@ -670,14 +687,16 @@ public class GrpcFlowTest {
 
     private MetConfiguration configuration(boolean server, int timeout) {
         // 客户端只挂载出站协议，服务端额外绑定随机端口。
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         configuration.setDefaultProtocol("grpc");
         configuration.setDefaultTimeout(timeout);
-        var http = configuration.connector("http").option("httpVersion", 2);
+        var http = configuration.connector("http") //
+                .option("httpVersion", 2);
         if (server) {
             http.bind("127.0.0.1", 0);
         }
-        http.protocol("grpc").option("streamBody", true);
+        http.protocol("grpc") //
+                .option("streamBody", true);
         return configuration;
     }
 

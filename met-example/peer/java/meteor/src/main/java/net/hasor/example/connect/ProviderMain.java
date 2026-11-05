@@ -21,9 +21,13 @@ public final class ProviderMain {
 
     public static void main(String[] arguments) throws Exception {
         // 配置本地协议端点。
-        MetConfiguration configuration = new MetConfiguration().setUnitName("local");
-        configuration.connector("http").bind("127.0.0.1", 8080) //
-                .protocol("connect").contextPath("/connect") //
+        MetConfiguration configuration = new MetConfiguration() //
+                .setUnitName("local") //
+                .setApplicationName("connect-order-provider");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 8080) //
+                .protocol("connect") //
+                .contextPath("/connect") //
                 .option("serializeType", "Protobuf");
 
         try (MetContext context = configuration.buildContext()) {

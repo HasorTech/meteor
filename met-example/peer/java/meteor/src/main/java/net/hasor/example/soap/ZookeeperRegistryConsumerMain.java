@@ -22,13 +22,16 @@ public final class ZookeeperRegistryConsumerMain {
 
     public static void main(String[] arguments) throws Exception {
         // 接入本地 ZooKeeper，配置出站协议。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.setUnitName("local");
-        configuration.setApplicationName("soap-order-consumer");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setUnitName("local") //
+                .setApplicationName("soap-order-consumer");
         configuration.addExtension(new ZookeeperRegistryConfiguration().setAddress("127.0.0.1:2181") //
                 .setPublishHost("127.0.0.1"));
-        configuration.connector("http").protocol("soap").contextPath("/soap");
-        configuration.connector("tcp").protocol("rsf");
+        configuration.connector("http") //
+                .protocol("soap") //
+                .contextPath("/soap");
+        configuration.connector("tcp") //
+                .protocol("rsf");
 
         try (MetContext context = configuration.buildContext()) {
             // 容器启动后订阅当前协议的订单服务。

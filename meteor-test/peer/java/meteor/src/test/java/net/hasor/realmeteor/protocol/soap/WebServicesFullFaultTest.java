@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
@@ -171,7 +172,8 @@ public class WebServicesFullFaultTest {
     }
 
     private MetConfiguration incoming(String version) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("soap") //
@@ -181,7 +183,8 @@ public class WebServicesFullFaultTest {
     }
 
     private MetConfiguration outgoing(String version) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
         configuration.connector("http") //
                 .protocol("soap") //
                 .option("soapVersion", version) //

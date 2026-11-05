@@ -25,6 +25,7 @@ import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetFuture;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import org.junit.jupiter.api.Test;
@@ -114,12 +115,19 @@ public class HttpProtocolIsolationTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void aNestedSoapMountWinsOverItsJsonRpcParent() throws Exception {
         // 两个协议的 context 存在父子关系，监听必须按完整路径选择更具体的挂载。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("jsonrpc");
-        ConnectorSettings endpoint = incoming.connector("http").bind("127.0.0.1", 0);
-        endpoint.protocol("jsonrpc").contextPath("/api");
-        endpoint.protocol("soap").contextPath("/api/soap");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("soap");
-        outgoing.connector("http").protocol("soap").contextPath("/api/soap");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("jsonrpc");
+        ConnectorSettings endpoint = incoming.connector("http") //
+                .bind("127.0.0.1", 0);
+        endpoint.protocol("jsonrpc") //
+                .contextPath("/api");
+        endpoint.protocol("soap") //
+                .contextPath("/api/soap");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
+        outgoing.connector("http") //
+                .protocol("soap") //
+                .contextPath("/api/soap");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();

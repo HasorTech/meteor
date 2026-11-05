@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.connect.go;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.ParameterizedClass;
@@ -326,15 +327,20 @@ public class ConnectGoInteropTest {
     }
 
     private MetConfiguration configuration(boolean listening) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("connect").setDefaultTimeout(10000);
-        ConnectorSettings connector = configuration.connector("http").option("httpVersion", 1);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("connect") //
+                .setDefaultTimeout(10000);
+        ConnectorSettings connector = configuration.connector("http") //
+                .option("httpVersion", 1);
         if (listening) {
             connector.bind(ContainerProcess.runnerHost(), 0);
         }
         if (!StringUtils.equals("plain", this.tlsMode)) {
-            connector.option("tlsEnabled", true).option("httpScheme", "https") //
+            connector.option("tlsEnabled", true) //
+                    .option("httpScheme", "https") //
                     .option("tlsTrustStore", "classpath:/certs/acceptance/trust.p12") //
-                    .option("tlsTrustStorePassword", "meteor-test").option("tlsAlpn", "http/1.1");
+                    .option("tlsTrustStorePassword", "meteor-test") //
+                    .option("tlsAlpn", "http/1.1");
             if (listening) {
                 connector.option("tlsKeyStore", "classpath:/certs/acceptance/server.p12") //
                         .option("tlsKeyStorePassword", "meteor-test") //
@@ -344,7 +350,9 @@ public class ConnectGoInteropTest {
                         .option("tlsKeyStorePassword", "meteor-test");
             }
         }
-        connector.protocol("connect").addressScheme(this.scheme()).contextPath("/");
+        connector.protocol("connect") //
+                .addressScheme(this.scheme()) //
+                .contextPath("/");
         return configuration;
     }
 

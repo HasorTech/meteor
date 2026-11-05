@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.function.ObjLongConsumer;
+import net.hasor.example.protocol.oncrpc.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.annotation.MetMethod;
@@ -259,8 +260,10 @@ public class OncRpcProtocolTest {
     @Test
     public void publicPublisherValidatesAnnotatedOncRpcContract() throws Exception {
         // 初始化协议挂载，但不打开网络监听。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc");
-        configuration.connector("tcp").protocol("oncrpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc");
+        configuration.connector("tcp") //
+                .protocol("oncrpc");
         try (MetContext context = configuration.buildContext()) {
             // 正式发布入口触发根提供者的同步契约检查。
             MetBindInfo<NativeContract> service = context.publisher().rsfService(NativeContract.class) //
@@ -273,8 +276,10 @@ public class OncRpcProtocolTest {
     @Test
     public void publicPublisherSkipsMissingProgramId() throws Exception {
         // 普通接口缺少 ONC RPC 契约时只拒绝此协议，服务登记仍然保留。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc");
-        configuration.connector("tcp").protocol("oncrpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc");
+        configuration.connector("tcp") //
+                .protocol("oncrpc");
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<Runnable> service = context.publisher().rsfService(Runnable.class) //
                     .protocol("oncrpc").register();
@@ -290,9 +295,12 @@ public class OncRpcProtocolTest {
     @Test
     public void unrelatedProtocolDeclarationSkipsOncRpcValidation() throws Exception {
         // 相同容器也允许只经 RSF 发布的普通接口。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc");
-        configuration.connector("tcp").protocol("oncrpc");
-        configuration.connector("tcp").protocol("rsf");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc");
+        configuration.connector("tcp") //
+                .protocol("oncrpc");
+        configuration.connector("tcp") //
+                .protocol("rsf");
         try (MetContext context = configuration.buildContext()) {
             // 协议筛选不应强迫未选择 ONC RPC 的服务提供其程序定义。
             MetBindInfo<Runnable> service = context.publisher().rsfService(Runnable.class) //

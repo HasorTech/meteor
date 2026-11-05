@@ -10,17 +10,19 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
+import net.hasor.example.bootstrap.TestConfigurationUtils;
+import net.hasor.example.connector.protocol.HttpEchoService;
+import net.hasor.example.connector.protocol.HttpWirePeer;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetFuture;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
-import net.hasor.example.connector.protocol.HttpEchoService;
-import net.hasor.example.connector.protocol.HttpWirePeer;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** 从正式启动和发布入口验证 HTTP 分块传输与外部对端互通。 */
 public class HttpTransportScenarioTest {
@@ -28,8 +30,10 @@ public class HttpTransportScenarioTest {
     @Timeout(value = 10000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void fragmentedChunkedRequestInvokesPublishedServiceAndReusesConnection() throws Exception {
         // HTTP 监听器由公开配置构建，文本测试协议负责映射普通回显业务。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("textprotocol");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("textprotocol");
         try (MetContext server = configuration.buildContext()) {
             server.publisher().rsfService(HttpEchoService.class, value -> value) //
                     .group("http").name("http.echo").version("1").serialize("Java").register();
@@ -63,8 +67,9 @@ public class HttpTransportScenarioTest {
     @Timeout(value = 10000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void remoteInvocationDecodesChunkedResponseFromExternalServer() throws Exception {
         // 客户端通过正式入口注册服务引用，对端使用独立原始 HTTP 服务器。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("http").protocol("textprotocol");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("http") //
+                .protocol("textprotocol");
         try (ServerSocket listener = new ServerSocket(0); //
              MetContext client = configuration.buildContext()) {
             listener.setSoTimeout(3000);

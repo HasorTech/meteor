@@ -76,7 +76,10 @@ public class RegistryForeignAdapterScenarioTest {
         try (RegistryDiscoveryEnvironment environment = RegistryDiscoveryEnvironment.open(this.backend, home)) {
             RegistryConfiguration registry = environment.configuration();
             MetConfiguration incoming = this.configuration(registry, "java-provider");
-            incoming.connector("http").bind(ContainerProcess.runnerHost(), 0).protocol("xmlrpc").contextPath("/xmlrpc");
+            incoming.connector("http") //
+                    .bind(ContainerProcess.runnerHost(), 0) //
+                    .protocol("xmlrpc") //
+                    .contextPath("/xmlrpc");
             try (MetContext provider = incoming.buildContext()) {
                 provider.start();
                 MetBindInfo<OrderDemoService> service = provider.publisher() //
@@ -106,7 +109,9 @@ public class RegistryForeignAdapterScenarioTest {
         try (RegistryDiscoveryEnvironment environment = RegistryDiscoveryEnvironment.open(this.backend, home)) {
             RegistryConfiguration registry = environment.configuration();
             MetConfiguration outgoing = this.configuration(registry, "java-consumer");
-            outgoing.connector("http").protocol("xmlrpc").contextPath("/xmlrpc");
+            outgoing.connector("http") //
+                    .protocol("xmlrpc") //
+                    .contextPath("/xmlrpc");
             try (MetContext consumer = outgoing.buildContext()) {
                 consumer.start();
                 MetBindInfo<OrderDemoService> service = consumer.publisher() //
@@ -142,7 +147,9 @@ public class RegistryForeignAdapterScenarioTest {
         try (RegistryDiscoveryEnvironment environment = RegistryDiscoveryEnvironment.open(this.backend, home)) {
             RegistryConfiguration registry = environment.configuration();
             MetConfiguration outgoing = this.configuration(registry, "withdrawal-consumer");
-            outgoing.connector("http").protocol("xmlrpc").contextPath("/xmlrpc");
+            outgoing.connector("http") //
+                    .protocol("xmlrpc") //
+                    .contextPath("/xmlrpc");
             try (MetContext consumer = outgoing.buildContext()) {
                 consumer.start();
                 MetBindInfo<OrderDemoService> service = consumer.publisher() //
@@ -175,7 +182,9 @@ public class RegistryForeignAdapterScenarioTest {
         try (RegistryDiscoveryEnvironment environment = RegistryDiscoveryEnvironment.open(this.backend, home)) {
             RegistryConfiguration registry = environment.configuration();
             MetConfiguration outgoing = this.configuration(registry, "restart-consumer");
-            outgoing.connector("http").protocol("xmlrpc").contextPath("/xmlrpc");
+            outgoing.connector("http") //
+                    .protocol("xmlrpc") //
+                    .contextPath("/xmlrpc");
             try (MetContext consumer = outgoing.buildContext()) {
                 consumer.start();
                 MetBindInfo<OrderDemoService> service = consumer.publisher() //
@@ -215,7 +224,8 @@ public class RegistryForeignAdapterScenarioTest {
         configuration.setApplicationName(applicationName);
         configuration.setDataHome(Files.createDirectory(this.data.resolve(applicationName)));
         configuration.addExtension(registry);
-        configuration.connector("tcp").protocol("rsf"); // 注册扩展的内部管理出口，不开放监听。
+        configuration.connector("tcp") //
+                .protocol("rsf"); // 注册扩展的内部管理出口，不开放监听。
         return configuration;
     }
 

@@ -21,9 +21,12 @@ public final class ConsumerMain {
 
     public static void main(String[] arguments) throws Exception {
         // 配置协议，消费者无需监听端口。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.setUnitName("local");
-        configuration.connector("http").protocol("xmlrpc").contextPath("/xmlrpc");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setApplicationName("xmlrpc-order-consumer") //
+                .setUnitName("local");
+        configuration.connector("http") //
+                .protocol("xmlrpc") //
+                .contextPath("/xmlrpc");
 
         try (MetContext context = configuration.buildContext()) {
             // 启动容器并订阅订单服务。

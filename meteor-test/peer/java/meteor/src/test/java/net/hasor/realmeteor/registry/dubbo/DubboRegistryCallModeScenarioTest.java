@@ -42,7 +42,9 @@ public class DubboRegistryCallModeScenarioTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration provider = application(registryUrl, "meteor-generic-provider");
-            provider.connector("tcp").bind("0.0.0.0", 0).protocol("dubbo");
+            provider.connector("tcp") //
+                    .bind("0.0.0.0", 0) //
+                    .protocol("dubbo");
             try (MetContext server = provider.buildContext()) {
                 server.start();
                 server.publisher() //
@@ -77,7 +79,9 @@ public class DubboRegistryCallModeScenarioTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration provider = application(registryUrl, "meteor-oneway-provider");
-            provider.connector("tcp").bind("0.0.0.0", 0).protocol("dubbo");
+            provider.connector("tcp") //
+                    .bind("0.0.0.0", 0) //
+                    .protocol("dubbo");
             try (MetContext server = provider.buildContext()) {
                 server.start();
                 server.publisher().rsfService(DubboInteropService.class, implementation).register();
@@ -104,7 +108,8 @@ public class DubboRegistryCallModeScenarioTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration consumer = application(registryUrl, "meteor-oneway-consumer");
-            consumer.connector("tcp").protocol("dubbo");
+            consumer.connector("tcp") //
+                    .protocol("dubbo");
             try (DubboProcess provider = DubboProcess.startLegacy( //
                     "--command=server", "--registry=" + registryUrl, //
                     "--group=default", "--version=1.0.0"); //
@@ -155,7 +160,9 @@ public class DubboRegistryCallModeScenarioTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration provider = application(registryUrl, "meteor-generic-provider");
-            provider.connector("tcp").bind("0.0.0.0", 0).protocol("dubbo");
+            provider.connector("tcp") //
+                    .bind("0.0.0.0", 0) //
+                    .protocol("dubbo");
             try (MetContext server = provider.buildContext()) {
                 server.start();
                 server.publisher() //
@@ -189,7 +196,9 @@ public class DubboRegistryCallModeScenarioTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration provider = application(registryUrl, "meteor-oneway-provider");
-            provider.connector("tcp").bind("0.0.0.0", 0).protocol("dubbo");
+            provider.connector("tcp") //
+                    .bind("0.0.0.0", 0) //
+                    .protocol("dubbo");
             try (MetContext server = provider.buildContext()) {
                 server.start();
                 server.publisher().rsfService(DubboInteropService.class, implementation).register();
@@ -215,7 +224,8 @@ public class DubboRegistryCallModeScenarioTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration consumer = application(registryUrl, "meteor-oneway-consumer");
-            consumer.connector("tcp").protocol("dubbo");
+            consumer.connector("tcp") //
+                    .protocol("dubbo");
             try (DubboProcess provider = DubboProcess.start( //
                     "--command=server", "--registry=" + registryUrl, //
                     "--group=default", "--version=1.0.0"); //

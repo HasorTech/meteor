@@ -23,9 +23,13 @@ public final class ConsumerMain {
 
     public static void main(String[] arguments) throws Exception {
         // 配置出站协议。
-        MetConfiguration configuration = new MetConfiguration().setUnitName("local");
-        configuration.connector("http").option("httpVersion", 2) //
-                .protocol("grpc").contextPath("/grpc") //
+        MetConfiguration configuration = new MetConfiguration() //
+                .setUnitName("local") //
+                .setApplicationName("grpc-order-consumer");
+        configuration.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("grpc") //
+                .contextPath("/grpc") //
                 .option("serializeType", "Protobuf") //
                 .option("streamBody", true);
 

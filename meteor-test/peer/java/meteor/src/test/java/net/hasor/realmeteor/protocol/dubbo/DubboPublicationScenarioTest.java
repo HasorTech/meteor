@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.dubbo;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.util.concurrent.Flow;
 import net.hasor.example.protocol.dubbo.DubboUnsupportedFlowService;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropService;
@@ -26,8 +27,11 @@ public class DubboPublicationScenarioTest {
     @Timeout(value = 10000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void nonHessianSerializationKeepsLocalServiceCallable() throws Exception {
         // Dubbo Hessian2 的 wire ID 固定，JSON 声明不向该端点发布。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("dubbo");
-        configuration.connector("tcp").bind("127.0.0.1", 0).protocol("dubbo");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("dubbo");
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("dubbo");
         try (MetContext context = configuration.buildContext()) {
             context.start();
 
@@ -47,8 +51,11 @@ public class DubboPublicationScenarioTest {
     @Timeout(value = 10000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void flowSignatureKeepsLocalServiceCallable() throws Exception {
         // 经典 Dubbo 帧不能承载 Flow 签名，端点监听仍可正常建立。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("dubbo");
-        configuration.connector("tcp").bind("127.0.0.1", 0).protocol("dubbo");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("dubbo");
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("dubbo");
         DubboUnsupportedFlowService implementation = input -> input;
         Flow.Publisher<String> values = subscriber -> {
         };

@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc.web;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -98,8 +99,10 @@ public class GrpcWebLifecycleTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void closingTheHttp2ClientCancelsTheRemotePublisherBeforeItsDeadline() throws Exception {
         // 使用长于断言等待时间的期限，排除依靠正常超时回收的假成功。
-        MetConfiguration incoming = this.incoming().setDefaultTimeout(15000);
-        MetConfiguration outgoing = this.outgoing(2).setDefaultTimeout(15000);
+        MetConfiguration incoming = this.incoming() //
+                .setDefaultTimeout(15000);
+        MetConfiguration outgoing = this.outgoing(2) //
+                .setDefaultTimeout(15000);
         CountDownLatch producing = new CountDownLatch(1);
         CountDownLatch cancelled = new CountDownLatch(1);
         GrpcWebServiceImpl implementation = new GrpcWebServiceImpl() {
@@ -150,9 +153,14 @@ public class GrpcWebLifecycleTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void gzipRequestAndResponseKeepTheirCompressedFrameFlag() throws Exception {
         // 服务选择 gRPC gzip；独立 HTTP 对端直接验证实际帧，避免仅检查配置值。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc-web");
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("grpc-web") //
-                .contextPath("/web").option("streamBody", true).option("compression", "gzip");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc-web");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc-web") //
+                .contextPath("/web") //
+                .option("streamBody", true) //
+                .option("compression", "gzip");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(GrpcWebService.class, new GrpcWebServiceImpl()) //
@@ -279,16 +287,24 @@ public class GrpcWebLifecycleTest {
     }
 
     private MetConfiguration incoming() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc-web");
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("grpc-web") //
-                .contextPath("/web").option("streamBody", true);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc-web");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc-web") //
+                .contextPath("/web") //
+                .option("streamBody", true);
         return configuration;
     }
 
     private MetConfiguration outgoing(int version) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc-web");
-        configuration.connector("http").option("httpVersion", version).protocol("grpc-web") //
-                .contextPath("/web").option("streamBody", true);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc-web");
+        configuration.connector("http") //
+                .option("httpVersion", version) //
+                .protocol("grpc-web") //
+                .contextPath("/web") //
+                .option("streamBody", true);
         return configuration;
     }
 

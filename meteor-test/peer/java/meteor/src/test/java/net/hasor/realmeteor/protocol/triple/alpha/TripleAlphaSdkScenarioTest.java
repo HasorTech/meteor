@@ -4,6 +4,7 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.protocol.triple.alpha;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -123,13 +124,17 @@ public class TripleAlphaSdkScenarioTest {
     }
 
     private MetConfiguration configuration(boolean listening, int version, String mode) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("triple");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("triple");
         configuration.setDefaultTimeout(10000);
-        var http = configuration.connector("http").option("httpVersion", version);
+        var http = configuration.connector("http") //
+                .option("httpVersion", version);
         if (listening) {
             http.bind("0.0.0.0", 0);
         }
-        http.protocol("triple").contextPath("/").option("httpMode", mode);
+        http.protocol("triple") //
+                .contextPath("/") //
+                .option("httpMode", mode);
         return configuration;
     }
 }

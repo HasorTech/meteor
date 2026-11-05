@@ -8,17 +8,24 @@
 package net.hasor.example.protocol.xmlrpc;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 
 /** 使用插件 SPI 配置并发布一个 XML-RPC 服务。 */
 public class XmlRpcExample {
     public static void main(String[] arguments) throws Exception {
         // 端点选择 HTTP 传输和 XML-RPC 协议，业务代码无需感知具体实现。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("xmlrpc");
-        incoming.connector("http").bind("127.0.0.1", 0) //
-                .protocol("xmlrpc").contextPath("/rpc");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("xmlrpc");
-        outgoing.connector("http").protocol("xmlrpc").contextPath("/rpc");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("xmlrpc");
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("xmlrpc") //
+                .contextPath("/rpc");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("xmlrpc");
+        outgoing.connector("http") //
+                .protocol("xmlrpc") //
+                .contextPath("/rpc");
 
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {

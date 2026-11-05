@@ -90,8 +90,8 @@ public class RsfsLifecycleScenarioTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void cancellingOneCallLeavesTheTlsConnectionUsable() throws Exception {
         // 两个业务线程允许阻塞调用仍在运行时，另一个接口验证取消后的连接可用性。
-        MetConfiguration incoming = RsfsConfigurations.server("server", "REQUIRE");
-        incoming.setQueueMinPoolSize(2);
+        MetConfiguration incoming = RsfsConfigurations.server("server", "REQUIRE") //
+                .setQueueMinPoolSize(2);
         MetConfiguration outgoing = RsfsConfigurations.client("client", "trust");
         RsfsBlockingProvider provider = new RsfsBlockingProvider();
         try (MetContext server = incoming.buildContext(); //

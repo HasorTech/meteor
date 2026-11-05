@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.xmlrpc.go;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.example.protocol.golang.GoEchoService;
@@ -25,10 +26,13 @@ public class XmlRpcGoInteropTest {
     @Timeout(value = 45000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void goXmlRpcClientCallsMeteorProvider() throws Exception {
         // Meteor 通过公开启动和发布 API 提供 XML-RPC 文本方法。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("xmlrpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("xmlrpc");
         configuration.setDefaultTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("xmlrpc").contextPath("/rpc");
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("xmlrpc") //
+                .contextPath("/rpc");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(GoEchoService.class, value -> value + "|meteor") //

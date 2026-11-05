@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropService;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropServiceImpl;
 import net.hasor.meteor.MetContext;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
@@ -24,8 +25,11 @@ public class NodeDubboConsumerScenarioTest {
     @Timeout(value = 60000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void nodeSdkCallsMeteorStringEchoDirectly() throws Exception {
         // bootstrap 启动当前场景独占的 Dubbo TCP 监听，随后发布普通 Java 接口。
-        MetConfiguration configuration = new MetConfiguration().setApplicationName("node-dubbo-basic-provider");
-        configuration.connector("tcp").bind("0.0.0.0", 0).protocol("dubbo");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setApplicationName("node-dubbo-basic-provider");
+        configuration.connector("tcp") //
+                .bind("0.0.0.0", 0) //
+                .protocol("dubbo");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(DubboInteropService.class, new DubboInteropServiceImpl()) //

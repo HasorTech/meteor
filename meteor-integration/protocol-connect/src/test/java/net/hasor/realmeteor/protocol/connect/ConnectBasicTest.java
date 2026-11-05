@@ -9,6 +9,7 @@ package net.hasor.realmeteor.protocol.connect;
 import net.hasor.example.protocol.connect.ConnectDemoService;
 import net.hasor.example.protocol.connect.ConnectDemoServiceImpl;
 import net.hasor.example.protocol.connect.ConnectMessage;
+import net.hasor.example.protocol.connect.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
@@ -91,13 +92,17 @@ public class ConnectBasicTest {
     }
 
     private MetConfiguration configuration(boolean listener) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("connect");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("connect");
         configuration.setDefaultTimeout(5000);
-        var http = configuration.connector("http").option("httpVersion", 2);
+        var http = configuration.connector("http") //
+                .option("httpVersion", 2);
         if (listener) {
             http.bind("127.0.0.1", 0);
         }
-        http.protocol("connect").contextPath("/rpc").option("streamBody", true);
+        http.protocol("connect") //
+                .contextPath("/rpc") //
+                .option("streamBody", true);
         return configuration;
     }
 }

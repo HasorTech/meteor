@@ -6,14 +6,19 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor;
+import java.nio.file.Path;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.MapPropertySource;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ServiceScannerConfigurerTest {
+    @TempDir
+    Path directory;
+
     @EnableMeteor
     @Configuration(proxyBeanMethods = false)
     static class Enable {
@@ -23,7 +28,10 @@ class ServiceScannerConfigurerTest {
     void usesEnablingConfigurationPackageWhenMeteorPackagesAreAbsent() {
         // 不指定 basePackages 或 meteor.scan-packages，使用配置类所在包。
         try (AnnotationConfigApplicationContext app = new AnnotationConfigApplicationContext()) {
-            Map<String, Object> properties = Map.of("meteor.connectors.rsf.host", "127.0.0.1", "meteor.connectors.rsf.port", "0");
+            Map<String, Object> properties = Map.of( //
+                    "meteor.connectors.rsf.host", "127.0.0.1", //
+                    "meteor.connectors.rsf.port", "0", //
+                    "meteor.data-home", this.directory.resolve("meteor").toString());
             app.getEnvironment().getPropertySources().addFirst(new MapPropertySource("defaults", properties));
             app.register(Enable.class);
             app.refresh();
@@ -37,7 +45,12 @@ class ServiceScannerConfigurerTest {
     void scansOnlyAnnotatedInterfacesFromNativePackageList() {
         // 通过原生 Environment 索引列表和 @EnableMeteor 完成扫描、注册。
         try (AnnotationConfigApplicationContext app = new AnnotationConfigApplicationContext()) {
-            Map<String, Object> properties = Map.of("meteor.scan-packages[0]", "net.hasor.meteor", "meteor.scan-packages[1]", "net.hasor.example.empty", "meteor.connectors.rsf.host", "127.0.0.1", "meteor.connectors.rsf.port", "0");
+            Map<String, Object> properties = Map.of( //
+                    "meteor.scan-packages[0]", "net.hasor.meteor", //
+                    "meteor.scan-packages[1]", "net.hasor.example.empty", //
+                    "meteor.connectors.rsf.host", "127.0.0.1", //
+                    "meteor.connectors.rsf.port", "0", //
+                    "meteor.data-home", this.directory.resolve("meteor").toString());
             app.getEnvironment().getPropertySources().addFirst(new MapPropertySource("scan", properties));
             app.register(Enable.class);
             app.refresh();

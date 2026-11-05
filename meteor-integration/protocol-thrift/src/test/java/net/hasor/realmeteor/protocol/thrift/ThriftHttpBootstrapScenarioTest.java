@@ -7,6 +7,7 @@
  */
 package net.hasor.realmeteor.protocol.thrift;
 import net.hasor.cobble.StringUtils;
+import net.hasor.example.protocol.thrift.TestConfigurationUtils;
 import net.hasor.example.protocol.thrift.ThriftDemoService;
 import net.hasor.example.protocol.thrift.ThriftDemoServiceImpl;
 import net.hasor.example.protocol.thrift.generated.ExtendedInteropService;
@@ -71,12 +72,18 @@ public class ThriftHttpBootstrapScenarioTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void rejectedThriftPublicationStillAllowsRsfNetworkInvocation() throws Exception {
         // RSF 与 Thrift HTTP 共用业务容器，当前接口选用的 JSON 仅适用于 RSF。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("rsf");
-        incoming.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        incoming.connector("http").bind("127.0.0.1", 0) //
-                .protocol("thrift-http").contextPath("/thrift");
-        MetConfiguration outgoing = new MetConfiguration();
-        outgoing.connector("tcp").protocol("rsf");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("rsf");
+        incoming.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("thrift-http") //
+                .contextPath("/thrift");
+        MetConfiguration outgoing = TestConfigurationUtils.create();
+        outgoing.connector("tcp") //
+                .protocol("rsf");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();
@@ -97,16 +104,22 @@ public class ThriftHttpBootstrapScenarioTest {
     }
 
     private MetConfiguration serverConfiguration() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift-http");
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("thrift-http").contextPath("/thrift");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift-http");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("thrift-http") //
+                .contextPath("/thrift");
         return configuration;
     }
 
     private MetConfiguration clientConfiguration(int version, String encoding) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift-http");
-        MetConfiguration.ProtocolSettings protocol = configuration.connector("http").option("httpVersion", version) //
-                .protocol("thrift-http").contextPath("/thrift");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift-http");
+        MetConfiguration.ProtocolSettings protocol = configuration.connector("http") //
+                .option("httpVersion", version) //
+                .protocol("thrift-http") //
+                .contextPath("/thrift");
         if (!StringUtils.equals("binary", encoding)) {
             protocol.option("encoding", encoding);
         }

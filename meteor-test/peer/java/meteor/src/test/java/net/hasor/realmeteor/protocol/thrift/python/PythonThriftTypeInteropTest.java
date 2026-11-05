@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.thrift.python;
+import net.hasor.example.support.TestConfigurationUtils;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.ParameterizedClass;
 import java.util.ArrayList;
@@ -104,13 +105,18 @@ public class PythonThriftTypeInteropTest {
     }
 
     private MetConfiguration configuration(boolean listen) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift");
-        configuration.setDefaultTimeout(10000).setQueueMinPoolSize(2).setQueueMaxPoolSize(4);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift");
+        configuration.setDefaultTimeout(10000) //
+                .setQueueMinPoolSize(2) //
+                .setQueueMaxPoolSize(4);
         MetConfiguration.ConnectorSettings tcp = configuration.connector("tcp");
         if (listen) {
             tcp.bind(ContainerProcess.runnerHost(), 0);
         }
-        tcp.protocol("thrift").option("encoding", this.encoding).option("framed", true);
+        tcp.protocol("thrift") //
+                .option("encoding", this.encoding) //
+                .option("framed", true);
         return configuration;
     }
 }

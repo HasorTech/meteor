@@ -8,6 +8,7 @@
 package net.hasor.realmeteor.protocol.hprose;
 import net.hasor.example.protocol.hprose.Echo;
 import net.hasor.example.protocol.hprose.EchoService;
+import net.hasor.example.protocol.hprose.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
@@ -22,10 +23,15 @@ public class HproseBasicScenarioTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void bootstrapPublishesAndConsumesHproseService() throws Exception {
         // 服务端监听和客户端通道只挂载本插件，不依赖外部语言或其他协议。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("hprose");
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("hprose");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("hprose");
-        outgoing.connector("http").protocol("hprose");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("hprose");
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("hprose");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("hprose");
+        outgoing.connector("http") //
+                .protocol("hprose");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             // 先启动上下文，再发布并订阅相同的业务接口。

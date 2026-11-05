@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.registry.zookeeper.ZookeeperTestUtils;
 import net.hasor.meteor.registry.RegistryAdmin;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
 import net.hasor.meteor.registry.shared.storage.domain.EntMetadataData;
@@ -41,10 +42,12 @@ public class ZookeeperAuthenticationTest {
             registry.setAddress(server.getConnectString());
             registry.setUsername("registry-user");
             registry.setPassword("storage-secret");
+            registry.setManagementToken("zookeeper-test-management");
             registry.setRoot("/protected");
             registry.setTimeoutMillis(5000);
             registry.setSessionTimeoutMillis(15000);
-            MetConfiguration configuration = new MetConfiguration().addExtension(registry);
+            MetConfiguration configuration = ZookeeperTestUtils.createConfiguration() //
+                    .addExtension(registry);
             try (MetContext context = configuration.buildContext()) {
                 RegistryAdmin admin = context.getExtension(RegistryAdmin.class);
                 assertEquals("zookeeper", admin.getClusterAdmin().info().getProvider());

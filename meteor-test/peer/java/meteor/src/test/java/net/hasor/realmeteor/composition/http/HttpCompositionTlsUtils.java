@@ -22,19 +22,23 @@ final class HttpCompositionTlsUtils {
 
     static void server(MetConfiguration configuration, String alpn, String clientAuth) {
         ConnectorSettings connector = configuration.getConnectors().get(0);
-        connector.option("tlsEnabled", true).option("httpScheme", "https") //
+        connector.option("tlsEnabled", true) //
+                .option("httpScheme", "https") //
                 .option("tlsKeyStore", "classpath:/certs/acceptance/server.p12") //
                 .option("tlsKeyStorePassword", "meteor-test") //
                 .option("tlsTrustStore", "classpath:/certs/acceptance/trust.p12") //
                 .option("tlsTrustStorePassword", "meteor-test") //
-                .option("tlsClientAuth", clientAuth).option("tlsAlpn", alpn);
+                .option("tlsClientAuth", clientAuth) //
+                .option("tlsAlpn", alpn);
     }
 
     static void client(MetConfiguration configuration, String alpn, String identity) {
         ConnectorSettings connector = configuration.getConnectors().get(0);
-        connector.option("tlsEnabled", true).option("httpScheme", "https") //
+        connector.option("tlsEnabled", true) //
+                .option("httpScheme", "https") //
                 .option("tlsTrustStore", "classpath:/certs/acceptance/trust.p12") //
-                .option("tlsTrustStorePassword", "meteor-test").option("tlsAlpn", alpn);
+                .option("tlsTrustStorePassword", "meteor-test") //
+                .option("tlsAlpn", alpn);
         if (identity != null) {
             connector.option("tlsKeyStore", "classpath:/certs/acceptance/" + identity + ".p12") //
                     .option("tlsKeyStorePassword", "meteor-test");

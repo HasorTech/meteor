@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.thrift;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.thrift.ThriftDemoService;
@@ -821,9 +822,12 @@ public class ThriftSecureScenarioTest {
     public void plaintextAndSecureTcpEndpointsRemainIndependent() throws Exception {
         // 同一上下文使用两个独立 TCP 端口，分别承载明文与 TLS Thrift。
         MetConfiguration incoming = this.incomingTcp("server", "NONE", "TLSv1.3,TLSv1.2");
-        incoming.connector("tcp").bind("127.0.0.1", 0).protocol("thrift");
+        incoming.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("thrift");
         MetConfiguration outgoing = this.outgoingTcp(null, "trust", "TLSv1.3,TLSv1.2");
-        outgoing.connector("tcp").protocol("thrift");
+        outgoing.connector("tcp") //
+                .protocol("thrift");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             // 同一服务发布到两个挂载，调用方只使用协议公开的地址别名选择端口。
@@ -851,8 +855,12 @@ public class ThriftSecureScenarioTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void secureTcpClientNeverFallsBackToPlaintext() throws Exception {
         // 服务器只提供明文监听，客户端明确要求 TLS。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("thrift").setDefaultTimeout(10000);
-        incoming.connector("tcp").bind("127.0.0.1", 0).protocol("thrift");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift") //
+                .setDefaultTimeout(10000);
+        incoming.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("thrift");
         MetConfiguration outgoing = this.outgoingTcp(null, "trust", "TLSv1.3,TLSv1.2");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
@@ -882,8 +890,11 @@ public class ThriftSecureScenarioTest {
     public void secureTcpListenerRejectsPlaintextClient() throws Exception {
         // 服务器只提供 TLS，客户端只准备普通 TCP Thrift。
         MetConfiguration incoming = this.incomingTcp("server", "NONE", "TLSv1.3,TLSv1.2");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("thrift").setDefaultTimeout(10000);
-        outgoing.connector("tcp").protocol("thrift");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift") //
+                .setDefaultTimeout(10000);
+        outgoing.connector("tcp") //
+                .protocol("thrift");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();
@@ -907,38 +918,53 @@ public class ThriftSecureScenarioTest {
     }
 
     private MetConfiguration incomingTcp(String identity, String clientAuth, String protocols) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift").setDefaultTimeout(10000);
-        ConnectorSettings connector = configuration.connector("tcp").bind("127.0.0.1", 0);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift") //
+                .setDefaultTimeout(10000);
+        ConnectorSettings connector = configuration.connector("tcp") //
+                .bind("127.0.0.1", 0);
         ThriftTlsUtils.serverTls(connector, identity, clientAuth, protocols);
-        connector.protocol("thrift").addressScheme("thrift-tls");
+        connector.protocol("thrift") //
+                .addressScheme("thrift-tls");
         return configuration;
     }
 
     private MetConfiguration outgoingTcp(String identity, String trust, String protocols) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift").setDefaultTimeout(10000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift") //
+                .setDefaultTimeout(10000);
         ConnectorSettings connector = configuration.connector("tcp");
         ThriftTlsUtils.clientTls(connector, identity, trust, protocols);
-        connector.protocol("thrift").addressScheme("thrift-tls");
+        connector.protocol("thrift") //
+                .addressScheme("thrift-tls");
         return configuration;
     }
 
     private MetConfiguration incomingHttp(int httpVersion, String identity, String clientAuth, String protocols) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift-http");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift-http");
         configuration.setDefaultTimeout(10000);
-        ConnectorSettings connector = configuration.connector("http").bind("127.0.0.1", 0);
+        ConnectorSettings connector = configuration.connector("http") //
+                .bind("127.0.0.1", 0);
         ThriftTlsUtils.serverTls(connector, identity, clientAuth, protocols);
         ThriftTlsUtils.https(connector, httpVersion);
-        connector.protocol("thrift-http").addressScheme("https").contextPath("/rpc");
+        connector.protocol("thrift-http") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
         return configuration;
     }
 
     private MetConfiguration outgoingHttp(int httpVersion, String identity, String trust, String protocols) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift-http");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift-http");
         configuration.setDefaultTimeout(10000);
-        ConnectorSettings connector = configuration.connector("http").option("httpVersion", httpVersion);
+        ConnectorSettings connector = configuration.connector("http") //
+                .option("httpVersion", httpVersion);
         ThriftTlsUtils.clientTls(connector, identity, trust, protocols);
         ThriftTlsUtils.https(connector, httpVersion);
-        connector.protocol("thrift-http").addressScheme("https").contextPath("/rpc");
+        connector.protocol("thrift-http") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
         return configuration;
     }
 }

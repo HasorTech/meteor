@@ -35,7 +35,8 @@ public class DubboRegistrySessionTest {
     @Test
     public void unopenedSessionIsNotAvailable() throws Exception {
         // 尚未打开的会话没有借用其他 SDK 实例的连接状态。
-        try (MetContext context = new MetConfiguration().buildContext(); //
+        MetConfiguration configuration = DubboTestUtils.createConfiguration();
+        try (MetContext context = configuration.buildContext(); //
              DubboRegistrySession session = new DubboRegistrySession(context, URL.valueOf("zookeeper://host:2181"))) {
             assertFalse(session.isAvailable());
         }
@@ -44,8 +45,10 @@ public class DubboRegistrySessionTest {
     @Test
     public void providerRegistersInterfaceAndApplicationDirectories() throws Exception {
         // 打开独占会话并一次发布服务地址。
+        MetConfiguration configuration = DubboTestUtils.createConfiguration();
+        configuration.setApplicationName("session-provider");
         try (TestingServer server = new TestingServer(); //
-             MetContext context = new MetConfiguration().setApplicationName("session-provider").buildContext(); //
+             MetContext context = configuration.buildContext(); //
              DubboRegistrySession session = new DubboRegistrySession(context, registryUrl(server)); //
              CuratorFramework observer = observer(server)) {
             session.open();
@@ -63,8 +66,10 @@ public class DubboRegistrySessionTest {
     @Test
     public void consumerRegistrationDoesNotCreateProviderInstance() throws Exception {
         // 消费者可以登记原生 consumer URL，但不作为服务提供者发布应用实例。
+        MetConfiguration configuration = DubboTestUtils.createConfiguration();
+        configuration.setApplicationName("session-consumer");
         try (TestingServer server = new TestingServer(); //
-             MetContext context = new MetConfiguration().setApplicationName("session-consumer").buildContext(); //
+             MetContext context = configuration.buildContext(); //
              DubboRegistrySession session = new DubboRegistrySession(context, registryUrl(server)); //
              CuratorFramework observer = observer(server)) {
             session.open();
@@ -82,8 +87,10 @@ public class DubboRegistrySessionTest {
     @Test
     public void duplicateDiscoveryAddressesAreMerged() throws Exception {
         // 一个提供者同时登记在接口目录和应用目录。
+        MetConfiguration configuration = DubboTestUtils.createConfiguration();
+        configuration.setApplicationName("session-merged");
         try (TestingServer server = new TestingServer(); //
-             MetContext context = new MetConfiguration().setApplicationName("session-merged").buildContext(); //
+             MetContext context = configuration.buildContext(); //
              DubboRegistrySession session = new DubboRegistrySession(context, registryUrl(server))) {
             session.open();
             session.register(provider(22390, true));
@@ -105,7 +112,8 @@ public class DubboRegistrySessionTest {
     @Test
     public void interfaceRemovalDoesNotEraseApplicationProviders() throws Exception {
         // 同一地址同时通过两个原生发现模型提供。
-        MetConfiguration configuration = new MetConfiguration().setApplicationName("session-source-isolation");
+        MetConfiguration configuration = DubboTestUtils.createConfiguration();
+        configuration.setApplicationName("session-source-isolation");
         try (TestingServer server = new TestingServer(); //
              MetContext context = configuration.buildContext(); //
              DubboRegistrySession session = new DubboRegistrySession(context, registryUrl(server)); //
@@ -132,8 +140,10 @@ public class DubboRegistrySessionTest {
     @Test
     public void sameProviderCanBePublishedAfterLastServiceRemoval() throws Exception {
         // 先创建原生应用实例，再完全撤回最后一个服务。
+        MetConfiguration configuration = DubboTestUtils.createConfiguration();
+        configuration.setApplicationName("session-republish");
         try (TestingServer server = new TestingServer(); //
-             MetContext context = new MetConfiguration().setApplicationName("session-republish").buildContext(); //
+             MetContext context = configuration.buildContext(); //
              DubboRegistrySession session = new DubboRegistrySession(context, registryUrl(server)); //
              CuratorFramework observer = observer(server)) {
             session.open();
@@ -154,8 +164,10 @@ public class DubboRegistrySessionTest {
     @Test
     public void remainingEndpointReplacesRemovedApplicationRepresentative() throws Exception {
         // 应用元数据每个协议服务键选用最早登记的端点，接口目录保留两个端点。
+        MetConfiguration configuration = DubboTestUtils.createConfiguration();
+        configuration.setApplicationName("session-fallback");
         try (TestingServer server = new TestingServer(); //
-             MetContext context = new MetConfiguration().setApplicationName("session-fallback").buildContext(); //
+             MetContext context = configuration.buildContext(); //
              DubboRegistrySession session = new DubboRegistrySession(context, registryUrl(server)); //
              CuratorFramework observer = observer(server)) {
             session.open();
@@ -182,7 +194,8 @@ public class DubboRegistrySessionTest {
     @Test
     public void mappingPermissionFailureCanBeRetriedAfterItsRollback() throws Exception {
         // 仅禁止 SDK 读写服务映射，接口提供者目录仍允许登记。
-        MetConfiguration configuration = new MetConfiguration().setApplicationName("session-mapping-retry");
+        MetConfiguration configuration = DubboTestUtils.createConfiguration();
+        configuration.setApplicationName("session-mapping-retry");
         try (TestingServer server = new TestingServer(); //
              MetContext context = configuration.buildContext(); //
              DubboRegistrySession session = new DubboRegistrySession(context, registryUrl(server)); //
@@ -211,7 +224,8 @@ public class DubboRegistrySessionTest {
     @Test
     public void emptyConsumerIdentityMatchesAbsentNativeApplicationIdentity() throws Exception {
         // 原生服务没有声明 group/version，而按类引用的消费者使用空字符串身份。
-        MetConfiguration configuration = new MetConfiguration().setApplicationName("session-empty-identity");
+        MetConfiguration configuration = DubboTestUtils.createConfiguration();
+        configuration.setApplicationName("session-empty-identity");
         try (TestingServer server = new TestingServer(); //
              MetContext context = configuration.buildContext(); //
              DubboRegistrySession session = new DubboRegistrySession(context, registryUrl(server)); //
@@ -235,7 +249,8 @@ public class DubboRegistrySessionTest {
     @Test
     public void publishedInstanceUpdateRetriesAfterNodeWritePermissionIsRestored() throws Exception {
         // 先成功发布实例，再仅禁止 SDK 修改实例节点，模拟已经上线后的单次存储写入故障。
-        MetConfiguration configuration = new MetConfiguration().setApplicationName("session-update-retry");
+        MetConfiguration configuration = DubboTestUtils.createConfiguration();
+        configuration.setApplicationName("session-update-retry");
         try (TestingServer server = new TestingServer(); //
              MetContext context = configuration.buildContext(); //
              DubboRegistrySession session = new DubboRegistrySession(context, registryUrl(server)); //

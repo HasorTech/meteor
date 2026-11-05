@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import net.hasor.example.protocol.oncrpc.OncRpcDemoCodecs;
 import net.hasor.example.protocol.oncrpc.OncRpcDemoService;
 import net.hasor.example.protocol.oncrpc.OncRpcDemoServiceImpl;
+import net.hasor.example.protocol.oncrpc.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
@@ -31,8 +32,11 @@ public class OncRpcJavaSdkBasicTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void remoteTeaJavaClientCallsMeteorOverTcp() throws Exception {
         // 使用插件本地接口和 IDL 编码资源，标准 XDR string 保持 ASCII。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc");
-        configuration.connector("tcp").bind("127.0.0.1", 0).protocol("oncrpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc");
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("oncrpc");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(OncRpcDemoService.class, new OncRpcDemoServiceImpl()) //
@@ -63,8 +67,11 @@ public class OncRpcJavaSdkBasicTest {
         try (DatagramSocket socket = new DatagramSocket(0, InetAddress.getLoopbackAddress())) {
             port = socket.getLocalPort();
         }
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc-udp");
-        configuration.connector("udp").bind("127.0.0.1", port).protocol("oncrpc-udp");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc-udp");
+        configuration.connector("udp") //
+                .bind("127.0.0.1", port) //
+                .protocol("oncrpc-udp");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(OncRpcDemoService.class, new OncRpcDemoServiceImpl()) //
@@ -91,9 +98,11 @@ public class OncRpcJavaSdkBasicTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorClientCallsRemoteTeaJavaServerOverTcp() throws Exception {
         // SDK 直接监听随机 TCP 端口，Meteor 只配置消费者，不发布本地实现。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc");
         configuration.setDefaultTimeout(5000);
-        configuration.connector("tcp").protocol("oncrpc");
+        configuration.connector("tcp") //
+                .protocol("oncrpc");
         try (OncRpcSdkServer server = OncRpcSdkServer.tcp(); //
              MetContext client = configuration.buildContext()) {
             client.start();
@@ -112,9 +121,11 @@ public class OncRpcJavaSdkBasicTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorClientCallsRemoteTeaJavaServerOverUdp() throws Exception {
         // 同进程 SDK UDP transport 完成监听和 RPC/XDR，Meteor 不持有服务实现。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc-udp");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc-udp");
         configuration.setDefaultTimeout(5000);
-        configuration.connector("udp").protocol("oncrpc-udp");
+        configuration.connector("udp") //
+                .protocol("oncrpc-udp");
         try (OncRpcSdkServer server = OncRpcSdkServer.udp(); //
              MetContext client = configuration.buildContext()) {
             client.start();

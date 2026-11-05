@@ -19,6 +19,7 @@ import net.hasor.example.protocol.golang.GoEchoService;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
@@ -132,7 +133,8 @@ public class GoScalarSdkVersionCompatibilityTest {
     }
 
     private MetConfiguration configuration(boolean listening) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol(this.protocol);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol(this.protocol);
         configuration.setDefaultTimeout(10000);
         boolean http = StringUtils.equals("hprose", this.protocol);
         var connector = configuration.connector(http ? "http" : "tcp");
@@ -145,7 +147,8 @@ public class GoScalarSdkVersionCompatibilityTest {
             mount.contextPath("/rpc");
         }
         if (StringUtils.equals("thrift", this.protocol)) {
-            mount.option("encoding", "binary").option("framed", true);
+            mount.option("encoding", "binary") //
+                    .option("framed", true);
         }
         return configuration;
     }

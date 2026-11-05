@@ -8,6 +8,10 @@
 package net.hasor.realmeteor.rpc.websocket;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import net.hasor.example.bootstrap.TestConfigurationUtils;
+import net.hasor.example.rpc.websocket.WebSocketConfigurations;
+import net.hasor.example.rpc.websocket.WebSocketSample;
+import net.hasor.example.rpc.websocket.WebSocketSampleService;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
@@ -15,12 +19,9 @@ import net.hasor.meteor.MetFuture;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.domain.MetTimeoutException;
-import net.hasor.example.rpc.websocket.WebSocketConfigurations;
-import net.hasor.example.rpc.websocket.WebSocketSample;
-import net.hasor.example.rpc.websocket.WebSocketSampleService;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** WSS 复用 HTTP 连接器的正式 TLS 配置与严格信任校验。 */
 public class WebSocketTlsBootstrapTest {
@@ -28,9 +29,10 @@ public class WebSocketTlsBootstrapTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void trustedServerCertificateAllowsTextRpcOverWss() throws Exception {
         // 单向 TLS 只配置服务端身份；客户端只有独立测试 CA 信任库。
-        MetConfiguration incoming = new MetConfiguration();
-        MetConfiguration outgoing = new MetConfiguration();
-        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 1).bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        MetConfiguration outgoing = TestConfigurationUtils.create();
+        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 1) //
+                .bind("127.0.0.1", 0);
         WebSocketConfigurations.tlsServer(listener, 1, "NONE");
         WebSocketConfigurations.websocket(listener, 1, false);
         ConnectorSettings sender = WebSocketConfigurations.http(outgoing, 1);
@@ -58,9 +60,10 @@ public class WebSocketTlsBootstrapTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void requiredClientCertificateAllowsBinaryRpcOverWss() throws Exception {
         // REQUIRE 验证双方独立身份，客户端与服务器分别使用 clientAuth/serverAuth 证书。
-        MetConfiguration incoming = new MetConfiguration();
-        MetConfiguration outgoing = new MetConfiguration();
-        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 1).bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        MetConfiguration outgoing = TestConfigurationUtils.create();
+        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 1) //
+                .bind("127.0.0.1", 0);
         WebSocketConfigurations.tlsServer(listener, 1, "REQUIRE");
         WebSocketConfigurations.websocket(listener, 1, true);
         ConnectorSettings sender = WebSocketConfigurations.http(outgoing, 1);
@@ -89,9 +92,10 @@ public class WebSocketTlsBootstrapTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void http2ExtendedConnectUsesTlsWithAlpn() throws Exception {
         // ALPN 选择 h2，随后通过 RFC 8441 extended CONNECT 建立文本通道。
-        MetConfiguration incoming = new MetConfiguration();
-        MetConfiguration outgoing = new MetConfiguration();
-        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 2).bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        MetConfiguration outgoing = TestConfigurationUtils.create();
+        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 2) //
+                .bind("127.0.0.1", 0);
         WebSocketConfigurations.tlsServer(listener, 2, "NONE");
         WebSocketConfigurations.websocket(listener, 2, false);
         ConnectorSettings sender = WebSocketConfigurations.http(outgoing, 2);
@@ -119,9 +123,10 @@ public class WebSocketTlsBootstrapTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void http2ExtendedConnectRequiresMutualTls() throws Exception {
         // 同一 TLS 连接协商 h2 并验证客户端证书，再建立二进制 WS stream。
-        MetConfiguration incoming = new MetConfiguration();
-        MetConfiguration outgoing = new MetConfiguration();
-        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 2).bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        MetConfiguration outgoing = TestConfigurationUtils.create();
+        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 2) //
+                .bind("127.0.0.1", 0);
         WebSocketConfigurations.tlsServer(listener, 2, "REQUIRE");
         WebSocketConfigurations.websocket(listener, 2, true);
         ConnectorSettings sender = WebSocketConfigurations.http(outgoing, 2);
@@ -150,9 +155,10 @@ public class WebSocketTlsBootstrapTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void requiredClientCertificateRejectsAnAnonymousWssCaller() throws Exception {
         // 服务端要求身份，客户端只配置 CA，不提供任何客户端证书。
-        MetConfiguration incoming = new MetConfiguration();
-        MetConfiguration outgoing = new MetConfiguration();
-        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 1).bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        MetConfiguration outgoing = TestConfigurationUtils.create();
+        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 1) //
+                .bind("127.0.0.1", 0);
         WebSocketConfigurations.tlsServer(listener, 1, "REQUIRE");
         WebSocketConfigurations.websocket(listener, 1, false);
         ConnectorSettings sender = WebSocketConfigurations.http(outgoing, 1);
@@ -185,9 +191,10 @@ public class WebSocketTlsBootstrapTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void requiredClientCertificateRejectsTheOtherTestCa() throws Exception {
         // 客户端证书来自另一套 CA；不允许用信任全部证书规避该失败。
-        MetConfiguration incoming = new MetConfiguration();
-        MetConfiguration outgoing = new MetConfiguration();
-        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 1).bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        MetConfiguration outgoing = TestConfigurationUtils.create();
+        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 1) //
+                .bind("127.0.0.1", 0);
         WebSocketConfigurations.tlsServer(listener, 1, "REQUIRE");
         WebSocketConfigurations.websocket(listener, 1, false);
         ConnectorSettings sender = WebSocketConfigurations.http(outgoing, 1);

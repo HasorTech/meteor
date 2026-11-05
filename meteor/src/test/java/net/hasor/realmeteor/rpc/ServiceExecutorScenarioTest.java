@@ -9,6 +9,7 @@ package net.hasor.realmeteor.rpc;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import net.hasor.example.bootstrap.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
@@ -167,17 +168,22 @@ public class ServiceExecutorScenarioTest {
     }
 
     private static MetConfiguration serverConfiguration() {
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.setQueueMinPoolSize(1).setQueueMaxPoolSize(1).setQueueMaxSize(1);
-        configuration.setDefaultTimeout(10000);
-        configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setQueueMinPoolSize(1) //
+                .setQueueMaxPoolSize(1) //
+                .setQueueMaxSize(1) //
+                .setDefaultTimeout(10000);
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
         return configuration;
     }
 
     private static MetConfiguration clientConfiguration() {
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.setDefaultTimeout(10000);
-        configuration.connector("tcp").protocol("rsf");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(10000);
+        configuration.connector("tcp") //
+                .protocol("rsf");
         return configuration;
     }
 }

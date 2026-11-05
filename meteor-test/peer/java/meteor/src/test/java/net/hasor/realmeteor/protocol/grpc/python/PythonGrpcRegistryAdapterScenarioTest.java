@@ -69,8 +69,10 @@ public class PythonGrpcRegistryAdapterScenarioTest {
         try (RegistryDiscoveryEnvironment environment = RegistryDiscoveryEnvironment.open(this.backend, home)) {
             RegistryConfiguration registry = environment.configuration();
             MetConfiguration configuration = this.configuration(registry, "meteor-grpc-provider");
-            configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                    .protocol("grpc").contextPath("/");
+            configuration.connector("http") //
+                    .bind(ContainerProcess.runnerHost(), 0) //
+                    .protocol("grpc") //
+                    .contextPath("/");
             try (MetContext provider = configuration.buildContext()) {
                 provider.start();
                 GrpcProtoResource resource = new GrpcProtoResource(this.getClass().getResource("/protocol/proto/order.proto"));
@@ -106,7 +108,10 @@ public class PythonGrpcRegistryAdapterScenarioTest {
         try (RegistryDiscoveryEnvironment environment = RegistryDiscoveryEnvironment.open(this.backend, home)) {
             RegistryConfiguration registry = environment.configuration();
             MetConfiguration configuration = this.configuration(registry, "meteor-grpc-consumer");
-            configuration.connector("http").option("httpVersion", 2).protocol("grpc").contextPath("/");
+            configuration.connector("http") //
+                    .option("httpVersion", 2) //
+                    .protocol("grpc") //
+                    .contextPath("/");
             try (MetContext consumer = configuration.buildContext()) {
                 consumer.start();
                 GrpcProtoResource resource = new GrpcProtoResource(this.getClass().getResource("/protocol/proto/order.proto"));
@@ -144,11 +149,13 @@ public class PythonGrpcRegistryAdapterScenarioTest {
     }
 
     private MetConfiguration configuration(RegistryConfiguration registry, String application) throws Exception {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDefaultProtocol("grpc");
         configuration.setApplicationName(application);
         configuration.setDataHome(Files.createDirectory(this.data.resolve(application)));
         configuration.addExtension(registry);
-        configuration.connector("tcp").protocol("rsf"); // 内部管理出口不开放监听，不参与业务发现。
+        configuration.connector("tcp") //
+                .protocol("rsf"); // 内部管理出口不开放监听，不参与业务发现。
         return configuration;
     }
 }

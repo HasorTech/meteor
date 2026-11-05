@@ -7,6 +7,7 @@
  */
 package net.hasor.realmeteor.protocol.soap;
 import net.hasor.example.protocol.soap.NamedEcho;
+import net.hasor.example.protocol.soap.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
@@ -60,12 +61,14 @@ public class SoapCommonMetaContractScenarioTest {
     }
 
     private MetConfiguration configuration(boolean listen) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
         MetConfiguration.ConnectorSettings connector = configuration.connector("http");
         if (listen) {
             connector.bind("127.0.0.1", 0);
         }
-        connector.protocol("soap").contextPath("/services");
+        connector.protocol("soap") //
+                .contextPath("/services");
         return configuration;
     }
 }

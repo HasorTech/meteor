@@ -7,6 +7,7 @@
  */
 package net.hasor.realmeteor.protocol.dubbo;
 import net.hasor.example.protocol.dubbo.NamedEcho;
+import net.hasor.example.protocol.dubbo.TestConfigurationUtils;
 import net.hasor.example.protocol.dubbo.WireEcho;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
@@ -56,7 +57,8 @@ public class DubboCommonNamesTest {
     }
 
     private MetConfiguration configuration(boolean listen) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("dubbo");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("dubbo");
         var connector = configuration.connector("tcp");
         if (listen) {
             connector.bind("127.0.0.1", 0);

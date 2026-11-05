@@ -8,6 +8,8 @@
 package net.hasor.meteor;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,9 +25,36 @@ import net.hasor.meteor.registry.jdbc.JdbcRegistryConfiguration;
 import net.hasor.meteor.registry.memory.MemoryRegistryConfiguration;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MeteorSettingsTest {
+    @TempDir
+    Path directory;
+
+    @Test
+    void readsExplicitDataHomeFromNativeConfiguration() throws Exception {
+        // 显式目录覆盖内核按应用名推导的数据目录。
+        Map<String, Object> values = new LinkedHashMap<>();
+        values.put("meteor.application", "example");
+        values.put("meteor.data-home", "build/settings/hasor-instance");
+        values.put("meteor.connectors.rsf.host", "127.0.0.1");
+        values.put("meteor.connectors.rsf.port", 0);
+        MetConfiguration config = MeteorSettings.configuration(settings(values), getClass().getClassLoader());
+        assertEquals(Paths.get("build/settings/hasor-instance"), config.getDataHome());
+    }
+
+    @Test
+    void derivesDefaultDataHomeFromApplicationName() throws Exception {
+        // 不设置目录时由内核统一使用用户目录及应用名。
+        Map<String, Object> values = new LinkedHashMap<>();
+        values.put("meteor.application", "example");
+        values.put("meteor.connectors.rsf.host", "127.0.0.1");
+        values.put("meteor.connectors.rsf.port", 0);
+        MetConfiguration config = MeteorSettings.configuration(settings(values), getClass().getClassLoader());
+        assertEquals(Paths.get(System.getProperty("user.home"), ".meteor", "example"), config.getDataHome());
+    }
+
     @Test
     void readsProtocolKeysFromNativeYaml() throws Exception {
         String yaml = """
@@ -179,7 +208,10 @@ class MeteorSettingsTest {
             return database;
         });
         assertInstanceOf(JdbcRegistryConfiguration.class, registry);
-        try (MetContext context = new MetConfiguration().addExtension(registry).buildContext()) {
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDataHome(this.directory) //
+                .addExtension(registry);
+        try (MetContext context = configuration.buildContext()) {
             assertNotNull(context.getExtension(RegistryClient.class));
             assertFalse(context.isOnline());
         }
@@ -203,7 +235,10 @@ class MeteorSettingsTest {
             assertEquals(RegistryTokenProvider.class, type);
             return tokens;
         });
-        try (MetContext context = new MetConfiguration().addExtension(registry).buildContext()) {
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDataHome(this.directory) //
+                .addExtension(registry);
+        try (MetContext context = configuration.buildContext()) {
             assertNull(context.getExtension(RegistryClient.class));
         }
     }
@@ -219,7 +254,10 @@ class MeteorSettingsTest {
         var source = settings(Map.of("meteor.registry.provider", "nacos", "meteor.registry.address", "127.0.0.1:1", "meteor.registry.group", "example", "meteor.registry.namespace", "test", "meteor.registry.timeout-millis", 500));
         RegistryConfiguration registry = (RegistryConfiguration) MeteorSettings.registry(source, getClass().getClassLoader(), List.of(), (name, type) -> null);
         assertEquals("nacos", registry.getProvider());
-        try (MetContext context = new MetConfiguration().addExtension(registry).buildContext()) {
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDataHome(this.directory) //
+                .addExtension(registry);
+        try (MetContext context = configuration.buildContext()) {
             assertNotNull(context.getExtension(RegistryClient.class));
             assertFalse(context.isOnline());
         }
@@ -230,7 +268,10 @@ class MeteorSettingsTest {
         var source = settings(Map.of("meteor.registry.provider", "zookeeper", "meteor.registry.address", "127.0.0.1:1", "meteor.registry.root", "/example", "meteor.registry.timeout-millis", 500, "meteor.registry.session-timeout-millis", 3000));
         RegistryConfiguration registry = (RegistryConfiguration) MeteorSettings.registry(source, getClass().getClassLoader(), List.of(), (name, type) -> null);
         assertEquals("zookeeper", registry.getProvider());
-        try (MetContext context = new MetConfiguration().addExtension(registry).buildContext()) {
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDataHome(this.directory) //
+                .addExtension(registry);
+        try (MetContext context = configuration.buildContext()) {
             assertNotNull(context.getExtension(RegistryClient.class));
             assertFalse(context.isOnline());
         }

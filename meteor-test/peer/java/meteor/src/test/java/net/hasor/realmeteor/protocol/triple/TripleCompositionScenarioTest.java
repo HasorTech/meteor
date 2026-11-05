@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.triple;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -42,14 +43,27 @@ public class TripleCompositionScenarioTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void httpJsonAndGrpcJsonUseSeparateContextsOnOneHttpPort() throws Exception {
         // 一个物理 HTTP 监听分别挂载普通 Triple JSON 与标准 gRPC JSON。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("triple");
-        ConnectorSettings endpoint = incoming.connector("http").bind("127.0.0.1", 0);
-        endpoint.protocol("triple").contextPath("/triple").option("httpMode", "json");
-        endpoint.protocol("grpc").contextPath("/grpc");
-        MetConfiguration triple = new MetConfiguration().setDefaultProtocol("triple");
-        triple.connector("http").protocol("triple").contextPath("/triple").option("httpMode", "json");
-        MetConfiguration grpc = new MetConfiguration().setDefaultProtocol("grpc");
-        grpc.connector("http").option("httpVersion", 2).protocol("grpc").contextPath("/grpc");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("triple");
+        ConnectorSettings endpoint = incoming.connector("http") //
+                .bind("127.0.0.1", 0);
+        endpoint.protocol("triple") //
+                .contextPath("/triple") //
+                .option("httpMode", "json");
+        endpoint.protocol("grpc") //
+                .contextPath("/grpc");
+        MetConfiguration triple = TestConfigurationUtils.create() //
+                .setDefaultProtocol("triple");
+        triple.connector("http") //
+                .protocol("triple") //
+                .contextPath("/triple") //
+                .option("httpMode", "json");
+        MetConfiguration grpc = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        grpc.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("grpc") //
+                .contextPath("/grpc");
         GrpcProtoResource resource = new GrpcProtoResource(this.getClass().getResource("/protocol/proto/triple-demo.proto"));
         try (MetContext server = incoming.buildContext(); //
              MetContext tripleClient = triple.buildContext(); //
@@ -94,19 +108,31 @@ public class TripleCompositionScenarioTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void wrappedTripleAndNativeGrpcShareOneMutualTlsPort() throws Exception {
         // 同一 h2 双向 TLS 监听分别承载 Triple wrapper 与原生 Protobuf gRPC。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("triple");
-        ConnectorSettings endpoint = incoming.connector("http").bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("triple");
+        ConnectorSettings endpoint = incoming.connector("http") //
+                .bind("127.0.0.1", 0);
         this.serverTls(endpoint);
-        endpoint.protocol("triple").addressScheme("https").contextPath("/triple");
-        endpoint.protocol("grpc").addressScheme("https").contextPath("/grpc");
-        MetConfiguration triple = new MetConfiguration().setDefaultProtocol("triple");
+        endpoint.protocol("triple") //
+                .addressScheme("https") //
+                .contextPath("/triple");
+        endpoint.protocol("grpc") //
+                .addressScheme("https") //
+                .contextPath("/grpc");
+        MetConfiguration triple = TestConfigurationUtils.create() //
+                .setDefaultProtocol("triple");
         ConnectorSettings tripleSender = triple.connector("http");
         this.clientTls(tripleSender);
-        tripleSender.protocol("triple").addressScheme("https").contextPath("/triple");
-        MetConfiguration grpc = new MetConfiguration().setDefaultProtocol("grpc");
+        tripleSender.protocol("triple") //
+                .addressScheme("https") //
+                .contextPath("/triple");
+        MetConfiguration grpc = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
         ConnectorSettings grpcSender = grpc.connector("http");
         this.clientTls(grpcSender);
-        grpcSender.protocol("grpc").addressScheme("https").contextPath("/grpc");
+        grpcSender.protocol("grpc") //
+                .addressScheme("https") //
+                .contextPath("/grpc");
         GrpcProtoResource resource = new GrpcProtoResource(this.getClass().getResource("/protocol/proto/triple-demo.proto"));
         try (MetContext server = incoming.buildContext(); //
              MetContext tripleClient = triple.buildContext(); //
@@ -148,9 +174,14 @@ public class TripleCompositionScenarioTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void explicitlyMountedServiceIsNotVisibleAtDefaultContext() throws Exception {
         // 协议有默认上下文与可选上下文，服务只选择后者。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("triple");
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("triple") //
-                .contextPath("/default").addContextPath("/isolated").option("httpMode", "json");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("triple");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("triple") //
+                .contextPath("/default") //
+                .addContextPath("/isolated") //
+                .option("httpMode", "json");
         TripleDemoServiceImpl implementation = new TripleDemoServiceImpl();
         try (MetContext server = configuration.buildContext()) {
             server.start();
@@ -188,21 +219,27 @@ public class TripleCompositionScenarioTest {
     }
 
     private void serverTls(ConnectorSettings connector) {
-        connector.option("httpVersion", 2).option("streamBody", true) //
-                .option("tlsEnabled", true).option("httpScheme", "https") //
+        connector.option("httpVersion", 2) //
+                .option("streamBody", true) //
+                .option("tlsEnabled", true) //
+                .option("httpScheme", "https") //
                 .option("tlsKeyStore", "classpath:/certs/acceptance/server.p12") //
                 .option("tlsKeyStorePassword", "meteor-test") //
                 .option("tlsTrustStore", "classpath:/certs/acceptance/trust.p12") //
                 .option("tlsTrustStorePassword", "meteor-test") //
-                .option("tlsClientAuth", "REQUIRE").option("tlsAlpn", "h2");
+                .option("tlsClientAuth", "REQUIRE") //
+                .option("tlsAlpn", "h2");
     }
 
     private void clientTls(ConnectorSettings connector) {
-        connector.option("httpVersion", 2).option("streamBody", true) //
-                .option("tlsEnabled", true).option("httpScheme", "https") //
+        connector.option("httpVersion", 2) //
+                .option("streamBody", true) //
+                .option("tlsEnabled", true) //
+                .option("httpScheme", "https") //
                 .option("tlsKeyStore", "classpath:/certs/acceptance/client.p12") //
                 .option("tlsKeyStorePassword", "meteor-test") //
                 .option("tlsTrustStore", "classpath:/certs/acceptance/trust.p12") //
-                .option("tlsTrustStorePassword", "meteor-test").option("tlsAlpn", "h2");
+                .option("tlsTrustStorePassword", "meteor-test") //
+                .option("tlsAlpn", "h2");
     }
 }

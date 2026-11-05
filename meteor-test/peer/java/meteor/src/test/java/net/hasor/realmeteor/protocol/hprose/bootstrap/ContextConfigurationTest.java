@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hprose.bootstrap;
+import java.util.UUID;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -28,7 +29,9 @@ public class ContextConfigurationTest extends BootstrapTestSupport {
     public void explicitOutboundEndpointReplacesDefaultListener() throws Exception {
         // 显式选择仅用于主动连接的 TCP 端点。
         MetConfiguration source = new MetConfiguration();
-        source.connector("tcp").protocol("rsf");
+        source.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
+        source.connector("tcp") //
+                .protocol("rsf");
         try (MetContext context = source.buildContext()) {
             context.start();
 
@@ -44,7 +47,10 @@ public class ContextConfigurationTest extends BootstrapTestSupport {
     public void portZeroOpensAnEphemeralListenerOnlyAtStart() throws Exception {
         // 配置动态端口，构建上下文本身不应开启监听。
         MetConfiguration source = new MetConfiguration();
-        source.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        source.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
+        source.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
         try (MetContext context = source.buildContext()) {
             assertNull(context.getListenAddress("rsf"));
 
@@ -58,9 +64,14 @@ public class ContextConfigurationTest extends BootstrapTestSupport {
     public void tcpClientInvokesWithoutOpeningAListener() throws Exception {
         // 服务端监听、客户端仅配置出口，二者使用 RSF 的 TCP 通道。
         MetConfiguration serverConfig = new MetConfiguration();
-        serverConfig.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        serverConfig.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
+        serverConfig.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
         MetConfiguration clientConfig = new MetConfiguration();
-        clientConfig.connector("tcp").protocol("rsf");
+        clientConfig.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
+        clientConfig.connector("tcp") //
+                .protocol("rsf");
         try (MetContext server = serverConfig.buildContext(); //
              MetContext client = clientConfig.buildContext()) {
             // 注册服务与消费声明，再启动服务端和客户端。
@@ -81,9 +92,16 @@ public class ContextConfigurationTest extends BootstrapTestSupport {
     public void httpClientInvokesWithoutOpeningAListener() throws Exception {
         // 服务端监听、客户端仅配置出口，二者使用相同协议路径。
         MetConfiguration serverConfig = new MetConfiguration();
-        serverConfig.connector("http").bind("127.0.0.1", 0).protocol("hprose").contextPath("/echo");
+        serverConfig.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
+        serverConfig.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("hprose") //
+                .contextPath("/echo");
         MetConfiguration clientConfig = new MetConfiguration();
-        clientConfig.connector("http").protocol("hprose").contextPath("/echo");
+        clientConfig.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
+        clientConfig.connector("http") //
+                .protocol("hprose") //
+                .contextPath("/echo");
         try (MetContext server = serverConfig.buildContext(); //
              MetContext client = clientConfig.buildContext()) {
             // 注册服务与消费声明，再启动服务端和客户端。
@@ -104,9 +122,16 @@ public class ContextConfigurationTest extends BootstrapTestSupport {
     public void hproseMessageCompletesAfterRemoteAdmission() throws Exception {
         // 通过公开配置入口准备 Hprose 服务端和仅出站客户端。
         MetConfiguration serverConfig = new MetConfiguration();
-        serverConfig.connector("http").bind("127.0.0.1", 0).protocol("hprose").contextPath("/signal");
+        serverConfig.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
+        serverConfig.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("hprose") //
+                .contextPath("/signal");
         MetConfiguration clientConfig = new MetConfiguration();
-        clientConfig.connector("http").protocol("hprose").contextPath("/signal");
+        clientConfig.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
+        clientConfig.connector("http") //
+                .protocol("hprose") //
+                .contextPath("/signal");
         try (MetContext server = serverConfig.buildContext(); //
              MetContext client = clientConfig.buildContext()) {
             server.start();

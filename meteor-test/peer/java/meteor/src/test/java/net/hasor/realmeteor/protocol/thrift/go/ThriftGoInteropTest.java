@@ -310,13 +310,16 @@ public class ThriftGoInteropTest {
         MetConfiguration configuration = provider ? OrderProtocol.THRIFT.providerConfiguration() //
                 : OrderProtocol.THRIFT.consumerConfiguration();
         if (provider) {
-            configuration.getConnectors().get(0).bind(ContainerProcess.runnerHost(), 0);
+            configuration.getConnectors().get(0) //
+                    .bind(ContainerProcess.runnerHost(), 0);
         }
         configuration.setDefaultProtocol("thrift");
         configuration.setDefaultTimeout(10000);
         var tcp = configuration.getConnectors().get(0);
         var mount = tcp.getProtocols().get(0);
-        mount.option("encoding", this.encoding).option("framed", this.framed).addressScheme(this.scheme());
+        mount.option("encoding", this.encoding) //
+                .option("framed", this.framed) //
+                .addressScheme(this.scheme());
 
         // Go 与 Java 使用同一 CA；服务端认证提供服务身份，双向认证再提供客户端身份。
         if (!StringUtils.equals("plain", this.tlsMode)) {

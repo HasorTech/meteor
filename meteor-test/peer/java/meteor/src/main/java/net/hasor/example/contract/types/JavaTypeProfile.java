@@ -14,6 +14,7 @@ import net.hasor.example.contract.scalar.ScalarValueProfile;
 import net.hasor.meteor.MetPublisher.ConfigurationBuilder;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 
 /** 复用既有协议配置，另列 Java object-stream，不与 JSON 默认值混为一项。 */
@@ -59,13 +60,15 @@ public enum JavaTypeProfile {
         if (this.profile != null) {
             return listening ? this.profile.providerConfiguration() : this.profile.consumerConfiguration();
         }
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.setUnitName("java_types").setDefaultProtocol("rsf");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setUnitName("java_types") //
+                .setDefaultProtocol("rsf");
         var connector = configuration.connector("tcp");
         if (listening) {
             connector.bind("127.0.0.1", 0);
         }
-        connector.protocol("rsf").option("serializeType", "Java");
+        connector.protocol("rsf") //
+                .option("serializeType", "Java");
         return configuration;
     }
 

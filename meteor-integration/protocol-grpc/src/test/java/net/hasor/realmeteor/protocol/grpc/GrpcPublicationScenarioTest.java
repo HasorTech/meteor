@@ -11,6 +11,7 @@ import java.util.function.IntBinaryOperator;
 import net.hasor.example.protocol.grpc.Echo;
 import net.hasor.example.protocol.grpc.EchoImpl;
 import net.hasor.example.protocol.grpc.Message;
+import net.hasor.example.protocol.grpc.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
@@ -26,9 +27,11 @@ public class GrpcPublicationScenarioTest {
     @Test
     public void providerWithoutProtoRemainsLocallyCallable() throws Exception {
         // 两个传输端点接收同一个提供者，Protobuf 服务没有绑定 proto。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("tcp").protocol("rsf");
-        configuration.connector("http").protocol("grpc");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("tcp") //
+                .protocol("rsf");
+        configuration.connector("http") //
+                .protocol("grpc");
         try (MetContext context = configuration.buildContext()) {
             context.start();
             MetBindInfo<Echo> service = context.publisher().rsfService(Echo.class, new EchoImpl()) //
@@ -50,9 +53,11 @@ public class GrpcPublicationScenarioTest {
     @Test
     public void unsupportedGrpcMethodRemainsLocallyCallable() throws Exception {
         // 双参数 Java 方法无法对应一条 gRPC 请求，仍可由 RSF 或本地服务承载。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("tcp").protocol("rsf");
-        configuration.connector("http").protocol("grpc");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("tcp") //
+                .protocol("rsf");
+        configuration.connector("http") //
+                .protocol("grpc");
         try (MetContext context = configuration.buildContext()) {
             context.start();
             MetBindInfo<IntBinaryOperator> service = context.publisher() //
@@ -71,10 +76,12 @@ public class GrpcPublicationScenarioTest {
     @Test
     public void browserClientStreamRejectionKeepsLocalService() throws Exception {
         // 标准 gRPC 支持客户端流，浏览器适配只拒绝自身无法表达的服务。
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         MetConfiguration.ConnectorSettings http = configuration.connector("http");
-        http.protocol("grpc").contextPath("/grpc");
-        http.protocol("grpc-web").contextPath("/web");
+        http.protocol("grpc") //
+                .contextPath("/grpc");
+        http.protocol("grpc-web") //
+                .contextPath("/web");
         try (MetContext context = configuration.buildContext()) {
             context.start();
             BrowserUpload implementation = new BrowserUpload() {
@@ -106,16 +113,30 @@ public class GrpcPublicationScenarioTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void sameProtocolCallsEachEndpointWithItsOwnContext() throws Exception {
         // 提供者在两个端口挂载同名协议，各自选择不同地址前缀和默认 context。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("grpc");
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("grpc") //
-                .addressScheme("grpc-primary").contextPath("/primary");
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("grpc") //
-                .addressScheme("grpc-secondary").contextPath("/secondary");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("grpc");
-        outgoing.connector("http").option("httpVersion", 2).protocol("grpc") //
-                .addressScheme("grpc-primary").contextPath("/primary");
-        outgoing.connector("http").option("httpVersion", 2).protocol("grpc") //
-                .addressScheme("grpc-secondary").contextPath("/secondary");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc") //
+                .addressScheme("grpc-primary") //
+                .contextPath("/primary");
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc") //
+                .addressScheme("grpc-secondary") //
+                .contextPath("/secondary");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        outgoing.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("grpc") //
+                .addressScheme("grpc-primary") //
+                .contextPath("/primary");
+        outgoing.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("grpc") //
+                .addressScheme("grpc-secondary") //
+                .contextPath("/secondary");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();

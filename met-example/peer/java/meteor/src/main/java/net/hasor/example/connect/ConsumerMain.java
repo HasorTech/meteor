@@ -23,9 +23,12 @@ public final class ConsumerMain {
 
     public static void main(String[] arguments) throws Exception {
         // 配置出站协议。
-        MetConfiguration configuration = new MetConfiguration().setUnitName("local");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setUnitName("local") //
+                .setApplicationName("connect-order-consumer");
         configuration.connector("http") //
-                .protocol("connect").contextPath("/connect") //
+                .protocol("connect") //
+                .contextPath("/connect") //
                 .option("serializeType", "Protobuf");
 
         try (MetContext context = configuration.buildContext()) {

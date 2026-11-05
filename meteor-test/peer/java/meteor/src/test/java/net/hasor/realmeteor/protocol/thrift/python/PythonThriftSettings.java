@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.thrift.python;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -34,14 +35,19 @@ final class PythonThriftSettings {
 
     static MetConfiguration configuration(String encoding, boolean framed, String security, boolean listener) {
         // 传输配置负责监听及 TLS；协议只接收自己的编码和分帧参数。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift");
-        configuration.setQueueMinPoolSize(2).setQueueMaxPoolSize(4).setDefaultTimeout(5000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift");
+        configuration.setQueueMinPoolSize(2) //
+                .setQueueMaxPoolSize(4) //
+                .setDefaultTimeout(5000);
         ConnectorSettings tcp = configuration.connector("tcp");
         if (listener) {
             tcp.bind(ContainerProcess.runnerHost(), 0);
         }
-        tcp.protocol("thrift").addressScheme(scheme(security)) //
-                .option("encoding", encoding).option("framed", framed);
+        tcp.protocol("thrift") //
+                .addressScheme(scheme(security)) //
+                .option("encoding", encoding) //
+                .option("framed", framed);
         if (StringUtils.equals(security, "plain")) {
             return configuration;
         }

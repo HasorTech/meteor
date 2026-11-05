@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -32,9 +33,12 @@ public class WebServicesFaultDeliveryTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void freshConnectionsReceiveSoap11VersionFaults() throws Exception {
         // 从公开入口启动 SOAP 1.1 服务，观察非法报文是否误入业务调用。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("soap").contextPath("/services");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("soap") //
+                .contextPath("/services");
         AtomicInteger invocations = new AtomicInteger();
         try (MetContext context = configuration.buildContext()) {
             context.start();
@@ -80,9 +84,13 @@ public class WebServicesFaultDeliveryTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void freshConnectionsReceiveSoap12StructureFaults() throws Exception {
         // 从公开入口启动 SOAP 1.2 服务，非法结构必须在业务调用前被拒绝。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("soap").contextPath("/services").option("soapVersion", "1.2");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("soap") //
+                .contextPath("/services") //
+                .option("soapVersion", "1.2");
         AtomicInteger invocations = new AtomicInteger();
         try (MetContext context = configuration.buildContext()) {
             context.start();

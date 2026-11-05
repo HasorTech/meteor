@@ -140,7 +140,9 @@ public class DubboRegistryAdapterScenarioTest {
     }
 
     private MetConfiguration configuration(RegistryConfiguration registry, boolean listening) throws Exception {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("dubbo").setDefaultTimeout(10000);
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDefaultProtocol("dubbo") //
+                .setDefaultTimeout(10000);
         configuration.setApplicationName(listening ? "dubbo-provider-adapter" : "dubbo-consumer-adapter");
         configuration.setDataHome(Files.createDirectory(this.data.resolve("application")));
         configuration.addExtension(registry);

@@ -161,8 +161,7 @@ final class DirectoryMapping {
         if (runtime != null) {
             result.setBlock(runtime.isBlock());
             result.setRoles(runtime.getRoles());
-            result.setListenAddresses(runtime.getListenAddresses());
-            result.setManagementAddress(runtime.getManagementAddresses());
+            result.setEndpoints(RegistryJson.copy(runtime.getEndpoints(), MetInstanceEndpoint[].class));
         }
         return result;
     }

@@ -9,6 +9,7 @@ package net.hasor.meteor.protocol.xmlrpc.codec;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+import net.hasor.example.protocol.xmlrpc.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.connector.RouteMountIndex;
@@ -29,8 +30,11 @@ public class XmlRpcResponseTest {
 
     @BeforeEach
     public void prepareConsumerMetadata() throws Exception {
-        MetConfiguration configuration = new MetConfiguration().setDefaultGroup("wire");
-        configuration.connector("http").protocol("xmlrpc").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultGroup("wire");
+        configuration.connector("http") //
+                .protocol("xmlrpc") //
+                .contextPath("/rpc");
         this.context = configuration.buildContext();
         this.context.publisher().rsfService(XmlRpcBindingTest.Methods.class) //
                 .name("Methods").aliasName("xmlrpc", "math").register();

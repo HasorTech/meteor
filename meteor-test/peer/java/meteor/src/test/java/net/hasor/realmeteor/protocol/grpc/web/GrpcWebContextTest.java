@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc.web;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.example.protocol.grpc.Message;
 import net.hasor.example.protocol.grpc.web.GrpcWebService;
@@ -25,9 +26,14 @@ public class GrpcWebContextTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void serviceWithoutContextIsVisibleOnlyAtTheDefault() throws Exception {
         // 一个端口配置两个挂载点，服务的发布配置决定实际可见范围。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("grpc-web");
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("grpc-web") //
-                .contextPath("/web").addContextPath("/private").option("streamBody", true);
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc-web");
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc-web") //
+                .contextPath("/web") //
+                .addContextPath("/private") //
+                .option("streamBody", true);
         MetConfiguration defaultOutgoing = this.outgoing("/web");
         MetConfiguration privateOutgoing = this.outgoing("/private");
         try (MetContext server = incoming.buildContext(); //
@@ -63,9 +69,14 @@ public class GrpcWebContextTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void explicitContextReplacesTheDefault() throws Exception {
         // 一个端口配置两个挂载点，服务的发布配置决定实际可见范围。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("grpc-web");
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("grpc-web") //
-                .contextPath("/web").addContextPath("/private").option("streamBody", true);
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc-web");
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc-web") //
+                .contextPath("/web") //
+                .addContextPath("/private") //
+                .option("streamBody", true);
         MetConfiguration defaultOutgoing = this.outgoing("/web");
         MetConfiguration privateOutgoing = this.outgoing("/private");
         try (MetContext server = incoming.buildContext(); //
@@ -102,9 +113,14 @@ public class GrpcWebContextTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void multipleContextsShareTheSamePublishedService() throws Exception {
         // 一个端口配置两个挂载点，服务的发布配置决定实际可见范围。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("grpc-web");
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("grpc-web") //
-                .contextPath("/web").addContextPath("/private").option("streamBody", true);
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc-web");
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc-web") //
+                .contextPath("/web") //
+                .addContextPath("/private") //
+                .option("streamBody", true);
         MetConfiguration defaultOutgoing = this.outgoing("/web");
         MetConfiguration privateOutgoing = this.outgoing("/private");
         try (MetContext server = incoming.buildContext(); //
@@ -133,9 +149,13 @@ public class GrpcWebContextTest {
     }
 
     private MetConfiguration outgoing(String path) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc-web");
-        configuration.connector("http").option("httpVersion", 1).protocol("grpc-web") //
-                .contextPath(path).option("streamBody", true);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc-web");
+        configuration.connector("http") //
+                .option("httpVersion", 1) //
+                .protocol("grpc-web") //
+                .contextPath(path) //
+                .option("streamBody", true);
         return configuration;
     }
 }

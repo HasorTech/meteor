@@ -16,6 +16,7 @@ import net.hasor.example.protocol.soap.EchoServiceImpl;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.soap.definition.SoapWsdlResource;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
@@ -55,9 +56,12 @@ public class NodeSoapSdkVersionScenarioTest {
     private void sdkCallsMeteor() throws Exception {
         // Meteor 按既有 WSDL 发布服务，地址来自实际打开的监听端口。
         URL contract = this.getClass().getResource("/protocol/wsdl/echo.wsdl");
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("soap").contextPath("/services");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("soap") //
+                .contextPath("/services");
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
             provider.publisher().rsfService(EchoService.class, new EchoServiceImpl()) //
@@ -78,8 +82,11 @@ public class NodeSoapSdkVersionScenarioTest {
         // 当前 SDK 使用原版 WSDL 解析和服务端实现，不在测试器内拼装 SOAP 报文。
         URL contract = this.getClass().getResource("/protocol/wsdl/echo.wsdl");
         String source = Path.of(contract.toURI()).toString();
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(10000);
-        configuration.connector("http").protocol("soap").contextPath("/services");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(10000);
+        configuration.connector("http") //
+                .protocol("soap") //
+                .contextPath("/services");
         try (NodeRpcPeer peer = NodeRpcPeer.startVersion(this.profile, "provider", source); //
              MetContext consumer = configuration.buildContext()) {
             int port = peer.awaitPort();

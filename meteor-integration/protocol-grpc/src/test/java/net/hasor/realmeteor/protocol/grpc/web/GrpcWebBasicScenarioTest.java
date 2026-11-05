@@ -9,6 +9,7 @@ package net.hasor.realmeteor.protocol.grpc.web;
 import net.hasor.example.protocol.grpc.Echo;
 import net.hasor.example.protocol.grpc.EchoImpl;
 import net.hasor.example.protocol.grpc.Message;
+import net.hasor.example.protocol.grpc.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
@@ -23,12 +24,20 @@ public class GrpcWebBasicScenarioTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void bootstrapPublishesAndConsumesJsonServiceWithoutAnAlias() throws Exception {
         // HTTP/1 上仅挂载 grpc-web，客户端不开放监听端口。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("grpc-web");
-        incoming.connector("http").bind("127.0.0.1", 0) //
-                .protocol("grpc-web").contextPath("/web").option("streamBody", true);
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("grpc-web");
-        outgoing.connector("http").option("httpVersion", 1) //
-                .protocol("grpc-web").contextPath("/web").option("streamBody", true);
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc-web");
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc-web") //
+                .contextPath("/web") //
+                .option("streamBody", true);
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc-web");
+        outgoing.connector("http") //
+                .option("httpVersion", 1) //
+                .protocol("grpc-web") //
+                .contextPath("/web") //
+                .option("streamBody", true);
         EchoImpl implementation = new EchoImpl();
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {

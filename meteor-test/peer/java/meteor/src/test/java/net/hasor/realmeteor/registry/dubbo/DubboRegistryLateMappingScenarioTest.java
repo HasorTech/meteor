@@ -38,7 +38,8 @@ public class DubboRegistryLateMappingScenarioTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration consumer = application(registryUrl, "meteor-late-mapping-consumer");
-            consumer.connector("tcp").protocol("dubbo");
+            consumer.connector("tcp") //
+                    .protocol("dubbo");
             try (MetContext client = consumer.buildContext(); //
                  CuratorFramework observer = CuratorFrameworkFactory.newClient( //
                          zookeeper.getConnectString(), new RetryOneTime(1000))) {
@@ -74,9 +75,11 @@ public class DubboRegistryLateMappingScenarioTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration first = application(registryUrl, "meteor-late-mapping-first");
-            first.connector("tcp").protocol("dubbo");
+            first.connector("tcp") //
+                    .protocol("dubbo");
             MetConfiguration second = application(registryUrl, "meteor-late-mapping-second");
-            second.connector("tcp").protocol("dubbo");
+            second.connector("tcp") //
+                    .protocol("dubbo");
             try (MetContext firstClient = first.buildContext(); //
                  CuratorFramework observer = CuratorFrameworkFactory.newClient( //
                          zookeeper.getConnectString(), new RetryOneTime(1000))) {

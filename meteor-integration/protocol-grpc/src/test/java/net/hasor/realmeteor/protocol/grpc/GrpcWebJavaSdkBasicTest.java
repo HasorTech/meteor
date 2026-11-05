@@ -24,6 +24,7 @@ import kotlin.jvm.JvmClassMappingKt;
 import net.hasor.example.protocol.grpc.Echo;
 import net.hasor.example.protocol.grpc.EchoImpl;
 import net.hasor.example.protocol.grpc.Message;
+import net.hasor.example.protocol.grpc.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
@@ -42,9 +43,13 @@ public class GrpcWebJavaSdkBasicTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialJavaSdkCallsPublishedJsonService() throws Exception {
         // 只挂载 gRPC-Web，不能拿普通 gRPC 的成功替代本协议可用。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc-web");
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("grpc-web").contextPath("/rpc").option("streamBody", true);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc-web");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc-web") //
+                .contextPath("/rpc") //
+                .option("streamBody", true);
         EchoImpl implementation = new EchoImpl();
         try (MetContext server = configuration.buildContext()) {
             server.start();
@@ -93,9 +98,12 @@ public class GrpcWebJavaSdkBasicTest {
         Server server = Server.builder().http(new InetSocketAddress("127.0.0.1", 0)).service(sdkService).build();
         try {
             server.start().get(10, TimeUnit.SECONDS);
-            MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc-web");
-            configuration.connector("http").option("httpVersion", 1) //
-                    .protocol("grpc-web").option("streamBody", true);
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setDefaultProtocol("grpc-web");
+            configuration.connector("http") //
+                    .option("httpVersion", 1) //
+                    .protocol("grpc-web") //
+                    .option("streamBody", true);
             GrpcProtoResource resource = new GrpcProtoResource(getClass().getResource("/proto/echo.proto"));
             try (MetContext client = configuration.buildContext()) {
                 client.start();

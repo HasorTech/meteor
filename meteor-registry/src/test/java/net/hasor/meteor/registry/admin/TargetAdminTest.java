@@ -31,6 +31,8 @@ import net.hasor.meteor.registry.shared.rpc.ManagementRPC;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
 import net.hasor.meteor.registry.shared.storage.domain.EntMetadataData;
 import org.junit.jupiter.api.Test;
+import static net.hasor.meteor.registry.shared.RegistryTestUtils.createConfiguration;
+import static net.hasor.meteor.registry.shared.RegistryTestUtils.createDataHome;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** 真实 TCP RPC，验证直连管理与存储管理的独立性。 */
@@ -44,17 +46,23 @@ public class TargetAdminTest {
         RegistryConfiguration registryConfiguration = new DecoratedRegistryConfiguration(storageConfiguration, probe::observe);
         registryConfiguration.setManagementToken("secret");
         registryConfiguration.setRefreshMillis(600000);
-        MetConfiguration serverConfiguration = new MetConfiguration();
-        serverConfiguration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf").option("serializeType", "Json");
+        MetConfiguration serverConfiguration = createConfiguration();
+        serverConfiguration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf") //
+                .option("serializeType", "Json");
         serverConfiguration.addExtension(registryConfiguration);
 
         // 调用方使用离线注册中心扩展，只通过 RPC 管理目标。
-        MetConfiguration callerConfiguration = new MetConfiguration();
-        callerConfiguration.addExtension(new RegistryConfiguration().setOnline(false).setManagementToken("secret"));
-        callerConfiguration.connector("tcp").protocol("rsf").option("serializeType", "Json");
+        MetConfiguration callerConfiguration = createConfiguration() //
+                .addExtension(new RegistryConfiguration().setOnline(false).setManagementToken("secret"));
+        callerConfiguration.connector("tcp") //
+                .protocol("rsf") //
+                .option("serializeType", "Json");
 
         try (MetContext first = serverConfiguration.setApplicationName("orders").buildContext(); //
-             MetContext second = serverConfiguration.setApplicationName("inventory").buildContext(); //
+             MetContext second = serverConfiguration.setApplicationName("inventory") //
+                     .setDataHome(createDataHome()).buildContext(); //
              MetContext caller = callerConfiguration.buildContext()) {
             // 分别发布业务服务，启动各上下文并完成初始拉取。
             String id = first.publisher().rsfService(Echo.class, value -> "first:" + value).register().getBindID();
@@ -81,7 +89,12 @@ public class TargetAdminTest {
             assertFalse(management.isShadow());
             assertEquals(first.getInstanceID(), instance.instance().getInstanceId());
             assertEquals("orders", instance.instance().getApplicationName());
-            assertEquals(Map.of("tcp-0#rsf", address.toString()), instance.instance().getManagementAddress());
+            MetInstanceEndpoint endpoint = instance.instance().getEndpoints()[0];
+            assertEquals("tcp-0", endpoint.getConnectorName());
+            assertEquals("tcp", endpoint.getTransport());
+            assertEquals("rsf", endpoint.getProtocolName());
+            assertEquals("rsf", endpoint.getScheme());
+            assertEquals(address.toString(), endpoint.getManagementAddress());
             MetServiceMember otherProvider = other.providers(null, null).getItems().get(0);
             assertEquals("inventory", otherProvider.getInstance().getApplicationName());
             MetPage<MetServiceInfo> services = instance.getServiceList(null);
@@ -137,7 +150,10 @@ public class TargetAdminTest {
             instance.block();
             assertTrue(instance.isBlock());
             assertTrue(instance.instance().isBlock());
-            assertEquals(Map.of("tcp-0#rsf", address.toString()), instance.instance().getManagementAddress());
+            MetInstanceEndpoint blockedEndpoint = instance.instance().getEndpoints()[0];
+            assertEquals("tcp-0", blockedEndpoint.getConnectorName());
+            assertEquals("rsf", blockedEndpoint.getProtocolName());
+            assertEquals(address.toString(), blockedEndpoint.getManagementAddress());
             assertTrue(first.isOnline());
             assertForbidden(() -> caller.getRsfClient(address).wrapper(Echo.class).echo("blocked"));
             InterAddress secondAddress = second.getListenAddress("rsf");
@@ -165,13 +181,18 @@ public class TargetAdminTest {
         RegistryConfiguration registryConfiguration = new DecoratedRegistryConfiguration(storageConfiguration, probe::observe);
         registryConfiguration.setManagementToken("secret");
         registryConfiguration.setRefreshMillis(600000);
-        MetConfiguration serverConfiguration = new MetConfiguration();
-        serverConfiguration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf").option("serializeType", "Json");
+        MetConfiguration serverConfiguration = createConfiguration();
+        serverConfiguration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf") //
+                .option("serializeType", "Json");
         serverConfiguration.addExtension(registryConfiguration);
 
         // 提供者监听所有网卡，但公告使用明确的发布主机。
-        MetConfiguration config = new MetConfiguration();
-        config.connector("tcp").bind("0.0.0.0", 0).protocol("rsf");
+        MetConfiguration config = createConfiguration();
+        config.connector("tcp") //
+                .bind("0.0.0.0", 0) //
+                .protocol("rsf");
         RegistryConfiguration registryConfig = registryConfiguration.setPublishHost("127.0.0.1");
         config.addExtension(registryConfig);
 
@@ -210,7 +231,12 @@ public class TargetAdminTest {
             MetServiceAdmin localService = targets.getServiceAdminByAddress(local, id);
             assertEquals(id, localService.info().getServiceId());
             MetServiceMember member = localService.providers(null, null).getItems().get(0);
-            assertEquals(Map.of("tcp-0#rsf", local.toString()), member.getInstance().getManagementAddress());
+            MetInstanceEndpoint endpoint = member.getInstance().getEndpoints()[0];
+            assertEquals("tcp-0", endpoint.getConnectorName());
+            assertEquals("tcp", endpoint.getTransport());
+            assertEquals("rsf", endpoint.getProtocolName());
+            assertEquals("rsf", endpoint.getScheme());
+            assertEquals(local.toString(), endpoint.getManagementAddress());
             assertEquals(provider.getListenAddress("rsf").toString(), member.getEndpoints()[0].getListenAddress());
             assertNull(member.getEndpoints()[0].getPublishedAddress());
             assertEquals(2, probe.openedSessions());
@@ -224,12 +250,18 @@ public class TargetAdminTest {
         registry.setManagementToken("secret");
         registry.setPublishHost("127.0.0.1");
         registry.setRefreshMillis(600000);
-        MetConfiguration server = new MetConfiguration().addExtension(registry);
-        server.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        server.connector("http").protocol("registry-http").addressScheme("http");
-        MetConfiguration client = new MetConfiguration();
-        client.addExtension(new RegistryConfiguration().setOnline(false).setManagementToken("secret"));
-        client.connector("tcp").protocol("rsf");
+        MetConfiguration server = createConfiguration() //
+                .addExtension(registry);
+        server.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        server.connector("http") //
+                .protocol("registry-http") //
+                .addressScheme("http");
+        MetConfiguration client = createConfiguration() //
+                .addExtension(new RegistryConfiguration().setOnline(false).setManagementToken("secret"));
+        client.connector("tcp") //
+                .protocol("rsf");
 
         try (MetContext target = server.buildContext(); //
              MetContext caller = client.buildContext()) {
@@ -270,12 +302,18 @@ public class TargetAdminTest {
         registry.setManagementToken("secret");
         registry.setPublishHost("127.0.0.1");
         registry.setRefreshMillis(600000);
-        MetConfiguration server = new MetConfiguration().addExtension(registry);
-        server.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        server.connector("http").protocol("registry-http").addressScheme("http");
-        MetConfiguration client = new MetConfiguration();
-        client.addExtension(new RegistryConfiguration().setOnline(false).setManagementToken("secret"));
-        client.connector("tcp").protocol("rsf");
+        MetConfiguration server = createConfiguration() //
+                .addExtension(registry);
+        server.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        server.connector("http") //
+                .protocol("registry-http") //
+                .addressScheme("http");
+        MetConfiguration client = createConfiguration() //
+                .addExtension(new RegistryConfiguration().setOnline(false).setManagementToken("secret"));
+        client.connector("tcp") //
+                .protocol("rsf");
 
         try (MetContext target = server.buildContext(); //
              MetContext caller = client.buildContext()) {
@@ -326,14 +364,19 @@ public class TargetAdminTest {
         RegistryConfiguration registryConfiguration = new DecoratedRegistryConfiguration(storageConfiguration, probe::observe);
         registryConfiguration.setManagementToken("secret");
         registryConfiguration.setRefreshMillis(600000);
-        MetConfiguration serverConfiguration = new MetConfiguration();
-        serverConfiguration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf").option("serializeType", "Json");
+        MetConfiguration serverConfiguration = createConfiguration();
+        serverConfiguration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf") //
+                .option("serializeType", "Json");
         serverConfiguration.addExtension(registryConfiguration);
 
         // 调用方只启用直连管理，目标规则在用例中逐步修改。
-        MetConfiguration callerConfiguration = new MetConfiguration();
-        callerConfiguration.addExtension(new RegistryConfiguration().setOnline(false).setManagementToken("secret"));
-        callerConfiguration.connector("tcp").protocol("rsf").option("serializeType", "Json");
+        MetConfiguration callerConfiguration = createConfiguration() //
+                .addExtension(new RegistryConfiguration().setOnline(false).setManagementToken("secret"));
+        callerConfiguration.connector("tcp") //
+                .protocol("rsf") //
+                .option("serializeType", "Json");
 
         String baseline = "<route><return value='addresses'/></route>";
         String instanceRule = "<route><!-- override --><return value='addresses'/></route>";
@@ -452,14 +495,19 @@ public class TargetAdminTest {
         RegistryConfiguration registryConfiguration = new DecoratedRegistryConfiguration(storageConfiguration, probe::observe);
         registryConfiguration.setManagementToken("secret");
         registryConfiguration.setRefreshMillis(600000);
-        MetConfiguration serverConfiguration = new MetConfiguration();
-        serverConfiguration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf").option("serializeType", "Json");
+        MetConfiguration serverConfiguration = createConfiguration();
+        serverConfiguration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf") //
+                .option("serializeType", "Json");
         serverConfiguration.addExtension(registryConfiguration);
 
         // 调用方使用离线扩展，管理操作全部直连目标。
-        MetConfiguration callerConfiguration = new MetConfiguration();
-        callerConfiguration.addExtension(new RegistryConfiguration().setOnline(false).setManagementToken("secret"));
-        callerConfiguration.connector("tcp").protocol("rsf").option("serializeType", "Json");
+        MetConfiguration callerConfiguration = createConfiguration() //
+                .addExtension(new RegistryConfiguration().setOnline(false).setManagementToken("secret"));
+        callerConfiguration.connector("tcp") //
+                .protocol("rsf") //
+                .option("serializeType", "Json");
 
         RegistryConfiguration bootstrap = registryConfiguration.setManagementToken("secret");
 
@@ -473,7 +521,8 @@ public class TargetAdminTest {
             target.start();
             caller.start();
             TargetAdmin targets = caller.getExtension(TargetAdmin.class);
-            MetConfiguration adminConfiguration = new MetConfiguration().addExtension(bootstrap);
+            MetConfiguration adminConfiguration = createConfiguration() //
+                    .addExtension(bootstrap);
 
             try (MetContext adminContext = adminConfiguration.buildContext()) {
                 RegistryAdmin admin = adminContext.getExtension(RegistryAdmin.class);
@@ -527,11 +576,17 @@ public class TargetAdminTest {
         // 双方均使用离线扩展，只有目标应用开启监听。
         RegistryConfiguration serverExtension = new RegistryConfiguration().setOnline(false).setManagementToken("secret");
         serverExtension.setPublishHost("127.0.0.1");
-        MetConfiguration server = new MetConfiguration().addExtension(serverExtension);
-        server.connector("tcp").bind("0.0.0.0", 0).protocol("rsf").option("serializeType", "Json");
-        MetConfiguration client = new MetConfiguration();
-        client.addExtension(new RegistryConfiguration().setOnline(false).setManagementToken("secret"));
-        client.connector("tcp").protocol("rsf").option("serializeType", "Json");
+        MetConfiguration server = createConfiguration() //
+                .addExtension(serverExtension);
+        server.connector("tcp") //
+                .bind("0.0.0.0", 0) //
+                .protocol("rsf") //
+                .option("serializeType", "Json");
+        MetConfiguration client = createConfiguration() //
+                .addExtension(new RegistryConfiguration().setOnline(false).setManagementToken("secret"));
+        client.connector("tcp") //
+                .protocol("rsf") //
+                .option("serializeType", "Json");
 
         try (MetContext target = server.buildContext(); //
              MetContext caller = client.buildContext()) {
@@ -558,7 +613,12 @@ public class TargetAdminTest {
             assertEquals(MetServiceType.Provider, management.getServiceType());
             assertFalse(management.isShadow());
             assertEquals(target.getInstanceID(), instance.instance().getInstanceId());
-            assertEquals(Map.of("tcp-0#rsf", address.toString()), instance.instance().getManagementAddress());
+            MetInstanceEndpoint endpoint = instance.instance().getEndpoints()[0];
+            assertEquals("tcp-0", endpoint.getConnectorName());
+            assertEquals("tcp", endpoint.getTransport());
+            assertEquals("rsf", endpoint.getProtocolName());
+            assertEquals("rsf", endpoint.getScheme());
+            assertEquals(address.toString(), endpoint.getManagementAddress());
             assertEquals(1, instance.getServiceList(null).getItems().size());
             service.putMeta("owner", "direct");
             assertEquals("direct", target.getServiceInfo(Echo.class).getMetaData("owner"));

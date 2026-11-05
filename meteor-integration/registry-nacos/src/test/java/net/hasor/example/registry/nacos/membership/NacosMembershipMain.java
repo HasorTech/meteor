@@ -41,7 +41,8 @@ public class NacosMembershipMain extends AbstractNacosExample {
     public void providerRegistrationIncludesItsIdentityAndEndpoint() throws Exception {
         // 为当前场景创建独立分组和所需的应用配置。
         NacosRegistryConfiguration registry = this.createRegistryConfiguration();
-        MetConfiguration administration = new MetConfiguration().addExtension(registry);
+        MetConfiguration administration = createConfiguration() //
+                .addExtension(registry);
         MetConfiguration provider = this.createProviderConfiguration(registry);
         try (MetContext administrationContext = administration.buildContext(); //
              MetContext server = provider.buildContext()) {
@@ -71,7 +72,8 @@ public class NacosMembershipMain extends AbstractNacosExample {
     public void consumerRegistrationIncludesItsIdentityWithoutAListeningAddress() throws Exception {
         // 为当前场景创建独立分组和所需的应用配置。
         NacosRegistryConfiguration registry = this.createRegistryConfiguration();
-        MetConfiguration administration = new MetConfiguration().addExtension(registry);
+        MetConfiguration administration = createConfiguration() //
+                .addExtension(registry);
         MetConfiguration consumer = this.createConsumerConfiguration(registry);
         try (MetContext administrationContext = administration.buildContext(); //
              MetContext client = consumer.buildContext()) {
@@ -101,7 +103,8 @@ public class NacosMembershipMain extends AbstractNacosExample {
     public void providerQueryCombinesEndpointFilters() throws Exception {
         // 为当前场景创建独立分组和所需的应用配置。
         NacosRegistryConfiguration registry = this.createRegistryConfiguration();
-        MetConfiguration administration = new MetConfiguration().addExtension(registry);
+        MetConfiguration administration = createConfiguration() //
+                .addExtension(registry);
         MetConfiguration provider = this.createProviderConfiguration(registry);
         try (MetContext administrationContext = administration.buildContext(); //
              MetContext server = provider.buildContext()) {
@@ -132,7 +135,8 @@ public class NacosMembershipMain extends AbstractNacosExample {
     public void providerQueryRejectsMismatchedProtocol() throws Exception {
         // 为当前场景创建独立分组和所需的应用配置。
         NacosRegistryConfiguration registry = this.createRegistryConfiguration();
-        MetConfiguration administration = new MetConfiguration().addExtension(registry);
+        MetConfiguration administration = createConfiguration() //
+                .addExtension(registry);
         MetConfiguration provider = this.createProviderConfiguration(registry);
         try (MetContext administrationContext = administration.buildContext(); //
              MetContext server = provider.buildContext()) {
@@ -233,7 +237,8 @@ public class NacosMembershipMain extends AbstractNacosExample {
     public void closingProviderRemovesOnlyItsPublication() throws Exception {
         // 为当前场景创建独立分组和所需的应用配置。
         NacosRegistryConfiguration registry = this.createRegistryConfiguration();
-        MetConfiguration administration = new MetConfiguration().addExtension(registry);
+        MetConfiguration administration = createConfiguration() //
+                .addExtension(registry);
         MetConfiguration provider = this.createProviderConfiguration(registry);
         MetConfiguration consumer = this.createConsumerConfiguration(registry);
         try (MetContext administrationContext = administration.buildContext(); //
@@ -280,7 +285,8 @@ public class NacosMembershipMain extends AbstractNacosExample {
     public void closingConsumerRemovesOnlyItsSubscription() throws Exception {
         // 为当前场景创建独立分组和所需的应用配置。
         NacosRegistryConfiguration registry = this.createRegistryConfiguration();
-        MetConfiguration administration = new MetConfiguration().addExtension(registry);
+        MetConfiguration administration = createConfiguration() //
+                .addExtension(registry);
         MetConfiguration provider = this.createProviderConfiguration(registry);
         MetConfiguration consumer = this.createConsumerConfiguration(registry);
         try (MetContext administrationContext = administration.buildContext(); //
@@ -324,7 +330,8 @@ public class NacosMembershipMain extends AbstractNacosExample {
     public void serviceCatalogSurvivesAllMembersClosing() throws Exception {
         // 为当前场景创建独立分组和所需的应用配置。
         NacosRegistryConfiguration registry = this.createRegistryConfiguration();
-        MetConfiguration administration = new MetConfiguration().addExtension(registry);
+        MetConfiguration administration = createConfiguration() //
+                .addExtension(registry);
         MetConfiguration provider = this.createProviderConfiguration(registry);
         MetConfiguration consumer = this.createConsumerConfiguration(registry);
         try (MetContext administrationContext = administration.buildContext(); //
@@ -368,18 +375,21 @@ public class NacosMembershipMain extends AbstractNacosExample {
     }
 
     private MetConfiguration createProviderConfiguration(NacosRegistryConfiguration registry) {
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = createConfiguration();
         configuration.setApplicationName("nacos-example-server");
         configuration.addExtension(registry);
-        configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
         return configuration;
     }
 
     private MetConfiguration createConsumerConfiguration(NacosRegistryConfiguration registry) {
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = createConfiguration();
         configuration.setApplicationName("nacos-example-client");
         configuration.addExtension(registry);
-        configuration.connector("tcp").protocol("rsf");
+        configuration.connector("tcp") //
+                .protocol("rsf");
         return configuration;
     }
 }

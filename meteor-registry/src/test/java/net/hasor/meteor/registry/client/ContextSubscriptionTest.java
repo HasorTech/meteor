@@ -22,6 +22,7 @@ import net.hasor.meteor.registry.shared.RegistryTestUtils.Echo;
 import net.hasor.meteor.registry.shared.StorageProbe;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
 import org.junit.jupiter.api.Test;
+import static net.hasor.meteor.registry.shared.RegistryTestUtils.createConfiguration;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -35,8 +36,10 @@ public class ContextSubscriptionTest {
         RegistryConfiguration registry = new DecoratedRegistryConfiguration(memory, probe::observe);
         registry.setManagementToken("secret");
         registry.setRefreshMillis(600000);
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        MetConfiguration configuration = createConfiguration();
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
         configuration.addExtension(registry);
 
         try (MetContext context = configuration.buildContext(); //

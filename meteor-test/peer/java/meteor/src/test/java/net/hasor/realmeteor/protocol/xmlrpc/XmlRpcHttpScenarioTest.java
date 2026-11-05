@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.xmlrpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -284,10 +285,14 @@ public class XmlRpcHttpScenarioTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void xmlRpcAndJsonRpcShareOneHttpPortThroughContextRouting() throws Exception {
         // 两个正式插件在同一端口按上下文挂载，无需额外监听器。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("xmlrpc");
-        ConnectorSettings endpoint = configuration.connector("http").bind("127.0.0.1", 0);
-        endpoint.protocol("xmlrpc").contextPath("/xmlrpc");
-        endpoint.protocol("jsonrpc").contextPath("/jsonrpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("xmlrpc");
+        ConnectorSettings endpoint = configuration.connector("http") //
+                .bind("127.0.0.1", 0);
+        endpoint.protocol("xmlrpc") //
+                .contextPath("/xmlrpc");
+        endpoint.protocol("jsonrpc") //
+                .contextPath("/jsonrpc");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher() //
@@ -405,7 +410,8 @@ public class XmlRpcHttpScenarioTest {
     public void closingTheServerFailsPendingCallsWithoutWaitingForTimeout() throws Exception {
         // 阻塞一次业务执行，观察连接关闭对在途调用的终止通知。
         MetConfiguration incoming = this.serverConfiguration();
-        MetConfiguration outgoing = this.clientConfiguration(2).setRequestTimeout(10000);
+        MetConfiguration outgoing = this.clientConfiguration(2) //
+                .setRequestTimeout(10000);
         CountDownLatch entered = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
         XmlRpcDemoServiceImpl implementation = new XmlRpcDemoServiceImpl() {
@@ -455,16 +461,22 @@ public class XmlRpcHttpScenarioTest {
     }
 
     private MetConfiguration serverConfiguration() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("xmlrpc");
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("xmlrpc").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("xmlrpc");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("xmlrpc") //
+                .contextPath("/rpc");
         return configuration;
     }
 
     private MetConfiguration clientConfiguration(int httpVersion) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("xmlrpc");
-        configuration.connector("http").option("httpVersion", httpVersion) //
-                .protocol("xmlrpc").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("xmlrpc");
+        configuration.connector("http") //
+                .option("httpVersion", httpVersion) //
+                .protocol("xmlrpc") //
+                .contextPath("/rpc");
         return configuration;
     }
 }

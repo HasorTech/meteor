@@ -57,10 +57,13 @@ public class PythonJsonRpcTypeTest {
     @Timeout(value = 40000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorProviderAcceptsOnePythonTypeVector() throws Exception {
         // 正式 bootstrap 启动 HTTP 挂载，再发布同一类型契约和业务实现。
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(5000);
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDefaultTimeout(5000);
         configuration.setDataHome(Files.createDirectory(this.data.resolve("provider")));
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("jsonrpc").contextPath("/types");
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("jsonrpc") //
+                .contextPath("/types");
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
             provider.publisher().rsfService(TypeEchoService.class, new TypeEchoServiceImpl()) //
@@ -85,9 +88,12 @@ public class PythonJsonRpcTypeTest {
         // Python HTTP 服务自行监听，Meteor 通过公开订阅入口创建纯远程代理。
         try (ForeignTypePeer peer = ForeignTypePeer.provider("python", "jsonrpc")) {
             int port = peer.awaitPort();
-            MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(5000);
+            MetConfiguration configuration = new MetConfiguration() //
+                    .setDefaultTimeout(5000);
             configuration.setDataHome(Files.createDirectory(this.data.resolve("consumer")));
-            configuration.connector("http").protocol("jsonrpc").contextPath("/types");
+            configuration.connector("http") //
+                    .protocol("jsonrpc") //
+                    .contextPath("/types");
             try (MetContext consumer = configuration.buildContext()) {
                 consumer.start();
                 MetBindInfo<TypeEchoService> info = consumer.publisher().rsfService(TypeEchoService.class) //

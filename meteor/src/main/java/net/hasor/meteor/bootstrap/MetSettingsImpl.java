@@ -60,7 +60,7 @@ final class MetSettingsImpl implements MetSettings {
         this.queueMaxPoolSize = source.getQueueMaxPoolSize();
         this.queueKeepAliveTime = source.getQueueKeepAliveTime();
         this.unitName = source.getUnitName();
-        this.dataHome = source.getDataHome();
+        this.dataHome = source.getDataHome().toAbsolutePath().normalize();
         this.addressBook = source.getAddressBook();
         this.invalidWaitTime = source.getInvalidWaitTime();
         this.refreshCacheTime = source.getRefreshCacheTime();

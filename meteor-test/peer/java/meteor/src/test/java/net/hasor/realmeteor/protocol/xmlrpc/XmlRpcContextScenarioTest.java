@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.xmlrpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -140,9 +141,13 @@ public class XmlRpcContextScenarioTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void mountedServiceOptionAllowsUnqualifiedMethodNames() throws Exception {
         // 单服务端点通过协议选项绑定别名，外部客户端只发送方法名。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("xmlrpc");
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("xmlrpc").contextPath("/calculator").option("service", "calculator");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("xmlrpc");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("xmlrpc") //
+                .contextPath("/calculator") //
+                .option("service", "calculator");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher() //
@@ -166,9 +171,13 @@ public class XmlRpcContextScenarioTest {
     }
 
     private MetConfiguration configuration() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("xmlrpc");
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("xmlrpc").contextPath("/rpc").addContextPath("/private");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("xmlrpc");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("xmlrpc") //
+                .contextPath("/rpc") //
+                .addContextPath("/private");
         return configuration;
     }
 

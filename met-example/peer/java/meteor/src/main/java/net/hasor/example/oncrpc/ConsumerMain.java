@@ -21,8 +21,11 @@ public final class ConsumerMain {
 
     public static void main(String[] arguments) throws Exception {
         // 配置出站协议。
-        MetConfiguration configuration = new MetConfiguration().setUnitName("local");
-        configuration.connector("tcp").protocol("oncrpc");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setUnitName("local") //
+                .setApplicationName("oncrpc-order-consumer");
+        configuration.connector("tcp") //
+                .protocol("oncrpc");
 
         try (MetContext context = configuration.buildContext()) {
             // 启动容器并订阅订单服务。

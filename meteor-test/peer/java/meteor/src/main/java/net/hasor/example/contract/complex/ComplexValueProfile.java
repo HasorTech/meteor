@@ -17,6 +17,7 @@ import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetPublisher.ConfigurationBuilder;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
@@ -69,8 +70,9 @@ public enum ComplexValueProfile {
 
     private MetConfiguration configuration(boolean listener) {
         // 业务端口仅挂载当前 profile，消费应用只有出站能力。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.setUnitName("complex_contract").setDefaultProtocol(this.protocol);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setUnitName("complex_contract") //
+                .setDefaultProtocol(this.protocol);
         ConnectorSettings connector = configuration.connector(this.transport);
         if (listener) {
             connector.bind("127.0.0.1", 0);
@@ -81,7 +83,8 @@ public enum ComplexValueProfile {
         if (this == TRIPLE_HESSIAN2 || this == TRIPLE_PROTOBUF) {
             connector.option("httpVersion", 2);
         }
-        var mount = connector.protocol(this.protocol).option("serializeType", this.serialization);
+        var mount = connector.protocol(this.protocol) //
+                .option("serializeType", this.serialization);
         if (StringUtils.equals(this.transport, "http")) {
             mount.contextPath("/complex");
         }
@@ -92,7 +95,8 @@ public enum ComplexValueProfile {
             mount.option("httpMode", "grpc");
         }
         if (this == THRIFT_BINARY) {
-            mount.option("encoding", "binary").option("framed", true);
+            mount.option("encoding", "binary") //
+                    .option("framed", true);
         }
         return configuration;
     }

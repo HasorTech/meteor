@@ -23,6 +23,7 @@ import net.hasor.meteor.registry.shared.DecoratedRegistryConfiguration;
 import net.hasor.meteor.registry.shared.RegistryTestUtils.Echo;
 import net.hasor.meteor.registry.shared.StorageProbe;
 import org.junit.jupiter.api.Test;
+import static net.hasor.meteor.registry.shared.RegistryTestUtils.createConfiguration;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** 用扩展的管理端写入治理配置，通过客户端拉取后检查应用真实状态。 */
@@ -186,8 +187,10 @@ public class ConfigurationApplicationTest {
         RegistryConfiguration registry = new DecoratedRegistryConfiguration(new MemoryRegistryConfiguration(), probe::observe);
         registry.setManagementToken("secret");
         registry.setRefreshMillis(600000);
-        MetConfiguration application = new MetConfiguration();
-        application.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        MetConfiguration application = createConfiguration();
+        application.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
         application.addExtension(registry);
         return application;
     }

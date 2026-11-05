@@ -11,6 +11,7 @@ import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
 import net.hasor.cobble.StringUtils;
+import net.hasor.example.protocol.triple.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
@@ -37,9 +38,13 @@ final class TripleFlowTestContext implements AutoCloseable {
 
     private TripleFlowTestContext(boolean client, Executor executor, int messageLimit, String method) throws Exception {
         // 声明真实服务元信息，使请求和响应按正式 POJO wrapper 编解码链路处理。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("triple");
-        configuration.connector("http").protocol("triple").contextPath("/triple") //
-                .option("httpVersion", 2).option("maxMessageSize", messageLimit);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("triple");
+        configuration.connector("http") //
+                .protocol("triple") //
+                .contextPath("/triple") //
+                .option("httpVersion", 2) //
+                .option("maxMessageSize", messageLimit);
         this.context = configuration.buildContext();
         MetBindInfo<Messages> service = this.context.publisher().rsfService(Messages.class) //
                 .aliasName("triple", "example.Messages").serialize("Hessian2").register();

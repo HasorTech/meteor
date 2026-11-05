@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.oncrpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.io.IOException;
 import java.net.DatagramSocket;
@@ -282,9 +283,12 @@ public class OncRpcSecureScenarioTest {
     public void plaintextAndSecureTcpMountsRemainIndependent() throws Exception {
         // 两个 TCP 端点分别提供明文与 TLS，不复制协议解析器。
         MetConfiguration incoming = this.incomingTcp("server", "NONE", "TLSv1.3,TLSv1.2");
-        incoming.connector("tcp").bind("127.0.0.1", 0).protocol("oncrpc");
+        incoming.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("oncrpc");
         MetConfiguration outgoing = this.outgoingTcp(null, "trust", "TLSv1.3,TLSv1.2");
-        outgoing.connector("tcp").protocol("oncrpc");
+        outgoing.connector("tcp") //
+                .protocol("oncrpc");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             // 容器启动后才发布与订阅；两端使用同一份本地 XDR 契约。
@@ -363,18 +367,25 @@ public class OncRpcSecureScenarioTest {
     }
 
     private MetConfiguration incomingTcp(String identity, String clientAuth, String protocols) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc").setDefaultTimeout(10000);
-        ConnectorSettings connector = configuration.connector("tcp").bind("127.0.0.1", 0);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc") //
+                .setDefaultTimeout(10000);
+        ConnectorSettings connector = configuration.connector("tcp") //
+                .bind("127.0.0.1", 0);
         OncRpcTlsUtils.server(connector, identity, clientAuth, protocols);
-        connector.protocol("oncrpc").addressScheme("oncrpc-tls");
+        connector.protocol("oncrpc") //
+                .addressScheme("oncrpc-tls");
         return configuration;
     }
 
     private MetConfiguration outgoingTcp(String identity, String trust, String protocols) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc").setDefaultTimeout(10000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc") //
+                .setDefaultTimeout(10000);
         ConnectorSettings connector = configuration.connector("tcp");
         OncRpcTlsUtils.client(connector, identity, trust, protocols);
-        connector.protocol("oncrpc").addressScheme("oncrpc-tls");
+        connector.protocol("oncrpc") //
+                .addressScheme("oncrpc-tls");
         return configuration;
     }
 
@@ -384,20 +395,25 @@ public class OncRpcSecureScenarioTest {
         try (DatagramSocket reservation = new DatagramSocket(0, InetAddress.getLoopbackAddress())) {
             port = reservation.getLocalPort();
         }
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc-udp");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc-udp");
         configuration.setDefaultTimeout(10000);
-        ConnectorSettings connector = configuration.connector("udp").bind("127.0.0.1", port);
+        ConnectorSettings connector = configuration.connector("udp") //
+                .bind("127.0.0.1", port);
         OncRpcTlsUtils.server(connector, "server", clientAuth, "DTLSv1.2");
-        connector.protocol("oncrpc-udp").addressScheme("oncrpc-dtls");
+        connector.protocol("oncrpc-udp") //
+                .addressScheme("oncrpc-dtls");
         return configuration;
     }
 
     private MetConfiguration outgoingUdp(String identity) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc-udp");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc-udp");
         configuration.setDefaultTimeout(10000);
         ConnectorSettings connector = configuration.connector("udp");
         OncRpcTlsUtils.client(connector, identity, "trust", "DTLSv1.2");
-        connector.protocol("oncrpc-udp").addressScheme("oncrpc-dtls");
+        connector.protocol("oncrpc-udp") //
+                .addressScheme("oncrpc-dtls");
         return configuration;
     }
 }

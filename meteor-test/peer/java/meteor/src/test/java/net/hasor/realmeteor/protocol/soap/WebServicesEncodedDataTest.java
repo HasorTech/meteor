@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.example.protocol.soap.EncodedDataService;
 import net.hasor.example.protocol.soap.EncodedDataServiceImpl;
 import net.hasor.example.protocol.soap.EncodedGraphNode;
@@ -24,14 +25,21 @@ public class WebServicesEncodedDataTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void rpcSoap11EncodedGraphRoundTrip() throws Exception {
         // 两端经 bootstrap 挂载 rpc/encoded SOAP 1.1，仅服务端开启监听。
-        MetConfiguration incoming = new MetConfiguration();
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("soap") //
-                .contextPath("/services").option("soapVersion", "1.1") //
-                .option("soapStyle", "rpc").option("soapUse", "encoded");
-        MetConfiguration outgoing = new MetConfiguration();
-        outgoing.connector("http").protocol("soap") //
-                .contextPath("/services").option("soapVersion", "1.1") //
-                .option("soapStyle", "rpc").option("soapUse", "encoded");
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("soap") //
+                .contextPath("/services") //
+                .option("soapVersion", "1.1") //
+                .option("soapStyle", "rpc") //
+                .option("soapUse", "encoded");
+        MetConfiguration outgoing = TestConfigurationUtils.create();
+        outgoing.connector("http") //
+                .protocol("soap") //
+                .contextPath("/services") //
+                .option("soapVersion", "1.1") //
+                .option("soapStyle", "rpc") //
+                .option("soapUse", "encoded");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();
@@ -63,14 +71,21 @@ public class WebServicesEncodedDataTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void rpcSoap12EncodedGraphRoundTrip() throws Exception {
         // 两端经 bootstrap 挂载 rpc/encoded SOAP 1.2，仅服务端开启监听。
-        MetConfiguration incoming = new MetConfiguration();
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("soap") //
-                .contextPath("/services").option("soapVersion", "1.2") //
-                .option("soapStyle", "rpc").option("soapUse", "encoded");
-        MetConfiguration outgoing = new MetConfiguration();
-        outgoing.connector("http").protocol("soap") //
-                .contextPath("/services").option("soapVersion", "1.2") //
-                .option("soapStyle", "rpc").option("soapUse", "encoded");
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("soap") //
+                .contextPath("/services") //
+                .option("soapVersion", "1.2") //
+                .option("soapStyle", "rpc") //
+                .option("soapUse", "encoded");
+        MetConfiguration outgoing = TestConfigurationUtils.create();
+        outgoing.connector("http") //
+                .protocol("soap") //
+                .contextPath("/services") //
+                .option("soapVersion", "1.2") //
+                .option("soapStyle", "rpc") //
+                .option("soapUse", "encoded");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();
@@ -101,14 +116,21 @@ public class WebServicesEncodedDataTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void documentSoap11EncodedGraphRoundTrip() throws Exception {
         // 两端经 bootstrap 挂载 document/encoded SOAP 1.1，仅服务端开启监听。
-        MetConfiguration incoming = new MetConfiguration();
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("soap") //
-                .contextPath("/services").option("soapVersion", "1.1") //
-                .option("soapStyle", "document").option("soapUse", "encoded");
-        MetConfiguration outgoing = new MetConfiguration();
-        outgoing.connector("http").protocol("soap") //
-                .contextPath("/services").option("soapVersion", "1.1") //
-                .option("soapStyle", "document").option("soapUse", "encoded");
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("soap") //
+                .contextPath("/services") //
+                .option("soapVersion", "1.1") //
+                .option("soapStyle", "document") //
+                .option("soapUse", "encoded");
+        MetConfiguration outgoing = TestConfigurationUtils.create();
+        outgoing.connector("http") //
+                .protocol("soap") //
+                .contextPath("/services") //
+                .option("soapVersion", "1.1") //
+                .option("soapStyle", "document") //
+                .option("soapUse", "encoded");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();
@@ -140,14 +162,21 @@ public class WebServicesEncodedDataTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void documentSoap12EncodedGraphRoundTrip() throws Exception {
         // 两端经 bootstrap 挂载 document/encoded SOAP 1.2，仅服务端开启监听。
-        MetConfiguration incoming = new MetConfiguration();
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("soap") //
-                .contextPath("/services").option("soapVersion", "1.2") //
-                .option("soapStyle", "document").option("soapUse", "encoded");
-        MetConfiguration outgoing = new MetConfiguration();
-        outgoing.connector("http").protocol("soap") //
-                .contextPath("/services").option("soapVersion", "1.2") //
-                .option("soapStyle", "document").option("soapUse", "encoded");
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("soap") //
+                .contextPath("/services") //
+                .option("soapVersion", "1.2") //
+                .option("soapStyle", "document") //
+                .option("soapUse", "encoded");
+        MetConfiguration outgoing = TestConfigurationUtils.create();
+        outgoing.connector("http") //
+                .protocol("soap") //
+                .contextPath("/services") //
+                .option("soapVersion", "1.2") //
+                .option("soapStyle", "document") //
+                .option("soapUse", "encoded");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();
@@ -178,14 +207,21 @@ public class WebServicesEncodedDataTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void rpcSoap11EncodedMatrixRoundTrip() throws Exception {
         // 两端经 bootstrap 挂载 rpc/encoded SOAP 1.1，仅服务端开启监听。
-        MetConfiguration incoming = new MetConfiguration();
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("soap") //
-                .contextPath("/services").option("soapVersion", "1.1") //
-                .option("soapStyle", "rpc").option("soapUse", "encoded");
-        MetConfiguration outgoing = new MetConfiguration();
-        outgoing.connector("http").protocol("soap") //
-                .contextPath("/services").option("soapVersion", "1.1") //
-                .option("soapStyle", "rpc").option("soapUse", "encoded");
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("soap") //
+                .contextPath("/services") //
+                .option("soapVersion", "1.1") //
+                .option("soapStyle", "rpc") //
+                .option("soapUse", "encoded");
+        MetConfiguration outgoing = TestConfigurationUtils.create();
+        outgoing.connector("http") //
+                .protocol("soap") //
+                .contextPath("/services") //
+                .option("soapVersion", "1.1") //
+                .option("soapStyle", "rpc") //
+                .option("soapUse", "encoded");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();
@@ -210,14 +246,21 @@ public class WebServicesEncodedDataTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void rpcSoap12EncodedMatrixRoundTrip() throws Exception {
         // 两端经 bootstrap 挂载 rpc/encoded SOAP 1.2，仅服务端开启监听。
-        MetConfiguration incoming = new MetConfiguration();
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("soap") //
-                .contextPath("/services").option("soapVersion", "1.2") //
-                .option("soapStyle", "rpc").option("soapUse", "encoded");
-        MetConfiguration outgoing = new MetConfiguration();
-        outgoing.connector("http").protocol("soap") //
-                .contextPath("/services").option("soapVersion", "1.2") //
-                .option("soapStyle", "rpc").option("soapUse", "encoded");
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("soap") //
+                .contextPath("/services") //
+                .option("soapVersion", "1.2") //
+                .option("soapStyle", "rpc") //
+                .option("soapUse", "encoded");
+        MetConfiguration outgoing = TestConfigurationUtils.create();
+        outgoing.connector("http") //
+                .protocol("soap") //
+                .contextPath("/services") //
+                .option("soapVersion", "1.2") //
+                .option("soapStyle", "rpc") //
+                .option("soapUse", "encoded");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();

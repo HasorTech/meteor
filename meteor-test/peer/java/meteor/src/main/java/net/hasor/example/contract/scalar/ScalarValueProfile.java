@@ -17,6 +17,7 @@ import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetPublisher.ConfigurationBuilder;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
@@ -73,8 +74,9 @@ public enum ScalarValueProfile {
 
     private MetConfiguration configuration(boolean listener) {
         // 每次只挂载当前编码，消费端通过正式出站连接调用业务端口。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.setUnitName("scalar_contract").setDefaultProtocol(this.protocol);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setUnitName("scalar_contract") //
+                .setDefaultProtocol(this.protocol);
         ConnectorSettings connector = configuration.connector(this.transport);
         if (listener) {
             connector.bind("127.0.0.1", 0);
@@ -85,7 +87,8 @@ public enum ScalarValueProfile {
         if (this == TRIPLE_HESSIAN2 || this == TRIPLE_PROTOBUF) {
             connector.option("httpVersion", 2);
         }
-        var mount = connector.protocol(this.protocol).option("serializeType", this.serialization);
+        var mount = connector.protocol(this.protocol) //
+                .option("serializeType", this.serialization);
         if (StringUtils.equals(this.transport, "http")) {
             mount.contextPath("/scalar");
         }
@@ -99,7 +102,8 @@ public enum ScalarValueProfile {
             mount.option("httpMode", "grpc");
         }
         if (this == THRIFT_BINARY) {
-            mount.option("encoding", "binary").option("framed", true);
+            mount.option("encoding", "binary") //
+                    .option("framed", true);
         }
         return configuration;
     }

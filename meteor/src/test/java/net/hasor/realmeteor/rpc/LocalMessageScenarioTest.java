@@ -10,6 +10,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import net.hasor.example.bootstrap.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetFuture;
@@ -25,8 +26,9 @@ public class LocalMessageScenarioTest {
     @Test
     public void localMessageCompletesOnCallingThreadWithoutRemoteAddress() throws Exception {
         // 只配置出站协议，不监听端口，也不为服务提供远程地址。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("tcp").protocol("rsf");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("tcp") //
+                .protocol("rsf");
         AtomicReference<Thread> businessThread = new AtomicReference<>();
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<MessageService> service = context.publisher().rsfService(MessageService.class, value -> {
@@ -52,8 +54,9 @@ public class LocalMessageScenarioTest {
     @Test
     public void localMessageBusinessFailureDoesNotContinueToRemoteFilters() throws Exception {
         // 本地提供者抛出业务异常，后续过滤器用于观察是否错误地继续远程调用。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("tcp").protocol("rsf");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("tcp") //
+                .protocol("rsf");
         IllegalStateException businessFailure = new IllegalStateException("message rejected");
         AtomicInteger businessCalls = new AtomicInteger();
         AtomicInteger downstreamCalls = new AtomicInteger();

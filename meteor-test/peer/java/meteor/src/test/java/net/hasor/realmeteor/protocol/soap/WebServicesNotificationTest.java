@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -35,7 +36,8 @@ public class WebServicesNotificationTest {
     public void oneWayReturnsAcceptedWhileBusinessExecutionContinues() throws Exception {
         // 由 Java 消息注解生成 one-way 契约，业务等待场景显式释放。
         BlockingSignalServiceImpl service = new BlockingSignalServiceImpl();
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("soap") //
@@ -120,7 +122,8 @@ public class WebServicesNotificationTest {
     }
 
     private MetConfiguration incomingConfiguration() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("soap") //
@@ -129,7 +132,8 @@ public class WebServicesNotificationTest {
     }
 
     private MetConfiguration outgoingConfiguration() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
         configuration.connector("http") //
                 .protocol("soap") //
                 .contextPath("/services");

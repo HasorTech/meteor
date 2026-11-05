@@ -27,6 +27,7 @@ import net.hasor.meteor.registry.shared.storage.StorageAccess;
 import net.hasor.meteor.registry.shared.storage.domain.EntServiceRuntimeData;
 import net.hasor.meteor.registry.shared.utils.RegistryJson;
 import org.junit.jupiter.api.Test;
+import static net.hasor.meteor.registry.shared.RegistryTestUtils.createConfiguration;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** 通过 bootstrap 发布服务、上报声明，再从独立存储会话或管理 API 查询。 */
@@ -54,9 +55,10 @@ public class ServiceDescriptionScenarioTest {
     public void directManagementRpcReturnsTheSamePureDataDescription() throws Exception {
         // 目标正常发布 RSF，调用方只提供直连管理能力，不连接注册存储。
         MemoryRegistryConfiguration registry = registry();
-        MetConfiguration outgoing = new MetConfiguration();
-        outgoing.addExtension(new RegistryConfiguration().setOnline(false).setManagementToken("description-tests"));
-        outgoing.connector("tcp").protocol("rsf");
+        MetConfiguration outgoing = createConfiguration() //
+                .addExtension(new RegistryConfiguration().setOnline(false).setManagementToken("description-tests"));
+        outgoing.connector("tcp") //
+                .protocol("rsf");
         try (MetContext server = configuration(registry).buildContext(); //
              MetContext caller = outgoing.buildContext()) {
             server.start();
@@ -234,8 +236,10 @@ public class ServiceDescriptionScenarioTest {
     public void consumerReportsItsOwnDeclaration() throws Exception {
         // 只配置出站能力的消费者也上报公共声明，身份明确标记为 Consumer。
         MemoryRegistryConfiguration registry = registry();
-        MetConfiguration config = new MetConfiguration().addExtension(registry);
-        config.connector("tcp").protocol("rsf");
+        MetConfiguration config = createConfiguration() //
+                .addExtension(registry);
+        config.connector("tcp") //
+                .protocol("rsf");
         try (MetContext context = config.buildContext(); //
              StorageAccess storage = registry.openStorage()) {
             context.start();
@@ -380,8 +384,11 @@ public class ServiceDescriptionScenarioTest {
     }
 
     private static MetConfiguration configuration(MemoryRegistryConfiguration registry) {
-        MetConfiguration configuration = new MetConfiguration().addExtension(registry);
-        configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        MetConfiguration configuration = createConfiguration() //
+                .addExtension(registry);
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
         return configuration;
     }
 

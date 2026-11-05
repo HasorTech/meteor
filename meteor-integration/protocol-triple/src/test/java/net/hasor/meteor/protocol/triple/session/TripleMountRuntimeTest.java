@@ -8,8 +8,8 @@
 package net.hasor.meteor.protocol.triple.session;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import net.hasor.example.protocol.triple.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
-import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.connector.RouteMountIndex;
 import net.hasor.meteor.domain.ProtocolConfig;
 import org.junit.jupiter.api.Test;
@@ -19,7 +19,7 @@ public class TripleMountRuntimeTest {
     @Test
     public void activeSessionsShareMountWorkersUntilLastRelease() throws Exception {
         // 同一挂载的两条会话复用 worker，单个会话退出不会中断另一条会话。
-        try (MetContext context = new MetConfiguration().buildContext()) {
+        try (MetContext context = TestConfigurationUtils.create().buildContext()) {
             ProtocolConfig config = ProtocolConfig.newConfig("triple", "triple", Map.of("streamWorkers", "2"));
             String endpointName = context.getSettings().getConnectorConfigs().iterator().next().name();
             TripleMountRuntime runtime = new TripleMountRuntime(config, new RouteMountIndex(endpointName, config));
@@ -43,7 +43,7 @@ public class TripleMountRuntimeTest {
     @Test
     public void releasedMountCreatesFreshWorkersForLaterSession() throws Exception {
         // 挂载没有活动会话后可再次接入连接，新会话得到新的 worker 池。
-        try (MetContext context = new MetConfiguration().buildContext()) {
+        try (MetContext context = TestConfigurationUtils.create().buildContext()) {
             ProtocolConfig config = ProtocolConfig.newConfig("triple", "triple", Map.of());
             String endpointName = context.getSettings().getConnectorConfigs().iterator().next().name();
             TripleMountRuntime runtime = new TripleMountRuntime(config, new RouteMountIndex(endpointName, config));

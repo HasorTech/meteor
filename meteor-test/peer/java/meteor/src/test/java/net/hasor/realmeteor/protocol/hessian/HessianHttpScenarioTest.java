@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hessian;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -345,15 +346,21 @@ public class HessianHttpScenarioTest {
 
 
     private MetConfiguration serverConfiguration() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("hessian");
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("hessian").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("hessian");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("hessian") //
+                .contextPath("/rpc");
         return configuration;
     }
 
     private MetConfiguration clientConfiguration() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("hessian");
-        configuration.connector("http").protocol("hessian").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("hessian");
+        configuration.connector("http") //
+                .protocol("hessian") //
+                .contextPath("/rpc");
         return configuration;
     }
 }

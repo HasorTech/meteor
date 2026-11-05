@@ -6,6 +6,8 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.List;
@@ -18,12 +20,40 @@ import net.hasor.meteor.registry.memory.MemoryRegistryConfiguration;
 import org.h2.jdbcx.JdbcDataSource;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.PropertySource;
 import org.springframework.core.env.StandardEnvironment;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SpringSettingsTest {
+    @TempDir
+    Path directory;
+
+    @Test
+    void readsExplicitDataHomeWithEnvironmentPlaceholders() throws Exception {
+        // 数据目录沿用 Environment 的占位符解析及配置优先级。
+        Map<String, Object> values = new LinkedHashMap<>();
+        values.put("meteor.application", "example");
+        values.put("meteor.data-home", "${example.data-home}");
+        values.put("example.data-home", "build/settings/spring-instance");
+        values.put("meteor.connectors.rsf.host", "127.0.0.1");
+        values.put("meteor.connectors.rsf.port", 0);
+        MetConfiguration config = SpringSettings.configuration(settings(values), getClass().getClassLoader());
+        assertEquals(Paths.get("build/settings/spring-instance"), config.getDataHome());
+    }
+
+    @Test
+    void derivesDefaultDataHomeFromApplicationName() throws Exception {
+        // 不设置目录时由内核统一使用用户目录及应用名。
+        Map<String, Object> values = new LinkedHashMap<>();
+        values.put("meteor.application", "example");
+        values.put("meteor.connectors.rsf.host", "127.0.0.1");
+        values.put("meteor.connectors.rsf.port", 0);
+        MetConfiguration config = SpringSettings.configuration(settings(values), getClass().getClassLoader());
+        assertEquals(Paths.get(System.getProperty("user.home"), ".meteor", "example"), config.getDataHome());
+    }
+
     @Test
     void derivesTransportFromProtocolSpiAndReadsHttpContext() throws Exception {
         // 不配置 transport 或 protocols.name，传输能力来自已安装 SPI。
@@ -161,7 +191,10 @@ class SpringSettingsTest {
             return database;
         });
         assertInstanceOf(JdbcRegistryConfiguration.class, registry);
-        try (MetContext context = new MetConfiguration().addExtension(registry).buildContext()) {
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDataHome(this.directory.resolve("meteor"));
+        configuration.addExtension(registry);
+        try (MetContext context = configuration.buildContext()) {
             assertNotNull(context.getExtension(RegistryClient.class));
             assertFalse(context.isOnline());
         }
@@ -184,7 +217,10 @@ class SpringSettingsTest {
             assertEquals(RegistryTokenProvider.class, type);
             return tokens;
         });
-        try (MetContext context = new MetConfiguration().addExtension(registry).buildContext()) {
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDataHome(this.directory.resolve("meteor"));
+        configuration.addExtension(registry);
+        try (MetContext context = configuration.buildContext()) {
             assertNull(context.getExtension(RegistryClient.class));
         }
     }
@@ -204,7 +240,10 @@ class SpringSettingsTest {
         RegistryConfiguration registry = (RegistryConfiguration) SpringSettings.registry(source,
                 getClass().getClassLoader(), List.of(), (name, type) -> null);
         assertEquals("nacos", registry.getProvider());
-        try (MetContext context = new MetConfiguration().addExtension(registry).buildContext()) {
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDataHome(this.directory.resolve("meteor"));
+        configuration.addExtension(registry);
+        try (MetContext context = configuration.buildContext()) {
             assertNotNull(context.getExtension(RegistryClient.class));
             assertFalse(context.isOnline());
         }
@@ -217,7 +256,10 @@ class SpringSettingsTest {
         RegistryConfiguration registry = (RegistryConfiguration) SpringSettings.registry(source,
                 getClass().getClassLoader(), List.of(), (name, type) -> null);
         assertEquals("zookeeper", registry.getProvider());
-        try (MetContext context = new MetConfiguration().addExtension(registry).buildContext()) {
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDataHome(this.directory.resolve("meteor"));
+        configuration.addExtension(registry);
+        try (MetContext context = configuration.buildContext()) {
             assertNotNull(context.getExtension(RegistryClient.class));
             assertFalse(context.isOnline());
         }

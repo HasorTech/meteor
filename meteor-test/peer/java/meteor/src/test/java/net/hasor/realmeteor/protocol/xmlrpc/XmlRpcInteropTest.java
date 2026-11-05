@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.xmlrpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -37,8 +38,10 @@ public class XmlRpcInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void pythonClientCallsMeteorUnicodeString() throws Exception {
         // 配置实际监听端口和协议挂载，Python 直接使用标准库客户端。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("xmlrpc") //
                 .contextPath("/rpc");
         try (MetContext server = configuration.buildContext()) {
@@ -62,8 +65,10 @@ public class XmlRpcInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void pythonClientCallsMeteorInteger() throws Exception {
         // 配置实际监听端口和协议挂载，Python 直接使用标准库客户端。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("xmlrpc") //
                 .contextPath("/rpc");
         try (MetContext server = configuration.buildContext()) {
@@ -87,8 +92,10 @@ public class XmlRpcInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void pythonClientCallsMeteorBoolean() throws Exception {
         // 配置实际监听端口和协议挂载，Python 直接使用标准库客户端。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("xmlrpc") //
                 .contextPath("/rpc");
         try (MetContext server = configuration.buildContext()) {
@@ -112,8 +119,10 @@ public class XmlRpcInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void pythonClientCallsMeteorDouble() throws Exception {
         // 配置实际监听端口和协议挂载，Python 直接使用标准库客户端。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("xmlrpc") //
                 .contextPath("/rpc");
         try (MetContext server = configuration.buildContext()) {
@@ -137,8 +146,10 @@ public class XmlRpcInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void pythonClientCallsMeteorBinary() throws Exception {
         // 配置实际监听端口和协议挂载，Python 直接使用标准库客户端。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("xmlrpc") //
                 .contextPath("/rpc");
         try (MetContext server = configuration.buildContext()) {
@@ -162,8 +173,10 @@ public class XmlRpcInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void pythonClientCallsMeteorDateTime() throws Exception {
         // 配置实际监听端口和协议挂载，Python 直接使用标准库客户端。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("xmlrpc") //
                 .contextPath("/rpc");
         try (MetContext server = configuration.buildContext()) {
@@ -187,8 +200,10 @@ public class XmlRpcInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void pythonClientCallsMeteorTypedArray() throws Exception {
         // 配置实际监听端口和协议挂载，Python 直接使用标准库客户端。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("xmlrpc") //
                 .contextPath("/rpc");
         try (MetContext server = configuration.buildContext()) {
@@ -212,8 +227,10 @@ public class XmlRpcInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void pythonClientCallsMeteorNestedStruct() throws Exception {
         // 配置实际监听端口和协议挂载，Python 直接使用标准库客户端。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("xmlrpc") //
                 .contextPath("/rpc");
         try (MetContext server = configuration.buildContext()) {
@@ -237,8 +254,10 @@ public class XmlRpcInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void pythonClientCallsMeteorApplicationFault() throws Exception {
         // 配置实际监听端口和协议挂载，Python 直接使用标准库客户端。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("xmlrpc") //
                 .contextPath("/rpc");
         try (MetContext server = configuration.buildContext()) {
@@ -262,8 +281,10 @@ public class XmlRpcInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void pythonClientCallsMeteorNoArguments() throws Exception {
         // 配置实际监听端口和协议挂载，Python 直接使用标准库客户端。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("xmlrpc") //
                 .contextPath("/rpc");
         try (MetContext server = configuration.buildContext()) {
@@ -287,8 +308,10 @@ public class XmlRpcInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void pythonClientCallsMeteorOptionalNil() throws Exception {
         // 配置实际监听端口和协议挂载，Python 直接使用标准库客户端。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("xmlrpc") //
                 .option("allowNil", true) //
                 .contextPath("/rpc");
@@ -313,7 +336,8 @@ public class XmlRpcInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorCallsPythonServerUnicodeString() throws Exception {
         // Python 标准库监听端口，Meteor 只配置出站传输和协议。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
         configuration.connector("http") //
                 .protocol("xmlrpc") //
                 .contextPath("/rpc");
@@ -341,7 +365,8 @@ public class XmlRpcInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorCallsPythonServerInteger() throws Exception {
         // Python 标准库监听端口，Meteor 只配置出站传输和协议。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
         configuration.connector("http") //
                 .protocol("xmlrpc") //
                 .contextPath("/rpc");
@@ -368,7 +393,8 @@ public class XmlRpcInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorCallsPythonServerBoolean() throws Exception {
         // Python 标准库监听端口，Meteor 只配置出站传输和协议。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
         configuration.connector("http") //
                 .protocol("xmlrpc") //
                 .contextPath("/rpc");
@@ -395,7 +421,8 @@ public class XmlRpcInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorCallsPythonServerDouble() throws Exception {
         // Python 标准库监听端口，Meteor 只配置出站传输和协议。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
         configuration.connector("http") //
                 .protocol("xmlrpc") //
                 .contextPath("/rpc");
@@ -422,7 +449,8 @@ public class XmlRpcInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorCallsPythonServerBinary() throws Exception {
         // Python 标准库监听端口，Meteor 只配置出站传输和协议。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
         configuration.connector("http") //
                 .protocol("xmlrpc") //
                 .contextPath("/rpc");
@@ -450,7 +478,8 @@ public class XmlRpcInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorCallsPythonServerDateTime() throws Exception {
         // Python 标准库监听端口，Meteor 只配置出站传输和协议。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
         configuration.connector("http") //
                 .protocol("xmlrpc") //
                 .contextPath("/rpc");
@@ -478,7 +507,8 @@ public class XmlRpcInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorCallsPythonServerTypedArray() throws Exception {
         // Python 标准库监听端口，Meteor 只配置出站传输和协议。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
         configuration.connector("http") //
                 .protocol("xmlrpc") //
                 .contextPath("/rpc");
@@ -516,7 +546,8 @@ public class XmlRpcInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorCallsPythonServerNestedStruct() throws Exception {
         // Python 标准库监听端口，Meteor 只配置出站传输和协议。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
         configuration.connector("http") //
                 .protocol("xmlrpc") //
                 .contextPath("/rpc");
@@ -545,7 +576,8 @@ public class XmlRpcInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorCallsPythonServerApplicationFault() throws Exception {
         // Python 标准库监听端口，Meteor 只配置出站传输和协议。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
         configuration.connector("http") //
                 .protocol("xmlrpc") //
                 .contextPath("/rpc");
@@ -579,7 +611,8 @@ public class XmlRpcInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorCallsPythonServerNoArguments() throws Exception {
         // Python 标准库监听端口，Meteor 只配置出站传输和协议。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
         configuration.connector("http") //
                 .protocol("xmlrpc") //
                 .contextPath("/rpc");
@@ -606,7 +639,8 @@ public class XmlRpcInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorCallsPythonServerOptionalNil() throws Exception {
         // Python 标准库监听端口，Meteor 只配置出站传输和协议。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
         configuration.connector("http") //
                 .protocol("xmlrpc") //
                 .option("allowNil", true) //
@@ -634,10 +668,14 @@ public class XmlRpcInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void pythonClientCallsMeteorOverHttps() throws Exception {
         // 用实际测试 CA 开启 HTTPS，独立 Python 客户端校验服务端证书和主机名。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        ConnectorSettings listener = configuration.connector("http").bind(ContainerProcess.runnerHost(), 0);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        ConnectorSettings listener = configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0);
         XmlRpcTlsUtils.serverTls(listener, 1, "NONE");
-        listener.protocol("xmlrpc").addressScheme("https").contextPath("/rpc");
+        listener.protocol("xmlrpc") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
         try (MetContext server = configuration.buildContext()) {
             // 启动后发布接口，服务仍由同一个 XML-RPC 插件处理。
             server.start();
@@ -660,10 +698,14 @@ public class XmlRpcInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorCallsPythonServerOverHttps() throws Exception {
         // Python 用测试服务端证书提供 HTTPS，Meteor 使用同一 CA 校验证书。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        ConnectorSettings sender = configuration.connector("http").option("httpVersion", 1);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        ConnectorSettings sender = configuration.connector("http") //
+                .option("httpVersion", 1);
         XmlRpcTlsUtils.clientTls(sender, 1, null);
-        sender.protocol("xmlrpc").addressScheme("https").contextPath("/rpc");
+        sender.protocol("xmlrpc") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
         String certificate = this.pemFile("server-chain.pem");
         String privateKey = this.pemFile("server-key.pem");
         try (XmlRpcPeerProcess peer = XmlRpcPeerProcess.start("server", certificate, privateKey); //

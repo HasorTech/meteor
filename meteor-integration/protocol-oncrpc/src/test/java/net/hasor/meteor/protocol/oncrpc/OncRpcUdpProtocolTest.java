@@ -10,6 +10,7 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.function.ObjLongConsumer;
+import net.hasor.example.protocol.oncrpc.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.annotation.MetMethod;
@@ -153,8 +154,10 @@ public class OncRpcUdpProtocolTest {
     @Test
     public void publicPublisherValidatesUdpServiceContract() throws Exception {
         // 只有传输变化，程序号和过程号仍在正式发布入口检查。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc-udp");
-        configuration.connector("udp").protocol("oncrpc-udp");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc-udp");
+        configuration.connector("udp") //
+                .protocol("oncrpc-udp");
         try (MetContext context = configuration.buildContext()) {
             // 不启动监听就能验证 SPI 提供者参与服务登记。
             MetBindInfo<NativeContract> service = context.publisher().rsfService(NativeContract.class) //
@@ -167,8 +170,10 @@ public class OncRpcUdpProtocolTest {
     @Test
     public void publicPublisherSkipsUnsupportedUdpService() throws Exception {
         // 普通接口缺少 ONC RPC 契约时只拒绝此协议，服务登记仍然保留。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc-udp");
-        configuration.connector("udp").protocol("oncrpc-udp");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc-udp");
+        configuration.connector("udp") //
+                .protocol("oncrpc-udp");
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<Runnable> service = context.publisher().rsfService(Runnable.class) //
                     .protocol("oncrpc-udp").register();
@@ -184,9 +189,12 @@ public class OncRpcUdpProtocolTest {
     @Test
     public void unrelatedServiceSkipsUdpContractValidation() throws Exception {
         // 同一个应用可以保留只通过其他协议发布的普通服务。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc-udp");
-        configuration.connector("udp").protocol("oncrpc-udp");
-        configuration.connector("tcp").protocol("rsf");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc-udp");
+        configuration.connector("udp") //
+                .protocol("oncrpc-udp");
+        configuration.connector("tcp") //
+                .protocol("rsf");
         try (MetContext context = configuration.buildContext()) {
             // 未选择 ONC RPC 的声明不需要补充其程序或过程注解。
             MetBindInfo<Runnable> service = context.publisher().rsfService(Runnable.class) //

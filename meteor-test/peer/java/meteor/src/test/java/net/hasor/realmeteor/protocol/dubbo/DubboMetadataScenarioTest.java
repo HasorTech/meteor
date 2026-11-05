@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.dubbo;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropService;
@@ -27,10 +28,15 @@ public class DubboMetadataScenarioTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void userOptionsTravelAsRequestAndResponseAttachments() throws Exception {
         // 配置双方 Dubbo TCP 能力，客户端不开放监听端口。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("dubbo");
-        incoming.connector("tcp").bind("127.0.0.1", 0).protocol("dubbo");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("dubbo");
-        outgoing.connector("tcp").protocol("dubbo");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("dubbo");
+        incoming.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("dubbo");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("dubbo");
+        outgoing.connector("tcp") //
+                .protocol("dubbo");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();

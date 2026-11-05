@@ -4,6 +4,7 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.protocol.soap.nativepeer;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.ParameterizedClass;
@@ -50,9 +51,12 @@ public class SoapNativeInteropTest {
     @Timeout(value = 60000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void sdkToMeteorSoapEcho() throws Exception {
         // 通过公开 bootstrap 启动 Meteor，并使用测试契约发布 Echo 服务。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("soap").contextPath("/services");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("soap") //
+                .contextPath("/services");
         URL contract = this.getClass().getResource("/protocol/wsdl/echo.wsdl");
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
@@ -75,8 +79,11 @@ public class SoapNativeInteropTest {
     @Timeout(value = 60000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorToSdkSoapEcho() throws Exception {
         // gSOAP 原生服务独立监听端口，Meteor 仅配置出站协议，不持有本地实现。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").protocol("soap").contextPath("/services");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .protocol("soap") //
+                .contextPath("/services");
         URL contract = this.getClass().getResource("/protocol/wsdl/echo.wsdl");
         try (NativeSoapPeer provider = NativeSoapPeer.startExecutable(this.executable, "provider"); //
              MetContext consumer = configuration.buildContext()) {

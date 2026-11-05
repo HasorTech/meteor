@@ -3,6 +3,7 @@
  * Licensed under the Apache License, Version 2.0. See LICENSE.txt.
  */
 package net.hasor.realmeteor.protocol.grpc.python;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.ParameterizedClass;
@@ -44,12 +45,15 @@ public class PythonGrpcSdkVersionCompatibilityTest {
     public void exchangesOrderUsingTheLatestSdkBranch() throws Exception {
         // 通道从公开 bootstrap 创建，当前发行版与对应生成器一起准备。
         boolean sdkConsumer = StringUtils.equals(this.direction, "SDK-to-Meteor");
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc");
-        var connector = configuration.connector("http").option("httpVersion", 2);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        var connector = configuration.connector("http") //
+                .option("httpVersion", 2);
         if (sdkConsumer) {
             connector.bind(ContainerProcess.runnerHost(), 0);
         }
-        connector.protocol("grpc").contextPath("/");
+        connector.protocol("grpc") //
+                .contextPath("/");
         GrpcProtoResource resource = new GrpcProtoResource(this.getClass().getResource("/protocol/proto/order.proto"));
 
         if (sdkConsumer) {

@@ -13,8 +13,9 @@ public class MetConfigurationInputTest {
     @Test
     public void gettersCanInspectIncompleteInputsWithoutResolvingThem() {
         // 配置正在编辑，地址不可解析、默认协议未挂载、端点尚无协议。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.setBindAddress("[invalid-ipv6]").setDefaultProtocol("missing");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setBindAddress("[invalid-ipv6]") //
+                .setDefaultProtocol("missing");
         MetConfiguration.ConnectorSettings endpoint = configuration.connector("TCP");
 
         // getter 只返回输入，不解析地址、不发现 SPI，也不校验完整端点。
@@ -32,9 +33,12 @@ public class MetConfigurationInputTest {
     public void gettersExposeProtocolInputsWithoutApplyingBuildDefaults() {
         // 协议挂载保留用户配置的名称、别名、选项及上下文路径。
         MetConfiguration configuration = new MetConfiguration();
-        MetConfiguration.ConnectorSettings endpoint = configuration.connector("HTTP").bind("localhost", 8080);
+        MetConfiguration.ConnectorSettings endpoint = configuration.connector("HTTP") //
+                .bind("localhost", 8080);
         MetConfiguration.ProtocolSettings protocol = endpoint.protocol("CUSTOM");
-        protocol.addressScheme("PUBLIC").contextPath("/api").option("serializeType", "Json");
+        protocol.addressScheme("PUBLIC") //
+                .contextPath("/api") //
+                .option("serializeType", "Json");
 
         // 读取未知 SPI 的输入不触发构建；全局默认选择仍未填写。
         assertEquals("localhost", endpoint.getHost());

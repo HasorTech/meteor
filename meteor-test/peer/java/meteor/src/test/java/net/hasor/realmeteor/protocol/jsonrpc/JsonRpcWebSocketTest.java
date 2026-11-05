@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.jsonrpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -40,14 +41,23 @@ public class JsonRpcWebSocketTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void http1UpgradeCarriesPublishedService() throws Exception {
         // 在 HTTP/1 端点上声明升级挂载，两端使用相同 context 与公开地址别名。
-        MetConfiguration incoming = new MetConfiguration();
-        ConnectorSettings listener = incoming.connector("http").bind("127.0.0.1", 0);
-        listener.protocol("jsonrpc").addressScheme("ws").contextPath("/ws") //
-                .option("upgrade", "websocket").option("httpVersion", 1);
-        MetConfiguration outgoing = new MetConfiguration().setRequestTimeout(5000);
-        ConnectorSettings sender = outgoing.connector("http").option("httpVersion", 1);
-        sender.protocol("jsonrpc").addressScheme("ws").contextPath("/ws") //
-                .option("upgrade", "websocket").option("httpVersion", 1);
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        ConnectorSettings listener = incoming.connector("http") //
+                .bind("127.0.0.1", 0);
+        listener.protocol("jsonrpc") //
+                .addressScheme("ws") //
+                .contextPath("/ws") //
+                .option("upgrade", "websocket") //
+                .option("httpVersion", 1);
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setRequestTimeout(5000);
+        ConnectorSettings sender = outgoing.connector("http") //
+                .option("httpVersion", 1);
+        sender.protocol("jsonrpc") //
+                .addressScheme("ws") //
+                .contextPath("/ws") //
+                .option("upgrade", "websocket") //
+                .option("httpVersion", 1);
 
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
@@ -69,14 +79,23 @@ public class JsonRpcWebSocketTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void http2ExtendedConnectCarriesPublishedService() throws Exception {
         // 在 HTTP/2 端点上声明升级挂载，两端使用相同 context 与公开地址别名。
-        MetConfiguration incoming = new MetConfiguration();
-        ConnectorSettings listener = incoming.connector("http").bind("127.0.0.1", 0);
-        listener.protocol("jsonrpc").addressScheme("ws").contextPath("/ws") //
-                .option("upgrade", "websocket").option("httpVersion", 2);
-        MetConfiguration outgoing = new MetConfiguration().setRequestTimeout(5000);
-        ConnectorSettings sender = outgoing.connector("http").option("httpVersion", 2);
-        sender.protocol("jsonrpc").addressScheme("ws").contextPath("/ws") //
-                .option("upgrade", "websocket").option("httpVersion", 2);
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        ConnectorSettings listener = incoming.connector("http") //
+                .bind("127.0.0.1", 0);
+        listener.protocol("jsonrpc") //
+                .addressScheme("ws") //
+                .contextPath("/ws") //
+                .option("upgrade", "websocket") //
+                .option("httpVersion", 2);
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setRequestTimeout(5000);
+        ConnectorSettings sender = outgoing.connector("http") //
+                .option("httpVersion", 2);
+        sender.protocol("jsonrpc") //
+                .addressScheme("ws") //
+                .contextPath("/ws") //
+                .option("upgrade", "websocket") //
+                .option("httpVersion", 2);
 
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
@@ -98,16 +117,25 @@ public class JsonRpcWebSocketTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void wssHttp1AuthenticatesServer() throws Exception {
         // 在 HTTP/1 端点上声明升级挂载，两端使用相同 context 与公开地址别名。
-        MetConfiguration incoming = new MetConfiguration();
-        ConnectorSettings listener = incoming.connector("http").bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        ConnectorSettings listener = incoming.connector("http") //
+                .bind("127.0.0.1", 0);
         JsonRpcTlsUtils.serverTls(listener, 1, "NONE");
-        listener.protocol("jsonrpc").addressScheme("wss").contextPath("/ws") //
-                .option("upgrade", "websocket").option("httpVersion", 1);
-        MetConfiguration outgoing = new MetConfiguration().setRequestTimeout(5000);
-        ConnectorSettings sender = outgoing.connector("http").option("httpVersion", 1);
+        listener.protocol("jsonrpc") //
+                .addressScheme("wss") //
+                .contextPath("/ws") //
+                .option("upgrade", "websocket") //
+                .option("httpVersion", 1);
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setRequestTimeout(5000);
+        ConnectorSettings sender = outgoing.connector("http") //
+                .option("httpVersion", 1);
         JsonRpcTlsUtils.clientTls(sender, 1, null);
-        sender.protocol("jsonrpc").addressScheme("wss").contextPath("/ws") //
-                .option("upgrade", "websocket").option("httpVersion", 1);
+        sender.protocol("jsonrpc") //
+                .addressScheme("wss") //
+                .contextPath("/ws") //
+                .option("upgrade", "websocket") //
+                .option("httpVersion", 1);
 
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
@@ -129,16 +157,25 @@ public class JsonRpcWebSocketTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void wssHttp2NegotiatesAlpn() throws Exception {
         // 在 HTTP/2 端点上声明升级挂载，两端使用相同 context 与公开地址别名。
-        MetConfiguration incoming = new MetConfiguration();
-        ConnectorSettings listener = incoming.connector("http").bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        ConnectorSettings listener = incoming.connector("http") //
+                .bind("127.0.0.1", 0);
         JsonRpcTlsUtils.serverTls(listener, 2, "NONE");
-        listener.protocol("jsonrpc").addressScheme("wss").contextPath("/ws") //
-                .option("upgrade", "websocket").option("httpVersion", 2);
-        MetConfiguration outgoing = new MetConfiguration().setRequestTimeout(5000);
-        ConnectorSettings sender = outgoing.connector("http").option("httpVersion", 2);
+        listener.protocol("jsonrpc") //
+                .addressScheme("wss") //
+                .contextPath("/ws") //
+                .option("upgrade", "websocket") //
+                .option("httpVersion", 2);
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setRequestTimeout(5000);
+        ConnectorSettings sender = outgoing.connector("http") //
+                .option("httpVersion", 2);
         JsonRpcTlsUtils.clientTls(sender, 2, null);
-        sender.protocol("jsonrpc").addressScheme("wss").contextPath("/ws") //
-                .option("upgrade", "websocket").option("httpVersion", 2);
+        sender.protocol("jsonrpc") //
+                .addressScheme("wss") //
+                .contextPath("/ws") //
+                .option("upgrade", "websocket") //
+                .option("httpVersion", 2);
 
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
@@ -160,16 +197,25 @@ public class JsonRpcWebSocketTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void wssHttp1AuthenticatesBothPeers() throws Exception {
         // 在 HTTP/1 端点上声明升级挂载，两端使用相同 context 与公开地址别名。
-        MetConfiguration incoming = new MetConfiguration();
-        ConnectorSettings listener = incoming.connector("http").bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        ConnectorSettings listener = incoming.connector("http") //
+                .bind("127.0.0.1", 0);
         JsonRpcTlsUtils.serverTls(listener, 1, "REQUIRE");
-        listener.protocol("jsonrpc").addressScheme("wss").contextPath("/ws") //
-                .option("upgrade", "websocket").option("httpVersion", 1);
-        MetConfiguration outgoing = new MetConfiguration().setRequestTimeout(5000);
-        ConnectorSettings sender = outgoing.connector("http").option("httpVersion", 1);
+        listener.protocol("jsonrpc") //
+                .addressScheme("wss") //
+                .contextPath("/ws") //
+                .option("upgrade", "websocket") //
+                .option("httpVersion", 1);
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setRequestTimeout(5000);
+        ConnectorSettings sender = outgoing.connector("http") //
+                .option("httpVersion", 1);
         JsonRpcTlsUtils.clientTls(sender, 1, "client");
-        sender.protocol("jsonrpc").addressScheme("wss").contextPath("/ws") //
-                .option("upgrade", "websocket").option("httpVersion", 1);
+        sender.protocol("jsonrpc") //
+                .addressScheme("wss") //
+                .contextPath("/ws") //
+                .option("upgrade", "websocket") //
+                .option("httpVersion", 1);
 
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
@@ -191,16 +237,25 @@ public class JsonRpcWebSocketTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void wssHttp2AuthenticatesBothPeers() throws Exception {
         // 在 HTTP/2 端点上声明升级挂载，两端使用相同 context 与公开地址别名。
-        MetConfiguration incoming = new MetConfiguration();
-        ConnectorSettings listener = incoming.connector("http").bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        ConnectorSettings listener = incoming.connector("http") //
+                .bind("127.0.0.1", 0);
         JsonRpcTlsUtils.serverTls(listener, 2, "REQUIRE");
-        listener.protocol("jsonrpc").addressScheme("wss").contextPath("/ws") //
-                .option("upgrade", "websocket").option("httpVersion", 2);
-        MetConfiguration outgoing = new MetConfiguration().setRequestTimeout(5000);
-        ConnectorSettings sender = outgoing.connector("http").option("httpVersion", 2);
+        listener.protocol("jsonrpc") //
+                .addressScheme("wss") //
+                .contextPath("/ws") //
+                .option("upgrade", "websocket") //
+                .option("httpVersion", 2);
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setRequestTimeout(5000);
+        ConnectorSettings sender = outgoing.connector("http") //
+                .option("httpVersion", 2);
         JsonRpcTlsUtils.clientTls(sender, 2, "client");
-        sender.protocol("jsonrpc").addressScheme("wss").contextPath("/ws") //
-                .option("upgrade", "websocket").option("httpVersion", 2);
+        sender.protocol("jsonrpc") //
+                .addressScheme("wss") //
+                .contextPath("/ws") //
+                .option("upgrade", "websocket") //
+                .option("httpVersion", 2);
 
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
@@ -222,15 +277,27 @@ public class JsonRpcWebSocketTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void http1WebSocketAndOrdinaryHttpShareOnePort() throws Exception {
         // 一个 JSON-RPC 挂载同时声明普通 HTTP 和 WebSocket 所使用的目录。
-        MetConfiguration incoming = new MetConfiguration();
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("jsonrpc") //
-                .contextPath("/rpc").addContextPath("/ws").option("upgrade", "websocket");
-        MetConfiguration ordinaryConfig = new MetConfiguration().setRequestTimeout(5000);
-        ordinaryConfig.connector("http").option("httpVersion", 1) //
-                .protocol("jsonrpc").contextPath("/rpc");
-        MetConfiguration upgradedConfig = new MetConfiguration().setRequestTimeout(5000);
-        upgradedConfig.connector("http").option("httpVersion", 1).protocol("jsonrpc") //
-                .contextPath("/ws").option("upgrade", "websocket").option("httpVersion", 1);
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("jsonrpc") //
+                .contextPath("/rpc") //
+                .addContextPath("/ws") //
+                .option("upgrade", "websocket");
+        MetConfiguration ordinaryConfig = TestConfigurationUtils.create() //
+                .setRequestTimeout(5000);
+        ordinaryConfig.connector("http") //
+                .option("httpVersion", 1) //
+                .protocol("jsonrpc") //
+                .contextPath("/rpc");
+        MetConfiguration upgradedConfig = TestConfigurationUtils.create() //
+                .setRequestTimeout(5000);
+        upgradedConfig.connector("http") //
+                .option("httpVersion", 1) //
+                .protocol("jsonrpc") //
+                .contextPath("/ws") //
+                .option("upgrade", "websocket") //
+                .option("httpVersion", 1);
         try (MetContext server = incoming.buildContext(); //
              MetContext ordinaryClient = ordinaryConfig.buildContext(); //
              MetContext upgradedClient = upgradedConfig.buildContext()) {
@@ -259,15 +326,27 @@ public class JsonRpcWebSocketTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void http2WebSocketAndOrdinaryHttpShareOnePort() throws Exception {
         // 一个 JSON-RPC 挂载同时声明普通 HTTP 和 WebSocket 所使用的目录。
-        MetConfiguration incoming = new MetConfiguration();
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("jsonrpc") //
-                .contextPath("/rpc").addContextPath("/ws").option("upgrade", "websocket");
-        MetConfiguration ordinaryConfig = new MetConfiguration().setRequestTimeout(5000);
-        ordinaryConfig.connector("http").option("httpVersion", 2) //
-                .protocol("jsonrpc").contextPath("/rpc");
-        MetConfiguration upgradedConfig = new MetConfiguration().setRequestTimeout(5000);
-        upgradedConfig.connector("http").option("httpVersion", 2).protocol("jsonrpc") //
-                .contextPath("/ws").option("upgrade", "websocket").option("httpVersion", 2);
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("jsonrpc") //
+                .contextPath("/rpc") //
+                .addContextPath("/ws") //
+                .option("upgrade", "websocket");
+        MetConfiguration ordinaryConfig = TestConfigurationUtils.create() //
+                .setRequestTimeout(5000);
+        ordinaryConfig.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("jsonrpc") //
+                .contextPath("/rpc");
+        MetConfiguration upgradedConfig = TestConfigurationUtils.create() //
+                .setRequestTimeout(5000);
+        upgradedConfig.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("jsonrpc") //
+                .contextPath("/ws") //
+                .option("upgrade", "websocket") //
+                .option("httpVersion", 2);
         try (MetContext server = incoming.buildContext(); //
              MetContext ordinaryClient = ordinaryConfig.buildContext(); //
              MetContext upgradedClient = upgradedConfig.buildContext()) {
@@ -296,10 +375,14 @@ public class JsonRpcWebSocketTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void independentJdkWebSocketAuthenticatesTlsServer() throws Exception {
         // 独立 WebSocket 客户端只发送标准 JSON-RPC 文本，不依赖 Meteor 客户端实现。
-        MetConfiguration configuration = new MetConfiguration();
-        ConnectorSettings listener = configuration.connector("http").bind("127.0.0.1", 0);
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        ConnectorSettings listener = configuration.connector("http") //
+                .bind("127.0.0.1", 0);
         JsonRpcTlsUtils.serverTls(listener, 1, "NONE");
-        listener.protocol("jsonrpc").addressScheme("wss").contextPath("/ws").option("upgrade", "websocket");
+        listener.protocol("jsonrpc") //
+                .addressScheme("wss") //
+                .contextPath("/ws") //
+                .option("upgrade", "websocket");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
@@ -329,12 +412,20 @@ public class JsonRpcWebSocketTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void notificationCallerCompletesWhileTheBusinessIsStillRunning() throws Exception {
         // 业务方法受闩锁控制；消息模式只能等待写出，不能等待业务执行完成。
-        MetConfiguration incoming = new MetConfiguration();
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("jsonrpc") //
-                .addressScheme("ws").contextPath("/ws").option("upgrade", "websocket");
-        MetConfiguration outgoing = new MetConfiguration().setRequestTimeout(5000);
-        outgoing.connector("http").protocol("jsonrpc") //
-                .addressScheme("ws").contextPath("/ws").option("upgrade", "websocket");
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("jsonrpc") //
+                .addressScheme("ws") //
+                .contextPath("/ws") //
+                .option("upgrade", "websocket");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setRequestTimeout(5000);
+        outgoing.connector("http") //
+                .protocol("jsonrpc") //
+                .addressScheme("ws") //
+                .contextPath("/ws") //
+                .option("upgrade", "websocket");
         JsonRpcCallGate implementation = new JsonRpcCallGate();
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
@@ -365,12 +456,20 @@ public class JsonRpcWebSocketTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void concurrentCallsKeepTheirResponseIdsIsolated() throws Exception {
         // 多个请求复用一个 WS 会话，结果必须按照 ID 对应到自己的 Future。
-        MetConfiguration incoming = new MetConfiguration();
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("jsonrpc") //
-                .addressScheme("ws").contextPath("/ws").option("upgrade", "websocket");
-        MetConfiguration outgoing = new MetConfiguration().setRequestTimeout(5000);
-        outgoing.connector("http").protocol("jsonrpc") //
-                .addressScheme("ws").contextPath("/ws").option("upgrade", "websocket");
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("jsonrpc") //
+                .addressScheme("ws") //
+                .contextPath("/ws") //
+                .option("upgrade", "websocket");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setRequestTimeout(5000);
+        outgoing.connector("http") //
+                .protocol("jsonrpc") //
+                .addressScheme("ws") //
+                .contextPath("/ws") //
+                .option("upgrade", "websocket");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();
@@ -398,12 +497,21 @@ public class JsonRpcWebSocketTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void cancellingOneCallLeavesTheWebSocketUsable() throws Exception {
         // 为阻塞调用和后续调用分别保留工作线程，避免业务队列串行掩盖连接隔离。
-        MetConfiguration incoming = new MetConfiguration().setQueueMinPoolSize(2);
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("jsonrpc") //
-                .addressScheme("ws").contextPath("/ws").option("upgrade", "websocket");
-        MetConfiguration outgoing = new MetConfiguration().setRequestTimeout(10000);
-        outgoing.connector("http").protocol("jsonrpc") //
-                .addressScheme("ws").contextPath("/ws").option("upgrade", "websocket");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setQueueMinPoolSize(2);
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("jsonrpc") //
+                .addressScheme("ws") //
+                .contextPath("/ws") //
+                .option("upgrade", "websocket");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        outgoing.connector("http") //
+                .protocol("jsonrpc") //
+                .addressScheme("ws") //
+                .contextPath("/ws") //
+                .option("upgrade", "websocket");
         JsonRpcCallGate implementation = new JsonRpcCallGate();
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
@@ -434,12 +542,20 @@ public class JsonRpcWebSocketTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void closingTheServerFailsPendingCallsWithoutWaitingForTimeout() throws Exception {
         // 关闭时一个网络调用仍在业务闩锁内，调用方应直接感知连接终止。
-        MetConfiguration incoming = new MetConfiguration();
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("jsonrpc") //
-                .addressScheme("ws").contextPath("/ws").option("upgrade", "websocket");
-        MetConfiguration outgoing = new MetConfiguration().setRequestTimeout(10000);
-        outgoing.connector("http").protocol("jsonrpc") //
-                .addressScheme("ws").contextPath("/ws").option("upgrade", "websocket");
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("jsonrpc") //
+                .addressScheme("ws") //
+                .contextPath("/ws") //
+                .option("upgrade", "websocket");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        outgoing.connector("http") //
+                .protocol("jsonrpc") //
+                .addressScheme("ws") //
+                .contextPath("/ws") //
+                .option("upgrade", "websocket");
         JsonRpcCallGate implementation = new JsonRpcCallGate();
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {

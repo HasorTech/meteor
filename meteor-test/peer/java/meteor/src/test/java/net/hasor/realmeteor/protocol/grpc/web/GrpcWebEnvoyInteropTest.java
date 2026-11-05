@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc.web;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -257,9 +258,11 @@ public class GrpcWebEnvoyInteropTest {
     }
 
     private MetConfiguration configuration(boolean text) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(5000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(5000);
         configuration.setDefaultProtocol("grpc-web");
-        configuration.connector("http").protocol("grpc-web") //
+        configuration.connector("http") //
+                .protocol("grpc-web") //
                 .contextPath("/web") //
                 .option("webText", text) //
                 .option("streamBody", true);

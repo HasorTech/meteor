@@ -17,6 +17,7 @@ import net.hasor.example.contract.types.TypeEchoServiceImpl;
 import net.hasor.example.contract.types.TypeValue;
 import net.hasor.example.contract.types.TypeValueVectors;
 import net.hasor.meteor.MetContext;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
@@ -54,9 +55,14 @@ public class BrowserGrpcWebTypeScenarioTest {
         // 浏览器先建立独立页面 origin，公开配置只允许该来源，不绕过 CORS 或伪造浏览器服务端。
         try (TypeNodePeerProcess peer = TypeNodePeerProcess.browser()) {
             String origin = peer.awaitReady().required("origin").textValue();
-            MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-            configuration.connector("http").bind(ContainerProcess.runnerHost(), 0).option("httpVersion", 1) //
-                    .protocol("grpc-web").contextPath("/types").option("corsOrigins", origin);
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setRequestTimeout(10000);
+            configuration.connector("http") //
+                    .bind(ContainerProcess.runnerHost(), 0) //
+                    .option("httpVersion", 1) //
+                    .protocol("grpc-web") //
+                    .contextPath("/types") //
+                    .option("corsOrigins", origin);
             GrpcProtoResource resource = new GrpcProtoResource(getClass().getResource("/protocol/proto/types/types.proto"));
             try (MetContext server = configuration.buildContext()) {
                 // 服务容器启动后正常发布接口和协议资源，所有业务流量经过 Caller/Dispatcher 链路。

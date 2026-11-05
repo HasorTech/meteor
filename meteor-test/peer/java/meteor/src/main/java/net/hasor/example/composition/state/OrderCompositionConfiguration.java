@@ -13,6 +13,7 @@ import net.hasor.example.matrix.OrderProtocol;
 import net.hasor.example.OrderDemoService;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetPublisher.ConfigurationBuilder;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 
@@ -22,7 +23,8 @@ public final class OrderCompositionConfiguration {
     }
 
     public static MetConfiguration provider(OrderProtocol write, OrderProtocol read, boolean discovery) {
-        MetConfiguration configuration = new MetConfiguration().setUnitName(DirectRpcExample.UNIT_NAME);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setUnitName(DirectRpcExample.UNIT_NAME);
         ConnectorSettings http = null;
 
         // HTTP 协议共享一个监听端点，通过各自 context 分流；TCP 协议使用独立端点。
@@ -30,18 +32,22 @@ public final class OrderCompositionConfiguration {
             ConnectorSettings connector;
             if (isHttp(protocol)) {
                 if (http == null) {
-                    http = configuration.connector("http").bind("127.0.0.1", 0);
+                    http = configuration.connector("http") //
+                            .bind("127.0.0.1", 0);
                 }
                 connector = http;
             } else {
-                connector = configuration.connector("tcp").bind("127.0.0.1", 0);
+                connector = configuration.connector("tcp") //
+                        .bind("127.0.0.1", 0);
             }
             protocol.mount(connector);
         }
 
         // 注册扩展的内部管理服务仅使用 RSF，不向业务 HTTP 协议发布管理接口。
         if (discovery && write != OrderProtocol.RSF && read != OrderProtocol.RSF) {
-            configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+            configuration.connector("tcp") //
+                    .bind("127.0.0.1", 0) //
+                    .protocol("rsf");
         }
         return configuration;
     }
@@ -49,7 +55,8 @@ public final class OrderCompositionConfiguration {
     public static MetConfiguration consumer(OrderProtocol protocol, boolean discovery) {
         MetConfiguration configuration = protocol.consumerConfiguration();
         if (discovery && protocol != OrderProtocol.RSF) {
-            configuration.connector("tcp").protocol("rsf");
+            configuration.connector("tcp") //
+                    .protocol("rsf");
         }
         return configuration;
     }

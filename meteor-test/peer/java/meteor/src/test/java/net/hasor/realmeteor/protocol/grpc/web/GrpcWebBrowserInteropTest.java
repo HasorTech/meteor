@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc.web;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Flow;
@@ -36,9 +37,12 @@ public class GrpcWebBrowserInteropTest {
         // 浏览器先创建独立页面 origin，协议挂载仅允许该来源。
         try (GrpcWebBrowserProcess peer = GrpcWebBrowserProcess.start()) {
             String origin = peer.awaitOrigin();
-            MetConfiguration configuration = new MetConfiguration().setRequestTimeout(5000);
-            configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                    .protocol("grpc-web").contextPath("/web") //
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setRequestTimeout(5000);
+            configuration.connector("http") //
+                    .bind(ContainerProcess.runnerHost(), 0) //
+                    .protocol("grpc-web") //
+                    .contextPath("/web") //
                     .option("streamBody", true) //
                     .option("corsOrigins", origin) //
                     .option("corsHeaders", "content-type,x-grpc-web,x-user-agent,custom-header,grpc-timeout");
@@ -67,9 +71,12 @@ public class GrpcWebBrowserInteropTest {
         // 浏览器先创建独立页面 origin，协议挂载仅允许该来源。
         try (GrpcWebBrowserProcess peer = GrpcWebBrowserProcess.start()) {
             String origin = peer.awaitOrigin();
-            MetConfiguration configuration = new MetConfiguration().setRequestTimeout(5000);
-            configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                    .protocol("grpc-web").contextPath("/web") //
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setRequestTimeout(5000);
+            configuration.connector("http") //
+                    .bind(ContainerProcess.runnerHost(), 0) //
+                    .protocol("grpc-web") //
+                    .contextPath("/web") //
                     .option("streamBody", true) //
                     .option("corsOrigins", origin) //
                     .option("corsHeaders", "content-type,x-grpc-web,x-user-agent,custom-header,grpc-timeout");
@@ -97,9 +104,12 @@ public class GrpcWebBrowserInteropTest {
         // 浏览器先创建独立页面 origin，协议挂载仅允许该来源。
         try (GrpcWebBrowserProcess peer = GrpcWebBrowserProcess.start()) {
             String origin = peer.awaitOrigin();
-            MetConfiguration configuration = new MetConfiguration().setRequestTimeout(5000);
-            configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                    .protocol("grpc-web").contextPath("/web") //
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setRequestTimeout(5000);
+            configuration.connector("http") //
+                    .bind(ContainerProcess.runnerHost(), 0) //
+                    .protocol("grpc-web") //
+                    .contextPath("/web") //
                     .option("streamBody", true) //
                     .option("corsOrigins", origin) //
                     .option("corsHeaders", "content-type,x-grpc-web,x-user-agent,custom-header,grpc-timeout");
@@ -133,9 +143,12 @@ public class GrpcWebBrowserInteropTest {
         // 浏览器先创建独立页面 origin，协议挂载仅允许该来源。
         try (GrpcWebBrowserProcess peer = GrpcWebBrowserProcess.start()) {
             String origin = peer.awaitOrigin();
-            MetConfiguration configuration = new MetConfiguration().setRequestTimeout(5000);
-            configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                    .protocol("grpc-web").contextPath("/web") //
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setRequestTimeout(5000);
+            configuration.connector("http") //
+                    .bind(ContainerProcess.runnerHost(), 0) //
+                    .protocol("grpc-web") //
+                    .contextPath("/web") //
                     .option("streamBody", true) //
                     .option("corsOrigins", origin) //
                     .option("corsHeaders", "content-type,x-grpc-web,x-user-agent,custom-header,grpc-timeout");
@@ -163,9 +176,12 @@ public class GrpcWebBrowserInteropTest {
         // 浏览器先创建独立页面 origin，协议挂载仅允许该来源。
         try (GrpcWebBrowserProcess peer = GrpcWebBrowserProcess.start()) {
             String origin = peer.awaitOrigin();
-            MetConfiguration configuration = new MetConfiguration().setRequestTimeout(5000);
-            configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                    .protocol("grpc-web").contextPath("/web") //
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setRequestTimeout(5000);
+            configuration.connector("http") //
+                    .bind(ContainerProcess.runnerHost(), 0) //
+                    .protocol("grpc-web") //
+                    .contextPath("/web") //
                     .option("streamBody", true) //
                     .option("corsOrigins", origin) //
                     .option("corsHeaders", "content-type,x-grpc-web,x-user-agent,custom-header,grpc-timeout");
@@ -195,9 +211,12 @@ public class GrpcWebBrowserInteropTest {
         // 浏览器先创建独立页面 origin，协议挂载仅允许该来源。
         try (GrpcWebBrowserProcess peer = GrpcWebBrowserProcess.start()) {
             String origin = peer.awaitOrigin();
-            MetConfiguration configuration = new MetConfiguration().setRequestTimeout(5000);
-            configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                    .protocol("grpc-web").contextPath("/web") //
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setRequestTimeout(5000);
+            configuration.connector("http") //
+                    .bind(ContainerProcess.runnerHost(), 0) //
+                    .protocol("grpc-web") //
+                    .contextPath("/web") //
                     .option("streamBody", true) //
                     .option("corsOrigins", origin) //
                     .option("corsCredentials", true) //
@@ -227,9 +246,12 @@ public class GrpcWebBrowserInteropTest {
         // 启动真实浏览器，制造跨域请求与严格配置之间的冲突。
         try (GrpcWebBrowserProcess peer = GrpcWebBrowserProcess.start()) {
             String origin = peer.awaitOrigin();
-            MetConfiguration configuration = new MetConfiguration().setRequestTimeout(5000);
-            configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                    .protocol("grpc-web").contextPath("/web") //
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setRequestTimeout(5000);
+            configuration.connector("http") //
+                    .bind(ContainerProcess.runnerHost(), 0) //
+                    .protocol("grpc-web") //
+                    .contextPath("/web") //
                     .option("streamBody", true) //
                     .option("corsOrigins", "http://127.0.0.1:1");
             AtomicInteger calls = new AtomicInteger();
@@ -266,9 +288,12 @@ public class GrpcWebBrowserInteropTest {
         // 启动真实浏览器，制造跨域请求与严格配置之间的冲突。
         try (GrpcWebBrowserProcess peer = GrpcWebBrowserProcess.start()) {
             String origin = peer.awaitOrigin();
-            MetConfiguration configuration = new MetConfiguration().setRequestTimeout(5000);
-            configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                    .protocol("grpc-web").contextPath("/web") //
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setRequestTimeout(5000);
+            configuration.connector("http") //
+                    .bind(ContainerProcess.runnerHost(), 0) //
+                    .protocol("grpc-web") //
+                    .contextPath("/web") //
                     .option("streamBody", true) //
                     .option("corsOrigins", origin) //
                     .option("corsHeaders", "content-type,x-grpc-web,x-user-agent");
@@ -327,10 +352,14 @@ public class GrpcWebBrowserInteropTest {
         };
         try (GrpcWebBrowserProcess peer = GrpcWebBrowserProcess.start()) {
             String origin = peer.awaitOrigin();
-            MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(10000);
-            configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                    .protocol("grpc-web").contextPath("/web") //
-                    .option("streamBody", true).option("corsOrigins", origin);
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setDefaultTimeout(10000);
+            configuration.connector("http") //
+                    .bind(ContainerProcess.runnerHost(), 0) //
+                    .protocol("grpc-web") //
+                    .contextPath("/web") //
+                    .option("streamBody", true) //
+                    .option("corsOrigins", origin);
             try (MetContext server = configuration.buildContext()) {
                 // 真实服务只通过 bootstrap 发布，浏览器使用官方 stream.cancel()。
                 server.start();
@@ -378,11 +407,16 @@ public class GrpcWebBrowserInteropTest {
         try (GrpcWebBrowserProcess peer = GrpcWebBrowserProcess.start("--test-tls")) {
             // 浏览器仅跳过私有测试 CA 的信任检查；TLS 与 ALPN 均走实际传输。
             String origin = peer.awaitOrigin();
-            MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(10000);
-            ConnectorSettings listener = configuration.connector("http").bind(ContainerProcess.runnerHost(), 0);
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setDefaultTimeout(10000);
+            ConnectorSettings listener = configuration.connector("http") //
+                    .bind(ContainerProcess.runnerHost(), 0);
             GrpcWebTlsUtils.serverTls(listener, 2, "NONE");
-            listener.protocol("grpc-web").addressScheme("https").contextPath("/web") //
-                    .option("streamBody", true).option("corsOrigins", origin);
+            listener.protocol("grpc-web") //
+                    .addressScheme("https") //
+                    .contextPath("/web") //
+                    .option("streamBody", true) //
+                    .option("corsOrigins", origin);
             try (MetContext server = configuration.buildContext()) {
                 // 发布后使用官方浏览器客户端调用，测试不向调用传递短期限。
                 server.start();
@@ -432,10 +466,14 @@ public class GrpcWebBrowserInteropTest {
         };
         try (GrpcWebBrowserProcess peer = GrpcWebBrowserProcess.start()) {
             String origin = peer.awaitOrigin();
-            MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(10000);
-            configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                    .protocol("grpc-web").contextPath("/web") //
-                    .option("streamBody", true).option("corsOrigins", origin);
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setDefaultTimeout(10000);
+            configuration.connector("http") //
+                    .bind(ContainerProcess.runnerHost(), 0) //
+                    .protocol("grpc-web") //
+                    .contextPath("/web") //
+                    .option("streamBody", true) //
+                    .option("corsOrigins", origin);
             try (MetContext server = configuration.buildContext()) {
                 // 启动后发布流服务，使用真实浏览器网络栈发起有期限的调用。
                 server.start();

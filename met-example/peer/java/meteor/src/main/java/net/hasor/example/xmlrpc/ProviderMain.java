@@ -19,10 +19,13 @@ public final class ProviderMain {
 
     public static void main(String[] arguments) throws Exception {
         // 配置本地 HTTP 端口和协议。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.setUnitName("local");
-        configuration.connector("http").bind("127.0.0.1", 8080) //
-                .protocol("xmlrpc").contextPath("/xmlrpc");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setApplicationName("xmlrpc-order-provider") //
+                .setUnitName("local");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 8080) //
+                .protocol("xmlrpc") //
+                .contextPath("/xmlrpc");
 
         try (MetContext context = configuration.buildContext()) {
             // 启动容器并发布订单服务。

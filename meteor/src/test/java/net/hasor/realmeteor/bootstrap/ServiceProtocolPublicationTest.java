@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.bootstrap;
+import net.hasor.example.bootstrap.TestConfigurationUtils;
 import net.hasor.example.connector.protocol.HttpEchoService;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
@@ -19,12 +20,17 @@ public class ServiceProtocolPublicationTest {
     @Test
     public void rejectingHttpPublicationPreservesAnotherProtocolsRealRpc() throws Exception {
         // HTTP 适配拒绝当前服务，应用同时配置可接受该服务的 RSF 监听。
-        MetConfiguration serverConfiguration = new MetConfiguration();
-        serverConfiguration.connector("http").protocol("httpa") //
-                .contextPath("/orders").option("rejectService", true);
-        serverConfiguration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        MetConfiguration clientConfiguration = new MetConfiguration();
-        clientConfiguration.connector("tcp").protocol("rsf");
+        MetConfiguration serverConfiguration = TestConfigurationUtils.create();
+        serverConfiguration.connector("http") //
+                .protocol("httpa") //
+                .contextPath("/orders") //
+                .option("rejectService", true);
+        serverConfiguration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        MetConfiguration clientConfiguration = TestConfigurationUtils.create();
+        clientConfiguration.connector("tcp") //
+                .protocol("rsf");
         try (MetContext server = serverConfiguration.buildContext(); //
              MetContext client = clientConfiguration.buildContext()) {
             MetBindInfo<HttpEchoService> provider = server.publisher() //
@@ -47,9 +53,11 @@ public class ServiceProtocolPublicationTest {
     @Test
     public void allProtocolEndpointsMayRejectWithoutRemovingTheLocalImplementation() throws Exception {
         // 当前应用唯一的网络协议拒绝服务，本地实现仍是有效的容器注册。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("http").protocol("httpa") //
-                .contextPath("/orders").option("rejectService", true);
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("http") //
+                .protocol("httpa") //
+                .contextPath("/orders") //
+                .option("rejectService", true);
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<HttpEchoService> service = context.publisher() //
                     .rsfService(HttpEchoService.class, value -> "local:" + value) //
@@ -69,10 +77,12 @@ public class ServiceProtocolPublicationTest {
     @Test
     public void validationFailureRollsBackTheAttemptAndAllowsCorrectedRepublication() throws Exception {
         // 第一协议先准备成功，第二协议抛异常，区别于正常返回 null 的端点拒绝。
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         MetConfiguration.ConnectorSettings http = configuration.connector("http");
-        http.protocol("httpb").contextPath("/other");
-        http.protocol("httpa").option("failService", true);
+        http.protocol("httpb") //
+                .contextPath("/other");
+        http.protocol("httpa") //
+                .option("failService", true);
         try (MetContext context = configuration.buildContext()) {
             MetPublisher.ConfigurationBuilder<HttpEchoService> publication = context.publisher() //
                     .rsfService(HttpEchoService.class, value -> "corrected:" + value) //

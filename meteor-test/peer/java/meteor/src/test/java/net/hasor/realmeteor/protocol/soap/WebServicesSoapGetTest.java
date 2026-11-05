@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -34,9 +35,11 @@ public class WebServicesSoapGetTest {
     public void meteorClientUsesTheAnnotatedGetOperation() throws Exception {
         // 客户端与服务端声明相同的只读接口，SOAP 1.2 自动选用 GET 绑定。
         MetConfiguration serverConfig = this.configuration("1.2");
-        MetConfiguration clientConfig = new MetConfiguration();
-        clientConfig.connector("http").protocol("soap") //
-                .contextPath("/services").option("soapVersion", "1.2");
+        MetConfiguration clientConfig = TestConfigurationUtils.create();
+        clientConfig.connector("http") //
+                .protocol("soap") //
+                .contextPath("/services") //
+                .option("soapVersion", "1.2");
         SoapStatusServiceImpl implementation = new SoapStatusServiceImpl();
         try (MetContext server = serverConfig.buildContext(); //
              MetContext client = clientConfig.buildContext()) {
@@ -207,9 +210,13 @@ public class WebServicesSoapGetTest {
     }
 
     private MetConfiguration configuration(String version) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("soap").contextPath("/services").option("soapVersion", version);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("soap") //
+                .contextPath("/services") //
+                .option("soapVersion", version);
         return configuration;
     }
 

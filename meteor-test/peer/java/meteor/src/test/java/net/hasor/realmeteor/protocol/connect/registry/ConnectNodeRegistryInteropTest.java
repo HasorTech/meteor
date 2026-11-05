@@ -76,8 +76,11 @@ public class ConnectNodeRegistryInteropTest {
         try (RegistryDiscoveryEnvironment environment = RegistryDiscoveryEnvironment.open(this.backend, home)) {
             RegistryConfiguration registry = environment.configuration();
             MetConfiguration incoming = this.configuration(registry, "connect-node-provider");
-            incoming.connector("http").bind(ContainerProcess.runnerHost(), 0).protocol("connect") //
-                    .addressScheme("http").contextPath("/connect");
+            incoming.connector("http") //
+                    .bind(ContainerProcess.runnerHost(), 0) //
+                    .protocol("connect") //
+                    .addressScheme("http") //
+                    .contextPath("/connect");
             try (MetContext provider = incoming.buildContext()) {
                 provider.start();
                 MetBindInfo<OrderDemoService> service = provider.publisher() //
@@ -110,8 +113,11 @@ public class ConnectNodeRegistryInteropTest {
         try (RegistryDiscoveryEnvironment environment = RegistryDiscoveryEnvironment.open(this.backend, home)) {
             RegistryConfiguration registry = environment.configuration();
             MetConfiguration incoming = this.configuration(registry, "connect-node-provider");
-            incoming.connector("http").bind(ContainerProcess.runnerHost(), 0).protocol("connect") //
-                    .addressScheme("http").contextPath("/connect");
+            incoming.connector("http") //
+                    .bind(ContainerProcess.runnerHost(), 0) //
+                    .protocol("connect") //
+                    .addressScheme("http") //
+                    .contextPath("/connect");
             try (MetContext provider = incoming.buildContext()) {
                 provider.start();
                 MetBindInfo<OrderDemoService> service = provider.publisher() //
@@ -143,8 +149,11 @@ public class ConnectNodeRegistryInteropTest {
         try (RegistryDiscoveryEnvironment environment = RegistryDiscoveryEnvironment.open(this.backend, home)) {
             RegistryConfiguration registry = environment.configuration();
             MetConfiguration incoming = this.configuration(registry, "connect-node-provider");
-            incoming.connector("http").bind(ContainerProcess.runnerHost(), 0).protocol("connect") //
-                    .addressScheme("http").contextPath("/connect");
+            incoming.connector("http") //
+                    .bind(ContainerProcess.runnerHost(), 0) //
+                    .protocol("connect") //
+                    .addressScheme("http") //
+                    .contextPath("/connect");
             try (MetContext provider = incoming.buildContext()) {
                 provider.start();
                 MetBindInfo<OrderDemoService> service = provider.publisher() //
@@ -177,7 +186,10 @@ public class ConnectNodeRegistryInteropTest {
         try (RegistryDiscoveryEnvironment environment = RegistryDiscoveryEnvironment.open(this.backend, home)) {
             RegistryConfiguration registry = environment.configuration();
             MetConfiguration outgoing = this.configuration(registry, "connect-node-consumer");
-            outgoing.connector("http").protocol("connect").addressScheme("http").contextPath("/connect");
+            outgoing.connector("http") //
+                    .protocol("connect") //
+                    .addressScheme("http") //
+                    .contextPath("/connect");
             try (MetContext consumer = outgoing.buildContext()) {
                 consumer.start();
                 MetBindInfo<OrderDemoService> service = consumer.publisher() //
@@ -215,7 +227,10 @@ public class ConnectNodeRegistryInteropTest {
         try (RegistryDiscoveryEnvironment environment = RegistryDiscoveryEnvironment.open(this.backend, home)) {
             RegistryConfiguration registry = environment.configuration();
             MetConfiguration outgoing = this.configuration(registry, "connect-node-consumer");
-            outgoing.connector("http").protocol("connect").addressScheme("http").contextPath("/connect");
+            outgoing.connector("http") //
+                    .protocol("connect") //
+                    .addressScheme("http") //
+                    .contextPath("/connect");
             try (MetContext consumer = outgoing.buildContext()) {
                 consumer.start();
                 MetBindInfo<OrderDemoService> service = consumer.publisher() //
@@ -252,7 +267,10 @@ public class ConnectNodeRegistryInteropTest {
         try (RegistryDiscoveryEnvironment environment = RegistryDiscoveryEnvironment.open(this.backend, home)) {
             RegistryConfiguration registry = environment.configuration();
             MetConfiguration outgoing = this.configuration(registry, "connect-node-consumer");
-            outgoing.connector("http").protocol("connect").addressScheme("http").contextPath("/connect");
+            outgoing.connector("http") //
+                    .protocol("connect") //
+                    .addressScheme("http") //
+                    .contextPath("/connect");
             try (MetContext consumer = outgoing.buildContext()) {
                 consumer.start();
                 MetBindInfo<OrderDemoService> service = consumer.publisher() //
@@ -289,7 +307,10 @@ public class ConnectNodeRegistryInteropTest {
         try (RegistryDiscoveryEnvironment environment = RegistryDiscoveryEnvironment.open(this.backend, home)) {
             RegistryConfiguration registry = environment.configuration();
             MetConfiguration outgoing = this.configuration(registry, "connect-node-withdrawal");
-            outgoing.connector("http").protocol("connect").addressScheme("http").contextPath("/connect");
+            outgoing.connector("http") //
+                    .protocol("connect") //
+                    .addressScheme("http") //
+                    .contextPath("/connect");
             try (MetContext consumer = outgoing.buildContext()) {
                 consumer.start();
                 MetBindInfo<OrderDemoService> service = consumer.publisher() //
@@ -321,7 +342,8 @@ public class ConnectNodeRegistryInteropTest {
         configuration.setApplicationName(applicationName);
         configuration.setDataHome(Files.createDirectory(this.data.resolve(applicationName)));
         configuration.addExtension(registry);
-        configuration.connector("tcp").protocol("rsf"); // 内部管理 RPC 只配置出口，不开放监听。
+        configuration.connector("tcp") //
+                .protocol("rsf"); // 内部管理 RPC 只配置出口，不开放监听。
         return configuration;
     }
 

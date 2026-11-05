@@ -16,6 +16,7 @@ import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetFuture;
 import net.hasor.meteor.address.InterAddress;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.domain.MetTimeoutException;
@@ -271,8 +272,11 @@ public class SocketSecurityCompositionScenarioTest {
     }
 
     private MetConfiguration serverConfiguration(String clientAuth, boolean includePlain) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("rsf").setDefaultTimeout(10000);
-        ConnectorSettings tls = configuration.connector("tcp").bind("127.0.0.1", 0);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("rsf") //
+                .setDefaultTimeout(10000);
+        ConnectorSettings tls = configuration.connector("tcp") //
+                .bind("127.0.0.1", 0);
         tls.option("tlsEnabled", true) //
                 .option("tlsKeyStore", "classpath:/certs/acceptance/server.p12") //
                 .option("tlsKeyStorePassword", "meteor-test") //
@@ -282,14 +286,17 @@ public class SocketSecurityCompositionScenarioTest {
                 .option("tlsProtocols", "TLSv1.3,TLSv1.2");
         this.protocols(tls, true);
         if (includePlain) {
-            ConnectorSettings plain = configuration.connector("tcp").bind("127.0.0.1", 0);
+            ConnectorSettings plain = configuration.connector("tcp") //
+                    .bind("127.0.0.1", 0);
             this.protocols(plain, false);
         }
         return configuration;
     }
 
     private MetConfiguration clientConfiguration(boolean withIdentity, boolean includePlain) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("rsf").setDefaultTimeout(10000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("rsf") //
+                .setDefaultTimeout(10000);
         ConnectorSettings tls = configuration.connector("tcp");
         tls.option("tlsEnabled", true) //
                 .option("tlsTrustStore", "classpath:/certs/acceptance/trust.p12") //
@@ -308,10 +315,14 @@ public class SocketSecurityCompositionScenarioTest {
 
     private void protocols(ConnectorSettings connector, boolean secure) {
         if (secure) {
-            connector.protocol("rsf").addressScheme("rsf-tls");
-            connector.protocol("dubbo").addressScheme("dubbo-tls");
-            connector.protocol("thrift").addressScheme("thrift-tls");
-            connector.protocol("oncrpc").addressScheme("oncrpc-tls");
+            connector.protocol("rsf") //
+                    .addressScheme("rsf-tls");
+            connector.protocol("dubbo") //
+                    .addressScheme("dubbo-tls");
+            connector.protocol("thrift") //
+                    .addressScheme("thrift-tls");
+            connector.protocol("oncrpc") //
+                    .addressScheme("oncrpc-tls");
         } else {
             connector.protocol("rsf");
             connector.protocol("dubbo");

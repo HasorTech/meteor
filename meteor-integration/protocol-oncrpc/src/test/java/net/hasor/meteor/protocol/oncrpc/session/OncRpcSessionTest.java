@@ -17,6 +17,7 @@ import java.util.concurrent.TimeoutException;
 import net.hasor.cobble.concurrent.future.BasicFuture;
 import net.hasor.cobble.concurrent.future.Cancellable;
 import net.hasor.cobble.concurrent.future.Future;
+import net.hasor.example.protocol.oncrpc.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.annotation.MetMethod;
@@ -1176,8 +1177,10 @@ public class OncRpcSessionTest {
 
         private Fixture(boolean datagram, Map<String, String> options) throws Exception {
             // 真实容器只提供服务元信息，不启动监听，不绕过会话执行业务。
-            MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc");
-            configuration.connector("tcp").protocol("oncrpc");
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setDefaultProtocol("oncrpc");
+            configuration.connector("tcp") //
+                    .protocol("oncrpc");
             this.context = configuration.buildContext();
             this.context.publisher().rsfService(Service.class, value -> value) //
                     .bindResource("oncrpc", new OncRpcServiceResource(Service.class)).register();

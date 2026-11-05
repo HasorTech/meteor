@@ -195,8 +195,12 @@ class SpringIntegrationTest {
         // 原生配置 Bean 支持完整 Meteor 配置，不由框架适配器二次覆盖。
         try (AnnotationConfigApplicationContext app = application("unused", null)) {
             app.registerBean(MetConfiguration.class, () -> {
-                MetConfiguration config = new MetConfiguration().setApplicationName("custom");
-                config.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+                MetConfiguration config = new MetConfiguration() //
+                        .setApplicationName("custom");
+                config.setDataHome(this.directory.resolve("custom"));
+                config.connector("tcp") //
+                        .bind("127.0.0.1", 0) //
+                        .protocol("rsf");
                 return config;
             });
             app.refresh();
@@ -331,6 +335,7 @@ class SpringIntegrationTest {
         AnnotationConfigApplicationContext app = new AnnotationConfigApplicationContext();
         Map<String, Object> properties = new LinkedHashMap<>();
         properties.put("meteor.application", name);
+        properties.put("meteor.data-home", this.directory.resolve(name).toString());
         properties.put("meteor.unit", "framework");
         properties.put("meteor.connectors.rsf.host", "127.0.0.1");
         properties.put("meteor.connectors.rsf.port", "0");

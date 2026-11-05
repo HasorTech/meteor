@@ -4,6 +4,7 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.protocol.connect.python;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.ParameterizedClass;
@@ -74,9 +75,12 @@ public class ConnectPythonSdkVersionInteropTest {
 
     private void pythonSdkConsumerSavesAndFindsMeteorOrder() throws Exception {
         // 从公开入口挂载当前协议，使用测试工程独立持有的订单契约。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol(this.protocol);
-        var connector = configuration.connector("http").bind(ContainerProcess.runnerHost(), 0);
-        connector.protocol(this.protocol).contextPath("/");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol(this.protocol);
+        var connector = configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0);
+        connector.protocol(this.protocol) //
+                .contextPath("/");
         var resource = new GrpcProtoResource(this.getClass().getResource("/protocol/proto/order.proto"));
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
@@ -98,8 +102,11 @@ public class ConnectPythonSdkVersionInteropTest {
 
     private void meteorConsumerSavesAndFindsPythonSdkOrder() throws Exception {
         // Python 官方 WSGI 服务自行监听端口，Meteor 仅配置当前协议的出站能力。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol(this.protocol);
-        configuration.connector("http").protocol(this.protocol).contextPath("/");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol(this.protocol);
+        configuration.connector("http") //
+                .protocol(this.protocol) //
+                .contextPath("/");
         var resource = new GrpcProtoResource(this.getClass().getResource("/protocol/proto/order.proto"));
         try (PythonConnectPeerProcess peer = PythonConnectPeerProcess.provider( //
                 this.version, this.protocol, this.messageApi); //

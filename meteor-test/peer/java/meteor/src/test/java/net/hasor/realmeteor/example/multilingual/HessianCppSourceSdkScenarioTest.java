@@ -9,6 +9,7 @@ import java.util.List;
 import net.hasor.example.protocol.hessian.HessianDemoService;
 import net.hasor.example.protocol.hessian.HessianDemoServiceImpl;
 import net.hasor.meteor.MetContext;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
@@ -24,9 +25,13 @@ public class HessianCppSourceSdkScenarioTest {
     @Timeout(value = 60000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void sourceCppSdkConsumerCallsMeteorHessianProvider() throws Exception {
         // 从 bootstrap 启动 Hessian 1 端点，普通 Java 接口作为真实服务提供者。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("hessian").contextPath("/hessian").option("version", 1);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("hessian") //
+                .contextPath("/hessian") //
+                .option("version", 1);
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
             provider.publisher().rsfService(HessianDemoService.class, new HessianDemoServiceImpl()) //

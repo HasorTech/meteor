@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
+import net.hasor.example.bootstrap.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetOptionParser;
 import net.hasor.meteor.MetOptionSet;
@@ -36,7 +37,7 @@ public class ContextSettingsSnapshotTest {
     @Test
     public void buildSuppliesDefaultsWithoutWritingThemBackToConfiguration() throws Exception {
         // 不声明端点或默认协议，构建阶段应补齐默认 TCP/RSF 配置。
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         try (MetContext context = configuration.buildContext()) {
             MetSettings settings = context.getSettings();
             assertFalse(MetConfiguration.class.isInstance(settings));
@@ -59,7 +60,8 @@ public class ContextSettingsSnapshotTest {
     @Test
     public void invalidAddressFailsDuringBuildAndCanBeCorrected() throws Exception {
         // 无效的 IPv6 字面量可以作为输入读取，地址解析在构建时执行。
-        MetConfiguration configuration = new MetConfiguration().setBindAddress("[invalid-ipv6]");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setBindAddress("[invalid-ipv6]");
         assertEquals("[invalid-ipv6]", configuration.getBindAddress());
         assertThrows(IOException.class, configuration::buildContext);
 
@@ -74,7 +76,8 @@ public class ContextSettingsSnapshotTest {
     @Test
     public void blankBindAddressCannotSilentlyBecomeTheLoopbackDefault() {
         // 空白地址仍是无效配置，默认端点生成不能将其隐式解析为本机地址。
-        MetConfiguration configuration = new MetConfiguration().setBindAddress("");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setBindAddress("");
         assertThrows(IllegalArgumentException.class, configuration::buildContext);
         assertEquals("", configuration.getBindAddress());
     }
@@ -82,9 +85,11 @@ public class ContextSettingsSnapshotTest {
     @Test
     public void requestTimeoutFallbackBelongsToEachBuild() throws Exception {
         // 未设置独立调用超时时，每次构建采用当时的服务默认超时。
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(1700);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(1700);
         try (MetContext first = configuration.buildContext()) {
-            configuration.setDefaultTimeout(2900);
+            configuration.setDefaultTimeout(2900) //
+                    .setDataHome(TestConfigurationUtils.newDataHome());
             try (MetContext second = configuration.buildContext()) {
                 // 读取原配置不计算回退值，既有快照也不重新读取原配置。
                 assertEquals(0, configuration.getRequestTimeout());
@@ -97,7 +102,7 @@ public class ContextSettingsSnapshotTest {
     @Test
     public void typedOptionReadsWorkButTypedWritesAreRejected() throws Exception {
         // 构建时复制已有类型化选项，读取继续使用调用方提供的解析器。
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         configuration.getRequestOptions().addOption("attempts", 2, INTEGER);
         try (MetContext context = configuration.buildContext()) {
             MetOptionSet options = context.getSettings().getRequestOptions();
@@ -112,8 +117,9 @@ public class ContextSettingsSnapshotTest {
     @Test
     public void optionSnapshotPreservesNullsAndDoesNotExposeItsKeys() throws Exception {
         // 原选项模型允许 null 键和值，快照不能改变其读取语义。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.setRequestOption(null, "null-key").setRequestOption("nullable", null);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestOption(null, "null-key") //
+                .setRequestOption("nullable", null);
         try (MetContext context = configuration.buildContext()) {
             MetOptionSet options = context.getSettings().getRequestOptions();
             assertEquals("null-key", options.getOption(null));
@@ -122,7 +128,8 @@ public class ContextSettingsSnapshotTest {
             // 修改返回的键数组或原始选项，均不能修改快照里的键值。
             String[] keys = options.getOptionKeys();
             Arrays.fill(keys, "changed");
-            configuration.setRequestOption(null, "later").setRequestOption("nullable", "later");
+            configuration.setRequestOption(null, "later") //
+                    .setRequestOption("nullable", "later");
             assertTrue(Arrays.asList(options.getOptionKeys()).contains(null));
             assertTrue(Arrays.asList(options.getOptionKeys()).contains("nullable"));
             assertEquals("null-key", options.getOption(null));
@@ -133,8 +140,9 @@ public class ContextSettingsSnapshotTest {
     @Test
     public void connectorSettingsExposeOnlyReadOnlyCollections() throws Exception {
         // 构建一个显式出站端点，检查公开配置集合及端点、协议选项。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("tcp").protocol("rsf");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("tcp") //
+                .protocol("rsf");
         try (MetContext context = configuration.buildContext()) {
             MetSettings settings = context.getSettings();
             Collection<ConnectorConfig> connectors = settings.getConnectorConfigs();

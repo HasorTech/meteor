@@ -70,8 +70,11 @@ public class PythonJsonRpcRegistryAdapterScenarioTest {
         try (RegistryDiscoveryEnvironment environment = RegistryDiscoveryEnvironment.open(this.backend, home)) {
             RegistryConfiguration registry = environment.configuration();
             MetConfiguration incoming = this.configuration(registry, "meteor-jsonrpc-provider");
-            incoming.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                    .protocol("jsonrpc").addressScheme("http").contextPath("/jsonrpc");
+            incoming.connector("http") //
+                    .bind(ContainerProcess.runnerHost(), 0) //
+                    .protocol("jsonrpc") //
+                    .addressScheme("http") //
+                    .contextPath("/jsonrpc");
             try (MetContext provider = incoming.buildContext()) {
                 provider.start();
 
@@ -165,7 +168,10 @@ public class PythonJsonRpcRegistryAdapterScenarioTest {
         try (RegistryDiscoveryEnvironment environment = RegistryDiscoveryEnvironment.open(this.backend, home)) {
             RegistryConfiguration registry = environment.configuration();
             MetConfiguration outgoing = this.configuration(registry, "meteor-jsonrpc-consumer");
-            outgoing.connector("http").protocol("jsonrpc").addressScheme("http").contextPath("/jsonrpc");
+            outgoing.connector("http") //
+                    .protocol("jsonrpc") //
+                    .addressScheme("http") //
+                    .contextPath("/jsonrpc");
             try (MetContext consumer = outgoing.buildContext()) {
                 consumer.start();
                 MetBindInfo<OrderDemoService> service = consumer.publisher() //
@@ -199,11 +205,13 @@ public class PythonJsonRpcRegistryAdapterScenarioTest {
     }
 
     private MetConfiguration configuration(RegistryConfiguration registry, String application) throws Exception {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("jsonrpc");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDefaultProtocol("jsonrpc");
         configuration.setApplicationName(application);
         configuration.setDataHome(Files.createDirectory(this.data.resolve(application)));
         configuration.addExtension(registry);
-        configuration.connector("tcp").protocol("rsf"); // 内部管理出口不监听，不参与业务发现。
+        configuration.connector("tcp") //
+                .protocol("rsf"); // 内部管理出口不监听，不参与业务发现。
         return configuration;
     }
 

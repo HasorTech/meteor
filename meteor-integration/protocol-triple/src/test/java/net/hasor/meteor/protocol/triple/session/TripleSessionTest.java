@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import net.hasor.cobble.concurrent.future.BasicFuture;
 import net.hasor.cobble.concurrent.future.Future;
+import net.hasor.example.protocol.triple.TestConfigurationUtils;
 import net.hasor.example.protocol.triple.TripleFlowService;
 import net.hasor.example.protocol.triple.TripleFlowServiceImpl;
 import net.hasor.example.protocol.triple.TripleMessage;
@@ -1078,9 +1079,13 @@ public class TripleSessionTest {
     }
 
     private static MetContext mixedContext() throws Exception {
-        MetConfiguration configuration = new MetConfiguration().setDefaultGroup("wire").setDefaultProtocol("triple");
-        configuration.connector("http").option("httpVersion", 2) //
-                .protocol("triple").contextPath("/triple");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultGroup("wire") //
+                .setDefaultProtocol("triple");
+        configuration.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("triple") //
+                .contextPath("/triple");
         MetContext context = configuration.buildContext();
         context.publisher().rsfService(Mixed.class, new Mixed() {
             public String exchange(int value) {
@@ -1118,9 +1123,14 @@ public class TripleSessionTest {
     }
 
     private static MetContext nativeContext() throws Exception {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("triple");
-        configuration.connector("http").option("httpVersion", 2) //
-                .protocol("triple").contextPath("/triple").option("httpMode", "grpc").option("streamBody", true);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("triple");
+        configuration.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("triple") //
+                .contextPath("/triple") //
+                .option("httpMode", "grpc") //
+                .option("streamBody", true);
         MetContext context = configuration.buildContext();
         GrpcProtoResource resource = new GrpcProtoResource( //
                 TripleSessionTest.class.getResource("/proto/triple-demo.proto"));
@@ -1150,8 +1160,13 @@ public class TripleSessionTest {
     }
 
     private static MetContext context() throws Exception {
-        MetConfiguration configuration = new MetConfiguration().setDefaultGroup("wire").setDefaultProtocol("triple");
-        configuration.connector("http").protocol("triple").contextPath("/triple").option("httpMode", "json");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultGroup("wire") //
+                .setDefaultProtocol("triple");
+        configuration.connector("http") //
+                .protocol("triple") //
+                .contextPath("/triple") //
+                .option("httpMode", "json");
         MetContext context = configuration.buildContext();
         context.publisher().rsfService(Echo.class, value -> value) //
                 .name("Echo") //

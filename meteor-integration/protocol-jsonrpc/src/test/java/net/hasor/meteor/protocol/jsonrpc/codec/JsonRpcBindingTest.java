@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Flow;
+import net.hasor.example.protocol.jsonrpc.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.annotation.MetIgnore;
@@ -35,9 +36,14 @@ public class JsonRpcBindingTest {
 
     @BeforeEach
     public void prepareServiceMetadata() throws Exception {
-        MetConfiguration configuration = new MetConfiguration().setDefaultGroup("wire");
-        configuration.connector("tcp").protocol("rsf");
-        configuration.connector("http").protocol("jsonrpc").contextPath("/rpc").addContextPath("/private");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultGroup("wire");
+        configuration.connector("tcp") //
+                .protocol("rsf");
+        configuration.connector("http") //
+                .protocol("jsonrpc") //
+                .contextPath("/rpc") //
+                .addContextPath("/private");
         this.context = configuration.buildContext();
         this.context.publisher().rsfService(Methods.class, new Methods() {
                 }) //

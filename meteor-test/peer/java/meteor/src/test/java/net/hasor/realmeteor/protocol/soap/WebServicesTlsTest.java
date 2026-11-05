@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -266,10 +267,12 @@ public class WebServicesTlsTest {
     public void httpsRejectsWrongHostCertificate() throws Exception {
         // 服务端证书由受信任 CA 签发，但 SAN 不包含 localhost。
         AtomicInteger calls = new AtomicInteger();
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
         MetConfiguration.ConnectorSettings connector = SoapTlsSupport.server(configuration, "http/1.1", false);
         connector.option("tlsKeyStore", "classpath:/certs/acceptance/wrong-host-server.p12") //
-                .protocol("soap").addressScheme("https") //
+                .protocol("soap") //
+                .addressScheme("https") //
                 .contextPath("/services") //
                 .option("soapVersion", "1.1");
         try (MetContext context = configuration.buildContext()) {
@@ -311,9 +314,11 @@ public class WebServicesTlsTest {
 
     private MetConfiguration server(String soapVersion, HttpClient.Version httpVersion, boolean mutual) {
         String alpn = httpVersion == HttpClient.Version.HTTP_2 ? "h2" : "http/1.1";
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
         SoapTlsSupport.server(configuration, alpn, mutual) //
-                .protocol("soap").addressScheme("https") //
+                .protocol("soap") //
+                .addressScheme("https") //
                 .contextPath("/services") //
                 .option("soapVersion", soapVersion);
         return configuration;

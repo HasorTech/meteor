@@ -115,7 +115,8 @@ public class RegistryMessageInvocationScenarioTest {
     }
 
     private MetConfiguration configuration(RegistryConfiguration registry, String application, boolean provider) throws Exception {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol(this.protocol);
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDefaultProtocol(this.protocol);
         configuration.setDefaultTimeout(10000);
         configuration.setApplicationName(application);
         configuration.setDataHome(Files.createDirectory(this.data.resolve(application)));
@@ -132,7 +133,9 @@ public class RegistryMessageInvocationScenarioTest {
             if (provider) {
                 http.bind("127.0.0.1", 0);
             }
-            http.protocol(this.protocol).addressScheme("http").contextPath("/notifications");
+            http.protocol(this.protocol) //
+                    .addressScheme("http") //
+                    .contextPath("/notifications");
         }
         return configuration;
     }

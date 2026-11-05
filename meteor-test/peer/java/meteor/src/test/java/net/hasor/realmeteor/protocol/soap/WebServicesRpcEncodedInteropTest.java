@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -30,7 +31,8 @@ public class WebServicesRpcEncodedInteropTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void axisClientInvokesMeteorRpcEncodedSoap11() throws Exception {
         // Meteor 发布普通 Java 接口，并自动生成 RPC/encoded SOAP 1.1 契约。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
         configuration.connector("http") //
                 .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("soap") //
@@ -69,7 +71,8 @@ public class WebServicesRpcEncodedInteropTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void axisClientInvokesMeteorRpcEncodedSoap12() throws Exception {
         // 原厂 Axis 1.4 不发送媒体类型 action，Meteor 明确发布允许省略 action 的 SOAP 1.2 契约。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
         configuration.connector("http") //
                 .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("soap") //
@@ -110,7 +113,8 @@ public class WebServicesRpcEncodedInteropTest {
         // 使用真实 AxisServer 引擎处理 SOAP；测试显式持有外部 HTTP 监听与引擎生命周期。
         try (SoapPeerProcess server = SoapPeerProcess.axisServer()) {
             // Meteor 独立生成 RPC/encoded SOAP 1.1 契约，只配置出站通道。
-            MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setDefaultProtocol("soap");
             configuration.connector("http") //
                     .protocol("soap") //
                     .contextPath("/services") //
@@ -142,7 +146,8 @@ public class WebServicesRpcEncodedInteropTest {
         // 使用真实 AxisServer 引擎处理 SOAP；测试显式持有外部 HTTP 监听与引擎生命周期。
         try (SoapPeerProcess server = SoapPeerProcess.axisServer()) {
             // Meteor 独立生成 RPC/encoded SOAP 1.2 契约，只配置出站通道。
-            MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setDefaultProtocol("soap");
             configuration.connector("http") //
                     .protocol("soap") //
                     .contextPath("/services") //

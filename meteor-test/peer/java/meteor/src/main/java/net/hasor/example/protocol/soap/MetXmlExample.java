@@ -9,18 +9,21 @@ package net.hasor.example.protocol.soap;
 import java.util.List;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 
 /** 只使用普通 Java 接口和 Meteor XML 注解，从启动入口发布并调用 SOAP 服务。 */
 public class MetXmlExample {
     public static void main(String[] args) throws Exception {
         // 配置双端 SOAP 挂载，只有服务端打开监听。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("soap");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
         incoming.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("soap") //
                 .contextPath("/services");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("soap");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
         outgoing.connector("http") //
                 .protocol("soap") //
                 .contextPath("/services");

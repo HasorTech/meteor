@@ -168,16 +168,22 @@ public class GrpcJavaRegistryAdapterScenarioTest {
     }
 
     private MetConfiguration configuration(RegistryConfiguration registry, String application, boolean provider) throws Exception {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc").setDefaultTimeout(10000);
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDefaultProtocol("grpc") //
+                .setDefaultTimeout(10000);
         configuration.setApplicationName(application);
         configuration.setDataHome(Files.createDirectory(this.data.resolve(application)));
         configuration.addExtension(registry);
-        configuration.connector("tcp").protocol("rsf"); // 内部管理出口不开放监听。
-        var http = configuration.connector("http").option("httpVersion", 2);
+        configuration.connector("tcp") //
+                .protocol("rsf"); // 内部管理出口不开放监听。
+        var http = configuration.connector("http") //
+                .option("httpVersion", 2);
         if (provider) {
             http.bind("127.0.0.1", 0);
         }
-        http.protocol("grpc").addressScheme("http").contextPath("/");
+        http.protocol("grpc") //
+                .addressScheme("http") //
+                .contextPath("/");
         return configuration;
     }
 

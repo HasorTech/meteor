@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
@@ -43,7 +44,8 @@ public class WebServicesFaultValidationTest {
         server.start();
         try {
             // 从公开 Bootstrap 发起真实 HTTP 请求，接收对端的畸形 Fault。
-            MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setDefaultProtocol("soap");
             configuration.connector("http") //
                     .protocol("soap") //
                     .option("soapVersion", "1.2") //
@@ -86,7 +88,8 @@ public class WebServicesFaultValidationTest {
         server.start();
         try {
             // 从公开 Bootstrap 发起真实 HTTP 请求，接收对端的畸形 Fault。
-            MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setDefaultProtocol("soap");
             configuration.connector("http") //
                     .protocol("soap") //
                     .option("soapVersion", "1.2") //
@@ -129,7 +132,8 @@ public class WebServicesFaultValidationTest {
         server.start();
         try {
             // 从公开 Bootstrap 发起真实 HTTP 请求，接收对端的畸形 Fault。
-            MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setDefaultProtocol("soap");
             configuration.connector("http") //
                     .protocol("soap") //
                     .option("soapVersion", "1.2") //
@@ -173,7 +177,8 @@ public class WebServicesFaultValidationTest {
         server.start();
         try {
             // 从公开 Bootstrap 发起真实 HTTP 请求，接收对端的畸形 Fault。
-            MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setDefaultProtocol("soap");
             configuration.connector("http") //
                     .protocol("soap") //
                     .option("soapVersion", "1.2") //
@@ -216,7 +221,8 @@ public class WebServicesFaultValidationTest {
         server.start();
         try {
             // 从公开 Bootstrap 发起真实 HTTP 请求，接收对端的畸形 Fault。
-            MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setDefaultProtocol("soap");
             configuration.connector("http") //
                     .protocol("soap") //
                     .option("soapVersion", "1.2") //
@@ -261,7 +267,8 @@ public class WebServicesFaultValidationTest {
         server.start();
         try {
             // 从公开 Bootstrap 发起真实 HTTP 请求，接收对端的畸形 Fault。
-            MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setDefaultProtocol("soap");
             configuration.connector("http") //
                     .protocol("soap") //
                     .option("soapVersion", "1.2") //

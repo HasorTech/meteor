@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.example.protocol.hessian.HessianInteropDemo;
 import net.hasor.example.protocol.hessian.HessianInteropDemoImpl;
 import net.hasor.meteor.MetContext;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
@@ -24,9 +25,13 @@ public class NodeHessianConsumerScenarioTest {
     @Timeout(value = 60000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void nodeSdkCallsMeteorStringEcho() throws Exception {
         // bootstrap 启动本场景的 HTTP 监听，再发布普通 Java 接口和 Hessian 服务路径。
-        MetConfiguration configuration = new MetConfiguration().setApplicationName("node-hessian-basic-provider");
-        configuration.connector("http").bind("0.0.0.0", 0) //
-                .protocol("hessian").contextPath("/hessian").option("version", 2);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setApplicationName("node-hessian-basic-provider");
+        configuration.connector("http") //
+                .bind("0.0.0.0", 0) //
+                .protocol("hessian") //
+                .contextPath("/hessian") //
+                .option("version", 2);
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(HessianInteropDemo.class, new HessianInteropDemoImpl()) //

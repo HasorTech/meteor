@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import com.caucho.hessian.io.Hessian2Input;
 import com.caucho.hessian.io.Hessian2Output;
+import net.hasor.example.protocol.dubbo.TestConfigurationUtils;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropPerson;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropService;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropServiceImpl;
@@ -1092,8 +1093,10 @@ public class DubboCodecTest {
     }
 
     private static MetConfiguration configuration() {
-        MetConfiguration config = new MetConfiguration().setDefaultProtocol("dubbo");
-        config.connector("tcp").protocol("dubbo");
+        MetConfiguration config = TestConfigurationUtils.create() //
+                .setDefaultProtocol("dubbo");
+        config.connector("tcp") //
+                .protocol("dubbo");
         return config;
     }
 

@@ -9,6 +9,7 @@ package net.hasor.example.protocol.thrift;
 import net.hasor.example.protocol.thrift.generated.ExtendedInteropService;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.thrift.ThriftClient;
 import net.hasor.meteor.protocol.thrift.ThriftServiceResource;
@@ -20,11 +21,19 @@ public final class ThriftHttpExample {
 
     public static void main(String[] args) throws Exception {
         // 两端选择相同编码与传输挂载；IDL 生成类仅提供本地方法和字段元数据。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("thrift-http");
-        incoming.connector("http").bind("127.0.0.1", 0) //
-                .protocol("thrift-http").contextPath("/thrift").option("encoding", "binary");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("thrift-http");
-        outgoing.connector("http").protocol("thrift-http").contextPath("/thrift").option("encoding", "binary");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift-http");
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("thrift-http") //
+                .contextPath("/thrift") //
+                .option("encoding", "binary");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift-http");
+        outgoing.connector("http") //
+                .protocol("thrift-http") //
+                .contextPath("/thrift") //
+                .option("encoding", "binary");
         ThriftServiceResource resource = new ThriftServiceResource(ExtendedInteropService.class);
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {

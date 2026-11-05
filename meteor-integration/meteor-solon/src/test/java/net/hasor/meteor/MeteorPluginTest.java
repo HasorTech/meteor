@@ -6,18 +6,24 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor;
+import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.noear.solon.core.AppContext;
 import org.noear.solon.core.Props;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MeteorPluginTest {
+    @TempDir
+    Path directory;
+
     @Test
     void scansOnlyAnnotatedInterfacesFromNativePackageList() throws Throwable {
         // 原生索引列表经插件扫描，只注册注解接口。
         Props properties = new Props();
         properties.setProperty("meteor.scan-packages[0]", "net.hasor.meteor");
         properties.setProperty("meteor.scan-packages[1]", "net.hasor.example.empty");
+        properties.setProperty("meteor.data-home", this.directory.resolve("meteor").toString());
         properties.setProperty("meteor.connectors.rsf.host", "127.0.0.1");
         properties.setProperty("meteor.connectors.rsf.port", "0");
         AppContext app = new AppContext(null, getClass().getClassLoader(), properties);

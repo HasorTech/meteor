@@ -12,10 +12,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import net.hasor.example.bootstrap.TestConfigurationUtils;
+import net.hasor.example.connector.protocol.rsf.EchoService;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
-import net.hasor.example.connector.protocol.rsf.EchoService;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -24,10 +25,13 @@ public class RsfInvocationTest {
     @Test
     public void concurrentProxyCallsKeepTheirOwnResults() throws Exception {
         // 服务端监听临时 TCP 端口，客户端只配置出站协议。
-        MetConfiguration incoming = new MetConfiguration();
-        incoming.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        MetConfiguration outgoing = new MetConfiguration();
-        outgoing.connector("tcp").protocol("rsf");
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        incoming.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        MetConfiguration outgoing = TestConfigurationUtils.create();
+        outgoing.connector("tcp") //
+                .protocol("rsf");
 
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {

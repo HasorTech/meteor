@@ -7,6 +7,7 @@
  */
 package net.hasor.example.rpc.rsfs;
 import net.hasor.cobble.StringUtils;
+import net.hasor.example.bootstrap.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 
@@ -16,31 +17,34 @@ public final class RsfsConfigurations {
     }
 
     public static MetConfiguration server(String key, String clientAuth) {
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.setDefaultTimeout(10000);
-        ConnectorSettings connector = configuration.connector("tcp").bind("127.0.0.1", 0);
-        connector.option("tlsEnabled", true);
-        connector.option("tlsKeyStore", "classpath:/tls/acceptance/" + key + ".p12");
-        connector.option("tlsKeyStorePassword", "meteor-test");
-        connector.option("tlsTrustStore", "classpath:/tls/acceptance/trust.p12");
-        connector.option("tlsTrustStorePassword", "meteor-test");
-        connector.option("tlsClientAuth", clientAuth);
-        connector.protocol("rsf").addressScheme("rsfs");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(10000);
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .option("tlsEnabled", true) //
+                .option("tlsKeyStore", "classpath:/tls/acceptance/" + key + ".p12") //
+                .option("tlsKeyStorePassword", "meteor-test") //
+                .option("tlsTrustStore", "classpath:/tls/acceptance/trust.p12") //
+                .option("tlsTrustStorePassword", "meteor-test") //
+                .option("tlsClientAuth", clientAuth) //
+                .protocol("rsf") //
+                .addressScheme("rsfs");
         return configuration;
     }
 
     public static MetConfiguration client(String key, String trust) {
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.setDefaultTimeout(10000);
-        ConnectorSettings connector = configuration.connector("tcp");
-        connector.option("tlsEnabled", true);
-        connector.option("tlsTrustStore", "classpath:/tls/acceptance/" + trust + ".p12");
-        connector.option("tlsTrustStorePassword", "meteor-test");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(10000);
+        ConnectorSettings connector = configuration.connector("tcp") //
+                .option("tlsEnabled", true) //
+                .option("tlsTrustStore", "classpath:/tls/acceptance/" + trust + ".p12") //
+                .option("tlsTrustStorePassword", "meteor-test");
         if (StringUtils.isNotBlank(key)) {
-            connector.option("tlsKeyStore", "classpath:/tls/acceptance/" + key + ".p12");
-            connector.option("tlsKeyStorePassword", "meteor-test");
+            connector.option("tlsKeyStore", "classpath:/tls/acceptance/" + key + ".p12") //
+                    .option("tlsKeyStorePassword", "meteor-test");
         }
-        connector.protocol("rsf").addressScheme("rsfs");
+        connector.protocol("rsf") //
+                .addressScheme("rsfs");
         return configuration;
     }
 }

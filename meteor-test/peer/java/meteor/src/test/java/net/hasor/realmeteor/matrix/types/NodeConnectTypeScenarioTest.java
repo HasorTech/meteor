@@ -20,6 +20,7 @@ import net.hasor.example.contract.types.TypeValueVectors;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
@@ -134,12 +135,15 @@ public class NodeConnectTypeScenarioTest {
     }
 
     private MetConfiguration configuration(boolean listening) {
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        var connector = configuration.connector("http").option("httpVersion", 1);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        var connector = configuration.connector("http") //
+                .option("httpVersion", 1);
         if (listening) {
             connector.bind(ContainerProcess.runnerHost(), 0);
         }
-        connector.protocol("connect").contextPath("/types");
+        connector.protocol("connect") //
+                .contextPath("/types");
         return configuration;
     }
 }

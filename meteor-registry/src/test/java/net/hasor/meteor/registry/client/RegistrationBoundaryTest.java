@@ -26,6 +26,8 @@ import net.hasor.meteor.registry.shared.RegistryTestUtils.Echo;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
 import net.hasor.meteor.registry.shared.storage.domain.*;
 import org.junit.jupiter.api.Test;
+import static net.hasor.meteor.registry.shared.RegistryTestUtils.createConfiguration;
+import static net.hasor.meteor.registry.shared.RegistryTestUtils.createDataHome;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RegistrationBoundaryTest {
@@ -34,12 +36,15 @@ public class RegistrationBoundaryTest {
         // 三个实例各自发布或订阅两个服务，目录应共享，关系按成员数量增长。
         MemoryRegistryConfiguration registry = new MemoryRegistryConfiguration();
         registry.setManagementToken("secret");
-        MetConfiguration configuration = new MetConfiguration().addExtension(registry);
-        configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        MetConfiguration configuration = createConfiguration() //
+                .addExtension(registry);
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
 
         try (MetContext first = configuration.buildContext(); //
-             MetContext second = configuration.buildContext(); //
-             MetContext consumer = configuration.buildContext(); //
+             MetContext second = configuration.setDataHome(createDataHome()).buildContext(); //
+             MetContext consumer = configuration.setDataHome(createDataHome()).buildContext(); //
              StorageAccess storage = registry.openStorage()) {
             for (String name : new String[] { "first", "second" }) {
                 first.publisher().rsfService(Echo.class, value -> value).name(name).register();
@@ -95,8 +100,9 @@ public class RegistrationBoundaryTest {
         // 在正式扩展入口装饰公开接口，诊断读取一旦发生就立即失败。
         MemoryRegistryConfiguration registry = new MemoryRegistryConfiguration();
         registry.setManagementToken("secret");
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("tcp").protocol("rsf");
+        MetConfiguration configuration = createConfiguration();
+        configuration.connector("tcp") //
+                .protocol("rsf");
         configuration.addExtension(context -> {
             String[] addressMethods = { "queryAvailableAddresses", "queryInvalidAddresses", "queryLocalUnitAddresses" };
             Set<String> addressReads = Set.of(addressMethods);

@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc.python;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
@@ -306,9 +307,12 @@ public class PythonProviderScenarioTest {
     }
 
     private MetConfiguration configuration(String security) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc");
-        var connector = configuration.connector("http").option("httpVersion", 2);
-        var protocol = connector.protocol("grpc").contextPath("/");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        var connector = configuration.connector("http") //
+                .option("httpVersion", 2);
+        var protocol = connector.protocol("grpc") //
+                .contextPath("/");
         if (!StringUtils.equals("clear", security)) {
             connector.option("tlsEnabled", true) //
                     .option("tlsTrustStore", "classpath:/certs/acceptance/trust.p12") //

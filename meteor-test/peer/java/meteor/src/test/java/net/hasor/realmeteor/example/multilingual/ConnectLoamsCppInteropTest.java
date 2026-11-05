@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.hasor.example.echo.TextEchoService;
 import net.hasor.meteor.MetContext;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
@@ -26,9 +27,13 @@ public class ConnectLoamsCppInteropTest {
     @Timeout(value = 60000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void loamsCppConnectClientCallsMeteorProvider() throws Exception {
         // 从 bootstrap 启动 Connect 提供者，沿用已有文本回声契约和普通 Java 接口。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("connect").contextPath("/rpc").option("streamBody", true);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("connect") //
+                .contextPath("/rpc") //
+                .option("streamBody", true);
         var resource = new GrpcProtoResource(getClass().getResource("/protocol/proto/java-sdk-echo.proto"));
         AtomicInteger calls = new AtomicInteger();
         try (MetContext provider = configuration.buildContext()) {

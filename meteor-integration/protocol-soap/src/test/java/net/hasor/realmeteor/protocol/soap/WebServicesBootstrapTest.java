@@ -15,6 +15,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import net.hasor.example.protocol.soap.DeclaredEcho;
 import net.hasor.example.protocol.soap.EchoService;
 import net.hasor.example.protocol.soap.EchoServiceImpl;
+import net.hasor.example.protocol.soap.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
@@ -31,12 +32,14 @@ public class WebServicesBootstrapTest {
     @Test
     public void defaultJavaTypeNamePublishesCallableSoapAndWsdl() throws Exception {
         // 服务端监听 SOAP，客户端只准备出站 SOAP 通道。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("soap");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
         incoming.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("soap") //
                 .contextPath("/services");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("soap");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
         outgoing.connector("http") //
                 .protocol("soap") //
                 .contextPath("/services");
@@ -76,10 +79,17 @@ public class WebServicesBootstrapTest {
     @Test
     public void declaredServiceNamePublishesCallableSoapAndWsdl() throws Exception {
         // 公共注解指定服务名，两端都不需要重复声明协议别名。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("soap");
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("soap").contextPath("/services");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("soap");
-        outgoing.connector("http").protocol("soap").contextPath("/services");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("soap") //
+                .contextPath("/services");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
+        outgoing.connector("http") //
+                .protocol("soap") //
+                .contextPath("/services");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();
@@ -102,10 +112,17 @@ public class WebServicesBootstrapTest {
     @Test
     public void explicitAliasOverridesDefaultRoutingAndGeneratedWsdl() throws Exception {
         // 协议别名覆盖内部服务登记名，线上地址和生成契约同时采用它。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("soap");
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("soap").contextPath("/services");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("soap");
-        outgoing.connector("http").protocol("soap").contextPath("/services");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("soap") //
+                .contextPath("/services");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
+        outgoing.connector("http") //
+                .protocol("soap") //
+                .contextPath("/services");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();
@@ -133,10 +150,17 @@ public class WebServicesBootstrapTest {
     public void defaultEndpointPreservesExternalWsdlContract() throws Exception {
         // 外部契约的 XML 名称由 WSDL 决定，默认服务名只用于 HTTP 地址。
         SoapWsdlResource contract = new SoapWsdlResource(this.getClass().getResource("/wsdl/echo.wsdl"));
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("soap");
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("soap").contextPath("/services");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("soap");
-        outgoing.connector("http").protocol("soap").contextPath("/services");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("soap") //
+                .contextPath("/services");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
+        outgoing.connector("http") //
+                .protocol("soap") //
+                .contextPath("/services");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();
@@ -166,10 +190,17 @@ public class WebServicesBootstrapTest {
     @Test
     public void explicitAliasCannotShadowAnExistingDefaultName() throws Exception {
         // 默认名与别名进入相同挂载时必须在发布阶段发现冲突。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("soap").contextPath("/services");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("soap");
-        outgoing.connector("http").protocol("soap").contextPath("/services");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("soap") //
+                .contextPath("/services");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
+        outgoing.connector("http") //
+                .protocol("soap") //
+                .contextPath("/services");
         try (MetContext server = configuration.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();
@@ -200,11 +231,19 @@ public class WebServicesBootstrapTest {
     @Test
     public void identicalDefaultNamesRemainIndependentOnDifferentMounts() throws Exception {
         // 同一物理 HTTP 端点上的两个挂载允许独立发布相同有效服务名。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("soap");
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("soap") //
-                .contextPath("/first").addContextPath("/second");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("soap");
-        outgoing.connector("http").protocol("soap").contextPath("/first").addContextPath("/second");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("soap") //
+                .contextPath("/first") //
+                .addContextPath("/second");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
+        outgoing.connector("http") //
+                .protocol("soap") //
+                .contextPath("/first") //
+                .addContextPath("/second");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();

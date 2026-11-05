@@ -39,8 +39,17 @@ final class MetContextFactory {
 
         // Context 持有核心组件和扩展，并负责初始化失败与正常关闭时的资源回收。
         MetContextImpl context = new MetContextImpl(settings, classLoader);
-        context.init(extensions);
-        return context;
+        try {
+            context.init(extensions);
+            return context;
+        } catch (RuntimeException | Error failure) {
+            try {
+                context.close();
+            } catch (Throwable cleanup) {
+                failure.addSuppressed(cleanup);
+            }
+            throw failure;
+        }
     }
 
     private static String resolveBindAddress(String bindAddress) throws IOException {

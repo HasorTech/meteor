@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hessian;
+import net.hasor.example.support.TestConfigurationUtils;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.ParameterizedClass;
 import java.io.IOException;
@@ -49,9 +50,13 @@ public class CauchoHessianInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void cauchoClientCallsUnicodeString() throws Exception {
         // 配置 Meteor 的 HTTP 监听和 Hessian 挂载，不直接创建协议会话。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("hessian").contextPath("/hessian").option("version", this.version);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("hessian") //
+                .contextPath("/hessian") //
+                .option("version", this.version);
         try (MetContext server = configuration.buildContext()) {
             // 服务容器启动后发布普通 Java 接口，官方代理直接连接公开服务地址。
             server.start();
@@ -72,9 +77,13 @@ public class CauchoHessianInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void cauchoClientCallsZeroArgumentOverload() throws Exception {
         // 配置 Meteor 的 HTTP 监听和 Hessian 挂载，不直接创建协议会话。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("hessian").contextPath("/hessian").option("version", this.version);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("hessian") //
+                .contextPath("/hessian") //
+                .option("version", this.version);
         try (MetContext server = configuration.buildContext()) {
             // 服务容器启动后发布普通 Java 接口，官方代理直接连接公开服务地址。
             server.start();
@@ -94,9 +103,13 @@ public class CauchoHessianInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void cauchoClientCallsStringOverload() throws Exception {
         // 配置 Meteor 的 HTTP 监听和 Hessian 挂载，不直接创建协议会话。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("hessian").contextPath("/hessian").option("version", this.version);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("hessian") //
+                .contextPath("/hessian") //
+                .option("version", this.version);
         try (MetContext server = configuration.buildContext()) {
             // 服务容器启动后发布普通 Java 接口，官方代理直接连接公开服务地址。
             server.start();
@@ -116,9 +129,13 @@ public class CauchoHessianInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void cauchoClientCallsIntegerOverload() throws Exception {
         // 配置 Meteor 的 HTTP 监听和 Hessian 挂载，不直接创建协议会话。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("hessian").contextPath("/hessian").option("version", this.version);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("hessian") //
+                .contextPath("/hessian") //
+                .option("version", this.version);
         try (MetContext server = configuration.buildContext()) {
             // 服务容器启动后发布普通 Java 接口，官方代理直接连接公开服务地址。
             server.start();
@@ -138,9 +155,13 @@ public class CauchoHessianInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void cauchoClientCallsPojo() throws Exception {
         // 配置 Meteor 的 HTTP 监听和 Hessian 挂载，不直接创建协议会话。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("hessian").contextPath("/hessian").option("version", this.version);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("hessian") //
+                .contextPath("/hessian") //
+                .option("version", this.version);
         try (MetContext server = configuration.buildContext()) {
             // 服务容器启动后发布普通 Java 接口，官方代理直接连接公开服务地址。
             server.start();
@@ -163,9 +184,13 @@ public class CauchoHessianInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void cauchoClientCallsNull() throws Exception {
         // 配置 Meteor 的 HTTP 监听和 Hessian 挂载，不直接创建协议会话。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("hessian").contextPath("/hessian").option("version", this.version);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("hessian") //
+                .contextPath("/hessian") //
+                .option("version", this.version);
         try (MetContext server = configuration.buildContext()) {
             // 服务容器启动后发布普通 Java 接口，官方代理直接连接公开服务地址。
             server.start();
@@ -184,9 +209,13 @@ public class CauchoHessianInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void cauchoClientCallsBinary() throws Exception {
         // 配置 Meteor 的 HTTP 监听和 Hessian 挂载，不直接创建协议会话。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("hessian").contextPath("/hessian").option("version", this.version);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("hessian") //
+                .contextPath("/hessian") //
+                .option("version", this.version);
         try (MetContext server = configuration.buildContext()) {
             // 服务容器启动后发布普通 Java 接口，官方代理直接连接公开服务地址。
             server.start();
@@ -207,9 +236,13 @@ public class CauchoHessianInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void cauchoClientCallsCollection() throws Exception {
         // 配置 Meteor 的 HTTP 监听和 Hessian 挂载，不直接创建协议会话。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("hessian").contextPath("/hessian").option("version", this.version);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("hessian") //
+                .contextPath("/hessian") //
+                .option("version", this.version);
         try (MetContext server = configuration.buildContext()) {
             // 服务容器启动后发布普通 Java 接口，官方代理直接连接公开服务地址。
             server.start();
@@ -236,9 +269,13 @@ public class CauchoHessianInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void cauchoClientCallsStructure() throws Exception {
         // 配置 Meteor 的 HTTP 监听和 Hessian 挂载，不直接创建协议会话。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("hessian").contextPath("/hessian").option("version", this.version);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("hessian") //
+                .contextPath("/hessian") //
+                .option("version", this.version);
         try (MetContext server = configuration.buildContext()) {
             // 服务容器启动后发布普通 Java 接口，官方代理直接连接公开服务地址。
             server.start();
@@ -268,9 +305,13 @@ public class CauchoHessianInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void cauchoClientCallsDeclaredException() throws Exception {
         // 配置 Meteor 的 HTTP 监听和 Hessian 挂载，不直接创建协议会话。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("hessian").contextPath("/hessian").option("version", this.version);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("hessian") //
+                .contextPath("/hessian") //
+                .option("version", this.version);
         try (MetContext server = configuration.buildContext()) {
             // 服务容器启动后发布普通 Java 接口，官方代理直接连接公开服务地址。
             server.start();
@@ -290,9 +331,12 @@ public class CauchoHessianInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorClientCallsUnicodeString() throws Exception {
         // 独立 JVM 的 HTTP 服务端使用 Caucho Skeleton；Meteor 只作为客户端。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
         configuration.connector("http") //
-                .protocol("hessian").contextPath("/hessian").option("version", this.version);
+                .protocol("hessian") //
+                .contextPath("/hessian") //
+                .option("version", this.version);
         try (CauchoHessianPeerProcess server = CauchoHessianPeerProcess.startServer(); //
              MetContext client = configuration.buildContext()) {
             // 从 bootstrap 启动后订阅接口，通过真实网络连接官方实现。
@@ -313,9 +357,12 @@ public class CauchoHessianInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorClientCallsZeroArgumentOverload() throws Exception {
         // 独立 JVM 的 HTTP 服务端使用 Caucho Skeleton；Meteor 只作为客户端。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
         configuration.connector("http") //
-                .protocol("hessian").contextPath("/hessian").option("version", this.version);
+                .protocol("hessian") //
+                .contextPath("/hessian") //
+                .option("version", this.version);
         try (CauchoHessianPeerProcess server = CauchoHessianPeerProcess.startServer(); //
              MetContext client = configuration.buildContext()) {
             // 从 bootstrap 启动后订阅接口，通过真实网络连接官方实现。
@@ -335,9 +382,12 @@ public class CauchoHessianInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorClientCallsStringOverload() throws Exception {
         // 独立 JVM 的 HTTP 服务端使用 Caucho Skeleton；Meteor 只作为客户端。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
         configuration.connector("http") //
-                .protocol("hessian").contextPath("/hessian").option("version", this.version);
+                .protocol("hessian") //
+                .contextPath("/hessian") //
+                .option("version", this.version);
         try (CauchoHessianPeerProcess server = CauchoHessianPeerProcess.startServer(); //
              MetContext client = configuration.buildContext()) {
             // 从 bootstrap 启动后订阅接口，通过真实网络连接官方实现。
@@ -357,9 +407,12 @@ public class CauchoHessianInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorClientCallsIntegerOverload() throws Exception {
         // 独立 JVM 的 HTTP 服务端使用 Caucho Skeleton；Meteor 只作为客户端。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
         configuration.connector("http") //
-                .protocol("hessian").contextPath("/hessian").option("version", this.version);
+                .protocol("hessian") //
+                .contextPath("/hessian") //
+                .option("version", this.version);
         try (CauchoHessianPeerProcess server = CauchoHessianPeerProcess.startServer(); //
              MetContext client = configuration.buildContext()) {
             // 从 bootstrap 启动后订阅接口，通过真实网络连接官方实现。
@@ -379,9 +432,12 @@ public class CauchoHessianInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorClientCallsPojo() throws Exception {
         // 独立 JVM 的 HTTP 服务端使用 Caucho Skeleton；Meteor 只作为客户端。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
         configuration.connector("http") //
-                .protocol("hessian").contextPath("/hessian").option("version", this.version);
+                .protocol("hessian") //
+                .contextPath("/hessian") //
+                .option("version", this.version);
         try (CauchoHessianPeerProcess server = CauchoHessianPeerProcess.startServer(); //
              MetContext client = configuration.buildContext()) {
             // 从 bootstrap 启动后订阅接口，通过真实网络连接官方实现。
@@ -404,9 +460,12 @@ public class CauchoHessianInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorClientCallsNull() throws Exception {
         // 独立 JVM 的 HTTP 服务端使用 Caucho Skeleton；Meteor 只作为客户端。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
         configuration.connector("http") //
-                .protocol("hessian").contextPath("/hessian").option("version", this.version);
+                .protocol("hessian") //
+                .contextPath("/hessian") //
+                .option("version", this.version);
         try (CauchoHessianPeerProcess server = CauchoHessianPeerProcess.startServer(); //
              MetContext client = configuration.buildContext()) {
             // 从 bootstrap 启动后订阅接口，通过真实网络连接官方实现。
@@ -425,9 +484,12 @@ public class CauchoHessianInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorClientCallsBinary() throws Exception {
         // 独立 JVM 的 HTTP 服务端使用 Caucho Skeleton；Meteor 只作为客户端。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
         configuration.connector("http") //
-                .protocol("hessian").contextPath("/hessian").option("version", this.version);
+                .protocol("hessian") //
+                .contextPath("/hessian") //
+                .option("version", this.version);
         try (CauchoHessianPeerProcess server = CauchoHessianPeerProcess.startServer(); //
              MetContext client = configuration.buildContext()) {
             // 从 bootstrap 启动后订阅接口，通过真实网络连接官方实现。
@@ -448,9 +510,12 @@ public class CauchoHessianInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorClientCallsCollection() throws Exception {
         // 独立 JVM 的 HTTP 服务端使用 Caucho Skeleton；Meteor 只作为客户端。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
         configuration.connector("http") //
-                .protocol("hessian").contextPath("/hessian").option("version", this.version);
+                .protocol("hessian") //
+                .contextPath("/hessian") //
+                .option("version", this.version);
         try (CauchoHessianPeerProcess server = CauchoHessianPeerProcess.startServer(); //
              MetContext client = configuration.buildContext()) {
             // 从 bootstrap 启动后订阅接口，通过真实网络连接官方实现。
@@ -477,9 +542,12 @@ public class CauchoHessianInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorClientCallsStructure() throws Exception {
         // 独立 JVM 的 HTTP 服务端使用 Caucho Skeleton；Meteor 只作为客户端。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
         configuration.connector("http") //
-                .protocol("hessian").contextPath("/hessian").option("version", this.version);
+                .protocol("hessian") //
+                .contextPath("/hessian") //
+                .option("version", this.version);
         try (CauchoHessianPeerProcess server = CauchoHessianPeerProcess.startServer(); //
              MetContext client = configuration.buildContext()) {
             // 从 bootstrap 启动后订阅接口，通过真实网络连接官方实现。
@@ -509,9 +577,12 @@ public class CauchoHessianInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorClientCallsDeclaredException() throws Exception {
         // 独立 JVM 的 HTTP 服务端使用 Caucho Skeleton；Meteor 只作为客户端。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
         configuration.connector("http") //
-                .protocol("hessian").contextPath("/hessian").option("version", this.version);
+                .protocol("hessian") //
+                .contextPath("/hessian") //
+                .option("version", this.version);
         try (CauchoHessianPeerProcess server = CauchoHessianPeerProcess.startServer(); //
              MetContext client = configuration.buildContext()) {
             // 从 bootstrap 启动后订阅接口，通过真实网络连接官方实现。
@@ -535,9 +606,13 @@ public class CauchoHessianInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialHessian1InputReadsStrictHessian1Reply() throws Throwable {
         // 官方代理的 H1 reader 选择有兼容问题；本例直接使用官方 H1 Input/Output。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("hessian").contextPath("/hessian").option("version", this.version);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("hessian") //
+                .contextPath("/hessian") //
+                .option("version", this.version);
         try (MetContext server = configuration.buildContext()) {
             // 服务发布仍走公开入口，正文来自 Caucho 的完整 Hessian 1 调用信封。
             server.start();
@@ -563,9 +638,13 @@ public class CauchoHessianInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void cauchoClientCallsDeclaredIOException() throws Exception {
         // 配置 Meteor 的 HTTP 监听和 Hessian 挂载，不直接创建协议会话。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("hessian").contextPath("/hessian").option("version", this.version);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("hessian") //
+                .contextPath("/hessian") //
+                .option("version", this.version);
         try (MetContext server = configuration.buildContext()) {
             // 服务容器启动后发布普通 Java 接口，官方代理直接连接公开服务地址。
             server.start();
@@ -586,9 +665,12 @@ public class CauchoHessianInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorClientCallsDeclaredIOException() throws Exception {
         // 独立 JVM 的 HTTP 服务端使用 Caucho Skeleton；Meteor 只作为客户端。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
         configuration.connector("http") //
-                .protocol("hessian").contextPath("/hessian").option("version", this.version);
+                .protocol("hessian") //
+                .contextPath("/hessian") //
+                .option("version", this.version);
         try (CauchoHessianPeerProcess server = CauchoHessianPeerProcess.startServer(); //
              MetContext client = configuration.buildContext()) {
             // 从 bootstrap 启动后订阅接口，通过真实网络连接官方实现。

@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.thrift;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -668,16 +669,23 @@ public class ThriftCallScenarioTest {
     }
 
     private MetConfiguration incoming(String encoding, boolean framed) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift");
-        configuration.connector("tcp").bind("127.0.0.1", 0) //
-                .protocol("thrift").option("encoding", encoding).option("framed", framed);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift");
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("thrift") //
+                .option("encoding", encoding) //
+                .option("framed", framed);
         return configuration;
     }
 
     private MetConfiguration outgoing(String encoding, boolean framed) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift");
-        configuration.connector("tcp").protocol("thrift") //
-                .option("encoding", encoding).option("framed", framed);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift");
+        configuration.connector("tcp") //
+                .protocol("thrift") //
+                .option("encoding", encoding) //
+                .option("framed", framed);
         return configuration;
     }
 

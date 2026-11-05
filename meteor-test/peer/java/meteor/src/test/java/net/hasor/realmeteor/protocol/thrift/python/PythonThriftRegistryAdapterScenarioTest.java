@@ -136,7 +136,8 @@ public class PythonThriftRegistryAdapterScenarioTest {
         configuration.setApplicationName(application);
         configuration.setDataHome(Files.createDirectory(this.data.resolve(application)));
         configuration.addExtension(registry);
-        configuration.connector("tcp").protocol("rsf"); // 内部管理出口不开放监听，不参与 Thrift 服务发布。
+        configuration.connector("tcp") //
+                .protocol("rsf"); // 内部管理出口不开放监听，不参与 Thrift 服务发布。
         return configuration;
     }
 }

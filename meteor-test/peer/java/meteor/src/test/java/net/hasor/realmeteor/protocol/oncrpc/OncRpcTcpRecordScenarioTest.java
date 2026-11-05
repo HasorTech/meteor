@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.oncrpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.example.protocol.oncrpc.OncRpcDemoCodecs;
 import net.hasor.example.protocol.oncrpc.OncRpcDemoService;
@@ -27,12 +28,17 @@ public class OncRpcTcpRecordScenarioTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void tcpReassemblesFragmentedRequestAndReplyRecords() throws Exception {
         // 两端选择普通 ONC RPC TCP，监听地址由公开启动 API 分配。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("oncrpc");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc");
         incoming.setDefaultTimeout(10000);
-        incoming.connector("tcp").bind("127.0.0.1", 0).protocol("oncrpc");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("oncrpc");
+        incoming.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("oncrpc");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc");
         outgoing.setDefaultTimeout(10000);
-        outgoing.connector("tcp").protocol("oncrpc");
+        outgoing.connector("tcp") //
+                .protocol("oncrpc");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             // 先启动容器，再发布和订阅普通 Java 接口。

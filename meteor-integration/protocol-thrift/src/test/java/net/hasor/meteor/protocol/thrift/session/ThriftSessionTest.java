@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import net.hasor.cobble.concurrent.future.BasicFuture;
 import net.hasor.cobble.concurrent.future.Future;
+import net.hasor.example.protocol.thrift.TestConfigurationUtils;
 import net.hasor.example.protocol.thrift.generated.DeclaredFailure;
 import net.hasor.example.protocol.thrift.generated.InteropService;
 import net.hasor.meteor.MetContext;
@@ -701,8 +702,10 @@ public class ThriftSessionTest {
 
         private Fixture(Map<String, String> options) throws Exception {
             // 只借用真实元信息容器，单元测试不启动监听或执行 RPC。
-            MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift");
-            configuration.connector("tcp").protocol("thrift");
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setDefaultProtocol("thrift");
+            configuration.connector("tcp") //
+                    .protocol("thrift");
             this.context = configuration.buildContext();
             this.context.publisher().rsfService(Service.class, new Service() {
                 @Override

@@ -11,6 +11,7 @@ import java.lang.reflect.Proxy;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import net.hasor.cobble.StringUtils;
+import net.hasor.example.bootstrap.TestConfigurationUtils;
 import net.hasor.example.connector.protocol.HttpEchoService;
 import net.hasor.meteor.*;
 import net.hasor.meteor.address.InterAddress;
@@ -956,11 +957,15 @@ public class EndpointContextValidationTest {
     @Test
     public void allEndpointValidationsUseThePublishedProtocolMetadata() throws Exception {
         // 同名协议挂到两个端点，测试提供者记录校验时收到的元信息及端点数量。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("http").protocol("httpa") //
-                .contextPath("/orders").option("captureMeta", true);
-        configuration.connector("http").protocol("httpa") //
-                .contextPath("/inventory").option("captureMeta", true);
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("http") //
+                .protocol("httpa") //
+                .contextPath("/orders") //
+                .option("captureMeta", true);
+        configuration.connector("http") //
+                .protocol("httpa") //
+                .contextPath("/inventory") //
+                .option("captureMeta", true);
 
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<HttpEchoService> service = context.publisher() //
@@ -1071,10 +1076,13 @@ public class EndpointContextValidationTest {
     @Test
     public void rejectingPrefixPublicationPreservesOtherProtocolAndLocalService() throws Exception {
         // 同一端点挂载两个协议，只有第一个协议拒绝当前服务。
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         MetConfiguration.ConnectorSettings http = configuration.connector("http");
-        http.protocol("httpa").contextPath("/orders").option("rejectService", true);
-        http.protocol("httpb").contextPath("/other");
+        http.protocol("httpa") //
+                .contextPath("/orders") //
+                .option("rejectService", true);
+        http.protocol("httpb") //
+                .contextPath("/other");
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<HttpEchoService> service = context.publisher() //
                     .rsfService(HttpEchoService.class, value -> "local:" + value) //
@@ -1111,9 +1119,10 @@ public class EndpointContextValidationTest {
     @Test
     public void rejectingExactPublicationDoesNotExposeItsPathThroughAnotherProtocol() throws Exception {
         // 两个协议分别拥有服务精确地址，拒绝只影响所属协议的地址。
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         MetConfiguration.ConnectorSettings http = configuration.connector("http");
-        http.protocol("httpa").option("rejectService", true);
+        http.protocol("httpa") //
+                .option("rejectService", true);
         http.protocol("httpb");
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<HttpEchoService> service = context.publisher() //
@@ -1149,10 +1158,14 @@ public class EndpointContextValidationTest {
     @Test
     public void laterEndpointAcceptsTheSameProtocolAfterAnEarlierEndpointRejectsIt() throws Exception {
         // 先配置拒绝端点，随后配置同名协议的可用端点。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("http").protocol("httpa") //
-                .contextPath("/orders").option("rejectService", true);
-        configuration.connector("http").protocol("httpa").contextPath("/orders");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("http") //
+                .protocol("httpa") //
+                .contextPath("/orders") //
+                .option("rejectService", true);
+        configuration.connector("http") //
+                .protocol("httpa") //
+                .contextPath("/orders");
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<HttpEchoService> service = context.publisher() //
                     .rsfService(HttpEchoService.class, value -> value).protocol("httpa").register();
@@ -1179,10 +1192,14 @@ public class EndpointContextValidationTest {
     @Test
     public void laterEndpointRejectionPreservesAnEarlierEndpointsPublication() throws Exception {
         // 已接受服务的端点在前，拒绝同名协议的端点在后。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("http").protocol("httpa").contextPath("/orders");
-        configuration.connector("http").protocol("httpa") //
-                .contextPath("/orders").option("rejectService", true);
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("http") //
+                .protocol("httpa") //
+                .contextPath("/orders");
+        configuration.connector("http") //
+                .protocol("httpa") //
+                .contextPath("/orders") //
+                .option("rejectService", true);
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<HttpEchoService> service = context.publisher() //
                     .rsfService(HttpEchoService.class, value -> value).protocol("httpa").register();
@@ -1207,8 +1224,10 @@ public class EndpointContextValidationTest {
     @Test
     public void contextCloseClearsEndpointResultsAndPreservesTheOriginalDeclaration() throws Exception {
         // 插件定义与原始路径声明分别保存在端点结果和协议组中。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("http").protocol("httpa").contextPath("/orders");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("http") //
+                .protocol("httpa") //
+                .contextPath("/orders");
         Object definition = new Object();
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<HttpEchoService> service = context.publisher() //
@@ -1234,11 +1253,15 @@ public class EndpointContextValidationTest {
     @Test
     public void sameProtocolKeepsEachEndpointsDefinitionAndEffectiveDefaultPathIndependent() throws Exception {
         // 同名协议在两个端点使用不同定义和默认路径，服务本身没有声明路径。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("http").protocol("httpa") //
-                .contextPath("/orders").option("definition", "orders-definition");
-        configuration.connector("http").protocol("httpa") //
-                .contextPath("/inventory").option("definition", "inventory-definition");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("http") //
+                .protocol("httpa") //
+                .contextPath("/orders") //
+                .option("definition", "orders-definition");
+        configuration.connector("http") //
+                .protocol("httpa") //
+                .contextPath("/inventory") //
+                .option("definition", "inventory-definition");
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<HttpEchoService> service = context.publisher() //
                     .rsfService(HttpEchoService.class, value -> value).register();
@@ -1263,9 +1286,11 @@ public class EndpointContextValidationTest {
     @Test
     public void unselectedServiceUsesOnlyProtocolDefaultContext() throws Exception {
         // 协议允许多个上下文，服务未显式选择时只发布到默认路径。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("http").protocol("httpa") //
-                .contextPath("/default").addContextPath("/orders");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("http") //
+                .protocol("httpa") //
+                .contextPath("/default") //
+                .addContextPath("/orders");
 
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<Runnable> service = context.publisher() //
@@ -1286,10 +1311,12 @@ public class EndpointContextValidationTest {
     @Test
     public void explicitServiceContextsDoNotImplicitlyIncludeDefaultContext() throws Exception {
         // 同一协议的一次选择可以指定多个上下文，选择顺序也决定默认发布地址。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("http").protocol("httpa") //
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("http") //
+                .protocol("httpa") //
                 .contextPath("/default") //
-                .addContextPath("/orders").addContextPath("/inventory");
+                .addContextPath("/orders") //
+                .addContextPath("/inventory");
 
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<Runnable> service = context.publisher() //
@@ -1316,8 +1343,10 @@ public class EndpointContextValidationTest {
     @Test
     public void exactContextSelectionUsesTheProtocolNameIgnoringCase() throws Exception {
         // 协议公开独立地址前缀，服务通过协议名称声明精确调用路径。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("http").protocol("httpa").addressScheme("public");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("http") //
+                .protocol("httpa") //
+                .addressScheme("public");
 
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<Runnable> service = context.publisher() //

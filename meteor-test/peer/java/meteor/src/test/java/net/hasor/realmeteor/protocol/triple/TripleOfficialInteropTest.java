@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.triple;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.util.ArrayList;
 import java.util.List;
@@ -1046,9 +1047,12 @@ public class TripleOfficialInteropTest {
         // 普通 HTTP JSON 与官方 Dubbo 的 HTTP RPC 入口互通，无需 Protobuf 定义。
         try (DubboTripleProcess peer = DubboTripleProcess.start("server", "--port=0")) {
             int port = peer.awaitPort();
-            MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(5000);
-            configuration.connector("http").option("httpVersion", 1) //
-                    .protocol("triple").option("httpMode", "json");
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setDefaultTimeout(5000);
+            configuration.connector("http") //
+                    .option("httpVersion", 1) //
+                    .protocol("triple") //
+                    .option("httpMode", "json");
             try (MetContext client = configuration.buildContext()) {
                 client.start();
                 MetBindInfo<TripleInteropWrappedService> service = client.publisher() //
@@ -1069,9 +1073,12 @@ public class TripleOfficialInteropTest {
         // 普通 HTTP JSON 与官方 Dubbo 的 HTTP RPC 入口互通，无需 Protobuf 定义。
         try (DubboTripleProcess peer = DubboTripleProcess.start("server", "--port=0")) {
             int port = peer.awaitPort();
-            MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(5000);
-            configuration.connector("http").option("httpVersion", 2) //
-                    .protocol("triple").option("httpMode", "json");
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setDefaultTimeout(5000);
+            configuration.connector("http") //
+                    .option("httpVersion", 2) //
+                    .protocol("triple") //
+                    .option("httpMode", "json");
             try (MetContext client = configuration.buildContext()) {
                 client.start();
                 MetBindInfo<TripleInteropWrappedService> service = client.publisher() //
@@ -1215,13 +1222,16 @@ public class TripleOfficialInteropTest {
     }
 
     private MetConfiguration configuration(boolean listen, boolean gzip) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(5000);
-        var connector = configuration.connector("http").option("httpVersion", 2);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(5000);
+        var connector = configuration.connector("http") //
+                .option("httpVersion", 2);
         if (listen) {
             // Dubbo 会把 loopback 目标规范化为本机接口，监听全部本地地址保持可达。
             connector.bind("0.0.0.0", 0);
         }
-        var protocol = connector.protocol("triple").option("streamBody", true);
+        var protocol = connector.protocol("triple") //
+                .option("streamBody", true);
         if (gzip) {
             protocol.option("compression", "gzip");
         }

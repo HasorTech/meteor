@@ -8,6 +8,10 @@
 package net.hasor.realmeteor.rpc.websocket;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import net.hasor.example.bootstrap.TestConfigurationUtils;
+import net.hasor.example.rpc.websocket.WebSocketConfigurations;
+import net.hasor.example.rpc.websocket.WebSocketSample;
+import net.hasor.example.rpc.websocket.WebSocketSampleService;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
@@ -15,12 +19,9 @@ import net.hasor.meteor.MetFuture;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.domain.MetTimeoutException;
-import net.hasor.example.rpc.websocket.WebSocketConfigurations;
-import net.hasor.example.rpc.websocket.WebSocketSample;
-import net.hasor.example.rpc.websocket.WebSocketSampleService;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 从公开 bootstrap、发布、订阅和代理调用验证 WebSocket 应用协议。 */
 public class WebSocketBootstrapTest {
@@ -28,9 +29,10 @@ public class WebSocketBootstrapTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void textFramesCarryRealJsonRpcWithUnicode() throws Exception {
         // 两端明确选择文本消息，接收不同帧类型会使示例协议拒绝请求。
-        MetConfiguration incoming = new MetConfiguration();
-        MetConfiguration outgoing = new MetConfiguration();
-        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 1).bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        MetConfiguration outgoing = TestConfigurationUtils.create();
+        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 1) //
+                .bind("127.0.0.1", 0);
         WebSocketConfigurations.websocket(listener, 1, false);
         WebSocketConfigurations.websocket(WebSocketConfigurations.http(outgoing, 1), 1, false);
         WebSocketSampleService implementation = new WebSocketSampleService();
@@ -55,9 +57,10 @@ public class WebSocketBootstrapTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void binaryFramesPreserveTypedByteArrayArgumentsAndResults() throws Exception {
         // JSON 信封放入二进制消息，参数仍按公开方法签名还原为 byte[]。
-        MetConfiguration incoming = new MetConfiguration();
-        MetConfiguration outgoing = new MetConfiguration();
-        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 1).bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        MetConfiguration outgoing = TestConfigurationUtils.create();
+        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 1) //
+                .bind("127.0.0.1", 0);
         WebSocketConfigurations.websocket(listener, 1, true);
         WebSocketConfigurations.websocket(WebSocketConfigurations.http(outgoing, 1), 1, true);
         WebSocketSampleService implementation = new WebSocketSampleService();
@@ -83,14 +86,17 @@ public class WebSocketBootstrapTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void websocketAndOrdinaryHttpShareOneListenerWithSeparateContexts() throws Exception {
         // 相同 HTTP 连接器在 /ws 升级，在 /http 保留普通 HTTP 应用协议。
-        MetConfiguration incoming = new MetConfiguration();
-        MetConfiguration outgoing = new MetConfiguration();
-        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 1).bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        MetConfiguration outgoing = TestConfigurationUtils.create();
+        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 1) //
+                .bind("127.0.0.1", 0);
         WebSocketConfigurations.websocket(listener, 1, false);
-        listener.protocol("wshttp").contextPath("/http");
+        listener.protocol("wshttp") //
+                .contextPath("/http");
         ConnectorSettings sender = WebSocketConfigurations.http(outgoing, 1);
         WebSocketConfigurations.websocket(sender, 1, false);
-        sender.protocol("wshttp").contextPath("/http");
+        sender.protocol("wshttp") //
+                .contextPath("/http");
         WebSocketSampleService websocket = new WebSocketSampleService();
         WebSocketSampleService ordinary = new WebSocketSampleService();
         try (MetContext server = incoming.buildContext(); //
@@ -122,14 +128,17 @@ public class WebSocketBootstrapTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void http2WebSocketAndOrdinaryHttpShareOneListenerWithSeparateContexts() throws Exception {
         // 相同 HTTP 连接器在 /ws 升级，在 /http 保留普通 HTTP 应用协议。
-        MetConfiguration incoming = new MetConfiguration();
-        MetConfiguration outgoing = new MetConfiguration();
-        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 2).bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        MetConfiguration outgoing = TestConfigurationUtils.create();
+        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 2) //
+                .bind("127.0.0.1", 0);
         WebSocketConfigurations.websocket(listener, 2, false);
-        listener.protocol("wshttp").contextPath("/http");
+        listener.protocol("wshttp") //
+                .contextPath("/http");
         ConnectorSettings sender = WebSocketConfigurations.http(outgoing, 2);
         WebSocketConfigurations.websocket(sender, 2, false);
-        sender.protocol("wshttp").contextPath("/http");
+        sender.protocol("wshttp") //
+                .contextPath("/http");
         WebSocketSampleService websocket = new WebSocketSampleService();
         WebSocketSampleService ordinary = new WebSocketSampleService();
         try (MetContext server = incoming.buildContext(); //
@@ -161,13 +170,16 @@ public class WebSocketBootstrapTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void websocketHandshakeCannotUpgradeTheOrdinaryHttpContext() throws Exception {
         // 只有 /ws 声明升级；客户端故意向 /http 发送 WebSocket 握手。
-        MetConfiguration incoming = new MetConfiguration();
-        MetConfiguration outgoing = new MetConfiguration();
-        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 1).bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        MetConfiguration outgoing = TestConfigurationUtils.create();
+        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 1) //
+                .bind("127.0.0.1", 0);
         WebSocketConfigurations.websocket(listener, 1, false);
-        listener.protocol("wshttp").contextPath("/http");
+        listener.protocol("wshttp") //
+                .contextPath("/http");
         ConnectorSettings sender = WebSocketConfigurations.http(outgoing, 1);
-        WebSocketConfigurations.websocket(sender, 1, false).option("requestPath", "/http");
+        WebSocketConfigurations.websocket(sender, 1, false) //
+                .option("requestPath", "/http");
         WebSocketSampleService implementation = new WebSocketSampleService();
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {

@@ -23,6 +23,7 @@ import net.hasor.example.contract.types.TypeValueVectors;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
@@ -110,14 +111,17 @@ public class GoProtoTypeMatrixTest {
     }
 
     private MetConfiguration configuration(boolean provider) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol(this.protocol);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol(this.protocol);
         configuration.setDefaultTimeout(10000);
         int httpVersion = StringUtils.equals(this.protocol, "grpc") ? 2 : 1;
-        var connector = configuration.connector("http").option("httpVersion", httpVersion);
+        var connector = configuration.connector("http") //
+                .option("httpVersion", httpVersion);
         if (provider) {
             connector.bind(ContainerProcess.runnerHost(), 0);
         }
-        connector.protocol(this.protocol).contextPath("/");
+        connector.protocol(this.protocol) //
+                .contextPath("/");
         return configuration;
     }
 

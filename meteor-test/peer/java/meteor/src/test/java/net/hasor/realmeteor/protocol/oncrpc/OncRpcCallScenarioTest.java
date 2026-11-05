@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.oncrpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.math.BigInteger;
 import java.net.DatagramSocket;
@@ -242,8 +243,11 @@ public class OncRpcCallScenarioTest {
         try (DatagramSocket socket = new DatagramSocket(new InetSocketAddress("::1", 0))) {
             port = socket.getLocalPort();
         }
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("oncrpc-udp");
-        incoming.connector("udp").bind("::1", port).protocol("oncrpc-udp");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc-udp");
+        incoming.connector("udp") //
+                .bind("::1", port) //
+                .protocol("oncrpc-udp");
         MetConfiguration outgoing = this.outgoing("udp");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
@@ -472,10 +476,15 @@ public class OncRpcCallScenarioTest {
     public void authSysIdentityReachesPublishedServiceFilter() throws Exception {
         // AUTH_SYS 是调用方自报的身份数据，服务端过滤器可以读取其协议选项。
         MetConfiguration incoming = this.incoming("tcp");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("oncrpc");
-        outgoing.connector("tcp").protocol("oncrpc") //
-                .option("auth", "sys").option("authUid", 1234).option("authGid", 5678) //
-                .option("authGroups", "11,22").option("authMachine", "example-host");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc");
+        outgoing.connector("tcp") //
+                .protocol("oncrpc") //
+                .option("auth", "sys") //
+                .option("authUid", 1234) //
+                .option("authGid", 5678) //
+                .option("authGroups", "11,22") //
+                .option("authMachine", "example-host");
         AtomicReference<String> uid = new AtomicReference<>();
         AtomicReference<String> machine = new AtomicReference<>();
         try (MetContext server = incoming.buildContext(); //
@@ -511,8 +520,11 @@ public class OncRpcCallScenarioTest {
                 port = socket.getLocalPort();
             }
         }
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol(protocol);
-        configuration.connector(transport).bind("127.0.0.1", port).protocol(protocol);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol(protocol);
+        configuration.connector(transport) //
+                .bind("127.0.0.1", port) //
+                .protocol(protocol);
         return configuration;
     }
 
@@ -521,8 +533,10 @@ public class OncRpcCallScenarioTest {
         if (StringUtils.equals("udp", transport)) {
             protocol = "oncrpc-udp";
         }
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol(protocol);
-        configuration.connector(transport).protocol(protocol);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol(protocol);
+        configuration.connector(transport) //
+                .protocol(protocol);
         return configuration;
     }
 

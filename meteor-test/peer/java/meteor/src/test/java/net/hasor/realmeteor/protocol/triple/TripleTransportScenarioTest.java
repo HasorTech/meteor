@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.triple;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.io.IOException;
 import java.io.InputStream;
@@ -671,9 +672,13 @@ public class TripleTransportScenarioTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void independentClientUpgradesHttpJsonCallToH2c() throws Exception {
         // 同一明文端口先接收 HTTP/1 Upgrade，再执行 HTTP/2 的普通 JSON RPC。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("triple");
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("triple") //
-                .contextPath("/rpc").option("httpMode", "json");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("triple");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("triple") //
+                .contextPath("/rpc") //
+                .option("httpMode", "json");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(TripleDemoService.class, new TripleDemoServiceImpl()) //
@@ -826,11 +831,16 @@ public class TripleTransportScenarioTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void clientRejectsWrongServerHostname() throws Exception {
         // 受信证书的名称不属于访问地址，HTTPS 主机名校验应拒绝该连接。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("triple");
-        ConnectorSettings listener = configuration.connector("http").bind("127.0.0.1", 0);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("triple");
+        ConnectorSettings listener = configuration.connector("http") //
+                .bind("127.0.0.1", 0);
         serverTls(listener, 1, "NONE");
         listener.option("tlsKeyStore", "classpath:/certs/acceptance/wrong-host-server.p12");
-        listener.protocol("triple").addressScheme("https").contextPath("/rpc").option("httpMode", "json");
+        listener.protocol("triple") //
+                .addressScheme("https") //
+                .contextPath("/rpc") //
+                .option("httpMode", "json");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(TripleDemoService.class, new TripleDemoServiceImpl()) //
@@ -876,11 +886,16 @@ public class TripleTransportScenarioTest {
     }
 
     private MetConfiguration secureIncoming(int httpVersion, String mode, String clientAuth) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("triple");
-        ConnectorSettings endpoint = configuration.connector("http").bind("127.0.0.1", 0);
-        endpoint.option("httpVersion", httpVersion).option("streamBody", true);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("triple");
+        ConnectorSettings endpoint = configuration.connector("http") //
+                .bind("127.0.0.1", 0);
+        endpoint.option("httpVersion", httpVersion) //
+                .option("streamBody", true);
         serverTls(endpoint, httpVersion, clientAuth);
-        var protocol = endpoint.protocol("triple").addressScheme("https").contextPath("/rpc");
+        var protocol = endpoint.protocol("triple") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
         if (mode != null) {
             protocol.option("httpMode", mode);
         }
@@ -888,12 +903,16 @@ public class TripleTransportScenarioTest {
     }
 
     private MetConfiguration secureOutgoing(int httpVersion, String mode, String identity) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("triple");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("triple");
         configuration.setDefaultTimeout(5000);
-        ConnectorSettings endpoint = configuration.connector("http").option("httpVersion", httpVersion);
+        ConnectorSettings endpoint = configuration.connector("http") //
+                .option("httpVersion", httpVersion);
         endpoint.option("streamBody", true);
         clientTls(endpoint, httpVersion, identity);
-        var protocol = endpoint.protocol("triple").addressScheme("https").contextPath("/rpc");
+        var protocol = endpoint.protocol("triple") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
         if (mode != null) {
             protocol.option("httpMode", mode);
         }

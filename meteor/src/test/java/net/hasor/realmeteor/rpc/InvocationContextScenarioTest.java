@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import net.hasor.cobble.StringUtils;
+import net.hasor.example.bootstrap.TestConfigurationUtils;
 import net.hasor.meteor.*;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.rpc.MetRequestLocal;
@@ -105,8 +106,10 @@ public class InvocationContextScenarioTest {
     @Test
     public void remoteInvocationBindsContextOnTheServerWorker() throws Exception {
         // 服务端监听真实 TCP 端口，客户端只声明出站 RSF 协议。
-        MetConfiguration serverConfiguration = new MetConfiguration();
-        serverConfiguration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        MetConfiguration serverConfiguration = TestConfigurationUtils.create();
+        serverConfiguration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
         MetConfiguration clientConfiguration = this.localConfiguration();
         AtomicReference<MetRequest> observedRequest = new AtomicReference<>();
         AtomicReference<MetResponse> observedResponse = new AtomicReference<>();
@@ -133,8 +136,10 @@ public class InvocationContextScenarioTest {
     @Test
     public void outboundFiltersSeeTheClientInvocationContext() throws Exception {
         // 服务端提供远程服务，客户端过滤器观察准备发送的本地请求。
-        MetConfiguration serverConfiguration = new MetConfiguration();
-        serverConfiguration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        MetConfiguration serverConfiguration = TestConfigurationUtils.create();
+        serverConfiguration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
         MetConfiguration clientConfiguration = this.localConfiguration();
         AtomicReference<MetRequest> observedRequest = new AtomicReference<>();
         AtomicReference<MetResponse> observedResponse = new AtomicReference<>();
@@ -162,8 +167,9 @@ public class InvocationContextScenarioTest {
     }
 
     private MetConfiguration localConfiguration() {
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("tcp").protocol("rsf");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("tcp") //
+                .protocol("rsf");
         return configuration;
     }
 

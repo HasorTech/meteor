@@ -11,16 +11,25 @@ import java.io.InputStreamReader;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.UUID;
 import javax.sql.DataSource;
 import net.hasor.cobble.StringUtils;
 import net.hasor.dbvisitor.jdbc.core.JdbcTemplate;
+import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.registry.jdbc.JdbcRegistryConfiguration;
 
 /** 为独立场景准备 H2 表结构及数据源；上下文和会话仍由每个测试自己管理。 */
 public final class JdbcTestSupport {
+    public static MetConfiguration createConfiguration() {
+        // 每个应用实例独占数据目录，锁文件及持久身份由 Meteor 管理。
+        Path dataHome = Path.of(System.getProperty("java.io.tmpdir"), "meteor-" + UUID.randomUUID());
+        return new MetConfiguration() //
+                .setDataHome(dataHome);
+    }
+
     public static String createDatabase() throws Exception {
         // 每个场景使用独立的内存库，避免并行测试共享持久目录。
         String url = "jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1";

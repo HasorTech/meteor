@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.hasor.cobble.concurrent.future.Cancellable;
+import net.hasor.example.bootstrap.TestConfigurationUtils;
 import net.hasor.meteor.*;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.domain.MetServiceType;
@@ -25,7 +26,7 @@ public class MetContextEventTest {
     @Test
     public void startedSubscriberCanRequestOfflineFromAnotherThread() throws Exception {
         // 工作线程等待启动事件，再执行回调安排的下线操作。
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         ExecutorService worker = Executors.newSingleThreadExecutor();
         CountDownLatch requestOffline = new CountDownLatch(1);
         AtomicInteger completed = new AtomicInteger();
@@ -54,7 +55,7 @@ public class MetContextEventTest {
     @Test
     public void closedSubscriberCanRepeatCloseFromAnotherThread() throws Exception {
         // 关闭事件回调同步等待另一线程重复关闭，不能与关闭锁形成互相等待。
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         ExecutorService worker = Executors.newSingleThreadExecutor();
         AtomicInteger completed = new AtomicInteger();
         try (MetContext context = configuration.buildContext()) {
@@ -86,7 +87,7 @@ public class MetContextEventTest {
     @Test
     public void registrationEventContainsCommittedProviderInformation() throws Exception {
         // 在构建后订阅服务事件，通过公开发布入口登记提供者。
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         try (MetContext context = configuration.buildContext()) {
             List<MetContextEvent> events = new ArrayList<>();
             context.subscribe(events::add);
@@ -106,7 +107,7 @@ public class MetContextEventTest {
     @Test
     public void registrationEventIdentifiesConsumerPublishedAfterStartup() throws Exception {
         // 上下文已启动，随后登记没有实现对象的消费者。
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         try (MetContext context = configuration.buildContext()) {
             context.start();
             List<MetContextEvent> events = new ArrayList<>();
@@ -125,8 +126,9 @@ public class MetContextEventTest {
     @Test
     public void lifecycleEventsFollowCommittedTransitionsOnlyOnce() throws Exception {
         // 关闭自动上线，明确观察启动、上线、下线和关闭的状态迁移。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("tcp").protocol("rsf");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("tcp") //
+                .protocol("rsf");
         configuration.setAutomaticOnline(false);
         try (MetContext context = configuration.buildContext()) {
             List<MetContextEvent> events = new ArrayList<>();
@@ -156,8 +158,9 @@ public class MetContextEventTest {
     @Test
     public void lifecycleListenerTransitionsAreDeliveredAfterTheCurrentEvent() throws Exception {
         // 手动上线后，第一个监听者在 ONLINE 回调中立即发起下线。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("tcp").protocol("rsf");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("tcp") //
+                .protocol("rsf");
         configuration.setAutomaticOnline(false);
         try (MetContext context = configuration.buildContext()) {
             List<MetContextEventType> observed = new ArrayList<>();
@@ -183,8 +186,9 @@ public class MetContextEventTest {
     @Test
     public void concurrentLifecycleCallWaitsForItsEventDelivery() throws Exception {
         // ONLINE 投递线程停在监听器中，另一线程在此期间提交 OFFLINE。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("tcp").protocol("rsf");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("tcp") //
+                .protocol("rsf");
         configuration.setAutomaticOnline(false);
         ExecutorService workers = Executors.newFixedThreadPool(2);
         CountDownLatch onlineEntered = new CountDownLatch(1);
@@ -243,7 +247,7 @@ public class MetContextEventTest {
     @Test
     public void failingListenerDoesNotPreventLaterListenerDelivery() throws Exception {
         // 先订阅抛异常的监听器，再订阅正常监听器。
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         try (MetContext context = configuration.buildContext()) {
             List<MetContextEvent> events = new ArrayList<>();
             Cancellable broken = context.subscribe(event -> {
@@ -263,7 +267,7 @@ public class MetContextEventTest {
     @Test
     public void closedContextRejectsNewSubscriptions() throws Exception {
         // 关闭后事件资源已经释放，不能登记新的监听器。
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         try (MetContext context = configuration.buildContext()) {
             context.close();
             assertThrows(IllegalStateException.class, () -> context.subscribe(event -> {
@@ -274,7 +278,7 @@ public class MetContextEventTest {
     @Test
     public void cancellingOneRegistrationDoesNotRemoveAnotherForTheSameListener() throws Exception {
         // 同一监听器订阅两次，每个取消句柄只负责它自己的登记。
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         try (MetContext context = configuration.buildContext()) {
             List<MetContextEvent> events = new ArrayList<>();
             MetContextListener listener = events::add;
@@ -294,10 +298,10 @@ public class MetContextEventTest {
 
     @Test
     public void subscriptionsBelongToOneContextAndAreReleasedOnClose() throws Exception {
-        // 同一配置构建两个上下文，分别登记监听器用于验证关闭隔离。
-        MetConfiguration configuration = new MetConfiguration();
+        // 复用配置并使用独立数据目录，分别登记监听器用于验证关闭隔离。
+        MetConfiguration configuration = TestConfigurationUtils.create();
         try (MetContext first = configuration.buildContext(); //
-             MetContext second = configuration.buildContext()) {
+             MetContext second = configuration.setDataHome(TestConfigurationUtils.newDataHome()).buildContext()) {
             List<MetContextEvent> firstEvents = new ArrayList<>();
             List<MetContextEvent> secondEvents = new ArrayList<>();
             Cancellable firstSubscription = first.subscribe(firstEvents::add);

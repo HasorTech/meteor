@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.connect;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.ParameterizedClass;
@@ -885,12 +886,16 @@ public class ConnectOfficialInteropTest {
     }
 
     private MetConfiguration configuration(boolean listening, int version, boolean gzip, boolean get) {
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        var connector = configuration.connector("http").option("httpVersion", version);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        var connector = configuration.connector("http") //
+                .option("httpVersion", version);
         if (listening) {
             connector.bind(ContainerProcess.runnerHost(), 0);
         }
-        var protocol = connector.protocol("connect").contextPath("/connect").option("streamBody", true);
+        var protocol = connector.protocol("connect") //
+                .contextPath("/connect") //
+                .option("streamBody", true);
         if (gzip) {
             protocol.option("compression", "gzip");
         }

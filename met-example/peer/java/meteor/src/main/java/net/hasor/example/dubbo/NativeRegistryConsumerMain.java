@@ -25,10 +25,12 @@ public final class NativeRegistryConsumerMain {
         // 只配置注册中心，业务地址由 Dubbo 原生发现提供。
         DubboRegistryConfiguration registry = new DubboRegistryConfiguration() //
                 .setAddress("zookeeper://127.0.0.1:2181");
-        MetConfiguration configuration = new MetConfiguration().setUnitName("local");
-        configuration.setApplicationName("meteor-native-dubbo-order-consumer");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setUnitName("local") //
+                .setApplicationName("meteor-native-dubbo-order-consumer");
         configuration.addExtension(registry);
-        configuration.connector("tcp").protocol("dubbo");
+        configuration.connector("tcp") //
+                .protocol("dubbo");
 
         try (MetContext context = configuration.buildContext()) {
             // 启动后登记消费者，原生注册扩展订阅同接口、分组和版本的提供者。

@@ -31,7 +31,8 @@ public final class SecurityExample {
 
             // 同一个 HTTPS 端口由 ALPN 选择 HTTP/1.1 或 HTTP/2，协议挂载保持原样。
             if (StringUtils.equals("http", connector.getType())) {
-                connector.option("httpScheme", "https").option("tlsAlpn", "h2,http/1.1");
+                connector.option("httpScheme", "https") //
+                        .option("tlsAlpn", "h2,http/1.1");
             }
         }
     }
@@ -45,7 +46,8 @@ public final class SecurityExample {
                     .option("tlsTrustStore", trustStore) //
                     .option("tlsTrustStorePassword", trustPassword);
             if (keyStore != null) {
-                connector.option("tlsKeyStore", keyStore).option("tlsKeyStorePassword", keyPassword);
+                connector.option("tlsKeyStore", keyStore) //
+                        .option("tlsKeyStorePassword", keyPassword);
             }
 
             // 与现有出站 HTTP 版本保持一致，避免把 HTTP/1.1 连接协商成 HTTP/2。
@@ -55,7 +57,8 @@ public final class SecurityExample {
                 if (StringUtils.equals("2", version)) {
                     alpn = "h2";
                 }
-                connector.option("httpScheme", "https").option("tlsAlpn", alpn);
+                connector.option("httpScheme", "https") //
+                        .option("tlsAlpn", alpn);
             }
         }
     }

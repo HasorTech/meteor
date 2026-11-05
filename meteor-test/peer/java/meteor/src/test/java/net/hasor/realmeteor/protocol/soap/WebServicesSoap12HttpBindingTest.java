@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -772,8 +773,12 @@ public class WebServicesSoap12HttpBindingTest {
     public void meteorSoap12ClientCallsMeteorServer() throws Exception {
         // 客户端和服务端都通过正式协议配置明确选择 SOAP 1.2。
         MetConfiguration incoming = this.configuration();
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("soap");
-        outgoing.connector("http").protocol("soap").option("soapVersion", "1.2").contextPath("/services");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
+        outgoing.connector("http") //
+                .protocol("soap") //
+                .option("soapVersion", "1.2") //
+                .contextPath("/services");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();
@@ -796,7 +801,8 @@ public class WebServicesSoap12HttpBindingTest {
     }
 
     private MetConfiguration configuration() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("soap") //

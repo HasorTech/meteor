@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hprose.bootstrap;
+import java.util.UUID;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -32,11 +33,19 @@ public class ProtocolExposureTest extends BootstrapTestSupport {
     public void defaultExposureUsesBothProtocolsAndTheirOwnSerialization() throws Exception {
         // 两个接入点发布同一个服务；调用方同样配置两种协议，无全局序列化选项。
         MetConfiguration provider = new MetConfiguration();
-        provider.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        provider.connector("http").bind("127.0.0.1", 0).protocol("hprose");
+        provider.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
+        provider.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        provider.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("hprose");
         MetConfiguration consumer = new MetConfiguration();
-        consumer.connector("tcp").protocol("rsf");
-        consumer.connector("http").protocol("hprose");
+        consumer.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
+        consumer.connector("tcp") //
+                .protocol("rsf");
+        consumer.connector("http") //
+                .protocol("hprose");
         try (MetContext server = provider.buildContext(); //
              MetContext client = consumer.buildContext()) {
             // 两端先启动，再通过公开发布入口装配服务和订阅。
@@ -75,11 +84,19 @@ public class ProtocolExposureTest extends BootstrapTestSupport {
     public void rsfRejectsServicesPublishedOnlyOverHprose() throws Exception {
         // 发布 RSF 与 Hprose 两个入口，验证 RSF 不能调用仅供 Hprose 的服务。
         MetConfiguration provider = new MetConfiguration();
-        provider.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        provider.connector("http").bind("127.0.0.1", 0).protocol("hprose");
+        provider.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
+        provider.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        provider.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("hprose");
         MetConfiguration consumer = new MetConfiguration();
-        consumer.connector("tcp").protocol("rsf");
-        consumer.connector("http").protocol("hprose");
+        consumer.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
+        consumer.connector("tcp") //
+                .protocol("rsf");
+        consumer.connector("http") //
+                .protocol("hprose");
         try (MetContext server = provider.buildContext(); //
              MetContext client = consumer.buildContext()) {
             // 两端先启动，再通过公开发布入口装配服务和订阅。
@@ -124,11 +141,19 @@ public class ProtocolExposureTest extends BootstrapTestSupport {
     public void hproseRejectsServicesPublishedOnlyOverRsf() throws Exception {
         // 发布两个协议入口，验证 Hprose 不能调用仅供 RSF 的服务。
         MetConfiguration provider = new MetConfiguration();
-        provider.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        provider.connector("http").bind("127.0.0.1", 0).protocol("hprose");
+        provider.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
+        provider.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        provider.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("hprose");
         MetConfiguration consumer = new MetConfiguration();
-        consumer.connector("tcp").protocol("rsf");
-        consumer.connector("http").protocol("hprose");
+        consumer.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
+        consumer.connector("tcp") //
+                .protocol("rsf");
+        consumer.connector("http") //
+                .protocol("hprose");
         try (MetContext server = provider.buildContext(); //
              MetContext client = consumer.buildContext()) {
             // 两端先启动，再通过公开发布入口装配服务和订阅。
@@ -171,11 +196,19 @@ public class ProtocolExposureTest extends BootstrapTestSupport {
     public void disallowedMessageIsRejectedBeforeAccept() throws Exception {
         // 配置双协议应用，验证单向消息也遵循服务发布范围。
         MetConfiguration provider = new MetConfiguration();
-        provider.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        provider.connector("http").bind("127.0.0.1", 0).protocol("hprose");
+        provider.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
+        provider.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        provider.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("hprose");
         MetConfiguration consumer = new MetConfiguration();
-        consumer.connector("tcp").protocol("rsf");
-        consumer.connector("http").protocol("hprose");
+        consumer.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
+        consumer.connector("tcp") //
+                .protocol("rsf");
+        consumer.connector("http") //
+                .protocol("hprose");
         try (MetContext server = provider.buildContext(); //
              MetContext client = consumer.buildContext()) {
             // 两端先启动，再通过公开发布入口装配服务和订阅。
@@ -216,9 +249,15 @@ public class ProtocolExposureTest extends BootstrapTestSupport {
     public void endpointSerializerCanBeOverriddenByAnExplicitServiceSerializer() throws Exception {
         // 将客户端协议默认序列化器设置为 JSON，供服务显式设置覆盖。
         MetConfiguration provider = new MetConfiguration();
-        provider.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        provider.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
+        provider.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
         MetConfiguration consumer = new MetConfiguration();
-        consumer.connector("tcp").protocol("rsf").option("serializeType", "jSoN");
+        consumer.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
+        consumer.connector("tcp") //
+                .protocol("rsf") //
+                .option("serializeType", "jSoN");
         try (MetContext server = provider.buildContext(); //
              MetContext client = consumer.buildContext()) {
             // 两端先启动，再通过公开发布入口装配服务和订阅。

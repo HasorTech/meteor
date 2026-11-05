@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
+import net.hasor.example.protocol.xmlrpc.TestConfigurationUtils;
 import net.hasor.cobble.concurrent.future.BasicFuture;
 import net.hasor.cobble.concurrent.future.Cancellable;
 import net.hasor.cobble.concurrent.future.Future;
@@ -536,8 +537,11 @@ public class XmlRpcSessionTest {
     }
 
     private static MetConfiguration applicationConfiguration() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("xmlrpc");
-        configuration.connector("http").protocol("xmlrpc").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("xmlrpc");
+        configuration.connector("http") //
+                .protocol("xmlrpc") //
+                .contextPath("/rpc");
         return configuration;
     }
 

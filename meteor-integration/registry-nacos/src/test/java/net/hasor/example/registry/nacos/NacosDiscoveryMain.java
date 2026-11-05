@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.example.registry.nacos;
+import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import net.hasor.cobble.StringUtils;
@@ -22,12 +23,17 @@ public class NacosDiscoveryMain {
         // 从配置文件连接真实 Nacos，服务端和客户端使用同一份注册中心配置。
         NacosRegistryConfiguration conf = createRegistryConfiguration();
         MetConfiguration provider = new MetConfiguration();
+        provider.setDataHome(Path.of("build", "meteor-instances", "nacos-example-provider"));
         provider.addExtension(conf);
-        provider.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        provider.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
 
         MetConfiguration consumer = new MetConfiguration();
+        consumer.setDataHome(Path.of("build", "meteor-instances", "nacos-example-consumer"));
         consumer.addExtension(conf);
-        consumer.connector("tcp").protocol("rsf");
+        consumer.connector("tcp") //
+                .protocol("rsf");
 
         // 启动两个独立应用，分别发布和订阅同一个接口。
         try (MetContext server = provider.buildContext(); //

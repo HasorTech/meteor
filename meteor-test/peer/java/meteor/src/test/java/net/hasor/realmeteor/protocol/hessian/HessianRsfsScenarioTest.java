@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hessian;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -103,21 +104,23 @@ public class HessianRsfsScenarioTest {
     }
 
     private static MetConfiguration server(String clientAuth) {
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         configuration.setDefaultTimeout(10000);
-        ConnectorSettings connector = configuration.connector("tcp").bind("127.0.0.1", 0);
+        ConnectorSettings connector = configuration.connector("tcp") //
+                .bind("127.0.0.1", 0);
         connector.option("tlsEnabled", true);
         connector.option("tlsKeyStore", "classpath:/certs/acceptance/server.p12");
         connector.option("tlsKeyStorePassword", "meteor-test");
         connector.option("tlsTrustStore", "classpath:/certs/acceptance/trust.p12");
         connector.option("tlsTrustStorePassword", "meteor-test");
         connector.option("tlsClientAuth", clientAuth);
-        connector.protocol("rsf").addressScheme("rsfs");
+        connector.protocol("rsf") //
+                .addressScheme("rsfs");
         return configuration;
     }
 
     private static MetConfiguration client(boolean provideCertificate) {
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         configuration.setDefaultTimeout(10000);
         ConnectorSettings connector = configuration.connector("tcp");
         connector.option("tlsEnabled", true);
@@ -127,7 +130,8 @@ public class HessianRsfsScenarioTest {
             connector.option("tlsKeyStore", "classpath:/certs/acceptance/client.p12");
             connector.option("tlsKeyStorePassword", "meteor-test");
         }
-        connector.protocol("rsf").addressScheme("rsfs");
+        connector.protocol("rsf") //
+                .addressScheme("rsfs");
         return configuration;
     }
 }

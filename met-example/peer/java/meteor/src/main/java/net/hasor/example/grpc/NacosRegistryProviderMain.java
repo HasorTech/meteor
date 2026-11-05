@@ -22,17 +22,23 @@ public final class NacosRegistryProviderMain {
 
     public static void main(String[] arguments) throws Exception {
         // 接入本地 Nacos，配置业务监听。
-        MetConfiguration configuration = new MetConfiguration().setUnitName("local");
-        configuration.setApplicationName("grpc-order-provider");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setUnitName("local") //
+                .setApplicationName("grpc-order-provider");
         configuration.addExtension(new NacosRegistryConfiguration().setAddress("127.0.0.1:8848") //
                 .setPublishHost("127.0.0.1"));
-        configuration.connector("http").bind("127.0.0.1", 8080).option("httpVersion", 2) //
-                .protocol("grpc").contextPath("/grpc") //
+        configuration.connector("http") //
+                .bind("127.0.0.1", 8080) //
+                .option("httpVersion", 2) //
+                .protocol("grpc") //
+                .contextPath("/grpc") //
                 .option("serializeType", "Protobuf") //
                 .option("streamBody", true);
 
         // RSF 端点供注册中心管理调用使用。
-        configuration.connector("tcp").bind("127.0.0.1", 8081).protocol("rsf");
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 8081) //
+                .protocol("rsf");
 
         try (MetContext context = configuration.buildContext()) {
             // 启动后发布订单服务，扩展自动登记服务地址。

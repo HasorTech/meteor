@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.connect;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.hasor.example.echo.TextEchoService;
@@ -29,10 +30,14 @@ public class ConnectJavaInteropTest {
     @Timeout(value = 45000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorClientCallsCommunityJavaSdkServer() throws Exception {
         // 社区 SDK 的 Protobuf 4 图仅属于对端，宿主与产品仍使用既有 Protobuf 3。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("connect");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("connect");
         configuration.setDefaultTimeout(5000);
-        configuration.connector("http").option("httpVersion", 1) //
-                .protocol("connect").contextPath("/").option("streamBody", true);
+        configuration.connector("http") //
+                .option("httpVersion", 1) //
+                .protocol("connect") //
+                .contextPath("/") //
+                .option("streamBody", true);
         try (ConnectJavaProcess peer = ConnectJavaProcess.startServer(); //
              MetContext client = configuration.buildContext()) {
             int port = peer.awaitPort();
@@ -54,9 +59,13 @@ public class ConnectJavaInteropTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialJavaClientCallsMeteorProtobufService() throws Exception {
         // Meteor 仍发布普通 Java 接口，SDK 与服务端只共享标准 proto 契约。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("connect");
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("connect").contextPath("/rpc").option("streamBody", true);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("connect");
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("connect") //
+                .contextPath("/rpc") //
+                .option("streamBody", true);
         var resource = new GrpcProtoResource(getClass().getResource("/protocol/proto/java-sdk-echo.proto"));
         AtomicInteger calls = new AtomicInteger();
         try (MetContext server = configuration.buildContext()) {

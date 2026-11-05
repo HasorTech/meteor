@@ -8,6 +8,7 @@
 package net.hasor.realmeteor.protocol.connect;
 import net.hasor.example.protocol.connect.ConnectDemoService;
 import net.hasor.example.protocol.connect.ConnectDemoServiceImpl;
+import net.hasor.example.protocol.connect.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.peer.protocol.connect.ConnectSdkClient;
@@ -22,9 +23,13 @@ public class ConnectJavaSdkBasicTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialJavaSdkCallsPublishedJsonService() throws Exception {
         // 只挂载当前被测协议，不能以其它协议成功代替本协议可用。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("connect");
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("connect").contextPath("/rpc").option("streamBody", true);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("connect");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("connect") //
+                .contextPath("/rpc") //
+                .option("streamBody", true);
         ConnectDemoServiceImpl implementation = new ConnectDemoServiceImpl();
         try (MetContext server = configuration.buildContext()) {
             server.start();

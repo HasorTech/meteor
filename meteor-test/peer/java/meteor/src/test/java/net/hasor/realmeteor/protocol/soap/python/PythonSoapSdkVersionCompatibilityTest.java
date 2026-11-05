@@ -3,6 +3,7 @@
  * Licensed under the Apache License, Version 2.0. See LICENSE.txt.
  */
 package net.hasor.realmeteor.protocol.soap.python;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.ParameterizedClass;
@@ -50,13 +51,16 @@ public class PythonSoapSdkVersionCompatibilityTest {
     @Timeout(value = 60000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void exchangesOrderUsingTheSelectedSdkVersion() throws Exception {
         // 每个发行版只验证它实际提供的一个角色，版本由对端加载的发行包再次核验。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
         var connector = configuration.connector("http");
         boolean sdkConsumer = StringUtils.equals(this.direction, "SDK-to-Meteor");
         if (sdkConsumer) {
             connector.bind(ContainerProcess.runnerHost(), 0);
         }
-        connector.protocol("soap").contextPath("/soap").addressScheme("http");
+        connector.protocol("soap") //
+                .contextPath("/soap") //
+                .addressScheme("http");
 
         if (sdkConsumer) {
             // Meteor 自动生成在线 WSDL，Zeep 自己下载并调用，不借用 Java XML 编码器。

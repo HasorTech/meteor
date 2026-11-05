@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.thrift;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.thrift.annotated.*;
@@ -454,7 +455,8 @@ public class ThriftAnnotatedContractScenarioTest {
 
     private MetConfiguration configuration(boolean listen, boolean http) {
         String protocol = http ? "thrift-http" : "thrift";
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol(protocol);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol(protocol);
         configuration.setDefaultTimeout(10000);
         MetConfiguration.ConnectorSettings connector = configuration.connector(http ? "http" : "tcp");
         if (listen) {

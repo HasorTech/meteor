@@ -110,10 +110,12 @@ public class ComplexValueMatrixTest {
         // 每个方法独占缓存、服务分组和注册空间，不继承上一用例发现的业务地址。
         this.scope = "complex-" + UUID.randomUUID();
         this.incoming = this.profile.providerConfiguration();
-        this.incoming.setDefaultGroup(this.scope).setApplicationName("complex-provider");
+        this.incoming.setDefaultGroup(this.scope) //
+                .setApplicationName("complex-provider");
         this.incoming.setDataHome(Files.createDirectory(this.data.resolve("provider")));
         this.outgoing = this.profile.consumerConfiguration();
-        this.outgoing.setDefaultGroup(this.scope).setApplicationName("complex-consumer");
+        this.outgoing.setDefaultGroup(this.scope) //
+                .setApplicationName("complex-consumer");
         this.outgoing.setDataHome(Files.createDirectory(this.data.resolve("consumer")));
 
         // 注册模式只有存储配置；独立 RSF 挂载只承载内部管理服务。
@@ -122,8 +124,11 @@ public class ComplexValueMatrixTest {
             this.incoming.addExtension(registry);
             this.outgoing.addExtension(registry);
             if (this.profile != ComplexValueProfile.RSF_JSON) {
-                this.incoming.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-                this.outgoing.connector("tcp").protocol("rsf");
+                this.incoming.connector("tcp") //
+                        .bind("127.0.0.1", 0) //
+                        .protocol("rsf");
+                this.outgoing.connector("tcp") //
+                        .protocol("rsf");
             }
         }
     }

@@ -7,19 +7,20 @@
  */
 package net.hasor.realmeteor.rpc.websocket;
 import java.util.concurrent.TimeUnit;
+import net.hasor.example.bootstrap.TestConfigurationUtils;
+import net.hasor.example.rpc.websocket.WebSocketConfigurations;
+import net.hasor.example.rpc.websocket.WebSocketObservation;
+import net.hasor.example.rpc.websocket.WebSocketSample;
+import net.hasor.example.rpc.websocket.WebSocketSampleService;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetFuture;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
-import net.hasor.example.rpc.websocket.WebSocketConfigurations;
-import net.hasor.example.rpc.websocket.WebSocketObservation;
-import net.hasor.example.rpc.websocket.WebSocketSample;
-import net.hasor.example.rpc.websocket.WebSocketSampleService;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 无回执消息的 Caller 完成只确认协议写出，不承诺远端业务完成。 */
 public class WebSocketMessageTest {
@@ -27,11 +28,12 @@ public class WebSocketMessageTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void notificationCompletesAfterWriteWithoutAResponseFrame() throws Exception {
         // 两侧通过扩展观察真实应用消息，业务方法保持阻塞。
-        MetConfiguration incoming = new MetConfiguration();
-        MetConfiguration outgoing = new MetConfiguration();
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        MetConfiguration outgoing = TestConfigurationUtils.create();
         incoming.addExtension(context -> new WebSocketObservation());
         outgoing.addExtension(context -> new WebSocketObservation());
-        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 1).bind("127.0.0.1", 0);
+        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 1) //
+                .bind("127.0.0.1", 0);
         WebSocketConfigurations.websocket(listener, 1, false);
         WebSocketConfigurations.websocket(WebSocketConfigurations.http(outgoing, 1), 1, false);
         WebSocketSampleService implementation = new WebSocketSampleService();

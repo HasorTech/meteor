@@ -125,9 +125,12 @@ public class OrderedProtocolStateTest {
         MetConfiguration incoming = OrderCompositionConfiguration.provider(this.write, this.read, discovered);
         MetConfiguration writing = OrderCompositionConfiguration.consumer(this.write, discovered);
         MetConfiguration reading = OrderCompositionConfiguration.consumer(this.read, discovered);
-        incoming.setDefaultGroup(scope).setApplicationName("composition-provider");
-        writing.setDefaultGroup(scope).setApplicationName("composition-writer");
-        reading.setDefaultGroup(scope).setApplicationName("composition-reader");
+        incoming.setDefaultGroup(scope) //
+                .setApplicationName("composition-provider");
+        writing.setDefaultGroup(scope) //
+                .setApplicationName("composition-writer");
+        reading.setDefaultGroup(scope) //
+                .setApplicationName("composition-reader");
         incoming.setDataHome(Files.createDirectory(this.data.resolve("provider")));
         writing.setDataHome(Files.createDirectory(this.data.resolve("writer")));
         reading.setDataHome(Files.createDirectory(this.data.resolve("reader")));

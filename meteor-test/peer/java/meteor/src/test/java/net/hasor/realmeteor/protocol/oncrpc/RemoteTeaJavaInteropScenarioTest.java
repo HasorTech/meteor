@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.oncrpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -26,8 +27,11 @@ public class RemoteTeaJavaInteropScenarioTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void remoteTeaJavaTcpClientCallsMeteor() throws Exception {
         // Meteor 通过公开入口监听 TCP；普通业务接口绑定既有 ONC RPC 契约。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc");
-        configuration.connector("tcp").bind(ContainerProcess.runnerHost(), 0).protocol("oncrpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc");
+        configuration.connector("tcp") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("oncrpc");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(OncRpcDemoService.class, new OncRpcDemoServiceImpl()) //
@@ -50,8 +54,11 @@ public class RemoteTeaJavaInteropScenarioTest {
         try (DatagramSocket socket = new DatagramSocket(0, InetAddress.getLoopbackAddress())) {
             port = socket.getLocalPort();
         }
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc-udp");
-        configuration.connector("udp").bind(ContainerProcess.runnerHost(), port).protocol("oncrpc-udp");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc-udp");
+        configuration.connector("udp") //
+                .bind(ContainerProcess.runnerHost(), port) //
+                .protocol("oncrpc-udp");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(OncRpcDemoService.class, new OncRpcDemoServiceImpl()) //
@@ -70,8 +77,11 @@ public class RemoteTeaJavaInteropScenarioTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void remoteTeaJavaTcpClientReceivesGarbageArgumentsForNonAsciiString() throws Exception {
         // 同一标准 IDL 没有约定 UTF-8 扩展，Meteor 应拒绝非 ASCII 参数而不是静默替换。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc");
-        configuration.connector("tcp").bind(ContainerProcess.runnerHost(), 0).protocol("oncrpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc");
+        configuration.connector("tcp") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("oncrpc");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(OncRpcDemoService.class, new OncRpcDemoServiceImpl()) //
@@ -93,8 +103,11 @@ public class RemoteTeaJavaInteropScenarioTest {
         try (DatagramSocket socket = new DatagramSocket(0, InetAddress.getLoopbackAddress())) {
             port = socket.getLocalPort();
         }
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc-udp");
-        configuration.connector("udp").bind(ContainerProcess.runnerHost(), port).protocol("oncrpc-udp");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc-udp");
+        configuration.connector("udp") //
+                .bind(ContainerProcess.runnerHost(), port) //
+                .protocol("oncrpc-udp");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(OncRpcDemoService.class, new OncRpcDemoServiceImpl()) //

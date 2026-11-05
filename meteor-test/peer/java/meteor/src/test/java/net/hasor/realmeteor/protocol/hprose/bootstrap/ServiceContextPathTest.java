@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hprose.bootstrap;
+import java.util.UUID;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
@@ -38,9 +39,14 @@ public class ServiceContextPathTest extends BootstrapTestSupport {
     @Test
     public void implicitServiceUsesOnlyTheDefaultContext() throws Exception {
         // 接入点声明默认和附加挂载，服务不显式选择路径。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("hprose");
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("hprose").contextPath("/hprose").addContextPath("/private");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDefaultProtocol("hprose");
+        configuration.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("hprose") //
+                .contextPath("/hprose") //
+                .addContextPath("/private");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             AtomicInteger calls = new AtomicInteger();
@@ -71,9 +77,14 @@ public class ServiceContextPathTest extends BootstrapTestSupport {
     @Test
     public void explicitlySelectedExtraContextExcludesTheDefault() throws Exception {
         // 服务只选择附加挂载，声明附加路径不会自动保留默认路径。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("hprose");
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("hprose").contextPath("/hprose").addContextPath("/private");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDefaultProtocol("hprose");
+        configuration.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("hprose") //
+                .contextPath("/hprose") //
+                .addContextPath("/private");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             AtomicInteger calls = new AtomicInteger();
@@ -105,9 +116,14 @@ public class ServiceContextPathTest extends BootstrapTestSupport {
     @Test
     public void explicitlySelectedMultipleContextsExposeTheSameService() throws Exception {
         // 同一个服务显式选择默认与附加路径，共享一个 HTTP 监听地址。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("hprose");
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("hprose").contextPath("/hprose").addContextPath("/private");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDefaultProtocol("hprose");
+        configuration.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("hprose") //
+                .contextPath("/hprose") //
+                .addContextPath("/private");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             AtomicInteger calls = new AtomicInteger();
@@ -139,9 +155,14 @@ public class ServiceContextPathTest extends BootstrapTestSupport {
     @Test
     public void functionListsContainOnlyServicesExposedOnTheRequestedContext() throws Exception {
         // 两个服务分属默认和附加挂载，使用不同别名观察函数发现范围。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("hprose");
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("hprose").contextPath("/hprose").addContextPath("/private");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDefaultProtocol("hprose");
+        configuration.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("hprose") //
+                .contextPath("/hprose") //
+                .addContextPath("/private");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher() //
@@ -171,9 +192,14 @@ public class ServiceContextPathTest extends BootstrapTestSupport {
     @Test
     public void nestedContextDoesNotExposeServicesFromTheDefaultContext() throws Exception {
         // 默认路径包含独立的子挂载，默认服务不能穿透到该子挂载。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("hprose");
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("hprose").contextPath("/api").addContextPath("/api/private");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDefaultProtocol("hprose");
+        configuration.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("hprose") //
+                .contextPath("/api") //
+                .addContextPath("/api/private");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             AtomicInteger calls = new AtomicInteger();
@@ -204,9 +230,14 @@ public class ServiceContextPathTest extends BootstrapTestSupport {
     @Test
     public void similarPrefixWithoutAPathBoundaryDoesNotMatchTheContext() throws Exception {
         // 发布默认挂载服务，记录相似前缀请求是否意外进入业务。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("hprose");
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("hprose").contextPath("/api").addContextPath("/api/private");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDefaultProtocol("hprose");
+        configuration.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("hprose") //
+                .contextPath("/api") //
+                .addContextPath("/api/private");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             AtomicInteger calls = new AtomicInteger();
@@ -232,12 +263,21 @@ public class ServiceContextPathTest extends BootstrapTestSupport {
     @Test
     public void clientUsesEachSubscribedServicesSelectedOutboundContext() throws Exception {
         // 两端声明相同挂载，客户端为不同订阅分别选择默认路径和附加路径。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("hprose");
-        incoming.connector("http").bind("127.0.0.1", 0) //
-                .protocol("hprose").contextPath("/hprose").addContextPath("/private");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("hprose");
+        MetConfiguration incoming = new MetConfiguration() //
+                .setDefaultProtocol("hprose");
+        incoming.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("hprose") //
+                .contextPath("/hprose") //
+                .addContextPath("/private");
+        MetConfiguration outgoing = new MetConfiguration() //
+                .setDefaultProtocol("hprose");
+        outgoing.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
         outgoing.connector("http") //
-                .protocol("hprose").contextPath("/hprose").addContextPath("/private");
+                .protocol("hprose") //
+                .contextPath("/hprose") //
+                .addContextPath("/private");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();

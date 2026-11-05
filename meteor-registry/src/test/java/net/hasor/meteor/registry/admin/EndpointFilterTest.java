@@ -19,6 +19,7 @@ import net.hasor.meteor.registry.shared.rpc.ServiceMemberData;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import static net.hasor.meteor.registry.shared.RegistryTestUtils.createConfiguration;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -34,7 +35,8 @@ public class EndpointFilterTest {
     @Test
     public void allConditionsMustMatchOneMountAndDoNotTrimReturnedMember() throws Exception {
         // 准备管理扩展与写入端点公告的独立存储会话。
-        MetConfiguration adminConfiguration = new MetConfiguration().addExtension(this.storageConfiguration);
+        MetConfiguration adminConfiguration = createConfiguration() //
+                .addExtension(this.storageConfiguration);
 
         try (StorageAccess backend = this.storageConfiguration.openStorage(); //
              MetContext adminContext = adminConfiguration.buildContext()) {
@@ -90,7 +92,8 @@ public class EndpointFilterTest {
     @Test
     public void instanceOnlyAndBlankFiltersIncludeMembersWithoutConfiguredEndpoints() throws Exception {
         // 准备没有端点挂载的成员。
-        MetConfiguration adminConfiguration = new MetConfiguration().addExtension(this.storageConfiguration);
+        MetConfiguration adminConfiguration = createConfiguration() //
+                .addExtension(this.storageConfiguration);
 
         try (StorageAccess backend = this.storageConfiguration.openStorage(); //
              MetContext adminContext = adminConfiguration.buildContext()) {

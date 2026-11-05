@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import net.hasor.example.protocol.xmlrpc.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.annotation.MetIgnore;
@@ -36,9 +37,14 @@ public class XmlRpcBindingTest {
 
     @BeforeEach
     public void preparePublishedMetadata() throws Exception {
-        MetConfiguration configuration = new MetConfiguration().setDefaultGroup("wire");
-        configuration.connector("tcp").protocol("rsf");
-        configuration.connector("http").protocol("xmlrpc").contextPath("/rpc").addContextPath("/private");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultGroup("wire");
+        configuration.connector("tcp") //
+                .protocol("rsf");
+        configuration.connector("http") //
+                .protocol("xmlrpc") //
+                .contextPath("/rpc") //
+                .addContextPath("/private");
         this.context = configuration.buildContext();
         this.context.publisher().rsfService(Methods.class, new Methods()) //
                 .name("Methods").aliasName("xmlrpc", "math").register();

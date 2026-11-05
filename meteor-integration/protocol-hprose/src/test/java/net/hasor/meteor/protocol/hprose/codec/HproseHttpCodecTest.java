@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import hprose.io.HproseReader;
+import net.hasor.example.protocol.hprose.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.annotation.MetIgnore;
@@ -228,8 +229,10 @@ public class HproseHttpCodecTest {
     }
 
     private MetConfiguration configuration() {
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("http").protocol("hprose").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("http") //
+                .protocol("hprose") //
+                .contextPath("/rpc");
         return configuration;
     }
 
@@ -241,7 +244,8 @@ public class HproseHttpCodecTest {
     @Test
     public void decodeLeavesRequestIdForSession() throws Exception {
         // 发布用于编解码的服务，并创建当前挂载点的编解码器。
-        MetConfiguration configuration = this.configuration().setDefaultGroup("wire");
+        MetConfiguration configuration = this.configuration() //
+                .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
@@ -264,7 +268,8 @@ public class HproseHttpCodecTest {
     @Test
     public void decodedCallPreservesDeclaredArgumentType() throws Exception {
         // 发布用于编解码的服务，并创建当前挂载点的编解码器。
-        MetConfiguration configuration = this.configuration().setDefaultGroup("wire");
+        MetConfiguration configuration = this.configuration() //
+                .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
@@ -287,7 +292,8 @@ public class HproseHttpCodecTest {
     @Test
     public void responseUsesTheCallersRequestId() throws Exception {
         // 发布用于编解码的服务，并创建当前挂载点的编解码器。
-        MetConfiguration configuration = this.configuration().setDefaultGroup("wire");
+        MetConfiguration configuration = this.configuration() //
+                .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
@@ -311,7 +317,8 @@ public class HproseHttpCodecTest {
     public void functionListOmitsServicesNotPublishedThroughHprose() throws Exception {
         // 两个实际端点同时存在，服务只向 RSF 暴露。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("tcp").protocol("rsf");
+        configuration.connector("tcp") //
+                .protocol("rsf");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, value -> value).protocol("rsf").register();
             ProtocolConfig mount = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/hprose"));
@@ -329,7 +336,8 @@ public class HproseHttpCodecTest {
     @Test
     public void functionDiscoveryOmitsIgnoredAndStaticMethods() throws Exception {
         // 发布用于编解码的服务，并创建当前挂载点的编解码器。
-        MetConfiguration configuration = this.configuration().setDefaultGroup("wire");
+        MetConfiguration configuration = this.configuration() //
+                .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
@@ -356,7 +364,8 @@ public class HproseHttpCodecTest {
     @Test
     public void similarPathPrefixDoesNotMatchTheMount() throws Exception {
         // 发布用于编解码的服务，并创建当前挂载点的编解码器。
-        MetConfiguration configuration = this.configuration().setDefaultGroup("wire");
+        MetConfiguration configuration = this.configuration() //
+                .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
@@ -374,7 +383,8 @@ public class HproseHttpCodecTest {
     @Test
     public void ignoredMethodCannotBeInvoked() throws Exception {
         // 发布用于编解码的服务，并创建当前挂载点的编解码器。
-        MetConfiguration configuration = this.configuration().setDefaultGroup("wire");
+        MetConfiguration configuration = this.configuration() //
+                .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
@@ -398,7 +408,8 @@ public class HproseHttpCodecTest {
     @Test
     public void inheritedIgnoredMethodCannotBeInvoked() throws Exception {
         // 发布用于编解码的服务，并创建当前挂载点的编解码器。
-        MetConfiguration configuration = this.configuration().setDefaultGroup("wire");
+        MetConfiguration configuration = this.configuration() //
+                .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
@@ -422,7 +433,8 @@ public class HproseHttpCodecTest {
     @Test
     public void ignoredOverloadCannotBeInvoked() throws Exception {
         // 发布用于编解码的服务，并创建当前挂载点的编解码器。
-        MetConfiguration configuration = this.configuration().setDefaultGroup("wire");
+        MetConfiguration configuration = this.configuration() //
+                .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
@@ -446,7 +458,8 @@ public class HproseHttpCodecTest {
     @Test
     public void staticMethodCannotBeInvoked() throws Exception {
         // 发布用于编解码的服务，并创建当前挂载点的编解码器。
-        MetConfiguration configuration = this.configuration().setDefaultGroup("wire");
+        MetConfiguration configuration = this.configuration() //
+                .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
@@ -470,7 +483,8 @@ public class HproseHttpCodecTest {
     @Test
     public void unicodeBusinessErrorsRemainFailedResponses() throws Exception {
         // 发布用于编解码的服务，并创建当前挂载点的编解码器。
-        MetConfiguration configuration = this.configuration().setDefaultGroup("wire");
+        MetConfiguration configuration = this.configuration() //
+                .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
@@ -492,7 +506,8 @@ public class HproseHttpCodecTest {
     @Test
     public void unstructuredRemoteErrorPreservesItsText() throws Exception {
         // 发布用于编解码的服务，并创建当前挂载点的编解码器。
-        MetConfiguration configuration = this.configuration().setDefaultGroup("wire");
+        MetConfiguration configuration = this.configuration() //
+                .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
@@ -510,7 +525,8 @@ public class HproseHttpCodecTest {
     @Test
     public void numericStructuredStatusIsPreserved() throws Exception {
         // 发布用于编解码的服务，并创建当前挂载点的编解码器。
-        MetConfiguration configuration = this.configuration().setDefaultGroup("wire");
+        MetConfiguration configuration = this.configuration() //
+                .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
@@ -529,7 +545,8 @@ public class HproseHttpCodecTest {
     @Test
     public void stringStructuredStatusIsPreserved() throws Exception {
         // 发布用于编解码的服务，并创建当前挂载点的编解码器。
-        MetConfiguration configuration = this.configuration().setDefaultGroup("wire");
+        MetConfiguration configuration = this.configuration() //
+                .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
@@ -548,7 +565,8 @@ public class HproseHttpCodecTest {
     @Test
     public void okStatusInAnErrorFrameRemainsFailure() throws Exception {
         // 发布用于编解码的服务，并创建当前挂载点的编解码器。
-        MetConfiguration configuration = this.configuration().setDefaultGroup("wire");
+        MetConfiguration configuration = this.configuration() //
+                .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
@@ -567,7 +585,8 @@ public class HproseHttpCodecTest {
     @Test
     public void acceptStatusInAnErrorFrameRemainsFailure() throws Exception {
         // 发布用于编解码的服务，并创建当前挂载点的编解码器。
-        MetConfiguration configuration = this.configuration().setDefaultGroup("wire");
+        MetConfiguration configuration = this.configuration() //
+                .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
@@ -587,7 +606,8 @@ public class HproseHttpCodecTest {
     @Test
     public void malformedJsonErrorRemainsReadable() throws Exception {
         // 发布用于编解码的服务，并创建当前挂载点的编解码器。
-        MetConfiguration configuration = this.configuration().setDefaultGroup("wire");
+        MetConfiguration configuration = this.configuration() //
+                .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
@@ -606,7 +626,8 @@ public class HproseHttpCodecTest {
     @Test
     public void arrayJsonErrorRemainsReadable() throws Exception {
         // 发布用于编解码的服务，并创建当前挂载点的编解码器。
-        MetConfiguration configuration = this.configuration().setDefaultGroup("wire");
+        MetConfiguration configuration = this.configuration() //
+                .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
@@ -625,7 +646,8 @@ public class HproseHttpCodecTest {
     @Test
     public void nullJsonErrorRemainsReadable() throws Exception {
         // 发布用于编解码的服务，并创建当前挂载点的编解码器。
-        MetConfiguration configuration = this.configuration().setDefaultGroup("wire");
+        MetConfiguration configuration = this.configuration() //
+                .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
@@ -644,7 +666,8 @@ public class HproseHttpCodecTest {
     @Test
     public void nullStructuredStatusRemainsReadable() throws Exception {
         // 发布用于编解码的服务，并创建当前挂载点的编解码器。
-        MetConfiguration configuration = this.configuration().setDefaultGroup("wire");
+        MetConfiguration configuration = this.configuration() //
+                .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
@@ -663,7 +686,8 @@ public class HproseHttpCodecTest {
     @Test
     public void invalidStructuredStatusRemainsReadable() throws Exception {
         // 发布用于编解码的服务，并创建当前挂载点的编解码器。
-        MetConfiguration configuration = this.configuration().setDefaultGroup("wire");
+        MetConfiguration configuration = this.configuration() //
+                .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
@@ -682,7 +706,8 @@ public class HproseHttpCodecTest {
     @Test
     public void outOfRangeStructuredStatusRemainsReadable() throws Exception {
         // 发布用于编解码的服务，并创建当前挂载点的编解码器。
-        MetConfiguration configuration = this.configuration().setDefaultGroup("wire");
+        MetConfiguration configuration = this.configuration() //
+                .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
@@ -701,7 +726,8 @@ public class HproseHttpCodecTest {
     @Test
     public void multipleStructuredErrorsRemainsReadable() throws Exception {
         // 发布用于编解码的服务，并创建当前挂载点的编解码器。
-        MetConfiguration configuration = this.configuration().setDefaultGroup("wire");
+        MetConfiguration configuration = this.configuration() //
+                .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
@@ -720,7 +746,8 @@ public class HproseHttpCodecTest {
     @Test
     public void ordinaryErrorTextRemainsReadable() throws Exception {
         // 发布用于编解码的服务，并创建当前挂载点的编解码器。
-        MetConfiguration configuration = this.configuration().setDefaultGroup("wire");
+        MetConfiguration configuration = this.configuration() //
+                .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
@@ -739,7 +766,8 @@ public class HproseHttpCodecTest {
     @Test
     public void emptySuccessfulResponseIsRejected() throws Exception {
         // 发布用于编解码的服务，并创建当前挂载点的编解码器。
-        MetConfiguration configuration = this.configuration().setDefaultGroup("wire");
+        MetConfiguration configuration = this.configuration() //
+                .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
@@ -754,7 +782,8 @@ public class HproseHttpCodecTest {
     @Test
     public void truncatedSuccessfulResponseIsRejected() throws Exception {
         // 发布用于编解码的服务，并创建当前挂载点的编解码器。
-        MetConfiguration configuration = this.configuration().setDefaultGroup("wire");
+        MetConfiguration configuration = this.configuration() //
+                .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
@@ -769,7 +798,8 @@ public class HproseHttpCodecTest {
     @Test
     public void trailingSuccessfulResponseIsRejected() throws Exception {
         // 发布用于编解码的服务，并创建当前挂载点的编解码器。
-        MetConfiguration configuration = this.configuration().setDefaultGroup("wire");
+        MetConfiguration configuration = this.configuration() //
+                .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
@@ -784,7 +814,8 @@ public class HproseHttpCodecTest {
     @Test
     public void unknownSuccessfulResponseTagIsRejected() throws Exception {
         // 发布用于编解码的服务，并创建当前挂载点的编解码器。
-        MetConfiguration configuration = this.configuration().setDefaultGroup("wire");
+        MetConfiguration configuration = this.configuration() //
+                .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
@@ -799,7 +830,8 @@ public class HproseHttpCodecTest {
     @Test
     public void terminatedNullResponseIsSuccessful() throws Exception {
         // 发布用于编解码的服务，并创建当前挂载点的编解码器。
-        MetConfiguration configuration = this.configuration().setDefaultGroup("wire");
+        MetConfiguration configuration = this.configuration() //
+                .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));

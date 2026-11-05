@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.grpc.Echo;
 import net.hasor.example.protocol.grpc.EchoImpl;
 import net.hasor.example.protocol.grpc.Message;
+import net.hasor.example.protocol.grpc.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.annotation.MetService;
@@ -24,10 +25,16 @@ public class GrpcServiceNamingScenarioTest {
     @Test
     public void serviceAnnotationSuppliesTheDefaultName() throws Exception {
         // 双方通过公共服务注解命名，均不配置 gRPC 别名。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("grpc");
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("grpc");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("grpc");
-        outgoing.connector("http").option("httpVersion", 2).protocol("grpc");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        outgoing.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("grpc");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();
@@ -49,10 +56,16 @@ public class GrpcServiceNamingScenarioTest {
     @Test
     public void aliasCollisionWithADefaultNamePreservesTheExistingProvider() throws Exception {
         // 首个服务使用推导名称，另一个不同服务身份的别名将与它冲突。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("grpc");
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("grpc");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("grpc");
-        outgoing.connector("http").option("httpVersion", 2).protocol("grpc");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        outgoing.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("grpc");
         EchoImpl implementation = new EchoImpl();
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
@@ -83,12 +96,20 @@ public class GrpcServiceNamingScenarioTest {
     @Test
     public void differentMountsCanExposeTheSameEffectiveName() throws Exception {
         // 一个端点声明两个目录，两个提供者分别选择自己的挂载。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("grpc");
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("grpc") //
-                .contextPath("/first").addContextPath("/second");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("grpc");
-        outgoing.connector("http").option("httpVersion", 2).protocol("grpc") //
-                .contextPath("/first").addContextPath("/second");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc") //
+                .contextPath("/first") //
+                .addContextPath("/second");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        outgoing.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("grpc") //
+                .contextPath("/first") //
+                .addContextPath("/second");
         EchoImpl first = new EchoImpl();
         EchoImpl second = new EchoImpl();
         try (MetContext server = incoming.buildContext(); //

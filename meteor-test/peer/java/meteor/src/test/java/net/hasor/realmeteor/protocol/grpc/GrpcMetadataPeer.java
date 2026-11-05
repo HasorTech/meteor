@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -136,14 +137,17 @@ abstract class GrpcMetadataPeer {
 
     protected static MetConfiguration configuration(boolean server) {
         // 两端共用 HTTP/2、增量正文和 gzip，只有服务端需要监听。
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         configuration.setDefaultProtocol("grpc");
         configuration.setDefaultTimeout(10000);
-        var http = configuration.connector("http").option("httpVersion", 2);
+        var http = configuration.connector("http") //
+                .option("httpVersion", 2);
         if (server) {
             http.bind("127.0.0.1", 0);
         }
-        http.protocol("grpc").option("streamBody", true).option("compression", "gzip");
+        http.protocol("grpc") //
+                .option("streamBody", true) //
+                .option("compression", "gzip");
         return configuration;
     }
 

@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -71,7 +72,7 @@ public class GrpcClientRetryPolicyInteropTest {
                 return request;
             }
         };
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         configuration //
                 .connector("http") //
                 .bind("127.0.0.1", 0) //
@@ -971,10 +972,12 @@ public class GrpcClientRetryPolicyInteropTest {
 
     private MetConfiguration clientConfiguration(String policy, int buffer, int timeout) {
         // 将策略和重放预算作为协议挂载选项，客户端只使用公开 bootstrap。
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         configuration.setDefaultProtocol("grpc");
         configuration.setDefaultTimeout(timeout);
-        var mount = configuration.connector("http").option("httpVersion", 2).protocol("grpc");
+        var mount = configuration.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("grpc");
         mount.option("streamBody", true) //
                 .option("serviceConfig", policy) //
                 .option("retryBufferSize", buffer);

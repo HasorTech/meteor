@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.net.URL;
 import java.util.Map;
 import javax.xml.namespace.QName;
@@ -39,10 +40,12 @@ public class WebServicesHttpsInteropTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void metroClientCallsMeteorOverMutualHttps() throws Exception {
         // Meteor 通过公开 Bootstrap 在双向 TLS HTTP/1.1 上发布外部 WSDL。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
         SoapTlsSupport.server(configuration, "http/1.1", true) //
                 .bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("soap").addressScheme("https") //
+                .protocol("soap") //
+                .addressScheme("https") //
                 .contextPath("/services") //
                 .option("soapVersion", "1.1");
         try (MetContext context = configuration.buildContext()) {
@@ -81,9 +84,11 @@ public class WebServicesHttpsInteropTest {
         // 独立 Metro SOAP 1.2 Provider 由 JDK HttpsServer 承载并要求客户端证书。
         try (SoapPeerProcess server = SoapPeerProcess.metroServer("echo", "1.2", true)) {
             // Meteor 只配置正式出站 TLS 参数，通过公开服务订阅入口创建代理。
-            MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setDefaultProtocol("soap");
             SoapTlsSupport.client(configuration, 1, "http/1.1", true) //
-                    .protocol("soap").addressScheme("https") //
+                    .protocol("soap") //
+                    .addressScheme("https") //
                     .contextPath("/services") //
                     .option("soapVersion", "1.2");
             try (MetContext context = configuration.buildContext()) {

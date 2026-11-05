@@ -7,6 +7,7 @@
  */
 package net.hasor.realmeteor.protocol.triple;
 import net.hasor.example.protocol.triple.NamedEcho;
+import net.hasor.example.protocol.triple.TestConfigurationUtils;
 import net.hasor.example.protocol.triple.WireEcho;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
@@ -56,8 +57,10 @@ public class TripleCommonNamesTest {
     }
 
     private MetConfiguration configuration(boolean listen) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("triple");
-        var connector = configuration.connector("http").option("httpVersion", 2);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("triple");
+        var connector = configuration.connector("http") //
+                .option("httpVersion", 2);
         if (listen) {
             connector.bind("127.0.0.1", 0);
         }

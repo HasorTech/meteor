@@ -118,8 +118,11 @@ public class OrderSelfMatrixTest {
             this.incoming.addExtension(registry);
             this.outgoing.addExtension(registry);
             if (this.protocol != OrderProtocol.RSF) {
-                this.incoming.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-                this.outgoing.connector("tcp").protocol("rsf");
+                this.incoming.connector("tcp") //
+                        .bind("127.0.0.1", 0) //
+                        .protocol("rsf");
+                this.outgoing.connector("tcp") //
+                        .protocol("rsf");
             }
         }
     }

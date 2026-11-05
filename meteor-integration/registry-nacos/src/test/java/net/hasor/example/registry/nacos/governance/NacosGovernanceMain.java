@@ -51,7 +51,8 @@ public class NacosGovernanceMain extends AbstractNacosExample {
     public void globalMetadataAppliesToAllServices() throws Exception {
         // 只为当前治理行为准备独立的注册分组和应用。
         NacosRegistryConfiguration registry = this.createRegistryConfiguration();
-        MetConfiguration administration = new MetConfiguration().addExtension(registry);
+        MetConfiguration administration = createConfiguration() //
+                .addExtension(registry);
         MetConfiguration provider = this.createProviderConfiguration(registry);
         try (MetContext administrationContext = administration.buildContext(); //
              MetContext server = provider.buildContext()) {
@@ -79,7 +80,8 @@ public class NacosGovernanceMain extends AbstractNacosExample {
     public void serviceMetadataOverridesGlobalValuesOnlyForThatService() throws Exception {
         // 只为当前治理行为准备独立的注册分组和应用。
         NacosRegistryConfiguration registry = this.createRegistryConfiguration();
-        MetConfiguration administration = new MetConfiguration().addExtension(registry);
+        MetConfiguration administration = createConfiguration() //
+                .addExtension(registry);
         MetConfiguration provider = this.createProviderConfiguration(registry);
         try (MetContext administrationContext = administration.buildContext(); //
              MetContext server = provider.buildContext()) {
@@ -117,7 +119,8 @@ public class NacosGovernanceMain extends AbstractNacosExample {
     public void instanceServiceMetadataOverridesOnlyTheSelectedInstance() throws Exception {
         // 只为当前治理行为准备独立的注册分组和应用。
         NacosRegistryConfiguration registry = this.createRegistryConfiguration();
-        MetConfiguration administration = new MetConfiguration().addExtension(registry);
+        MetConfiguration administration = createConfiguration() //
+                .addExtension(registry);
         MetConfiguration provider = this.createProviderConfiguration(registry);
         MetConfiguration consumer = this.createConsumerConfiguration(registry);
         try (MetContext administrationContext = administration.buildContext(); //
@@ -156,7 +159,8 @@ public class NacosGovernanceMain extends AbstractNacosExample {
     public void removingInstanceMetadataRestoresServiceInheritance() throws Exception {
         // 只为当前治理行为准备独立的注册分组和应用。
         NacosRegistryConfiguration registry = this.createRegistryConfiguration();
-        MetConfiguration administration = new MetConfiguration().addExtension(registry);
+        MetConfiguration administration = createConfiguration() //
+                .addExtension(registry);
         MetConfiguration provider = this.createProviderConfiguration(registry);
         try (MetContext administrationContext = administration.buildContext(); //
              MetContext server = provider.buildContext()) {
@@ -187,7 +191,8 @@ public class NacosGovernanceMain extends AbstractNacosExample {
     public void removingServiceMetadataRestoresGlobalInheritance() throws Exception {
         // 只为当前治理行为准备独立的注册分组和应用。
         NacosRegistryConfiguration registry = this.createRegistryConfiguration();
-        MetConfiguration administration = new MetConfiguration().addExtension(registry);
+        MetConfiguration administration = createConfiguration() //
+                .addExtension(registry);
         MetConfiguration provider = this.createProviderConfiguration(registry);
         try (MetContext administrationContext = administration.buildContext(); //
              MetContext server = provider.buildContext()) {
@@ -220,7 +225,8 @@ public class NacosGovernanceMain extends AbstractNacosExample {
     public void updatingRouteAppliesItsStoredContent() throws Exception {
         // 只为当前治理行为准备独立的注册分组和应用。
         NacosRegistryConfiguration registry = this.createRegistryConfiguration();
-        MetConfiguration administration = new MetConfiguration().addExtension(registry);
+        MetConfiguration administration = createConfiguration() //
+                .addExtension(registry);
         MetConfiguration consumer = this.createConsumerConfiguration(registry);
         try (MetContext administrationContext = administration.buildContext(); //
              MetContext client = consumer.buildContext()) {
@@ -249,7 +255,8 @@ public class NacosGovernanceMain extends AbstractNacosExample {
     public void disablingRouteClearsRuntimeButKeepsStoredContent() throws Exception {
         // 只为当前治理行为准备独立的注册分组和应用。
         NacosRegistryConfiguration registry = this.createRegistryConfiguration();
-        MetConfiguration administration = new MetConfiguration().addExtension(registry);
+        MetConfiguration administration = createConfiguration() //
+                .addExtension(registry);
         MetConfiguration consumer = this.createConsumerConfiguration(registry);
         try (MetContext administrationContext = administration.buildContext(); //
              MetContext client = consumer.buildContext()) {
@@ -286,7 +293,8 @@ public class NacosGovernanceMain extends AbstractNacosExample {
     public void enablingRouteRestoresItsStoredContent() throws Exception {
         // 只为当前治理行为准备独立的注册分组和应用。
         NacosRegistryConfiguration registry = this.createRegistryConfiguration();
-        MetConfiguration administration = new MetConfiguration().addExtension(registry);
+        MetConfiguration administration = createConfiguration() //
+                .addExtension(registry);
         MetConfiguration consumer = this.createConsumerConfiguration(registry);
         try (MetContext administrationContext = administration.buildContext(); //
              MetContext client = consumer.buildContext()) {
@@ -327,7 +335,8 @@ public class NacosGovernanceMain extends AbstractNacosExample {
     public void instanceSwitchDisablesInheritedRule() throws Exception {
         // 从公开 bootstrap 接入真实 Nacos，服务继承全局路由。
         NacosRegistryConfiguration registry = this.createRegistryConfiguration();
-        MetConfiguration administration = new MetConfiguration().addExtension(registry);
+        MetConfiguration administration = createConfiguration() //
+                .addExtension(registry);
         MetConfiguration consumer = this.createConsumerConfiguration(registry);
         try (MetContext administrationContext = administration.buildContext(); //
              MetContext client = consumer.buildContext()) {
@@ -357,7 +366,8 @@ public class NacosGovernanceMain extends AbstractNacosExample {
     public void membershipSwitchOnlyDisablesTheSelectedService() throws Exception {
         // 一个实例订阅两项业务服务，均继承全局规则。
         NacosRegistryConfiguration registry = this.createRegistryConfiguration();
-        MetConfiguration administration = new MetConfiguration().addExtension(registry);
+        MetConfiguration administration = createConfiguration() //
+                .addExtension(registry);
         MetConfiguration consumer = this.createConsumerConfiguration(registry);
         try (MetContext administrationContext = administration.buildContext(); //
              MetContext client = consumer.buildContext()) {
@@ -390,7 +400,8 @@ public class NacosGovernanceMain extends AbstractNacosExample {
     public void resettingRouteRemovesTheAppliedRule() throws Exception {
         // 只为当前治理行为准备独立的注册分组和应用。
         NacosRegistryConfiguration registry = this.createRegistryConfiguration();
-        MetConfiguration administration = new MetConfiguration().addExtension(registry);
+        MetConfiguration administration = createConfiguration() //
+                .addExtension(registry);
         MetConfiguration consumer = this.createConsumerConfiguration(registry);
         try (MetContext administrationContext = administration.buildContext(); //
              MetContext client = consumer.buildContext()) {
@@ -426,7 +437,8 @@ public class NacosGovernanceMain extends AbstractNacosExample {
     public void disablingServiceLeavesOtherServicesCallable() throws Exception {
         // 只为当前治理行为准备独立的注册分组和应用。
         NacosRegistryConfiguration registry = this.createRegistryConfiguration();
-        MetConfiguration administration = new MetConfiguration().addExtension(registry);
+        MetConfiguration administration = createConfiguration() //
+                .addExtension(registry);
         MetConfiguration provider = this.createProviderConfiguration(registry);
         MetConfiguration consumer = this.createConsumerConfiguration(registry);
         try (MetContext administrationContext = administration.buildContext(); //
@@ -477,7 +489,8 @@ public class NacosGovernanceMain extends AbstractNacosExample {
     public void enablingServiceRestoresDiscoveryAndInvocation() throws Exception {
         // 只为当前治理行为准备独立的注册分组和应用。
         NacosRegistryConfiguration registry = this.createRegistryConfiguration();
-        MetConfiguration administration = new MetConfiguration().addExtension(registry);
+        MetConfiguration administration = createConfiguration() //
+                .addExtension(registry);
         MetConfiguration provider = this.createProviderConfiguration(registry);
         MetConfiguration consumer = this.createConsumerConfiguration(registry);
         try (MetContext administrationContext = administration.buildContext(); //
@@ -519,7 +532,8 @@ public class NacosGovernanceMain extends AbstractNacosExample {
     public void blockingInstanceRejectsBusinessCallsWhileManagementRemainsAvailable() throws Exception {
         // 只为当前治理行为准备独立的注册分组和应用。
         NacosRegistryConfiguration registry = this.createRegistryConfiguration();
-        MetConfiguration administration = new MetConfiguration().addExtension(registry);
+        MetConfiguration administration = createConfiguration() //
+                .addExtension(registry);
         MetConfiguration provider = this.createProviderConfiguration(registry);
         MetConfiguration consumer = this.createConsumerConfiguration(registry);
         try (MetContext administrationContext = administration.buildContext(); //
@@ -566,7 +580,8 @@ public class NacosGovernanceMain extends AbstractNacosExample {
     public void unblockingInstanceRestoresBusinessCalls() throws Exception {
         // 只为当前治理行为准备独立的注册分组和应用。
         NacosRegistryConfiguration registry = this.createRegistryConfiguration();
-        MetConfiguration administration = new MetConfiguration().addExtension(registry);
+        MetConfiguration administration = createConfiguration() //
+                .addExtension(registry);
         MetConfiguration provider = this.createProviderConfiguration(registry);
         MetConfiguration consumer = this.createConsumerConfiguration(registry);
         try (MetContext administrationContext = administration.buildContext(); //
@@ -608,18 +623,21 @@ public class NacosGovernanceMain extends AbstractNacosExample {
     }
 
     private MetConfiguration createProviderConfiguration(NacosRegistryConfiguration registry) {
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = createConfiguration();
         configuration.setApplicationName("nacos-example-server");
         configuration.addExtension(registry);
-        configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
         return configuration;
     }
 
     private MetConfiguration createConsumerConfiguration(NacosRegistryConfiguration registry) {
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = createConfiguration();
         configuration.setApplicationName("nacos-example-client");
         configuration.addExtension(registry);
-        configuration.connector("tcp").protocol("rsf");
+        configuration.connector("tcp") //
+                .protocol("rsf");
         return configuration;
     }
 }

@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URL;
 import java.util.concurrent.ExecutorService;
@@ -29,7 +30,8 @@ public class GrpcOfficialInteropTest {
     @Timeout(value = 40000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialEmptyUnary() throws Exception {
         // 配置 HTTP/2 流式接入，并加载官方互通服务使用的 proto。
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(15000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(15000);
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("grpc") //
@@ -84,7 +86,8 @@ public class GrpcOfficialInteropTest {
     @Timeout(value = 40000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialLargeUnary() throws Exception {
         // 配置 HTTP/2 流式接入，并加载官方互通服务使用的 proto。
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(15000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(15000);
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("grpc") //
@@ -139,7 +142,8 @@ public class GrpcOfficialInteropTest {
     @Timeout(value = 40000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialClientStreaming() throws Exception {
         // 配置 HTTP/2 流式接入，并加载官方互通服务使用的 proto。
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(15000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(15000);
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("grpc") //
@@ -194,7 +198,8 @@ public class GrpcOfficialInteropTest {
     @Timeout(value = 40000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialServerStreaming() throws Exception {
         // 配置 HTTP/2 流式接入，并加载官方互通服务使用的 proto。
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(15000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(15000);
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("grpc") //
@@ -249,7 +254,8 @@ public class GrpcOfficialInteropTest {
     @Timeout(value = 40000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialPingPong() throws Exception {
         // 配置 HTTP/2 流式接入，并加载官方互通服务使用的 proto。
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(15000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(15000);
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("grpc") //
@@ -304,7 +310,8 @@ public class GrpcOfficialInteropTest {
     @Timeout(value = 40000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialEmptyStream() throws Exception {
         // 配置 HTTP/2 流式接入，并加载官方互通服务使用的 proto。
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(15000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(15000);
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("grpc") //
@@ -359,7 +366,8 @@ public class GrpcOfficialInteropTest {
     @Timeout(value = 40000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialCustomMetadata() throws Exception {
         // 配置 HTTP/2 流式接入，并加载官方互通服务使用的 proto。
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(15000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(15000);
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("grpc") //
@@ -414,7 +422,8 @@ public class GrpcOfficialInteropTest {
     @Timeout(value = 40000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialStatusCodeAndMessage() throws Exception {
         // 配置 HTTP/2 流式接入，并加载官方互通服务使用的 proto。
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(15000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(15000);
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("grpc") //
@@ -469,7 +478,8 @@ public class GrpcOfficialInteropTest {
     @Timeout(value = 40000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialSpecialStatusMessage() throws Exception {
         // 配置 HTTP/2 流式接入，并加载官方互通服务使用的 proto。
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(15000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(15000);
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("grpc") //
@@ -524,7 +534,8 @@ public class GrpcOfficialInteropTest {
     @Timeout(value = 40000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialUnimplementedMethod() throws Exception {
         // 配置 HTTP/2 流式接入，并加载官方互通服务使用的 proto。
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(15000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(15000);
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("grpc") //
@@ -579,7 +590,8 @@ public class GrpcOfficialInteropTest {
     @Timeout(value = 40000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialUnimplementedService() throws Exception {
         // 配置 HTTP/2 流式接入，并加载官方互通服务使用的 proto。
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(15000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(15000);
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("grpc") //
@@ -634,7 +646,8 @@ public class GrpcOfficialInteropTest {
     @Timeout(value = 40000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialCancelAfterBegin() throws Exception {
         // 配置 HTTP/2 流式接入，并加载官方互通服务使用的 proto。
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(15000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(15000);
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("grpc") //
@@ -689,7 +702,8 @@ public class GrpcOfficialInteropTest {
     @Timeout(value = 40000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialCancelAfterFirstResponse() throws Exception {
         // 配置 HTTP/2 流式接入，并加载官方互通服务使用的 proto。
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(15000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(15000);
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("grpc") //
@@ -744,7 +758,8 @@ public class GrpcOfficialInteropTest {
     @Timeout(value = 40000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialTimeoutOnSleepingServer() throws Exception {
         // 配置 HTTP/2 流式接入，并加载官方互通服务使用的 proto。
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(15000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(15000);
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("grpc") //
@@ -799,7 +814,8 @@ public class GrpcOfficialInteropTest {
     @Timeout(value = 40000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialClientCompressedUnaryNoprobe() throws Exception {
         // 配置 HTTP/2 流式接入，并加载官方互通服务使用的 proto。
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(15000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(15000);
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("grpc") //
@@ -854,7 +870,8 @@ public class GrpcOfficialInteropTest {
     @Timeout(value = 40000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialClientCompressedStreamingNoprobe() throws Exception {
         // 配置 HTTP/2 流式接入，并加载官方互通服务使用的 proto。
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(15000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(15000);
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("grpc") //
@@ -909,7 +926,8 @@ public class GrpcOfficialInteropTest {
     @Timeout(value = 40000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialRpcSoak() throws Exception {
         // 配置 HTTP/2 流式接入，并加载官方互通服务使用的 proto。
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(15000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(15000);
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("grpc") //
@@ -964,7 +982,8 @@ public class GrpcOfficialInteropTest {
     @Timeout(value = 40000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialChannelSoak() throws Exception {
         // 配置 HTTP/2 流式接入，并加载官方互通服务使用的 proto。
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(15000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(15000);
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("grpc") //

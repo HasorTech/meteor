@@ -58,7 +58,9 @@ public final class MeteorOrderContainerMain {
         // 容器拥有自身上下文，实际监听地址可从同一 Docker 网络内访问并登记到注册中心。
         String host = InetAddress.getLocalHost().getHostAddress();
         MetConfiguration configuration = configuration(home, settings, "provider");
-        configuration.connector("tcp").bind(host, 0).protocol("rsf");
+        configuration.connector("tcp") //
+                .bind(host, 0) //
+                .protocol("rsf");
         try (MetContext context = configuration.buildContext()) {
             context.start();
             MetBindInfo<OrderDemoService> service = context.publisher() //
@@ -82,7 +84,8 @@ public final class MeteorOrderContainerMain {
     private static void consumer(Path home, Properties settings, String directAddress) throws Exception {
         // 消费者只启用出站能力；注册发现场景没有预置服务地址。
         MetConfiguration configuration = configuration(home, settings, "consumer");
-        configuration.connector("tcp").protocol("rsf");
+        configuration.connector("tcp") //
+                .protocol("rsf");
         Properties result = new Properties();
         try (MetContext context = configuration.buildContext()) {
             context.start();
@@ -133,9 +136,10 @@ public final class MeteorOrderContainerMain {
     }
 
     private static MetConfiguration configuration(Path home, Properties settings, String role) {
-        MetConfiguration configuration = new MetConfiguration().setUnitName("container");
-        configuration.setApplicationName("container-order-" + role);
-        configuration.setDataHome(home.resolve(role + "-data"));
+        MetConfiguration configuration = new MetConfiguration() //
+                .setUnitName("container") //
+                .setApplicationName("container-order-" + role) //
+                .setDataHome(home.resolve(role + "-data"));
         String backend = settings.getProperty("backend");
         if (!StringUtils.equals("direct", backend)) {
             configuration.addExtension(registry(settings));

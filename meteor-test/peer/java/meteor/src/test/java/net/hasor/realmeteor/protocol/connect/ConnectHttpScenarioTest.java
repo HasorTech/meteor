@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.connect;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URL;
 import java.util.ArrayList;
@@ -132,9 +133,13 @@ public class ConnectHttpScenarioTest {
     public void jsonSideEffectFreeMethodCanUseGet() throws Exception {
         // GET 开关只作用于实际调用的方法，安全级别来自绑定的标准 proto。
         MetConfiguration incoming = this.configuration(true);
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("connect");
-        outgoing.connector("http").option("httpVersion", 2).protocol("connect") //
-                .contextPath("/rpc").option("get", true);
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("connect");
+        outgoing.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("connect") //
+                .contextPath("/rpc") //
+                .option("get", true);
         URL descriptor = this.getClass().getResource("/protocol/proto/connect/connect-demo.proto");
         GrpcProtoResource resource = new GrpcProtoResource(descriptor);
         try (MetContext server = incoming.buildContext(); //
@@ -162,9 +167,13 @@ public class ConnectHttpScenarioTest {
     public void protobufSideEffectFreeMethodCanUseGet() throws Exception {
         // GET 开关只作用于实际调用的方法，安全级别来自绑定的标准 proto。
         MetConfiguration incoming = this.configuration(true);
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("connect");
-        outgoing.connector("http").option("httpVersion", 2).protocol("connect") //
-                .contextPath("/rpc").option("get", true);
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("connect");
+        outgoing.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("connect") //
+                .contextPath("/rpc") //
+                .option("get", true);
         URL descriptor = this.getClass().getResource("/protocol/proto/connect/connect-demo.proto");
         GrpcProtoResource resource = new GrpcProtoResource(descriptor);
         try (MetContext server = incoming.buildContext(); //
@@ -192,9 +201,13 @@ public class ConnectHttpScenarioTest {
     public void getRejectsAMethodWithoutSideEffectFreeDeclaration() throws Exception {
         // 同一个接口包含安全与普通方法，GET 不能被用于未声明安全的 echo。
         MetConfiguration incoming = this.configuration(true);
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("connect");
-        outgoing.connector("http").option("httpVersion", 2).protocol("connect") //
-                .contextPath("/rpc").option("get", true);
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("connect");
+        outgoing.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("connect") //
+                .contextPath("/rpc") //
+                .option("get", true);
         URL descriptor = this.getClass().getResource("/protocol/proto/connect/connect-demo.proto");
         GrpcProtoResource resource = new GrpcProtoResource(descriptor);
         try (MetContext server = incoming.buildContext(); //
@@ -265,13 +278,17 @@ public class ConnectHttpScenarioTest {
     }
 
     private MetConfiguration configuration(boolean listener) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("connect");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("connect");
         configuration.setDefaultTimeout(5000);
-        var http = configuration.connector("http").option("httpVersion", 2);
+        var http = configuration.connector("http") //
+                .option("httpVersion", 2);
         if (listener) {
             http.bind("127.0.0.1", 0);
         }
-        http.protocol("connect").contextPath("/rpc").option("streamBody", true);
+        http.protocol("connect") //
+                .contextPath("/rpc") //
+                .option("streamBody", true);
         return configuration;
     }
 }

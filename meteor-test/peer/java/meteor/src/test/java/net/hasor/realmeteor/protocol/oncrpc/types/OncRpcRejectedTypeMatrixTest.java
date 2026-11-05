@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.oncrpc.types;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.ParameterizedClass;
@@ -71,9 +72,12 @@ public class OncRpcRejectedTypeMatrixTest {
         if (StringUtils.equals(this.transport, "udp")) {
             protocol = "oncrpc-udp";
         }
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol(protocol);
-        configuration.setQueueMinPoolSize(2).setDefaultTimeout(5000);
-        configuration.connector(this.transport).protocol(protocol);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol(protocol);
+        configuration.setQueueMinPoolSize(2) //
+                .setDefaultTimeout(5000);
+        configuration.connector(this.transport) //
+                .protocol(protocol);
         try (OncRpcNativeProcess peer = OncRpcNativeProcess.start("--command=server", //
                 "--transport=" + this.transport, "--port=0"); //
              MetContext client = configuration.buildContext()) {

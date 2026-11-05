@@ -294,15 +294,20 @@ public class JsonRpcNodeRegistryAdapterTest {
 
     private MetConfiguration configuration(RegistryConfiguration registry, String application, boolean listener) throws Exception {
         // 注册扩展管理 RPC 使用独立 RSF 出口，业务只挂载 JSON-RPC。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("jsonrpc");
-        configuration.setApplicationName(application).setDataHome(Files.createDirectory(this.data.resolve(application)));
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDefaultProtocol("jsonrpc");
+        configuration.setApplicationName(application) //
+                .setDataHome(Files.createDirectory(this.data.resolve(application)));
         configuration.addExtension(registry);
-        configuration.connector("tcp").protocol("rsf");
+        configuration.connector("tcp") //
+                .protocol("rsf");
         var http = configuration.connector("http");
         if (listener) {
             http.bind(ContainerProcess.runnerHost(), 0);
         }
-        http.protocol("jsonrpc").addressScheme("http").contextPath("/orders");
+        http.protocol("jsonrpc") //
+                .addressScheme("http") //
+                .contextPath("/orders");
         return configuration;
     }
 

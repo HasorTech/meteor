@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hprose;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -31,14 +32,17 @@ public class HproseTlsTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void h2PriorKnowledgeCallsPublishedService() throws Exception {
         // 明文 HTTP/2 客户端直接发送 preface，服务端按实际报文选择协议。
-        MetConfiguration incoming = new MetConfiguration();
+        MetConfiguration incoming = TestConfigurationUtils.create();
         incoming.connector("http") //
                 .bind("127.0.0.1", 0) //
-                .protocol("hprose").contextPath("/rpc");
-        MetConfiguration outgoing = new MetConfiguration().setRequestTimeout(5000);
+                .protocol("hprose") //
+                .contextPath("/rpc");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setRequestTimeout(5000);
         outgoing.connector("http") //
                 .option("httpVersion", 2) //
-                .protocol("hprose").contextPath("/rpc");
+                .protocol("hprose") //
+                .contextPath("/rpc");
 
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
@@ -64,7 +68,7 @@ public class HproseTlsTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void httpsHttp1CallsPublishedService() throws Exception {
         // 单向 TLS 仅允许协商 HTTP/1.1，客户端验证服务器证书和主机名。
-        MetConfiguration incoming = new MetConfiguration();
+        MetConfiguration incoming = TestConfigurationUtils.create();
         incoming.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .option("tlsEnabled", true) //
@@ -74,8 +78,11 @@ public class HproseTlsTest {
                 .option("tlsKeyStore", "classpath:/certs/acceptance/server.p12") //
                 .option("tlsKeyStorePassword", "meteor-test") //
                 .option("tlsAlpn", "http/1.1") //
-                .protocol("hprose").addressScheme("https").contextPath("/rpc");
-        MetConfiguration outgoing = new MetConfiguration().setRequestTimeout(5000);
+                .protocol("hprose") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setRequestTimeout(5000);
         outgoing.connector("http") //
                 .option("httpVersion", 1) //
                 .option("tlsEnabled", true) //
@@ -83,7 +90,9 @@ public class HproseTlsTest {
                 .option("tlsTrustStore", "classpath:/certs/acceptance/trust.p12") //
                 .option("tlsTrustStorePassword", "meteor-test") //
                 .option("tlsAlpn", "http/1.1") //
-                .protocol("hprose").addressScheme("https").contextPath("/rpc");
+                .protocol("hprose") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
 
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
@@ -109,7 +118,7 @@ public class HproseTlsTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void httpsHttp2AlpnCallsPublishedService() throws Exception {
         // 单向 TLS 仅允许协商 h2，HTTP/2 客户端不会回退到 HTTP/1.1。
-        MetConfiguration incoming = new MetConfiguration();
+        MetConfiguration incoming = TestConfigurationUtils.create();
         incoming.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .option("tlsEnabled", true) //
@@ -119,8 +128,11 @@ public class HproseTlsTest {
                 .option("tlsKeyStore", "classpath:/certs/acceptance/server.p12") //
                 .option("tlsKeyStorePassword", "meteor-test") //
                 .option("tlsAlpn", "h2") //
-                .protocol("hprose").addressScheme("https").contextPath("/rpc");
-        MetConfiguration outgoing = new MetConfiguration().setRequestTimeout(5000);
+                .protocol("hprose") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setRequestTimeout(5000);
         outgoing.connector("http") //
                 .option("httpVersion", 2) //
                 .option("tlsEnabled", true) //
@@ -128,7 +140,9 @@ public class HproseTlsTest {
                 .option("tlsTrustStore", "classpath:/certs/acceptance/trust.p12") //
                 .option("tlsTrustStorePassword", "meteor-test") //
                 .option("tlsAlpn", "h2") //
-                .protocol("hprose").addressScheme("https").contextPath("/rpc");
+                .protocol("hprose") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
 
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
@@ -154,7 +168,7 @@ public class HproseTlsTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void mutualTlsHttp1CallsPublishedService() throws Exception {
         // HTTP/1.1 两端分别加载身份，服务端要求客户端通过证书认证。
-        MetConfiguration incoming = new MetConfiguration();
+        MetConfiguration incoming = TestConfigurationUtils.create();
         incoming.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .option("tlsEnabled", true) //
@@ -165,8 +179,11 @@ public class HproseTlsTest {
                 .option("tlsKeyStorePassword", "meteor-test") //
                 .option("tlsAlpn", "http/1.1") //
                 .option("tlsClientAuth", "REQUIRE") //
-                .protocol("hprose").addressScheme("https").contextPath("/rpc");
-        MetConfiguration outgoing = new MetConfiguration().setRequestTimeout(5000);
+                .protocol("hprose") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setRequestTimeout(5000);
         outgoing.connector("http") //
                 .option("httpVersion", 1) //
                 .option("tlsEnabled", true) //
@@ -176,7 +193,9 @@ public class HproseTlsTest {
                 .option("tlsKeyStore", "classpath:/certs/acceptance/client.p12") //
                 .option("tlsKeyStorePassword", "meteor-test") //
                 .option("tlsAlpn", "http/1.1") //
-                .protocol("hprose").addressScheme("https").contextPath("/rpc");
+                .protocol("hprose") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
 
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
@@ -202,7 +221,7 @@ public class HproseTlsTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void mutualTlsHttp2AlpnCallsPublishedService() throws Exception {
         // HTTP/2 在 ALPN h2 上双向认证，两端使用独立的客户端和服务器证书。
-        MetConfiguration incoming = new MetConfiguration();
+        MetConfiguration incoming = TestConfigurationUtils.create();
         incoming.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .option("tlsEnabled", true) //
@@ -213,8 +232,11 @@ public class HproseTlsTest {
                 .option("tlsKeyStorePassword", "meteor-test") //
                 .option("tlsAlpn", "h2") //
                 .option("tlsClientAuth", "REQUIRE") //
-                .protocol("hprose").addressScheme("https").contextPath("/rpc");
-        MetConfiguration outgoing = new MetConfiguration().setRequestTimeout(5000);
+                .protocol("hprose") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setRequestTimeout(5000);
         outgoing.connector("http") //
                 .option("httpVersion", 2) //
                 .option("tlsEnabled", true) //
@@ -224,7 +246,9 @@ public class HproseTlsTest {
                 .option("tlsKeyStore", "classpath:/certs/acceptance/client.p12") //
                 .option("tlsKeyStorePassword", "meteor-test") //
                 .option("tlsAlpn", "h2") //
-                .protocol("hprose").addressScheme("https").contextPath("/rpc");
+                .protocol("hprose") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
 
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
@@ -250,7 +274,7 @@ public class HproseTlsTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void mutualTlsHttp1RejectsMissingClientCertificateBeforeDispatch() throws Exception {
         // 服务端要求客户端证书，只安装信任库的调用方不能进入业务实现。
-        MetConfiguration incoming = new MetConfiguration();
+        MetConfiguration incoming = TestConfigurationUtils.create();
         incoming.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .option("tlsEnabled", true) //
@@ -261,7 +285,9 @@ public class HproseTlsTest {
                 .option("tlsKeyStorePassword", "meteor-test") //
                 .option("tlsAlpn", "http/1.1") //
                 .option("tlsClientAuth", "REQUIRE") //
-                .protocol("hprose").addressScheme("https").contextPath("/rpc");
+                .protocol("hprose") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
         try (MetContext server = incoming.buildContext()) {
             // 容器启动后发布带计数的普通业务方法，观察握手失败的隔离边界。
             server.start();
@@ -301,7 +327,7 @@ public class HproseTlsTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void mutualTlsHttp2RejectsMissingClientCertificateBeforeDispatch() throws Exception {
         // 服务端要求客户端证书，只安装信任库的调用方不能进入业务实现。
-        MetConfiguration incoming = new MetConfiguration();
+        MetConfiguration incoming = TestConfigurationUtils.create();
         incoming.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .option("tlsEnabled", true) //
@@ -312,7 +338,9 @@ public class HproseTlsTest {
                 .option("tlsKeyStorePassword", "meteor-test") //
                 .option("tlsAlpn", "h2") //
                 .option("tlsClientAuth", "REQUIRE") //
-                .protocol("hprose").addressScheme("https").contextPath("/rpc");
+                .protocol("hprose") //
+                .addressScheme("https") //
+                .contextPath("/rpc");
         try (MetContext server = incoming.buildContext()) {
             // 容器启动后发布带计数的普通业务方法，观察握手失败的隔离边界。
             server.start();

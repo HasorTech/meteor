@@ -50,7 +50,9 @@ public class RsfsPublicationScenarioTest {
     public void publicationRejectsAddressSchemeAsProtocolName() throws Exception {
         // 同一 RSF 协议同时挂载明文端点和 rsfs 安全端点。
         MetConfiguration incoming = RsfsConfigurations.server("server", "NONE");
-        incoming.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        incoming.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
         try (MetContext server = incoming.buildContext()) {
             server.start();
 
@@ -67,9 +69,12 @@ public class RsfsPublicationScenarioTest {
     public void namedRsfServiceIsExposedThroughEveryRsfMount() throws Exception {
         // 同一 RSF 协议挂载到明文和 TLS 监听器，服务按协议名选择全部挂载。
         MetConfiguration incoming = RsfsConfigurations.server("server", "NONE");
-        incoming.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        incoming.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
         MetConfiguration outgoing = RsfsConfigurations.client(null, "trust");
-        outgoing.connector("tcp").protocol("rsf");
+        outgoing.connector("tcp") //
+                .protocol("rsf");
         AtomicInteger calls = new AtomicInteger();
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {

@@ -19,8 +19,12 @@ public final class ProviderMain {
 
     public static void main(String[] arguments) throws Exception {
         // 配置本地协议端点。
-        MetConfiguration configuration = new MetConfiguration().setUnitName("local");
-        configuration.connector("tcp").bind("0.0.0.0", 8080).protocol("dubbo");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setUnitName("local") //
+                .setApplicationName("dubbo-order-provider");
+        configuration.connector("tcp") //
+                .bind("0.0.0.0", 8080) //
+                .protocol("dubbo");
 
         try (MetContext context = configuration.buildContext()) {
             // 启动容器并发布订单服务。

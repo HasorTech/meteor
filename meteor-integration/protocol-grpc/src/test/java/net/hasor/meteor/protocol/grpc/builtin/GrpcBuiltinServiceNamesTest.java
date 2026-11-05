@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.hasor.example.protocol.grpc.Echo;
 import net.hasor.example.protocol.grpc.EchoImpl;
+import net.hasor.example.protocol.grpc.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
@@ -22,8 +23,11 @@ public class GrpcBuiltinServiceNamesTest {
     @Timeout(20)
     public void healthListIncludesTheDerivedServiceName() throws Exception {
         // 安装标准服务，业务提供者只声明服务名，不设置协议别名。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc");
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("grpc") //
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc") //
                 .option("streamBody", true);
         configuration.addExtension(new GrpcBuiltinServicesFactory());
         try (MetContext context = configuration.buildContext()) {

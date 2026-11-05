@@ -7,18 +7,19 @@
  */
 package net.hasor.realmeteor.rpc.websocket;
 import java.util.concurrent.TimeUnit;
+import net.hasor.example.bootstrap.TestConfigurationUtils;
+import net.hasor.example.rpc.websocket.WebSocketConfigurations;
+import net.hasor.example.rpc.websocket.WebSocketSample;
+import net.hasor.example.rpc.websocket.WebSocketSampleService;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetFuture;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
-import net.hasor.example.rpc.websocket.WebSocketConfigurations;
-import net.hasor.example.rpc.websocket.WebSocketSample;
-import net.hasor.example.rpc.websocket.WebSocketSampleService;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** RFC 8441 扩展 CONNECT 的真实 RPC 与单个 HTTP/2 stream 生命周期。 */
 public class WebSocketHttp2BootstrapTest {
@@ -26,9 +27,10 @@ public class WebSocketHttp2BootstrapTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void extendedConnectCarriesRealJsonRpc() throws Exception {
         // HTTP/2 明文先验连接使用 RFC 8441 CONNECT，而不是 HTTP/1 Upgrade。
-        MetConfiguration incoming = new MetConfiguration();
-        MetConfiguration outgoing = new MetConfiguration();
-        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 2).bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        MetConfiguration outgoing = TestConfigurationUtils.create();
+        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 2) //
+                .bind("127.0.0.1", 0);
         WebSocketConfigurations.websocket(listener, 2, false);
         WebSocketConfigurations.websocket(WebSocketConfigurations.http(outgoing, 2), 2, false);
         WebSocketSampleService implementation = new WebSocketSampleService();
@@ -53,13 +55,15 @@ public class WebSocketHttp2BootstrapTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void closingOneWebSocketStreamLeavesTheOtherStreamUsable() throws Exception {
         // 一个 ProtocolSession 在同一个 HTTP 通道上打开两个 WS stream，轮流承载请求。
-        MetConfiguration incoming = new MetConfiguration();
-        MetConfiguration outgoing = new MetConfiguration();
-        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 2).bind("127.0.0.1", 0);
+        MetConfiguration incoming = TestConfigurationUtils.create();
+        MetConfiguration outgoing = TestConfigurationUtils.create();
+        ConnectorSettings listener = WebSocketConfigurations.http(incoming, 2) //
+                .bind("127.0.0.1", 0);
         WebSocketConfigurations.websocket(listener, 2, false);
         ConnectorSettings sender = WebSocketConfigurations.http(outgoing, 2);
         WebSocketConfigurations.websocket(sender, 2, false) //
-                .option("streams", 2).option("closeStreamOnCancel", true);
+                .option("streams", 2) //
+                .option("closeStreamOnCancel", true);
         WebSocketSampleService first = new WebSocketSampleService();
         WebSocketSampleService second = new WebSocketSampleService();
         try (MetContext server = incoming.buildContext(); //

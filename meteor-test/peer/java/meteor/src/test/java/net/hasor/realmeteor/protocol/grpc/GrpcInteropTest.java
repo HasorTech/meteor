@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -57,9 +58,12 @@ public class GrpcInteropTest {
     public void protobufAndHproseShareOneHttpPort() throws Exception {
         // 在同一个 HTTP 监听端口挂载 gRPC 和 Hprose，服务资源只绑定 proto。
         MetConfiguration configuration = this.configuration();
-        var http = configuration.connector("http").bind("127.0.0.1", 0);
-        http.protocol("grpc").contextPath("/grpc");
-        http.protocol("hprose").contextPath("/hprose");
+        var http = configuration.connector("http") //
+                .bind("127.0.0.1", 0);
+        http.protocol("grpc") //
+                .contextPath("/grpc");
+        http.protocol("hprose") //
+                .contextPath("/hprose");
         EchoImpl implementation = new EchoImpl();
         try (MetContext context = configuration.buildContext()) {
             // 先启动容器，再通过公开 API 发布或订阅服务。
@@ -98,9 +102,12 @@ public class GrpcInteropTest {
     public void officialClientSeesBusinessFailureWithoutPoisoningTheNextCall() throws Exception {
         // 发布会抛出业务异常的服务，验证标准错误状态与后续调用隔离。
         MetConfiguration configuration = this.configuration();
-        var http = configuration.connector("http").bind("127.0.0.1", 0);
-        http.protocol("grpc").contextPath("/grpc");
-        http.protocol("hprose").contextPath("/hprose");
+        var http = configuration.connector("http") //
+                .bind("127.0.0.1", 0);
+        http.protocol("grpc") //
+                .contextPath("/grpc");
+        http.protocol("hprose") //
+                .contextPath("/hprose");
         EchoImpl implementation = new EchoImpl();
         try (MetContext context = configuration.buildContext()) {
             // 先启动容器，再通过公开 API 发布或订阅服务。
@@ -140,9 +147,12 @@ public class GrpcInteropTest {
     public void http1CannotInvokeAGrpcService() throws Exception {
         // 在共享 HTTP 端口发布 gRPC，验证 HTTP/1 请求不能执行 gRPC 业务。
         MetConfiguration configuration = this.configuration();
-        var http = configuration.connector("http").bind("127.0.0.1", 0);
-        http.protocol("grpc").contextPath("/grpc");
-        http.protocol("hprose").contextPath("/hprose");
+        var http = configuration.connector("http") //
+                .bind("127.0.0.1", 0);
+        http.protocol("grpc") //
+                .contextPath("/grpc");
+        http.protocol("hprose") //
+                .contextPath("/hprose");
         EchoImpl implementation = new EchoImpl();
         try (MetContext context = configuration.buildContext()) {
             // 先启动容器，再通过公开 API 发布或订阅服务。
@@ -189,7 +199,8 @@ public class GrpcInteropTest {
                 .addMethod(method, handler) //
                 .build();
         Server server = NettyServerBuilder.forPort(0).addService(service).build().start();
-        try (MetContext client = this.clientConfiguration("/").buildContext()) {
+        try (MetContext client = this.clientConfiguration("/") //
+                .buildContext()) {
             // 先启动容器，再通过公开 API 发布或订阅服务。
             client.start();
 
@@ -224,7 +235,8 @@ public class GrpcInteropTest {
                 .addMethod(method, handler) //
                 .build();
         Server server = NettyServerBuilder.forPort(0).addService(service).build().start();
-        try (MetContext client = this.clientConfiguration("/").buildContext()) {
+        try (MetContext client = this.clientConfiguration("/") //
+                .buildContext()) {
             // 先启动容器，再通过公开 API 发布或订阅服务。
             client.start();
 
@@ -246,10 +258,16 @@ public class GrpcInteropTest {
     public void unaryIncrementalResponseWaitsForBodyAndTrailers() throws Exception {
         // 两端启用增量正文，在客户端限制单条消息大小。
         MetConfiguration incoming = this.configuration();
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("grpc").option("streamBody", true);
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc") //
+                .option("streamBody", true);
         MetConfiguration outgoing = this.configuration();
-        var mount = outgoing.connector("http").option("httpVersion", 2).protocol("grpc");
-        mount.option("streamBody", true).option("maxMessageSize", 128);
+        var mount = outgoing.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("grpc");
+        mount.option("streamBody", true) //
+                .option("maxMessageSize", 128);
         EchoImpl implementation = new EchoImpl() {
             public Message echo(Message request) {
                 return Message.of("x".repeat(request.getCount()), request.getCount());
@@ -278,10 +296,16 @@ public class GrpcInteropTest {
     public void oversizedIncrementalResponseDoesNotPoisonTheNextCall() throws Exception {
         // 两端启用增量正文，准备验证客户端的 128 字节消息上限。
         MetConfiguration incoming = this.configuration();
-        incoming.connector("http").bind("127.0.0.1", 0).protocol("grpc").option("streamBody", true);
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc") //
+                .option("streamBody", true);
         MetConfiguration outgoing = this.configuration();
-        var mount = outgoing.connector("http").option("httpVersion", 2).protocol("grpc");
-        mount.option("streamBody", true).option("maxMessageSize", 128);
+        var mount = outgoing.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("grpc");
+        mount.option("streamBody", true) //
+                .option("maxMessageSize", 128);
         EchoImpl implementation = new EchoImpl() {
             public Message echo(Message request) {
                 return Message.of("x".repeat(request.getCount()), request.getCount());
@@ -320,11 +344,15 @@ public class GrpcInteropTest {
         CountingPipeline.clients.set(0);
         CountingPipeline.servers.set(0);
         MetConfiguration configuration = this.configuration();
-        var incoming = configuration.connector("http").bind("127.0.0.1", 0);
-        incoming.option("transportPipeline", CountingPipeline.class.getName()).protocol("grpc");
+        var incoming = configuration.connector("http") //
+                .bind("127.0.0.1", 0);
+        incoming.option("transportPipeline", CountingPipeline.class.getName()) //
+                .protocol("grpc");
         MetConfiguration outgoing = this.configuration();
-        var connector = outgoing.connector("http").option("httpVersion", 2);
-        connector.option("transportPipeline", CountingPipeline.class.getName()).protocol("grpc");
+        var connector = outgoing.connector("http") //
+                .option("httpVersion", 2);
+        connector.option("transportPipeline", CountingPipeline.class.getName()) //
+                .protocol("grpc");
 
         // 暂停第一个业务调用，让后续调用先返回，明确验证调用重叠与响应乱序。
         CountDownLatch entered = new CountDownLatch(1);
@@ -405,7 +433,9 @@ public class GrpcInteropTest {
     public void officialCustomMarshallerUsesThePublishedJsonSerializer() throws Exception {
         // 配置 JSON 编码服务，准备由官方客户端的自定义 marshaller 调用。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("grpc");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc");
         try (MetContext context = configuration.buildContext()) {
             // 先启动容器，再通过公开 API 发布或订阅服务。
             context.start();
@@ -431,7 +461,9 @@ public class GrpcInteropTest {
     public void cancellationOnlyEndsItsOwnHttp2Stream() throws Exception {
         // 配置可阻塞的业务实现，让取消发生在服务执行期间。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("grpc");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc");
         CountDownLatch release = new CountDownLatch(1);
         LinkedBlockingQueue<String> entered = new LinkedBlockingQueue<>();
         EchoImpl implementation = new EchoImpl() {
@@ -448,7 +480,8 @@ public class GrpcInteropTest {
             }
         };
         try (MetContext server = configuration.buildContext(); //
-             MetContext client = this.clientConfiguration("/").buildContext()) {
+             MetContext client = this.clientConfiguration("/") //
+                     .buildContext()) {
             // 先启动容器，再通过公开 API 发布或订阅服务。
             server.start();
             client.start();
@@ -485,7 +518,9 @@ public class GrpcInteropTest {
     public void deadlineOnlyEndsItsOwnHttp2Stream() throws Exception {
         // 配置可阻塞的业务实现，让调用期限早于服务返回。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("grpc");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc");
         CountDownLatch release = new CountDownLatch(1);
         LinkedBlockingQueue<String> entered = new LinkedBlockingQueue<>();
         EchoImpl implementation = new EchoImpl() {
@@ -502,7 +537,8 @@ public class GrpcInteropTest {
             }
         };
         try (MetContext server = configuration.buildContext(); //
-             MetContext client = this.clientConfiguration("/").buildContext()) {
+             MetContext client = this.clientConfiguration("/") //
+                     .buildContext()) {
             // 先启动容器，再通过公开 API 发布或订阅服务。
             server.start();
             client.start();
@@ -540,7 +576,9 @@ public class GrpcInteropTest {
     public void protobufLargeMessageCrossesHttp2FlowControlWindows() throws Exception {
         // 发布 Protobuf 服务，准备官方客户端发送跨越多个 HTTP/2 窗口的大消息。
         MetConfiguration configuration = this.configuration();
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("grpc");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc");
         try (MetContext context = configuration.buildContext()) {
             // 先启动容器，再通过公开 API 发布或订阅服务。
             context.start();
@@ -610,7 +648,7 @@ public class GrpcInteropTest {
 
     private MetConfiguration configuration() {
         // 为互通测试设置明确的协议、期限和服务执行线程数。
-        MetConfiguration config = new MetConfiguration();
+        MetConfiguration config = TestConfigurationUtils.create();
         config.setDefaultProtocol("grpc");
         config.setDefaultTimeout(3000);
         config.setQueueMinPoolSize(2);
@@ -620,7 +658,10 @@ public class GrpcInteropTest {
     private MetConfiguration clientConfiguration(String mount) {
         // 客户端只配置出站 HTTP/2 与协议挂载，不创建监听端口。
         MetConfiguration config = this.configuration();
-        config.connector("http").option("httpVersion", 2).protocol("grpc").contextPath(mount);
+        config.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("grpc") //
+                .contextPath(mount);
         return config;
     }
 

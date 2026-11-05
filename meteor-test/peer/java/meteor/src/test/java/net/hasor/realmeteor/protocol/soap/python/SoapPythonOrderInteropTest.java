@@ -178,14 +178,18 @@ public class SoapPythonOrderInteropTest {
     }
 
     private MetConfiguration configuration(String scope, boolean listen) throws Exception {
-        MetConfiguration configuration = new MetConfiguration().setUnitName("local");
-        configuration.setDefaultGroup(scope).setApplicationName("python-soap-interop");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setUnitName("local");
+        configuration.setDefaultGroup(scope) //
+                .setApplicationName("python-soap-interop");
         configuration.setDataHome(Files.createDirectory(this.data.resolve("application")));
         var http = configuration.connector("http");
         if (listen) {
             http.bind(ContainerProcess.runnerHost(), 0);
         }
-        http.protocol("soap").contextPath("/soap").addressScheme("http");
+        http.protocol("soap") //
+                .contextPath("/soap") //
+                .addressScheme("http");
 
         // 只有注册扩展安装内部管理出口；业务仍只向 SOAP 挂载公开。
         if (this.discovery != OrderDiscovery.DIRECT) {

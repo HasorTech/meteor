@@ -17,6 +17,7 @@ import net.hasor.example.OrderExampleUtils;
 import net.hasor.example.OrderQuery;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
@@ -57,9 +58,13 @@ public class NodeConnectSdkVersionScenarioTest {
 
     private void nodeConsumerSavesAndFindsMeteorOrder() throws Exception {
         // 从公开 bootstrap 启动 HTTP/1.1，并在当前挂载点发布测试自有的订单契约。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0).option("httpVersion", 1) //
-                .protocol("connect").contextPath("/versions/connect");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .option("httpVersion", 1) //
+                .protocol("connect") //
+                .contextPath("/versions/connect");
         var resource = new GrpcProtoResource(this.getClass().getResource("/protocol/proto/order.proto"));
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
@@ -81,9 +86,12 @@ public class NodeConnectSdkVersionScenarioTest {
 
     private void meteorConsumerSavesAndFindsNodeOrder() throws Exception {
         // SDK 提供者独立监听动态端口；Meteor 只准备同一路径的 Connect 出站通道。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").option("httpVersion", 1) //
-                .protocol("connect").contextPath("/versions/connect");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .option("httpVersion", 1) //
+                .protocol("connect") //
+                .contextPath("/versions/connect");
         var resource = new GrpcProtoResource(this.getClass().getResource("/protocol/proto/order.proto"));
         try (NodeRpcPeer peer = NodeRpcPeer.startVersion(this.profile, "provider"); //
              MetContext consumer = configuration.buildContext()) {

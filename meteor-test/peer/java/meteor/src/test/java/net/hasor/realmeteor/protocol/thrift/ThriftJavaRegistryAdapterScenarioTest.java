@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.thrift;
+import java.util.UUID;
 import java.nio.file.Files;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -71,8 +72,12 @@ public class ThriftJavaRegistryAdapterScenarioTest {
             RegistryConfiguration registry = environment.configuration();
             registry.setPublishHost(ContainerProcess.runnerHost());
             MetConfiguration configuration = this.configuration(registry, "thrift-java-adapter-provider");
-            configuration.connector("tcp").bind(ContainerProcess.runnerHost(), 0).protocol("thrift") //
-                    .option("encoding", "binary").option("framed", true).option("multiplexed", false);
+            configuration.connector("tcp") //
+                    .bind(ContainerProcess.runnerHost(), 0) //
+                    .protocol("thrift") //
+                    .option("encoding", "binary") //
+                    .option("framed", true) //
+                    .option("multiplexed", false);
             try (MetContext provider = configuration.buildContext()) {
                 provider.start();
                 MetBindInfo<ThriftDemoService> service = provider.publisher() //
@@ -108,8 +113,11 @@ public class ThriftJavaRegistryAdapterScenarioTest {
             RegistryConfiguration registry = environment.configuration();
             registry.setPublishHost(ContainerProcess.runnerHost());
             MetConfiguration configuration = this.configuration(registry, "thrift-java-adapter-consumer");
-            configuration.connector("tcp").protocol("thrift") //
-                    .option("encoding", "binary").option("framed", true).option("multiplexed", false);
+            configuration.connector("tcp") //
+                    .protocol("thrift") //
+                    .option("encoding", "binary") //
+                    .option("framed", true) //
+                    .option("multiplexed", false);
             try (MetContext consumer = configuration.buildContext()) {
                 consumer.start();
                 MetBindInfo<ThriftDemoService> service = consumer.publisher().rsfService(ThriftDemoService.class) //
@@ -141,9 +149,13 @@ public class ThriftJavaRegistryAdapterScenarioTest {
     }
 
     private MetConfiguration configuration(RegistryConfiguration registry, String application) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift");
-        configuration.setApplicationName(application).addExtension(registry);
-        configuration.connector("tcp").protocol("rsf");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDefaultProtocol("thrift");
+        configuration.setDataHome(this.data.resolve("meteor-" + UUID.randomUUID()));
+        configuration.setApplicationName(application) //
+                .addExtension(registry);
+        configuration.connector("tcp") //
+                .protocol("rsf");
         return configuration;
     }
 }

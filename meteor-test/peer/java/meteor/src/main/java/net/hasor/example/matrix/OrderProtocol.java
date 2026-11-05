@@ -19,6 +19,7 @@ import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetPublisher.ConfigurationBuilder;
 import net.hasor.meteor.MetPublisher.LinkedBuilder;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
@@ -62,7 +63,8 @@ public enum OrderProtocol {
 
     private MetConfiguration configuration(boolean listen) {
         // 业务端点只安装当前协议；是否监听与是否具备出站能力分别配置。
-        MetConfiguration configuration = new MetConfiguration().setUnitName(DirectRpcExample.UNIT_NAME);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setUnitName(DirectRpcExample.UNIT_NAME);
         ConnectorSettings connector = configuration.connector(this.transport);
         if (listen) {
             connector.bind("127.0.0.1", 0);

@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.meteor.MetContext;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
@@ -24,10 +25,14 @@ public class BrowserThriftHttpConsumerScenarioTest {
     @Timeout(value = 120000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialThriftXhrReceivesTheSavedOrder() throws Exception {
         // 公开 bootstrap 只启用 Thrift HTTP/1，普通接口及 DTO 使用已有公共字段编号映射。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("thrift-http");
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .option("httpVersion", 1).protocol("thrift-http") //
-                .contextPath("/thrift").option("encoding", "json");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("thrift-http");
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .option("httpVersion", 1) //
+                .protocol("thrift-http") //
+                .contextPath("/thrift") //
+                .option("encoding", "json");
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
             provider.publisher().rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //

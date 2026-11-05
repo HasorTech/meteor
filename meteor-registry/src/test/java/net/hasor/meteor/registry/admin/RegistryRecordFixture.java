@@ -25,7 +25,6 @@ final class RegistryRecordFixture {
     public void save(StorageAccess storage) throws Exception {
         String instanceId = this.instance.getInstanceId();
         EntInstanceRuntimeData runtime = RegistryJson.copy(this.instance, EntInstanceRuntimeData.class);
-        runtime.setManagementAddresses(this.instance.getManagementAddress());
         storage.registerInstance(runtime);
 
         // 夹具只替换本实例的当前清单，目录与治理仍由正式存储维护。

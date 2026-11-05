@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.oncrpc;
+import java.util.UUID;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.io.TempDir;
 import java.io.ByteArrayInputStream;
@@ -339,13 +340,19 @@ public class OncRpcPublicationScenarioTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void oncRpcAndRsfShareOneTcpListener() throws Exception {
         // 一个底层连接器同时挂载 RSF 与 ONC RPC，监听端口只创建一次。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("oncrpc");
-        ConnectorSettings listener = incoming.connector("tcp").bind("127.0.0.1", 0);
+        MetConfiguration incoming = new MetConfiguration() //
+                .setDefaultProtocol("oncrpc");
+        incoming.setDataHome(this.contracts.resolve("meteor-" + UUID.randomUUID()));
+        ConnectorSettings listener = incoming.connector("tcp") //
+                .bind("127.0.0.1", 0);
         listener.protocol("oncrpc");
         listener.protocol("rsf");
         MetConfiguration oncConfiguration = this.outgoing();
-        MetConfiguration rsfConfiguration = new MetConfiguration().setDefaultProtocol("rsf");
-        rsfConfiguration.connector("tcp").protocol("rsf");
+        MetConfiguration rsfConfiguration = new MetConfiguration() //
+                .setDefaultProtocol("rsf");
+        rsfConfiguration.setDataHome(this.contracts.resolve("meteor-" + UUID.randomUUID()));
+        rsfConfiguration.connector("tcp") //
+                .protocol("rsf");
         try (MetContext server = incoming.buildContext(); //
              MetContext oncClient = oncConfiguration.buildContext(); //
              MetContext rsfClient = rsfConfiguration.buildContext()) {
@@ -370,14 +377,21 @@ public class OncRpcPublicationScenarioTest {
     }
 
     private MetConfiguration incoming() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc");
-        configuration.connector("tcp").bind("127.0.0.1", 0).protocol("oncrpc");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDefaultProtocol("oncrpc");
+        configuration.setDataHome(this.contracts.resolve("meteor-" + UUID.randomUUID()));
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("oncrpc");
         return configuration;
     }
 
     private MetConfiguration outgoing() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc");
-        configuration.connector("tcp").protocol("oncrpc");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDefaultProtocol("oncrpc");
+        configuration.setDataHome(this.contracts.resolve("meteor-" + UUID.randomUUID()));
+        configuration.connector("tcp") //
+                .protocol("oncrpc");
         return configuration;
     }
 

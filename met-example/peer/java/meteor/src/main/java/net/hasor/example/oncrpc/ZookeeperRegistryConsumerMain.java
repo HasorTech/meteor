@@ -22,14 +22,17 @@ public final class ZookeeperRegistryConsumerMain {
 
     public static void main(String[] arguments) throws Exception {
         // 接入本地 ZooKeeper，配置出站协议。
-        MetConfiguration configuration = new MetConfiguration().setUnitName("local");
-        configuration.setApplicationName("oncrpc-order-consumer");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setUnitName("local") //
+                .setApplicationName("oncrpc-order-consumer");
         configuration.addExtension(new ZookeeperRegistryConfiguration().setAddress("127.0.0.1:2181") //
                 .setPublishHost("127.0.0.1"));
-        configuration.connector("tcp").protocol("oncrpc");
+        configuration.connector("tcp") //
+                .protocol("oncrpc");
 
         // RSF 端点供注册中心管理调用使用。
-        configuration.connector("tcp").protocol("rsf");
+        configuration.connector("tcp") //
+                .protocol("rsf");
 
         try (MetContext context = configuration.buildContext()) {
             // 先启动消费容器，再订阅当前协议的订单接口。

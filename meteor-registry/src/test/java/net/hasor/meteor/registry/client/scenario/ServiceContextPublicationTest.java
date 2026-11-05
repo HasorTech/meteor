@@ -24,6 +24,7 @@ import net.hasor.meteor.registry.shared.storage.domain.EntServiceRuntimeData;
 import net.hasor.meteor.registry.shared.storage.domain.RefProtocolMountData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import static net.hasor.meteor.registry.shared.RegistryTestUtils.createConfiguration;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** 经正式发布与注册入口核对服务选择的上下文，不验证测试 HTTP 协议的业务 RPC。 */
@@ -114,9 +115,10 @@ public class ServiceContextPublicationTest {
     public void directManagementRetainsEverySelectedContext() throws Exception {
         // 通过 RSF 管理通道读取 HTTP 服务的运行快照。
         MetConfiguration application = this.providerConfiguration();
-        MetConfiguration callerConfiguration = new MetConfiguration() //
+        MetConfiguration callerConfiguration = createConfiguration() //
                 .addExtension(new RegistryConfiguration().setOnline(false).setManagementToken("secret"));
-        callerConfiguration.connector("tcp").protocol("rsf");
+        callerConfiguration.connector("tcp") //
+                .protocol("rsf");
         try (MetContext context = application.buildContext(); //
              MetContext caller = callerConfiguration.buildContext()) {
             String id = context.publisher().rsfService(Echo.class, value -> value) //
@@ -205,18 +207,30 @@ public class ServiceContextPublicationTest {
     }
 
     private MetConfiguration providerConfiguration() {
-        MetConfiguration application = new MetConfiguration().addExtension(this.registry);
-        application.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        application.connector("http").bind("127.0.0.1", 0).protocol("registry-http") //
-                .contextPath("/default").addContextPath("/one").addContextPath("/two");
+        MetConfiguration application = createConfiguration() //
+                .addExtension(this.registry);
+        application.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        application.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("registry-http") //
+                .contextPath("/default") //
+                .addContextPath("/one") //
+                .addContextPath("/two");
         return application;
     }
 
     private MetConfiguration consumerConfiguration() {
-        MetConfiguration application = new MetConfiguration().addExtension(this.registry);
-        application.connector("tcp").protocol("rsf");
-        application.connector("http").protocol("registry-http") //
-                .contextPath("/default").addContextPath("/one").addContextPath("/two");
+        MetConfiguration application = createConfiguration() //
+                .addExtension(this.registry);
+        application.connector("tcp") //
+                .protocol("rsf");
+        application.connector("http") //
+                .protocol("registry-http") //
+                .contextPath("/default") //
+                .addContextPath("/one") //
+                .addContextPath("/two");
         return application;
     }
 

@@ -36,6 +36,7 @@ class HasorExampleTest {
     void loadsExampleAddressBookFromClasspath() throws Throwable {
         // 主配置只指向独立地址本，类路径资源可初始化两个服务的地址池。
         Properties overrides = new Properties();
+        overrides.setProperty("meteor.data-home", this.directory.resolve("consumer").toString());
         overrides.setProperty("meteor.connectors.rsf.port", "0");
         try (AppContext app = Hasor.create().registerShutdownHook(false) // 使用演示主配置中的地址本位置。
                 .mainSettingWith("hasor-consumer.properties").loadSettings(overrides) //
@@ -60,12 +61,14 @@ class HasorExampleTest {
     void queriesOrderAndInventoryWithExampleConfiguration() throws Throwable {
         // 使用演示入口相同的配置和 Module，测试只覆盖端口为随机值，避免占用演示端口。
         Properties providerSettings = new Properties();
+        providerSettings.setProperty("meteor.data-home", this.directory.resolve("provider").toString());
         providerSettings.setProperty("meteor.connectors.rsf.port", "0");
         try (AppContext provider = Hasor.create().registerShutdownHook(false) //
                 .mainSettingWith("hasor-provider.properties").loadSettings(providerSettings) //
                 .addModules(new MeteorModule(), new ProviderMain()).build()) {
             String address = provider.getInstance(MetContext.class).getListenAddress("rsf").toString();
             Properties consumerSettings = new Properties();
+            consumerSettings.setProperty("meteor.data-home", this.directory.resolve("consumer").toString());
             consumerSettings.setProperty("meteor.connectors.rsf.port", "0");
             Path book = Files.createTempFile(this.directory, "example-address-book-", ".xml");
             try (InputStream input = getClass().getResourceAsStream("/hasor-address-book.xml")) {

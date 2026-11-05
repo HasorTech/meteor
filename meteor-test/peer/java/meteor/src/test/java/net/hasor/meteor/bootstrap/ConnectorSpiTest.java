@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.function.ObjLongConsumer;
 import net.hasor.cobble.concurrent.future.Future;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.connector.*;
@@ -25,12 +26,13 @@ public class ConnectorSpiTest {
     @Test
     public void connectorSpecificConfigurationIsPassedWithoutFrameworkChanges() throws Exception {
         // 自定义传输和协议均通过测试 SPI 注册，参数从正式配置传递。
-        MetConfiguration settings = new MetConfiguration();
+        MetConfiguration settings = TestConfigurationUtils.create();
         MetConfiguration.ConnectorSettings custom = settings.connector("custom");
         custom.bind("127.0.0.1", 23000);
         custom.option("custom.nested", "custom-value");
         custom.option("custom.parallelism", 3);
-        custom.protocol("custom-test").addressScheme("custom-wire");
+        custom.protocol("custom-test") //
+                .addressScheme("custom-wire");
         try (MetContext runtime = settings.buildContext()) {
             assertNull(runtime.getListenAddress("custom-test"));
 
@@ -48,7 +50,7 @@ public class ConnectorSpiTest {
         FailingTransport.events.clear();
         FailingTransport.bindings = 0;
         FailingTransport.firstListen = null;
-        MetConfiguration settings = new MetConfiguration();
+        MetConfiguration settings = TestConfigurationUtils.create();
         settings.connector("failing") //
                 .bind("127.0.0.1", 2181) //
                 .protocol("failing-test");

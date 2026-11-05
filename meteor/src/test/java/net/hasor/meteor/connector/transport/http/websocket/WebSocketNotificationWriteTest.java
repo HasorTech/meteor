@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.hasor.cobble.concurrent.future.BasicFuture;
 import net.hasor.cobble.concurrent.future.Future;
+import net.hasor.example.bootstrap.TestConfigurationUtils;
 import net.hasor.example.rpc.websocket.JsonWebSocketProtocol;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
@@ -32,7 +33,7 @@ public class WebSocketNotificationWriteTest {
     @Test
     public void failedPhysicalWriteDoesNotProduceAnAccept() throws Exception {
         // 只替换物理发送 Future；使用真实示例 ProtocolProvider 和正式 JSON 编码器。
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         try (MetContext context = configuration.buildContext()) {
             ControlledConnection connection = new ControlledConnection();
             ProtocolConfig config = ProtocolConfig.newConfig("jsonws", "jsonws", //

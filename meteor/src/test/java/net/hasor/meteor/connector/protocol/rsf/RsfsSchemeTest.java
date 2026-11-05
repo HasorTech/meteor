@@ -9,6 +9,7 @@ package net.hasor.meteor.connector.protocol.rsf;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import net.hasor.example.bootstrap.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
@@ -48,10 +49,11 @@ public class RsfsSchemeTest {
     @Test
     public void secureRsfEndpointKeepsTheTcpTransportIdentity() throws Exception {
         // 用户只选择 TCP 和 RSF，TLS 由端点选项启用。
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         configuration.connector("tcp") //
                 .option("tlsEnabled", true) //
-                .protocol("rsf").addressScheme("rsfs");
+                .protocol("rsf") //
+                .addressScheme("rsfs");
 
         try (MetContext context = configuration.buildContext()) {
             // 构建后的公开地址为 rsfs，内部仍由 tcp 与 RsfProtocol 处理。
@@ -70,11 +72,16 @@ public class RsfsSchemeTest {
     @Test
     public void secureAddressSchemeCannotBeSelectedAsTheDefaultProtocol() {
         // 同时配置明文和 TLS 端点，默认协议错误地使用安全地址前缀。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("rsfs");
-        configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        configuration.connector("tcp").bind("127.0.0.1", 0) //
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("rsfs");
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
                 .option("tlsEnabled", true) //
-                .protocol("rsf").addressScheme("rsfs");
+                .protocol("rsf") //
+                .addressScheme("rsfs");
 
         // 默认协议只认 rsf 名字，不能用 rsfs 把协议选择混同为安全端点选择。
         IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, configuration::buildContext);
@@ -84,11 +91,16 @@ public class RsfsSchemeTest {
     @Test
     public void protocolNameKeepsBothPlainAndSecureEndpointAddresses() throws Exception {
         // 默认协议选择 rsf，同一个协议先后挂载到 TLS 与明文端点。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("rsf");
-        configuration.connector("tcp").bind("127.0.0.1", 0) //
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("rsf");
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
                 .option("tlsEnabled", true) //
-                .protocol("rsf").addressScheme("rsfs");
-        configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+                .protocol("rsf") //
+                .addressScheme("rsfs");
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
 
         try (MetContext context = configuration.buildContext()) {
             // 协议名不筛掉任意端点，两种地址前缀仍在各自配置中保留。

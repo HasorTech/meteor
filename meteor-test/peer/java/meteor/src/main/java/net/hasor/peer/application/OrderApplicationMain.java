@@ -95,7 +95,8 @@ public final class OrderApplicationMain {
 
     private static MetConfiguration configuration(String protocol, boolean provider, String discovery,
             String registryAddress, String registryScope) throws IOException {
-        MetConfiguration configuration = new MetConfiguration().setUnitName("local");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setUnitName("local");
         String role = "consumer";
         if (provider) {
             role = "provider";

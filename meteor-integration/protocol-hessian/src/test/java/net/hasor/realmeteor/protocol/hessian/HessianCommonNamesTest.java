@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hessian;
+import net.hasor.example.protocol.hessian.TestConfigurationUtils;
 import net.hasor.example.protocol.hessian.NamedEcho;
 import net.hasor.example.protocol.hessian.WireEcho;
 import net.hasor.meteor.MetBindInfo;
@@ -56,7 +57,8 @@ public class HessianCommonNamesTest {
     }
 
     private MetConfiguration configuration(boolean listen) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("hessian");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("hessian");
         var connector = configuration.connector("http");
         if (listen) {
             connector.bind("127.0.0.1", 0);

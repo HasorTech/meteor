@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.net.URI;
 import java.net.URL;
 import java.util.Map;
@@ -32,7 +33,8 @@ public class WebServicesRpcLiteralInteropTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void metroTypedProxyInvokesMeteorRpcLiteralSoap11() throws Exception {
         // Meteor 以 RPC/literal SOAP 1.1 发布普通 Java 接口，并自动生成契约。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
         configuration.connector("http") //
                 .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("soap") //
@@ -71,7 +73,8 @@ public class WebServicesRpcLiteralInteropTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void metroTypedProxyInvokesMeteorRpcLiteralSoap12() throws Exception {
         // Meteor 以 RPC/literal SOAP 1.2 发布普通 Java 接口，并自动生成契约。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
         configuration.connector("http") //
                 .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("soap") //
@@ -111,7 +114,8 @@ public class WebServicesRpcLiteralInteropTest {
         // Metro 从真实 SEI 注解生成 RPC/literal SOAP 1.1 Endpoint。
         try (SoapPeerProcess server = SoapPeerProcess.metroServer("rpc", "1.1", false)) {
             // Meteor 仅启动出站通道，从普通 Java 接口独立生成相同的调用契约。
-            MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setDefaultProtocol("soap");
             configuration.connector("http") //
                     .protocol("soap") //
                     .contextPath("/services") //
@@ -143,7 +147,8 @@ public class WebServicesRpcLiteralInteropTest {
         // Metro 从同一个真实 SEI 注解生成 RPC/literal SOAP 1.2 Endpoint。
         try (SoapPeerProcess server = SoapPeerProcess.metroServer("rpc", "1.2", false)) {
             // Meteor 仅启动出站通道，从普通 Java 接口独立生成相同的调用契约。
-            MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+            MetConfiguration configuration = TestConfigurationUtils.create() //
+                    .setDefaultProtocol("soap");
             configuration.connector("http") //
                     .protocol("soap") //
                     .contextPath("/services") //

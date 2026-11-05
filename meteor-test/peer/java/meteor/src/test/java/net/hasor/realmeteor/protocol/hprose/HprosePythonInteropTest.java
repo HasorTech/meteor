@@ -4,6 +4,7 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.protocol.hprose;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.example.protocol.hprose.Sample;
 import net.hasor.example.protocol.hprose.SampleImpl;
 import net.hasor.meteor.MetBindInfo;
@@ -26,9 +27,11 @@ public class HprosePythonInteropTest {
     @Timeout(value = 45000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void pythonSdkCallsMeteor() throws Exception {
         // 通过 bootstrap 启动 Meteor HTTP 监听并发布普通接口。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("hprose").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("hprose") //
+                .contextPath("/rpc");
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
             provider.publisher().rsfService(Sample.class, new SampleImpl()) //
@@ -49,8 +52,10 @@ public class HprosePythonInteropTest {
         // Python SDK 自行注册业务方法和建立监听，Meteor 只借用就绪端点。
         try (PythonSdkPeerProcess provider = PythonSdkPeerProcess.start("hprose", "provider")) {
             int port = provider.awaitPort();
-            MetConfiguration configuration = new MetConfiguration();
-            configuration.connector("http").protocol("hprose").contextPath("/rpc");
+            MetConfiguration configuration = TestConfigurationUtils.create();
+            configuration.connector("http") //
+                    .protocol("hprose") //
+                    .contextPath("/rpc");
             try (MetContext consumer = configuration.buildContext()) {
                 consumer.start();
                 MetBindInfo<Sample> service = consumer.publisher().rsfService(Sample.class) //

@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.oncrpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -454,11 +455,17 @@ public class OncRpcOfficialInteropScenarioTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorTcpSendsSystemIdentityToNative() throws Exception {
         // AUTH_SYS 只是声明身份；当前场景核对实际发给 libtirpc 的 UID、GID 和附加组。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc");
-        configuration.setQueueMinPoolSize(2).setDefaultTimeout(5000);
-        configuration.connector("tcp").protocol("oncrpc") //
-                .option("auth", "sys").option("authMachine", "meteor-test") //
-                .option("authUid", 123).option("authGid", 456).option("authGroups", "7,11");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc");
+        configuration.setQueueMinPoolSize(2) //
+                .setDefaultTimeout(5000);
+        configuration.connector("tcp") //
+                .protocol("oncrpc") //
+                .option("auth", "sys") //
+                .option("authMachine", "meteor-test") //
+                .option("authUid", 123) //
+                .option("authGid", 456) //
+                .option("authGroups", "7,11");
         try (OncRpcNativeProcess peer = OncRpcNativeProcess.start("--command=server", //
                 "--transport=tcp", "--port=0"); //
              MetContext client = configuration.buildContext()) {
@@ -898,11 +905,17 @@ public class OncRpcOfficialInteropScenarioTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorUdpSendsSystemIdentityToNative() throws Exception {
         // AUTH_SYS 只是声明身份；当前场景核对实际发给 libtirpc 的 UID、GID 和附加组。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc-udp");
-        configuration.setQueueMinPoolSize(2).setDefaultTimeout(5000);
-        configuration.connector("udp").protocol("oncrpc-udp") //
-                .option("auth", "sys").option("authMachine", "meteor-test") //
-                .option("authUid", 123).option("authGid", 456).option("authGroups", "7,11");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc-udp");
+        configuration.setQueueMinPoolSize(2) //
+                .setDefaultTimeout(5000);
+        configuration.connector("udp") //
+                .protocol("oncrpc-udp") //
+                .option("auth", "sys") //
+                .option("authMachine", "meteor-test") //
+                .option("authUid", 123) //
+                .option("authGid", 456) //
+                .option("authGroups", "7,11");
         try (OncRpcNativeProcess peer = OncRpcNativeProcess.start("--command=server", //
                 "--transport=udp", "--port=0"); //
              MetContext client = configuration.buildContext()) {
@@ -929,9 +942,13 @@ public class OncRpcOfficialInteropScenarioTest {
         try (DatagramSocket reservation = new DatagramSocket(0, runner)) {
             port = reservation.getLocalPort();
         }
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("oncrpc-udp");
-        configuration.setQueueMinPoolSize(2).setDefaultTimeout(5000);
-        configuration.connector("udp").bind(runnerAddress, port).protocol("oncrpc-udp");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("oncrpc-udp");
+        configuration.setQueueMinPoolSize(2) //
+                .setDefaultTimeout(5000);
+        configuration.connector("udp") //
+                .bind(runnerAddress, port) //
+                .protocol("oncrpc-udp");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(OncRpcDemoService.class, new OncRpcDemoServiceImpl()) //
@@ -972,25 +989,36 @@ public class OncRpcOfficialInteropScenarioTest {
     }
 
     private MetConfiguration incoming(String transport, String protocol) throws IOException {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol(protocol);
-        configuration.setQueueMinPoolSize(2).setDefaultTimeout(5000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol(protocol);
+        configuration.setQueueMinPoolSize(2) //
+                .setDefaultTimeout(5000);
         int port = this.listenPort(transport);
-        configuration.connector(transport).bind(ContainerProcess.runnerHost(), port).protocol(protocol);
+        configuration.connector(transport) //
+                .bind(ContainerProcess.runnerHost(), port) //
+                .protocol(protocol);
         return configuration;
     }
 
     private MetConfiguration outgoing(String transport, String protocol) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol(protocol);
-        configuration.setQueueMinPoolSize(2).setDefaultTimeout(5000);
-        configuration.connector(transport).protocol(protocol);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol(protocol);
+        configuration.setQueueMinPoolSize(2) //
+                .setDefaultTimeout(5000);
+        configuration.connector(transport) //
+                .protocol(protocol);
         return configuration;
     }
 
     private MetConfiguration requireSystem(String transport, String protocol) throws IOException {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol(protocol);
-        configuration.setQueueMinPoolSize(2).setDefaultTimeout(5000);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol(protocol);
+        configuration.setQueueMinPoolSize(2) //
+                .setDefaultTimeout(5000);
         int port = this.listenPort(transport);
-        configuration.connector(transport).bind(ContainerProcess.runnerHost(), port).protocol(protocol) //
+        configuration.connector(transport) //
+                .bind(ContainerProcess.runnerHost(), port) //
+                .protocol(protocol) //
                 .option("auth", "require-sys");
         return configuration;
     }

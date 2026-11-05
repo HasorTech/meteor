@@ -138,17 +138,24 @@ public class TripleRegistryAdapterScenarioTest {
     }
 
     private MetConfiguration configuration(RegistryConfiguration registry, boolean listening) throws Exception {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("triple").setDefaultTimeout(10000);
+        MetConfiguration configuration = new MetConfiguration() //
+                .setDefaultProtocol("triple") //
+                .setDefaultTimeout(10000);
         configuration.setApplicationName(listening ? "triple-provider-adapter" : "triple-consumer-adapter");
         configuration.setDataHome(Files.createDirectory(this.data.resolve("application")));
         configuration.addExtension(registry);
-        configuration.connector("tcp").protocol("rsf"); // 注册扩展内部管理出口。
-        ConnectorSettings connector = configuration.connector("http").option("httpVersion", 2);
+        configuration.connector("tcp") //
+                .protocol("rsf"); // 注册扩展内部管理出口。
+        ConnectorSettings connector = configuration.connector("http") //
+                .option("httpVersion", 2);
         if (listening) {
             // 官方 SDK 会规范化 loopback；沿用既有互通测试监听方式，由注册 publishHost 明确公布地址。
             connector.bind("0.0.0.0", 0);
         }
-        connector.protocol("triple").addressScheme("http").contextPath("/").option("streamBody", true);
+        connector.protocol("triple") //
+                .addressScheme("http") //
+                .contextPath("/") //
+                .option("streamBody", true);
         return configuration;
     }
 

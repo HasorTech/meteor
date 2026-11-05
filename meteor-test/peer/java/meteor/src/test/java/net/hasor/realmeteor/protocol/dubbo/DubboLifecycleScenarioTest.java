@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.dubbo;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -31,8 +32,10 @@ public class DubboLifecycleScenarioTest {
     public void ordinaryCallRemainsPendingUntilBusinessCompletes() throws Exception {
         // 应用自己控制业务完成时机，协议只传输请求和响应。
         DubboTaskServiceImpl implementation = new DubboTaskServiceImpl();
-        try (MetContext server = this.configuration(true, 5000).buildContext(); //
-             MetContext client = this.configuration(false, 5000).buildContext()) {
+        try (MetContext server = this.configuration(true, 5000) //
+                .buildContext(); //
+             MetContext client = this.configuration(false, 5000) //
+                     .buildContext()) {
             server.start();
             client.start();
             server.publisher().rsfService(DubboTaskService.class, implementation).register();
@@ -61,8 +64,10 @@ public class DubboLifecycleScenarioTest {
     public void messageCompletesAfterWriteWhileBusinessIsStillRunning() throws Exception {
         // 应用自己控制业务完成时机，协议只传输请求和响应。
         DubboTaskServiceImpl implementation = new DubboTaskServiceImpl();
-        try (MetContext server = this.configuration(true, 5000).buildContext(); //
-             MetContext client = this.configuration(false, 5000).buildContext()) {
+        try (MetContext server = this.configuration(true, 5000) //
+                .buildContext(); //
+             MetContext client = this.configuration(false, 5000) //
+                     .buildContext()) {
             server.start();
             client.start();
             server.publisher().rsfService(DubboTaskService.class, implementation).register();
@@ -92,8 +97,10 @@ public class DubboLifecycleScenarioTest {
     public void cancellationDoesNotPoisonTheConnection() throws Exception {
         // 应用自己控制业务完成时机，协议只传输请求和响应。
         DubboTaskServiceImpl implementation = new DubboTaskServiceImpl();
-        try (MetContext server = this.configuration(true, 5000).buildContext(); //
-             MetContext client = this.configuration(false, 5000).buildContext()) {
+        try (MetContext server = this.configuration(true, 5000) //
+                .buildContext(); //
+             MetContext client = this.configuration(false, 5000) //
+                     .buildContext()) {
             server.start();
             client.start();
             server.publisher().rsfService(DubboTaskService.class, implementation).register();
@@ -124,8 +131,10 @@ public class DubboLifecycleScenarioTest {
     public void deadlineDoesNotPoisonFollowingCalls() throws Exception {
         // 应用自己控制业务完成时机，协议只传输请求和响应。
         DubboTaskServiceImpl implementation = new DubboTaskServiceImpl();
-        try (MetContext server = this.configuration(true, 5000).buildContext(); //
-             MetContext client = this.configuration(false, 500).buildContext()) {
+        try (MetContext server = this.configuration(true, 5000) //
+                .buildContext(); //
+             MetContext client = this.configuration(false, 500) //
+                     .buildContext()) {
             server.start();
             client.start();
             server.publisher().rsfService(DubboTaskService.class, implementation).register();
@@ -157,8 +166,10 @@ public class DubboLifecycleScenarioTest {
     public void closingTheClientTerminatesItsOutstandingCall() throws Exception {
         // 应用自己控制业务完成时机，协议只传输请求和响应。
         DubboTaskServiceImpl implementation = new DubboTaskServiceImpl();
-        try (MetContext server = this.configuration(true, 5000).buildContext(); //
-             MetContext client = this.configuration(false, 5000).buildContext()) {
+        try (MetContext server = this.configuration(true, 5000) //
+                .buildContext(); //
+             MetContext client = this.configuration(false, 5000) //
+                     .buildContext()) {
             server.start();
             client.start();
             server.publisher().rsfService(DubboTaskService.class, implementation).register();
@@ -184,7 +195,8 @@ public class DubboLifecycleScenarioTest {
     }
 
     private MetConfiguration configuration(boolean listener, int timeout) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("dubbo");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("dubbo");
         configuration.setDefaultTimeout(timeout);
         var tcp = configuration.connector("tcp");
         if (listener) {

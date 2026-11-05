@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hprose;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.example.protocol.hprose.TextService;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
@@ -24,19 +25,22 @@ public class HproseRsfsSerializationTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void hproseSerializationOverRsfsWithServerAuthentication() throws Exception {
         // TCP 端点启用 TLS，单向认证客户端只加载服务器 CA 的信任库。
-        MetConfiguration incoming = new MetConfiguration();
+        MetConfiguration incoming = TestConfigurationUtils.create();
         incoming.connector("tcp") //
                 .bind("127.0.0.1", 0) //
                 .option("tlsEnabled", true) //
                 .option("tlsKeyStore", "classpath:/certs/acceptance/server.p12") //
                 .option("tlsKeyStorePassword", "meteor-test") //
-                .protocol("rsf").addressScheme("rsfs");
-        MetConfiguration outgoing = new MetConfiguration().setRequestTimeout(5000);
+                .protocol("rsf") //
+                .addressScheme("rsfs");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setRequestTimeout(5000);
         outgoing.connector("tcp") //
                 .option("tlsEnabled", true) //
                 .option("tlsTrustStore", "classpath:/certs/acceptance/trust.p12") //
                 .option("tlsTrustStorePassword", "meteor-test") //
-                .protocol("rsf").addressScheme("rsfs");
+                .protocol("rsf") //
+                .addressScheme("rsfs");
 
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
@@ -61,7 +65,7 @@ public class HproseRsfsSerializationTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void hproseSerializationOverRsfsWithMutualTls() throws Exception {
         // 双向 TLS 使用独立身份，服务端要求客户端提供受信任的证书。
-        MetConfiguration incoming = new MetConfiguration();
+        MetConfiguration incoming = TestConfigurationUtils.create();
         incoming.connector("tcp") //
                 .bind("127.0.0.1", 0) //
                 .option("tlsEnabled", true) //
@@ -70,15 +74,18 @@ public class HproseRsfsSerializationTest {
                 .option("tlsTrustStore", "classpath:/certs/acceptance/trust.p12") //
                 .option("tlsTrustStorePassword", "meteor-test") //
                 .option("tlsClientAuth", "REQUIRE") //
-                .protocol("rsf").addressScheme("rsfs");
-        MetConfiguration outgoing = new MetConfiguration().setRequestTimeout(5000);
+                .protocol("rsf") //
+                .addressScheme("rsfs");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setRequestTimeout(5000);
         outgoing.connector("tcp") //
                 .option("tlsEnabled", true) //
                 .option("tlsKeyStore", "classpath:/certs/acceptance/client.p12") //
                 .option("tlsKeyStorePassword", "meteor-test") //
                 .option("tlsTrustStore", "classpath:/certs/acceptance/trust.p12") //
                 .option("tlsTrustStorePassword", "meteor-test") //
-                .protocol("rsf").addressScheme("rsfs");
+                .protocol("rsf") //
+                .addressScheme("rsfs");
 
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {

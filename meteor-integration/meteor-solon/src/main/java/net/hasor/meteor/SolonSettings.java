@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -25,6 +26,10 @@ final class SolonSettings {
         MetConfiguration config = new MetConfiguration();
         config.setAddressBook(properties.get("meteor.address-book"));
         config.setApplicationName(properties.get("meteor.application", config.getApplicationName()));
+        String dataHome = properties.get("meteor.data-home");
+        if (StringUtils.isNotBlank(dataHome)) {
+            config.setDataHome(Paths.get(dataHome));
+        }
         config.setUnitName(properties.get("meteor.unit", config.getUnitName()));
         config.setDefaultProtocol(properties.get("meteor.default-protocol", config.getDefaultProtocol()));
         config.setDefaultGroup(properties.get("meteor.default-group", config.getDefaultGroup()));
@@ -46,7 +51,8 @@ final class SolonSettings {
             int port = properties.getInt(prefix + "port", 0);
             String key = provider.transportType() + "://" + host + ":" + port;
             MetConfiguration.ConnectorSettings connector = connectors.computeIfAbsent(key, ignored -> {
-                return config.connector(provider.transportType()).bind(host, port);
+                return config.connector(provider.transportType()) //
+                        .bind(host, port);
             });
 
             MetConfiguration.ProtocolSettings protocol = connector.protocol(provider.name());

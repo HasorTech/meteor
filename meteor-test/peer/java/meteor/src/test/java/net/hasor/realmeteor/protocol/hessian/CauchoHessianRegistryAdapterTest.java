@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hessian;
+import java.util.UUID;
 import java.nio.file.Files;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -73,11 +74,19 @@ public class CauchoHessianRegistryAdapterTest {
         try (RegistryDiscoveryEnvironment environment = RegistryDiscoveryEnvironment.open(this.backend, directory)) {
             RegistryConfiguration registry = environment.configuration();
             registry.setPublishHost(ContainerProcess.runnerHost());
-            MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("hessian");
-            configuration.addExtension(registry).setApplicationName("meteor-hessian-adapter-provider");
-            configuration.connector("tcp").protocol("rsf");
-            configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                    .protocol("hessian").addressScheme("http").contextPath("/hessian").option("version", this.version);
+            MetConfiguration configuration = new MetConfiguration() //
+                    .setDefaultProtocol("hessian");
+            configuration.setDataHome(this.data.resolve("meteor-" + UUID.randomUUID()));
+            configuration.addExtension(registry) //
+                    .setApplicationName("meteor-hessian-adapter-provider");
+            configuration.connector("tcp") //
+                    .protocol("rsf");
+            configuration.connector("http") //
+                    .bind(ContainerProcess.runnerHost(), 0) //
+                    .protocol("hessian") //
+                    .addressScheme("http") //
+                    .contextPath("/hessian") //
+                    .option("version", this.version);
             try (MetContext provider = configuration.buildContext()) {
                 provider.start();
                 MetBindInfo<HessianInteropDemo> service = provider.publisher() //
@@ -110,11 +119,18 @@ public class CauchoHessianRegistryAdapterTest {
         try (RegistryDiscoveryEnvironment environment = RegistryDiscoveryEnvironment.open(this.backend, directory)) {
             RegistryConfiguration registry = environment.configuration();
             registry.setPublishHost(ContainerProcess.runnerHost());
-            MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("hessian");
-            configuration.addExtension(registry).setApplicationName("meteor-hessian-adapter-consumer");
-            configuration.connector("tcp").protocol("rsf");
-            configuration.connector("http").protocol("hessian") //
-                    .addressScheme("http").contextPath("/hessian").option("version", this.version);
+            MetConfiguration configuration = new MetConfiguration() //
+                    .setDefaultProtocol("hessian");
+            configuration.setDataHome(this.data.resolve("meteor-" + UUID.randomUUID()));
+            configuration.addExtension(registry) //
+                    .setApplicationName("meteor-hessian-adapter-consumer");
+            configuration.connector("tcp") //
+                    .protocol("rsf");
+            configuration.connector("http") //
+                    .protocol("hessian") //
+                    .addressScheme("http") //
+                    .contextPath("/hessian") //
+                    .option("version", this.version);
             try (MetContext consumer = configuration.buildContext()) {
                 consumer.start();
                 MetBindInfo<HessianInteropDemo> service = consumer.publisher().rsfService(HessianInteropDemo.class) //

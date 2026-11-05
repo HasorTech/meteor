@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
+import net.hasor.example.support.TestConfigurationUtils;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -30,7 +31,8 @@ public class WebServicesFaultTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void serviceFailureReturnsSoapFault() throws Exception {
         // 发布一个总是失败的 SOAP 服务。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("soap") //
@@ -76,7 +78,8 @@ public class WebServicesFaultTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void responseOptionsDoNotOverrideSoapControlHeaders() throws Exception {
         // 配置与 SOAP 控制头同名的响应选项。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
         configuration.setResponseOption("message", "internal message");
         configuration.setResponseOption("SOAPAction", "conflicting action");
         configuration.connector("http") //
@@ -117,7 +120,8 @@ public class WebServicesFaultTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void businessResponseOptionBecomesHttpHeader() throws Exception {
         // 配置一个允许透传的业务响应选项。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
         configuration.setResponseOption("X-Trace", "visible trace");
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //

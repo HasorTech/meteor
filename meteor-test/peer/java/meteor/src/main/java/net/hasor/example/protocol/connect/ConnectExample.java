@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.rpc.MetCaller;
 
@@ -20,12 +21,20 @@ public final class ConnectExample {
 
     public static void main(String[] arguments) throws Exception {
         // 配置同一个 Connect 挂载点；客户端仅创建出站通道。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("connect");
-        incoming.connector("http").bind("127.0.0.1", 0) //
-                .protocol("connect").contextPath("/rpc").option("streamBody", true);
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("connect");
-        outgoing.connector("http").option("httpVersion", 2) //
-                .protocol("connect").contextPath("/rpc").option("streamBody", true);
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("connect");
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("connect") //
+                .contextPath("/rpc") //
+                .option("streamBody", true);
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("connect");
+        outgoing.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("connect") //
+                .contextPath("/rpc") //
+                .option("streamBody", true);
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             // 先启动两端服务容器，再发布和订阅同一个普通 Java 接口。

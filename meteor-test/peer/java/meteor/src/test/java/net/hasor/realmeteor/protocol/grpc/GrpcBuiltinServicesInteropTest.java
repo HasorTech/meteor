@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -49,9 +50,11 @@ public class GrpcBuiltinServicesInteropTest {
     @Test
     public void standardServicesAreNotInstalledByDefault() throws Exception {
         // 只挂载协议，不安装标准服务扩展。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("http").bind("127.0.0.1", 0) // 共用 HTTP 端点，挂载 gRPC。
-                .protocol("grpc").option("streamBody", true);
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) // 共用 HTTP 端点，挂载 gRPC。
+                .protocol("grpc") //
+                .option("streamBody", true);
         try (MetContext context = configuration.buildContext()) {
             context.start();
 
@@ -65,7 +68,8 @@ public class GrpcBuiltinServicesInteropTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void reflectionResolvesNestedProtoSymbols() throws Exception {
         // 从 bootstrap 启动 gRPC，并显式安装 Health 和 Reflection 标准服务。
-        try (MetContext context = this.configuration().buildContext()) {
+        try (MetContext context = this.configuration() //
+                .buildContext()) {
             context.start();
 
             // 发布包含嵌套符号和 proto2 扩展的服务，供标准反射接口查询。
@@ -112,7 +116,8 @@ public class GrpcBuiltinServicesInteropTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void reflectionListsProto2ExtensionNumbers() throws Exception {
         // 从 bootstrap 启动 gRPC，并显式安装 Health 和 Reflection 标准服务。
-        try (MetContext context = this.configuration().buildContext()) {
+        try (MetContext context = this.configuration() //
+                .buildContext()) {
             context.start();
 
             // 发布包含嵌套符号和 proto2 扩展的服务，供标准反射接口查询。
@@ -150,7 +155,8 @@ public class GrpcBuiltinServicesInteropTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void reflectionFindsTheFileContainingAProto2Extension() throws Exception {
         // 从 bootstrap 启动 gRPC，并显式安装 Health 和 Reflection 标准服务。
-        try (MetContext context = this.configuration().buildContext()) {
+        try (MetContext context = this.configuration() //
+                .buildContext()) {
             context.start();
 
             // 发布包含嵌套符号和 proto2 扩展的服务，供标准反射接口查询。
@@ -189,7 +195,8 @@ public class GrpcBuiltinServicesInteropTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void reflectionRejectsUnknownExtensionContainer() throws Exception {
         // 从 bootstrap 启动 gRPC，并显式安装 Health 和 Reflection 标准服务。
-        try (MetContext context = this.configuration().buildContext()) {
+        try (MetContext context = this.configuration() //
+                .buildContext()) {
             context.start();
 
             // 发布包含嵌套符号和 proto2 扩展的服务，供标准反射接口查询。
@@ -228,10 +235,14 @@ public class GrpcBuiltinServicesInteropTest {
         // 只启用 Health，并让两个协议共用端口且各自使用独立路径。
         GrpcBuiltinServicesFactory services = new GrpcBuiltinServicesFactory();
         services.setReflection(false);
-        MetConfiguration configuration = new MetConfiguration();
-        var http = configuration.connector("http").bind("127.0.0.1", 0);
-        http.protocol("grpc").contextPath("/rpc").option("streamBody", true);
-        http.protocol("hprose").contextPath("/hprose");
+        MetConfiguration configuration = TestConfigurationUtils.create();
+        var http = configuration.connector("http") //
+                .bind("127.0.0.1", 0);
+        http.protocol("grpc") //
+                .contextPath("/rpc") //
+                .option("streamBody", true);
+        http.protocol("hprose") //
+                .contextPath("/hprose");
         configuration.addExtension(services);
         try (MetContext context = configuration.buildContext()) {
             context.start();
@@ -260,7 +271,8 @@ public class GrpcBuiltinServicesInteropTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void healthCheckReportsTheServingInstance() throws Exception {
         // 从 bootstrap 启动 gRPC，并显式安装 Health 和 Reflection 标准服务。
-        try (MetContext context = this.configuration().buildContext()) {
+        try (MetContext context = this.configuration() //
+                .buildContext()) {
             context.start();
             ManagedChannel channel = this.channel(context);
             try {
@@ -280,7 +292,8 @@ public class GrpcBuiltinServicesInteropTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void healthCheckRejectsAnUnpublishedService() throws Exception {
         // 从 bootstrap 启动 gRPC，并显式安装 Health 和 Reflection 标准服务。
-        try (MetContext context = this.configuration().buildContext()) {
+        try (MetContext context = this.configuration() //
+                .buildContext()) {
             context.start();
             ManagedChannel channel = this.channel(context);
             try {
@@ -301,7 +314,8 @@ public class GrpcBuiltinServicesInteropTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void healthListIncludesPublishedStandardServices() throws Exception {
         // 从 bootstrap 启动 gRPC，并显式安装 Health 和 Reflection 标准服务。
-        try (MetContext context = this.configuration().buildContext()) {
+        try (MetContext context = this.configuration() //
+                .buildContext()) {
             context.start();
             ManagedChannel channel = this.channel(context);
             try {
@@ -321,7 +335,8 @@ public class GrpcBuiltinServicesInteropTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void healthWatchObservesServicePublication() throws Exception {
         // 从 bootstrap 启动 gRPC，并显式安装 Health 和 Reflection 标准服务。
-        try (MetContext context = this.configuration().buildContext()) {
+        try (MetContext context = this.configuration() //
+                .buildContext()) {
             context.start();
             ManagedChannel channel = this.channel(context);
             try {
@@ -353,7 +368,8 @@ public class GrpcBuiltinServicesInteropTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void healthWatchTerminatesWhenContextGoesOffline() throws Exception {
         // 从 bootstrap 启动 gRPC，并显式安装 Health 和 Reflection 标准服务。
-        try (MetContext context = this.configuration().buildContext()) {
+        try (MetContext context = this.configuration() //
+                .buildContext()) {
             context.start();
             ManagedChannel channel = this.channel(context);
             try {
@@ -387,7 +403,8 @@ public class GrpcBuiltinServicesInteropTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void healthCheckIsAvailableAfterContextReturnsOnline() throws Exception {
         // 从 bootstrap 启动 gRPC，并发布一个可由标准 Health 查询的服务。
-        try (MetContext context = this.configuration().buildContext()) {
+        try (MetContext context = this.configuration() //
+                .buildContext()) {
             context.start();
             URL proto = this.getClass().getResource("/protocol/proto/grpc/echo.proto");
             GrpcProtoResource resource = new GrpcProtoResource(proto);
@@ -413,7 +430,8 @@ public class GrpcBuiltinServicesInteropTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void healthWatchCancellationLeavesUnaryChecksAvailable() throws Exception {
         // 从 bootstrap 启动 gRPC，并显式安装 Health 和 Reflection 标准服务。
-        try (MetContext context = this.configuration().buildContext()) {
+        try (MetContext context = this.configuration() //
+                .buildContext()) {
             context.start();
             ManagedChannel channel = this.channel(context);
             try {
@@ -449,7 +467,8 @@ public class GrpcBuiltinServicesInteropTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void reflectionV1ListsServices() throws Exception {
         // 从 bootstrap 启动 gRPC，并显式安装 Health 和 Reflection 标准服务。
-        try (MetContext context = this.configuration().buildContext()) {
+        try (MetContext context = this.configuration() //
+                .buildContext()) {
             context.start();
 
             // 发布带有跨文件消息引用的服务，供反射查询服务和描述文件。
@@ -491,7 +510,8 @@ public class GrpcBuiltinServicesInteropTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void reflectionV1IncludesImportedDescriptors() throws Exception {
         // 从 bootstrap 启动 gRPC，并显式安装 Health 和 Reflection 标准服务。
-        try (MetContext context = this.configuration().buildContext()) {
+        try (MetContext context = this.configuration() //
+                .buildContext()) {
             context.start();
 
             // 发布带有跨文件消息引用的服务，供反射查询服务和描述文件。
@@ -541,7 +561,8 @@ public class GrpcBuiltinServicesInteropTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void reflectionV1FindsFileByName() throws Exception {
         // 从 bootstrap 启动 gRPC，并显式安装 Health 和 Reflection 标准服务。
-        try (MetContext context = this.configuration().buildContext()) {
+        try (MetContext context = this.configuration() //
+                .buildContext()) {
             context.start();
 
             // 发布带有跨文件消息引用的服务，供反射查询服务和描述文件。
@@ -580,7 +601,8 @@ public class GrpcBuiltinServicesInteropTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void reflectionV1ReportsEmptyExtensionNumbers() throws Exception {
         // 从 bootstrap 启动 gRPC，并显式安装 Health 和 Reflection 标准服务。
-        try (MetContext context = this.configuration().buildContext()) {
+        try (MetContext context = this.configuration() //
+                .buildContext()) {
             context.start();
 
             // 发布带有跨文件消息引用的服务，供反射查询服务和描述文件。
@@ -619,7 +641,8 @@ public class GrpcBuiltinServicesInteropTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void reflectionV1ContinuesAfterUnknownSymbol() throws Exception {
         // 从 bootstrap 启动 gRPC，并显式安装 Health 和 Reflection 标准服务。
-        try (MetContext context = this.configuration().buildContext()) {
+        try (MetContext context = this.configuration() //
+                .buildContext()) {
             context.start();
 
             // 发布带有跨文件消息引用的服务，供反射查询服务和描述文件。
@@ -663,7 +686,8 @@ public class GrpcBuiltinServicesInteropTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void reflectionV1AlphaListsServices() throws Exception {
         // 从 bootstrap 启动 gRPC，并显式安装 Health 和 Reflection 标准服务。
-        try (MetContext context = this.configuration().buildContext()) {
+        try (MetContext context = this.configuration() //
+                .buildContext()) {
             context.start();
 
             // 发布带有跨文件消息引用的服务，供反射查询服务和描述文件。
@@ -705,7 +729,8 @@ public class GrpcBuiltinServicesInteropTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void reflectionV1AlphaIncludesImportedDescriptors() throws Exception {
         // 从 bootstrap 启动 gRPC，并显式安装 Health 和 Reflection 标准服务。
-        try (MetContext context = this.configuration().buildContext()) {
+        try (MetContext context = this.configuration() //
+                .buildContext()) {
             context.start();
 
             // 发布带有跨文件消息引用的服务，供反射查询服务和描述文件。
@@ -755,7 +780,8 @@ public class GrpcBuiltinServicesInteropTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void reflectionV1AlphaFindsFileByName() throws Exception {
         // 从 bootstrap 启动 gRPC，并显式安装 Health 和 Reflection 标准服务。
-        try (MetContext context = this.configuration().buildContext()) {
+        try (MetContext context = this.configuration() //
+                .buildContext()) {
             context.start();
 
             // 发布带有跨文件消息引用的服务，供反射查询服务和描述文件。
@@ -794,7 +820,8 @@ public class GrpcBuiltinServicesInteropTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void reflectionV1AlphaReportsEmptyExtensionNumbers() throws Exception {
         // 从 bootstrap 启动 gRPC，并显式安装 Health 和 Reflection 标准服务。
-        try (MetContext context = this.configuration().buildContext()) {
+        try (MetContext context = this.configuration() //
+                .buildContext()) {
             context.start();
 
             // 发布带有跨文件消息引用的服务，供反射查询服务和描述文件。
@@ -833,7 +860,8 @@ public class GrpcBuiltinServicesInteropTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void reflectionV1AlphaContinuesAfterUnknownSymbol() throws Exception {
         // 从 bootstrap 启动 gRPC，并显式安装 Health 和 Reflection 标准服务。
-        try (MetContext context = this.configuration().buildContext()) {
+        try (MetContext context = this.configuration() //
+                .buildContext()) {
             context.start();
 
             // 发布带有跨文件消息引用的服务，供反射查询服务和描述文件。
@@ -876,7 +904,7 @@ public class GrpcBuiltinServicesInteropTest {
     @Test
     public void standardServicesRejectConfigurationWithoutGrpcMount() {
         // 安装标准服务扩展，但不配置它依赖的 gRPC 挂载点。
-        MetConfiguration configuration = new MetConfiguration();
+        MetConfiguration configuration = TestConfigurationUtils.create();
         configuration.addExtension(new GrpcBuiltinServicesFactory());
 
         // 错误应在构建阶段暴露，调用方能看到缺少挂载点的具体原因。
@@ -933,9 +961,13 @@ public class GrpcBuiltinServicesInteropTest {
 
     private MetConfiguration configuration() {
         // 公共准备只提供配置，实际上下文的启动和关闭保留在各场景中。
-        MetConfiguration configuration = new MetConfiguration().setDefaultTimeout(10000);
-        configuration.connector("http").bind("127.0.0.1", 0) // 标准服务与业务服务共用根挂载点。
-                .protocol("grpc").contextPath("/").option("streamBody", true);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultTimeout(10000);
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) // 标准服务与业务服务共用根挂载点。
+                .protocol("grpc") //
+                .contextPath("/") //
+                .option("streamBody", true);
         configuration.addExtension(new GrpcBuiltinServicesFactory());
         return configuration;
     }

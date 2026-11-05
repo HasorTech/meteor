@@ -27,7 +27,8 @@ public final class ContextMountExample {
             for (ProtocolSettings protocol : connector.getProtocols()) {
                 if (StringUtils.equals("soap", protocol.getName())) {
                     // /soap 保留为默认，额外路径只供服务发布时显式选择。
-                    protocol.addContextPath("/private").addContextPath("/partner");
+                    protocol.addContextPath("/private") //
+                            .addContextPath("/partner");
                 }
             }
         }

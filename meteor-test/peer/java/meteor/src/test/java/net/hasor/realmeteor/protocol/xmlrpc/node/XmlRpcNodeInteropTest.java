@@ -4,6 +4,7 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.protocol.xmlrpc.node;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.example.echo.TextEchoService;
 import net.hasor.meteor.MetBindInfo;
@@ -25,9 +26,12 @@ public class XmlRpcNodeInteropTest {
     @Timeout(value = 60000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void nodeXmlRpcConsumerCallsMeteorProvider() throws Exception {
         // 从正式 bootstrap 入口启动 XML-RPC 监听，再发布普通 Java 接口。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("xmlrpc").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("xmlrpc") //
+                .contextPath("/rpc");
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
             provider.publisher().rsfService(TextEchoService.class, text -> text) //
@@ -47,8 +51,11 @@ public class XmlRpcNodeInteropTest {
     @Timeout(value = 60000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorConsumerCallsNodeXmlRpcProvider() throws Exception {
         // 独立 node-xmlrpc 服务只实现回声方法，监听端口由本场景申请。
-        MetConfiguration configuration = new MetConfiguration().setRequestTimeout(10000);
-        configuration.connector("http").protocol("xmlrpc").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setRequestTimeout(10000);
+        configuration.connector("http") //
+                .protocol("xmlrpc") //
+                .contextPath("/rpc");
         try (NodeRpcPeer provider = NodeRpcPeer.start("xmlrpc", "provider"); //
              MetContext consumer = configuration.buildContext()) {
             int port = provider.awaitPort();

@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.example.registry.dubbo;
+import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
@@ -26,13 +27,20 @@ public final class DubboRegistryExample {
         // 两个应用共用原生注册中心，消费方无需配置业务服务地址。
         DubboRegistryConfiguration providerRegistry = new DubboRegistryConfiguration().setAddress(args[0]);
         providerRegistry.setPublishHost("127.0.0.1");
-        MetConfiguration provider = new MetConfiguration().addExtension(providerRegistry);
+        MetConfiguration provider = new MetConfiguration() //
+                .addExtension(providerRegistry);
         provider.setApplicationName("meteor-dubbo-example-provider");
-        provider.connector("tcp").bind("0.0.0.0", 0).protocol("dubbo");
+        provider.setDataHome(Path.of("build", "meteor-instances", "dubbo-example-provider"));
+        provider.connector("tcp") //
+                .bind("0.0.0.0", 0) //
+                .protocol("dubbo");
         DubboRegistryConfiguration consumerRegistry = new DubboRegistryConfiguration().setAddress(args[0]);
-        MetConfiguration consumer = new MetConfiguration().addExtension(consumerRegistry);
+        MetConfiguration consumer = new MetConfiguration() //
+                .addExtension(consumerRegistry);
         consumer.setApplicationName("meteor-dubbo-example-consumer");
-        consumer.connector("tcp").protocol("dubbo");
+        consumer.setDataHome(Path.of("build", "meteor-instances", "dubbo-example-consumer"));
+        consumer.connector("tcp") //
+                .protocol("dubbo");
 
         try (MetContext server = provider.buildContext(); //
              MetContext client = consumer.buildContext()) {

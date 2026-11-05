@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.registry.jdbc;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import net.hasor.cobble.ObjectUtils;
 import net.hasor.example.registry.jdbc.Echo;
@@ -16,14 +17,60 @@ import net.hasor.meteor.registry.RegistryAdmin;
 import net.hasor.meteor.registry.admin.MetDirectoryQuery;
 import net.hasor.meteor.registry.admin.MetInstanceInfo;
 import net.hasor.meteor.registry.admin.MetServiceAdmin;
+import net.hasor.meteor.registry.client.RegistryClient;
 import net.hasor.meteor.registry.jdbc.JdbcRegistryConfiguration;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
+import static net.hasor.example.registry.jdbc.JdbcTestSupport.createConfiguration;
 import static net.hasor.example.registry.jdbc.JdbcTestSupport.createDatabase;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JdbcRegistryIntegrationTest {
+    @Test
+    public void restartFromSameDataHomeKeepsOneJdbcInstance() throws Exception {
+        // 两次启动复用同一个数据目录和 H2 注册中心，各自重新创建注册会话。
+        JdbcDataSource dataSource = new JdbcDataSource();
+        dataSource.setURL(createDatabase());
+        JdbcRegistryConfiguration registry = new JdbcRegistryConfiguration();
+        registry.setDataSource(dataSource);
+        registry.setManagementToken("jdbc-test-token");
+        MetConfiguration configuration = createConfiguration() //
+                .setApplicationName("orders");
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        configuration.addExtension(registry);
+
+        String instanceId;
+        try (MetContext first = configuration.buildContext()) {
+            first.publisher().rsfService(Echo.class, text -> "h2:" + text).register();
+            instanceId = first.getInstanceID();
+            first.start();
+            first.getExtension(RegistryClient.class).pushSync().get(5, TimeUnit.SECONDS);
+
+            RegistryAdmin admin = first.getExtension(RegistryAdmin.class);
+            List<MetInstanceInfo> instances = admin.getClusterAdmin().instances("orders", null).getItems();
+            assertEquals(1, instances.size());
+            assertEquals(instanceId, instances.get(0).getInstanceId());
+            assertTrue(instances.get(0).isOnline());
+        }
+
+        // 原上下文和 JDBC 会话已经关闭，重启通过新的会话更新同一个实例档案。
+        try (MetContext restarted = configuration.buildContext()) {
+            assertEquals(instanceId, restarted.getInstanceID());
+            restarted.publisher().rsfService(Echo.class, text -> "h2:" + text).register();
+            restarted.start();
+            restarted.getExtension(RegistryClient.class).pushSync().get(5, TimeUnit.SECONDS);
+
+            RegistryAdmin admin = restarted.getExtension(RegistryAdmin.class);
+            List<MetInstanceInfo> instances = admin.getClusterAdmin().instances("orders", null).getItems();
+            assertEquals(1, instances.size());
+            assertEquals(instanceId, instances.get(0).getInstanceId());
+            assertTrue(instances.get(0).isOnline());
+        }
+    }
+
     @Test
     public void jdbcDiscoveryCallsRegisteredServiceOverRpc() throws Exception {
         // 应用提供 DataSource，两端安装同一个 JDBC 注册中心配置。
@@ -31,11 +78,15 @@ public class JdbcRegistryIntegrationTest {
         dataSource.setURL(createDatabase());
         JdbcRegistryConfiguration registry = new JdbcRegistryConfiguration();
         registry.setDataSource(dataSource);
-        MetConfiguration incoming = new MetConfiguration();
-        incoming.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        registry.setManagementToken("jdbc-test-token");
+        MetConfiguration incoming = createConfiguration();
+        incoming.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
         incoming.addExtension(registry);
-        MetConfiguration outgoing = new MetConfiguration();
-        outgoing.connector("tcp").protocol("rsf");
+        MetConfiguration outgoing = createConfiguration();
+        outgoing.connector("tcp") //
+                .protocol("rsf");
         outgoing.addExtension(registry);
 
         try (MetContext server = incoming.buildContext(); //
@@ -76,9 +127,12 @@ public class JdbcRegistryIntegrationTest {
         dataSource.setURL(createDatabase());
         JdbcRegistryConfiguration registry = new JdbcRegistryConfiguration();
         registry.setDataSource(dataSource);
+        registry.setManagementToken("jdbc-test-token");
         registry.setRefreshMillis(60000);
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        MetConfiguration configuration = createConfiguration();
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
         configuration.addExtension(registry);
 
         try (MetContext server = configuration.buildContext()) {

@@ -89,6 +89,7 @@ class HasorIntegrationTest {
     void startsAutomaticRegistryWithNativeDefaultScanPackages() throws Throwable {
         // 不额外设置扫描范围，扩展自身发布的管理接口不能被扫描器重复注册。
         Properties settings = new Properties();
+        settings.setProperty("meteor.data-home", this.directory.resolve("registry").toString());
         settings.setProperty("meteor.connectors.rsf.host", "127.0.0.1");
         settings.setProperty("meteor.connectors.rsf.port", "0");
         settings.setProperty("meteor.registry.online", "false");
@@ -177,8 +178,11 @@ class HasorIntegrationTest {
         scope.setProperty("hasor.loadPackages", "net.hasor.example.services");
         try (AppContext app = Hasor.create().registerShutdownHook(false).loadSettings(scope).addModules(binder -> {
             binder.bindType(OrderService.class).toInstance(instance);
-            MetConfiguration config = new MetConfiguration();
-            config.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+            MetConfiguration config = new MetConfiguration() //
+                    .setDataHome(this.directory.resolve("meteor"));
+            config.connector("tcp") //
+                    .bind("127.0.0.1", 0) //
+                    .protocol("rsf");
             binder.bindType(MetConfiguration.class).toInstance(config);
         }).addModules(new MeteorModule()).build()) {
             MetContext meteor = app.getInstance(MetContext.class);
@@ -194,8 +198,11 @@ class HasorIntegrationTest {
             settings.setSetting("hasor.loadPackages", "net.hasor.meteor", Settings.DefaultNameSpace);
             String scanScope = "net.hasor.example.services,net.hasor.example";
             settings.addSetting("hasor.loadPackages", scanScope, Settings.DefaultNameSpace);
-            MetConfiguration configuration = new MetConfiguration();
-            configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+            MetConfiguration configuration = new MetConfiguration() //
+                    .setDataHome(this.directory.resolve("meteor"));
+            configuration.connector("tcp") //
+                    .bind("127.0.0.1", 0) //
+                    .protocol("rsf");
             binder.bindType(MetConfiguration.class).toInstance(configuration);
             binder.bindType(OrderServiceImpl.class).asEagerSingleton();
         }).addModules(new MeteorModule()).build()) {
@@ -211,8 +218,14 @@ class HasorIntegrationTest {
     void rejectsMultipleConfigurationBeans() {
         // 启动配置存在歧义时，在创建上下文之前失败。
         Hasor builder = Hasor.create().registerShutdownHook(false).addModules(binder -> {
-            binder.bindType(MetConfiguration.class).nameWith("first").toInstance(new MetConfiguration());
-            binder.bindType(MetConfiguration.class).nameWith("second").toInstance(new MetConfiguration());
+            binder //
+                    .bindType(MetConfiguration.class) //
+                    .nameWith("first") //
+                    .toInstance(new MetConfiguration());
+            binder //
+                    .bindType(MetConfiguration.class) //
+                    .nameWith("second") //
+                    .toInstance(new MetConfiguration());
         }).addModules(new MeteorModule());
         RuntimeException error = assertThrows(RuntimeException.class, builder::build);
         assertTrue(error.toString().contains("Only one MetConfiguration"));
@@ -223,6 +236,7 @@ class HasorIntegrationTest {
         // 只设置 Hasor 的原生扫描范围，不再重复声明 meteor.scan-packages。
         Properties properties = new Properties();
         properties.setProperty("hasor.loadPackages", "net.hasor.example.services.*");
+        properties.setProperty("meteor.data-home", this.directory.resolve("meteor").toString());
         properties.setProperty("meteor.connectors.rsf.host", "127.0.0.1");
         properties.setProperty("meteor.connectors.rsf.port", "0");
         try (AppContext app = Hasor.create().registerShutdownHook(false).loadSettings(properties).addModules(new MeteorModule(), binder -> {
@@ -245,6 +259,7 @@ class HasorIntegrationTest {
         Properties properties = new Properties();
         properties.setProperty("hasor.loadPackages", "net.hasor.example.services");
         properties.setProperty("meteor.application", name);
+        properties.setProperty("meteor.data-home", this.directory.resolve(name).toString());
         properties.setProperty("meteor.unit", "framework");
         properties.setProperty("meteor.connectors.rsf.host", "127.0.0.1");
         properties.setProperty("meteor.connectors.rsf.port", "0");

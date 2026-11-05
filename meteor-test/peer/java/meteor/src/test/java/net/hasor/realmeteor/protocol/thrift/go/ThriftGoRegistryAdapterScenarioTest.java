@@ -166,7 +166,8 @@ public class ThriftGoRegistryAdapterScenarioTest {
         MetConfiguration configuration = provider ? OrderProtocol.THRIFT.providerConfiguration() //
                 : OrderProtocol.THRIFT.consumerConfiguration();
         if (provider) {
-            configuration.getConnectors().get(0).bind(ContainerProcess.runnerHost(), 0);
+            configuration.getConnectors().get(0) //
+                    .bind(ContainerProcess.runnerHost(), 0);
         }
         configuration.setDefaultGroup(scope);
         String application = provider ? "thrift-go-provider-adapter" : "thrift-go-consumer-adapter";
@@ -174,7 +175,9 @@ public class ThriftGoRegistryAdapterScenarioTest {
         configuration.setDataHome(Files.createDirectory(this.data.resolve(application)));
         configuration.addExtension(registry);
         var thrift = configuration.getConnectors().get(0).getProtocols().get(0);
-        thrift.option("encoding", "binary").option("framed", true).addressScheme("thrift");
+        thrift.option("encoding", "binary") //
+                .option("framed", true) //
+                .addressScheme("thrift");
 
         // 注册扩展管理服务只使用 RSF；提供端开启管理监听，消费端只声明出口。
         var management = configuration.connector("tcp");

@@ -35,11 +35,15 @@ public class DubboRegistryDiscoveryScenarioTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration provider = application(registryUrl, "meteor-independent-provider");
-            provider.connector("tcp").bind("0.0.0.0", 0).protocol("dubbo");
+            provider.connector("tcp") //
+                    .bind("0.0.0.0", 0) //
+                    .protocol("dubbo");
             MetConfiguration first = application(registryUrl, "meteor-first-consumer");
-            first.connector("tcp").protocol("dubbo");
+            first.connector("tcp") //
+                    .protocol("dubbo");
             MetConfiguration second = application(registryUrl, "meteor-second-consumer");
-            second.connector("tcp").protocol("dubbo");
+            second.connector("tcp") //
+                    .protocol("dubbo");
             try (MetContext server = provider.buildContext(); //
                  MetContext firstClient = first.buildContext()) {
                 server.start();
@@ -77,7 +81,8 @@ public class DubboRegistryDiscoveryScenarioTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration consumer = application(registryUrl, "meteor-late-legacy-consumer");
-            consumer.connector("tcp").protocol("dubbo");
+            consumer.connector("tcp") //
+                    .protocol("dubbo");
             try (MetContext client = consumer.buildContext()) {
                 client.start();
                 DubboRegistryClient registry = client.getExtension(DubboRegistryClient.class);
@@ -106,7 +111,8 @@ public class DubboRegistryDiscoveryScenarioTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration consumer = application(registryUrl, "meteor-late-current-consumer");
-            consumer.connector("tcp").protocol("dubbo");
+            consumer.connector("tcp") //
+                    .protocol("dubbo");
             try (MetContext client = consumer.buildContext()) {
                 client.start();
                 DubboRegistryClient registry = client.getExtension(DubboRegistryClient.class);
@@ -136,7 +142,8 @@ public class DubboRegistryDiscoveryScenarioTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration consumer = application(registryUrl, "meteor-legacy-withdrawal");
-            consumer.connector("tcp").protocol("dubbo");
+            consumer.connector("tcp") //
+                    .protocol("dubbo");
             try (DubboProcess provider = DubboProcess.startLegacy( //
                     "--command=server", "--registry=" + registryUrl, //
                     "--group=default", "--version=1.0.0"); //
@@ -166,7 +173,8 @@ public class DubboRegistryDiscoveryScenarioTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration consumer = application(registryUrl, "meteor-current-withdrawal");
-            consumer.connector("tcp").protocol("dubbo");
+            consumer.connector("tcp") //
+                    .protocol("dubbo");
             try (DubboProcess provider = DubboProcess.start( //
                     "--command=server", "--registry=" + registryUrl, //
                     "--group=default", "--version=1.0.0"); //
@@ -197,9 +205,12 @@ public class DubboRegistryDiscoveryScenarioTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration provider = application(registryUrl, "meteor-closing-provider");
-            provider.connector("tcp").bind("0.0.0.0", 0).protocol("dubbo");
+            provider.connector("tcp") //
+                    .bind("0.0.0.0", 0) //
+                    .protocol("dubbo");
             MetConfiguration consumer = application(registryUrl, "meteor-watching-consumer");
-            consumer.connector("tcp").protocol("dubbo");
+            consumer.connector("tcp") //
+                    .protocol("dubbo");
             try (MetContext server = provider.buildContext(); //
                  MetContext client = consumer.buildContext()) {
                 server.start();

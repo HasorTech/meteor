@@ -21,8 +21,11 @@ public final class ConsumerMain {
 
     public static void main(String[] arguments) throws Exception {
         // 配置出站协议。
-        MetConfiguration configuration = new MetConfiguration().setUnitName("local");
-        configuration.connector("tcp").protocol("dubbo");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setUnitName("local") //
+                .setApplicationName("dubbo-order-consumer");
+        configuration.connector("tcp") //
+                .protocol("dubbo");
 
         try (MetContext context = configuration.buildContext()) {
             // 启动容器并订阅订单服务。

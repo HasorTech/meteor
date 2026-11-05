@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc.web;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.util.ArrayList;
 import java.util.List;
@@ -283,7 +284,8 @@ public class GrpcWebFlowTest {
     public void http1CancellationStopsLocallyAndTheDeadlineReleasesTheRemotePublisher() throws Exception {
         // 冻结的 HTTP/1 通道把 FIN 视为输入半关闭，远端响应流由显式期限最终回收。
         MetConfiguration incoming = this.incoming();
-        MetConfiguration outgoing = this.outgoing(1, true).setDefaultTimeout(1000);
+        MetConfiguration outgoing = this.outgoing(1, true) //
+                .setDefaultTimeout(1000);
         CountDownLatch producing = new CountDownLatch(1);
         CountDownLatch cancelled = new CountDownLatch(1);
         GrpcWebServiceImpl implementation = new GrpcWebServiceImpl() {
@@ -332,7 +334,8 @@ public class GrpcWebFlowTest {
     public void deadlineReleasesTheRemotePublisherWithoutAResponse() throws Exception {
         // 使用不产出数据的业务 Publisher，观察请求生命周期的远端释放。
         MetConfiguration incoming = this.incoming();
-        MetConfiguration outgoing = this.outgoing(2, false).setDefaultTimeout(800);
+        MetConfiguration outgoing = this.outgoing(2, false) //
+                .setDefaultTimeout(800);
         CountDownLatch producing = new CountDownLatch(1);
         CountDownLatch cancelled = new CountDownLatch(1);
         GrpcWebServiceImpl implementation = new GrpcWebServiceImpl() {
@@ -383,16 +386,25 @@ public class GrpcWebFlowTest {
     }
 
     private MetConfiguration incoming() {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc-web");
-        configuration.connector("http").bind("127.0.0.1", 0).protocol("grpc-web") //
-                .contextPath("/web").option("streamBody", true);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc-web");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("grpc-web") //
+                .contextPath("/web") //
+                .option("streamBody", true);
         return configuration;
     }
 
     private MetConfiguration outgoing(int version, boolean text) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc-web");
-        configuration.connector("http").option("httpVersion", version).protocol("grpc-web") //
-                .contextPath("/web").option("streamBody", true).option("webText", text);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc-web");
+        configuration.connector("http") //
+                .option("httpVersion", version) //
+                .protocol("grpc-web") //
+                .contextPath("/web") //
+                .option("streamBody", true) //
+                .option("webText", text);
         return configuration;
     }
 }

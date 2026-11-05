@@ -31,6 +31,7 @@ import net.hasor.meteor.registry.shared.utils.RegistryGovernanceUtils;
 import net.hasor.meteor.registry.shared.utils.RegistryJson;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import static net.hasor.meteor.registry.shared.RegistryTestUtils.createConfiguration;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class GovernanceModelTest {
@@ -44,7 +45,8 @@ public class GovernanceModelTest {
     @Test
     public void ruleUpdatesWriteOnlyTheirOwnRecord() throws Exception {
         // 准备管理扩展与用于检查记录版本的存储会话。
-        MetConfiguration adminConfiguration = new MetConfiguration().addExtension(this.storageConfiguration);
+        MetConfiguration adminConfiguration = createConfiguration() //
+                .addExtension(this.storageConfiguration);
 
         try (StorageAccess storage = this.storageConfiguration.openStorage(); //
              MetContext adminContext = adminConfiguration.buildContext()) {
@@ -92,7 +94,8 @@ public class GovernanceModelTest {
     @Test
     public void concurrentMetadataUpdatesMergeWithoutLostValues() throws Exception {
         // 准备共享服务管理入口和独立的记录观察会话。
-        MetConfiguration adminConfiguration = new MetConfiguration().addExtension(this.storageConfiguration);
+        MetConfiguration adminConfiguration = createConfiguration() //
+                .addExtension(this.storageConfiguration);
 
         try (StorageAccess storage = this.storageConfiguration.openStorage(); //
              MetContext adminContext = adminConfiguration.buildContext()) {
@@ -138,7 +141,8 @@ public class GovernanceModelTest {
 
         // 通过扩展创建管理入口，故障在实际操作时触发。
         failing.setManagementToken("secret");
-        MetConfiguration adminConfiguration = new MetConfiguration().addExtension(failing);
+        MetConfiguration adminConfiguration = createConfiguration() //
+                .addExtension(failing);
 
         try (MetContext adminContext = adminConfiguration.buildContext()) {
             RegistryAdmin admin = adminContext.getExtension(RegistryAdmin.class);
@@ -161,7 +165,8 @@ public class GovernanceModelTest {
     @Test
     public void metadataLimitAndInvalidRuleDoNotCommit() throws Exception {
         // 准备管理入口与记录版本观察会话。
-        MetConfiguration adminConfiguration = new MetConfiguration().addExtension(this.storageConfiguration);
+        MetConfiguration adminConfiguration = createConfiguration() //
+                .addExtension(this.storageConfiguration);
 
         try (StorageAccess storage = this.storageConfiguration.openStorage(); //
              MetContext adminContext = adminConfiguration.buildContext()) {
@@ -218,7 +223,8 @@ public class GovernanceModelTest {
 
             // 通过扩展创建管理端，并建立未受故障影响的服务记录。
             observed.setManagementToken("secret");
-            MetConfiguration adminConfiguration = new MetConfiguration().addExtension(observed);
+            MetConfiguration adminConfiguration = createConfiguration() //
+                    .addExtension(observed);
 
             try (MetContext adminContext = adminConfiguration.buildContext()) {
                 RegistryAdmin admin = adminContext.getExtension(RegistryAdmin.class);

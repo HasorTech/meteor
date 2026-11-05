@@ -22,13 +22,16 @@ public final class NacosRegistryConsumerMain {
 
     public static void main(String[] arguments) throws Exception {
         // 接入本地 Nacos，配置出站协议。
-        MetConfiguration configuration = new MetConfiguration();
-        configuration.setUnitName("local");
-        configuration.setApplicationName("jsonrpc-order-consumer");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setUnitName("local") //
+                .setApplicationName("jsonrpc-order-consumer");
         configuration.addExtension(new NacosRegistryConfiguration().setAddress("127.0.0.1:8848") //
                 .setPublishHost("127.0.0.1"));
-        configuration.connector("http").protocol("jsonrpc").contextPath("/jsonrpc");
-        configuration.connector("tcp").protocol("rsf");
+        configuration.connector("http") //
+                .protocol("jsonrpc") //
+                .contextPath("/jsonrpc");
+        configuration.connector("tcp") //
+                .protocol("rsf");
 
         try (MetContext context = configuration.buildContext()) {
             // 容器启动后订阅当前协议的订单服务。

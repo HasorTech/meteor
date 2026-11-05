@@ -13,6 +13,7 @@ import net.hasor.example.registry.zookeeper.EchoService;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.registry.zookeeper.ZookeeperTestUtils;
 import net.hasor.meteor.registry.RegistryAdmin;
 import net.hasor.meteor.registry.admin.MetRuleType;
 import net.hasor.meteor.registry.admin.MetServiceAdmin;
@@ -32,8 +33,11 @@ public class ZookeeperGovernanceTest {
         // 延长周期核对间隔，确保本场景由 ZooKeeper watch 驱动。
         try (TestingServer zookeeper = new TestingServer()) {
             ZookeeperRegistryConfiguration registry = registry(zookeeper.getConnectString());
-            MetConfiguration configuration = new MetConfiguration().addExtension(registry);
-            configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+            MetConfiguration configuration = ZookeeperTestUtils.createConfiguration() //
+                    .addExtension(registry);
+            configuration.connector("tcp") //
+                    .bind("127.0.0.1", 0) //
+                    .protocol("rsf");
             try (MetContext context = configuration.buildContext(); //
                  StorageAccess storage = registry.openStorage()) {
                 context.start();
@@ -65,8 +69,11 @@ public class ZookeeperGovernanceTest {
         // 配置使用真实 ZooKeeper 服务，业务上下文经 bootstrap 启动。
         try (TestingServer zookeeper = new TestingServer()) {
             ZookeeperRegistryConfiguration registry = registry(zookeeper.getConnectString());
-            MetConfiguration configuration = new MetConfiguration().addExtension(registry);
-            configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+            MetConfiguration configuration = ZookeeperTestUtils.createConfiguration() //
+                    .addExtension(registry);
+            configuration.connector("tcp") //
+                    .bind("127.0.0.1", 0) //
+                    .protocol("rsf");
             try (MetContext context = configuration.buildContext(); //
                  StorageAccess storage = registry.openStorage()) {
                 context.start();
@@ -97,6 +104,7 @@ public class ZookeeperGovernanceTest {
         ZookeeperRegistryConfiguration registry = new ZookeeperRegistryConfiguration();
         registry.setAddress(address);
         registry.setRefreshMillis(600000);
+        registry.setManagementToken("zookeeper-test-management");
         return registry;
     }
 

@@ -30,8 +30,8 @@ public final class RegistryDiscoveryExample {
     /** 服务端开启共享 TCP、HTTP 端口，自动向注册中心上报全部协议端点。 */
     public static MetConfiguration provider(RegistryConfiguration registry, String host, int tcpPort, int httpPort) {
         MetConfiguration configuration = DirectRpcExample.server(host, tcpPort, httpPort);
-        configuration.setApplicationName("order-provider");
-        configuration.addExtension(registry);
+        configuration.setApplicationName("order-provider") //
+                .addExtension(registry);
         return configuration;
     }
 
@@ -41,10 +41,11 @@ public final class RegistryDiscoveryExample {
 
         // 注册中心扩展的内部管理服务使用 RSF；业务订阅仍只选择调用方指定的协议。
         if (!StringUtils.equalsIgnoreCase(protocol, "rsf")) {
-            configuration.connector("tcp").protocol("rsf");
+            configuration.connector("tcp") //
+                    .protocol("rsf");
         }
-        configuration.setApplicationName("order-consumer");
-        configuration.addExtension(registry);
+        configuration.setApplicationName("order-consumer") //
+                .addExtension(registry);
         return configuration;
     }
 

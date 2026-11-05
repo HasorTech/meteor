@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc.web;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -447,22 +448,31 @@ public class GrpcWebTlsTest {
     }
 
     private MetConfiguration serverConfiguration(int version, String clientAuth) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc-web");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc-web");
         configuration.setDefaultTimeout(5000);
-        ConnectorSettings endpoint = configuration.connector("http").bind("127.0.0.1", 0);
+        ConnectorSettings endpoint = configuration.connector("http") //
+                .bind("127.0.0.1", 0);
         GrpcWebTlsUtils.serverTls(endpoint, version, clientAuth);
-        endpoint.protocol("grpc-web").addressScheme("https").contextPath("/web") //
+        endpoint.protocol("grpc-web") //
+                .addressScheme("https") //
+                .contextPath("/web") //
                 .option("streamBody", true);
         return configuration;
     }
 
     private MetConfiguration clientConfiguration(int version, boolean text, String identity) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc-web");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc-web");
         configuration.setDefaultTimeout(5000);
-        ConnectorSettings endpoint = configuration.connector("http").option("httpVersion", version);
+        ConnectorSettings endpoint = configuration.connector("http") //
+                .option("httpVersion", version);
         GrpcWebTlsUtils.clientTls(endpoint, version, identity);
-        endpoint.protocol("grpc-web").addressScheme("https").contextPath("/web") //
-                .option("streamBody", true).option("webText", text);
+        endpoint.protocol("grpc-web") //
+                .addressScheme("https") //
+                .contextPath("/web") //
+                .option("streamBody", true) //
+                .option("webText", text);
         return configuration;
     }
 

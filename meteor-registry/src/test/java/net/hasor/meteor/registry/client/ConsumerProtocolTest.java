@@ -20,6 +20,7 @@ import net.hasor.meteor.registry.memory.MemoryRegistryConfiguration;
 import net.hasor.meteor.registry.shared.RegistryTestUtils;
 import net.hasor.meteor.registry.shared.RegistryTestUtils.Echo;
 import org.junit.jupiter.api.Test;
+import static net.hasor.meteor.registry.shared.RegistryTestUtils.createConfiguration;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ConsumerProtocolTest {
@@ -29,10 +30,15 @@ public class ConsumerProtocolTest {
         MemoryRegistryConfiguration registry = new MemoryRegistryConfiguration();
         registry.setManagementToken("secret");
         registry.setRefreshMillis(50);
-        MetConfiguration consumerConfig = new MetConfiguration().addExtension(registry);
-        consumerConfig.connector("tcp").protocol("rsf");
-        MetConfiguration providerConfig = new MetConfiguration().addExtension(registry);
-        providerConfig.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        MetConfiguration consumerConfig = createConfiguration() //
+                .addExtension(registry);
+        consumerConfig.connector("tcp") //
+                .protocol("rsf");
+        MetConfiguration providerConfig = createConfiguration() //
+                .addExtension(registry);
+        providerConfig.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
 
         try (MetContext consumer = consumerConfig.buildContext()) {
             String id = consumer.publisher().rsfService(Echo.class).register().getBindID();
@@ -70,8 +76,10 @@ public class ConsumerProtocolTest {
         MemoryRegistryConfiguration registry = new MemoryRegistryConfiguration();
         registry.setManagementToken("secret");
         registry.setRefreshMillis(50);
-        MetConfiguration configuration = new MetConfiguration().addExtension(registry);
-        configuration.connector("tcp").protocol("rsf");
+        MetConfiguration configuration = createConfiguration() //
+                .addExtension(registry);
+        configuration.connector("tcp") //
+                .protocol("rsf");
 
         try (MetContext context = configuration.buildContext()) {
             String first = context.publisher().rsfService(Echo.class).name("first").register().getBindID();
@@ -108,8 +116,11 @@ public class ConsumerProtocolTest {
         // 通过真正的管理 RPC 查询消费者，不依赖注册中心中的订阅快照。
         MemoryRegistryConfiguration registry = new MemoryRegistryConfiguration();
         registry.setManagementToken("secret");
-        MetConfiguration configuration = new MetConfiguration().addExtension(registry);
-        configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        MetConfiguration configuration = createConfiguration() //
+                .addExtension(registry);
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
 
         try (MetContext context = configuration.buildContext()) {
             String id = context.publisher().rsfService(Echo.class).register().getBindID();

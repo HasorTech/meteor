@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc.python;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.ParameterizedClass;
@@ -95,13 +96,18 @@ public class PythonGrpcTypeInteropTest {
     }
 
     private MetConfiguration configuration(boolean listen) {
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("grpc");
-        configuration.setDefaultTimeout(10000).setQueueMinPoolSize(2).setQueueMaxPoolSize(4);
-        MetConfiguration.ConnectorSettings http = configuration.connector("http").option("httpVersion", 2);
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("grpc");
+        configuration.setDefaultTimeout(10000) //
+                .setQueueMinPoolSize(2) //
+                .setQueueMaxPoolSize(4);
+        MetConfiguration.ConnectorSettings http = configuration.connector("http") //
+                .option("httpVersion", 2);
         if (listen) {
             http.bind(ContainerProcess.runnerHost(), 0);
         }
-        http.protocol("grpc").contextPath("/");
+        http.protocol("grpc") //
+                .contextPath("/");
         return configuration;
     }
 }

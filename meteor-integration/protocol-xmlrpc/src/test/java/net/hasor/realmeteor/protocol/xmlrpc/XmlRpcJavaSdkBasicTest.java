@@ -7,6 +7,7 @@
  */
 package net.hasor.realmeteor.protocol.xmlrpc;
 import java.net.URI;
+import net.hasor.example.protocol.xmlrpc.TestConfigurationUtils;
 import net.hasor.example.protocol.xmlrpc.XmlRpcDemoService;
 import net.hasor.example.protocol.xmlrpc.XmlRpcDemoServiceImpl;
 import net.hasor.meteor.MetBindInfo;
@@ -27,9 +28,12 @@ public class XmlRpcJavaSdkBasicTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void officialJavaSdkCallsPublishedService() throws Exception {
         // 当前 JUnit 进程通过正式入口启动 Meteor，并发布本插件的普通业务接口。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("xmlrpc");
-        configuration.connector("http").bind("127.0.0.1", 0) //
-                .protocol("xmlrpc").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("xmlrpc");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("xmlrpc") //
+                .contextPath("/rpc");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher() //
@@ -56,10 +60,12 @@ public class XmlRpcJavaSdkBasicTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorConsumerCallsOfficialJavaSdkServer() throws Exception {
         // SDK 服务与 Meteor 消费者均由测试持有，关闭顺序与创建顺序相反。
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("xmlrpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("xmlrpc");
         configuration.setRequestTimeout(10000);
         configuration.connector("http") //
-                .protocol("xmlrpc").contextPath("/rpc");
+                .protocol("xmlrpc") //
+                .contextPath("/rpc");
         try (XmlRpcJavaSdkServer server = XmlRpcJavaSdkServer.start(); //
              MetContext client = configuration.buildContext()) {
             client.start();

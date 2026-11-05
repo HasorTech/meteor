@@ -33,7 +33,8 @@ public class DubboRegistryApplicationIdentityScenarioTest {
         try (ZookeeperTestServer zookeeper = ZookeeperTestServer.dedicated()) {
             String registryUrl = "zookeeper://" + zookeeper.getConnectString();
             MetConfiguration consumer = application(registryUrl, "meteor-application-native-default");
-            consumer.connector("tcp").protocol("dubbo");
+            consumer.connector("tcp") //
+                    .protocol("dubbo");
             try (DubboProcess provider = DubboProcess.start( //
                     "--command=server", "--registry=" + registryUrl, "--register-mode=instance"); //
                  MetContext client = consumer.buildContext()) {

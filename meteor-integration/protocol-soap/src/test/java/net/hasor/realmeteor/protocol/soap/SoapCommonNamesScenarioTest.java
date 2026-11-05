@@ -7,6 +7,7 @@
  */
 package net.hasor.realmeteor.protocol.soap;
 import net.hasor.example.protocol.soap.NamedEcho;
+import net.hasor.example.protocol.soap.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
@@ -20,12 +21,19 @@ public class SoapCommonNamesScenarioTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void soap12UsesCommonNamesAndDispatchesTheOriginalJavaMethod() throws Exception {
         // 协议挂载声明 SOAP 1.2，业务接口通过公共注解生成两端的契约。
-        MetConfiguration incoming = new MetConfiguration().setDefaultProtocol("soap");
-        incoming.connector("http").bind("127.0.0.1", 0) //
-                .protocol("soap").contextPath("/services").option("soapVersion", "1.2");
-        MetConfiguration outgoing = new MetConfiguration().setDefaultProtocol("soap");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("soap") //
+                .contextPath("/services") //
+                .option("soapVersion", "1.2");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
         outgoing.connector("http") //
-                .protocol("soap").contextPath("/services").option("soapVersion", "1.2");
+                .protocol("soap") //
+                .contextPath("/services") //
+                .option("soapVersion", "1.2");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             // 先启动容器，再发布和订阅同一份 Java 接口。

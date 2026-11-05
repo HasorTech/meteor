@@ -9,6 +9,7 @@ package net.hasor.realmeteor.rpc.rsfs;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import net.hasor.example.bootstrap.TestConfigurationUtils;
 import net.hasor.example.rpc.rsfs.RsfsConfigurations;
 import net.hasor.example.rpc.rsfs.RsfsEcho;
 import net.hasor.meteor.MetBindInfo;
@@ -18,8 +19,8 @@ import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.domain.MetTimeoutException;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 身份校验失败必须终止连接，业务不得被明文或未认证请求执行。 */
 public class RsfsAuthenticationScenarioTest {
@@ -135,9 +136,11 @@ public class RsfsAuthenticationScenarioTest {
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void secureClientNeverFallsBackToAPlaintextServer() throws Exception {
         // 明文 RSF 与 TLS RSF 使用相同帧格式，但不能跨越传输安全边界。
-        MetConfiguration incoming = new MetConfiguration();
-        incoming.setDefaultTimeout(10000);
-        incoming.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        MetConfiguration incoming = TestConfigurationUtils.create() //
+                .setDefaultTimeout(10000);
+        incoming.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
         MetConfiguration outgoing = RsfsConfigurations.client(null, "trust");
         AtomicInteger calls = new AtomicInteger();
         try (MetContext server = incoming.buildContext(); //
@@ -167,9 +170,10 @@ public class RsfsAuthenticationScenarioTest {
     public void secureListenerRejectsAPlaintextRsfClient() throws Exception {
         // 明文 RSF 与 TLS RSF 使用相同帧格式，但不能跨越传输安全边界。
         MetConfiguration incoming = RsfsConfigurations.server("server", "NONE");
-        MetConfiguration outgoing = new MetConfiguration();
-        outgoing.setDefaultTimeout(10000);
-        outgoing.connector("tcp").protocol("rsf");
+        MetConfiguration outgoing = TestConfigurationUtils.create() //
+                .setDefaultTimeout(10000);
+        outgoing.connector("tcp") //
+                .protocol("rsf");
         AtomicInteger calls = new AtomicInteger();
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {

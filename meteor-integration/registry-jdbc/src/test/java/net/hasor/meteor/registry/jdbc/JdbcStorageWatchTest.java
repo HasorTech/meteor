@@ -9,7 +9,6 @@ package net.hasor.meteor.registry.jdbc;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -188,7 +187,7 @@ public class JdbcStorageWatchTest {
             EntInstanceRuntimeData refreshed = instance("one", "payments", "west");
             refreshed.setIpAddress("127.0.0.2");
             refreshed.setProcessId(456L);
-            refreshed.setListenAddresses(Map.of("rsf", "rsf://127.0.0.2:9000"));
+            refreshed.setEndpoints(new EntInstanceEndpointData[] { instanceEndpoint("rsf://127.0.0.2:9000") });
             writer.registerInstance(refreshed);
             await(() -> notifications.get() == 2);
 
@@ -199,7 +198,9 @@ public class JdbcStorageWatchTest {
             assertEquals("west", identity.getUnitName());
             assertEquals("127.0.0.2", identity.getIpAddress());
             assertEquals(Long.valueOf(456), identity.getProcessId());
-            assertEquals(refreshed.getListenAddresses(), identity.getListenAddresses());
+            assertEquals(1, identity.getEndpoints().length);
+            assertEquals("rsf://127.0.0.2:9000", identity.getEndpoints()[0].getListenAddress());
+            assertEquals("rsf", identity.getEndpoints()[0].getProtocolName());
             assertArrayEquals(new String[] { "rsf://127.0.0.1:8000" }, member.getService().getAddresses());
             DirectoryQuery query = new DirectoryQuery();
             query.setUnitName("west");
@@ -221,19 +222,22 @@ public class JdbcStorageWatchTest {
         try (StorageAccess writer = configuration.openStorage(); //
              StorageAccess reader = configuration.openStorage()) {
             EntInstanceRuntimeData registered = instance();
-            registered.setListenAddresses(Map.of("rsf", "rsf://127.0.0.1:8000"));
+            registered.setEndpoints(new EntInstanceEndpointData[] { instanceEndpoint("rsf://127.0.0.1:8000") });
             writer.registerInstance(registered);
             writer.registerService("one", service());
             AtomicInteger notifications = new AtomicInteger();
             reader.watchProviders("echo", notifications::incrementAndGet);
             await(() -> notifications.get() == 1);
+            EntInstanceRuntimeData captured = reader.getInstance("one").getRuntime();
 
             // 不触碰服务登记，运行正文的新版本也必须驱动提供者订阅。
-            registered.setListenAddresses(Map.of("rsf", "rsf://127.0.0.1:9000"));
+            registered.setEndpoints(new EntInstanceEndpointData[] { instanceEndpoint("rsf://127.0.0.1:9000") });
             writer.registerInstance(registered);
             await(() -> notifications.get() == 2);
             RefServiceRelationData member = reader.getMember("echo", MetServiceType.Provider, "one");
-            assertEquals(registered.getListenAddresses(), member.getInstance().getListenAddresses());
+            assertEquals(1, member.getInstance().getEndpoints().length);
+            assertEquals("rsf://127.0.0.1:9000", member.getInstance().getEndpoints()[0].getListenAddress());
+            assertEquals("rsf://127.0.0.1:8000", captured.getEndpoints()[0].getListenAddress());
             assertEquals("127.0.0.1", member.getInstance().getIpAddress());
             assertEquals(Long.valueOf(123), member.getInstance().getProcessId());
         }
@@ -260,6 +264,16 @@ public class JdbcStorageWatchTest {
                 await(() -> notifications.get() == 2);
             }
         }
+    }
+
+    private static EntInstanceEndpointData instanceEndpoint(String address) {
+        EntInstanceEndpointData endpoint = new EntInstanceEndpointData();
+        endpoint.setConnectorName("primary");
+        endpoint.setTransport("tcp");
+        endpoint.setProtocolName("rsf");
+        endpoint.setScheme("rsf");
+        endpoint.setListenAddress(address);
+        return endpoint;
     }
 
     private static void await(Callable<Boolean> condition) throws Exception {

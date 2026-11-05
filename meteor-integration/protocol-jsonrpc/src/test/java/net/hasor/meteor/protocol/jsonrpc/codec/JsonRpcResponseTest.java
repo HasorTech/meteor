@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import net.hasor.example.protocol.jsonrpc.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.connector.RouteMountIndex;
@@ -36,8 +37,11 @@ public class JsonRpcResponseTest {
 
     @BeforeEach
     public void prepareConsumerMetadata() throws Exception {
-        MetConfiguration configuration = new MetConfiguration().setDefaultGroup("wire");
-        configuration.connector("http").protocol("jsonrpc").contextPath("/rpc");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultGroup("wire");
+        configuration.connector("http") //
+                .protocol("jsonrpc") //
+                .contextPath("/rpc");
         this.context = configuration.buildContext();
         this.context.publisher().rsfService(JsonRpcBindingTest.Methods.class) //
                 .name("Methods").aliasName("jsonrpc", "math").register();

@@ -9,10 +9,11 @@ package net.hasor.meteor.bootstrap;
 import java.io.InputStream;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.ServiceConfigurationError;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.protocol.hprose.SerializerExamples.*;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.connector.protocol.rsf.codec.RsfV1Codec;
 import net.hasor.meteor.domain.MetException;
@@ -22,15 +23,19 @@ import net.hasor.meteor.domain.payload.RequestPayload;
 import net.hasor.meteor.serialize.SerializeCoder;
 import net.hasor.realmeteor.protocol.hprose.support.BootstrapTestSupport;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ContextIsolationTest extends BootstrapTestSupport {
+    @TempDir
+    Path data;
+
     @Test
     public void missingSpiCoderIsReportedAsASerializationError() throws Exception {
         // SPI 声明一个不存在的编码器，构建时应报告序列化组件发现失败。
         String coderClass = "missing.Coder";
 
-        MetConfiguration settings = new MetConfiguration();
+        MetConfiguration settings = TestConfigurationUtils.create();
         try (URLClassLoader loader = this.spiLoader(coderClass)) {
             // 沿实际构建入口触发加载，检查包装后的错误码与原始 SPI 原因。
             try (MetContext ignored = settings.buildContext(loader)) {
@@ -51,7 +56,7 @@ public class ContextIsolationTest extends BootstrapTestSupport {
         // 已存在但未实现 SerializeCoder 的类也不能成为 SPI 提供者。
         String coderClass = ContextIsolationTest.class.getName();
 
-        MetConfiguration settings = new MetConfiguration();
+        MetConfiguration settings = TestConfigurationUtils.create();
         try (URLClassLoader loader = this.spiLoader(coderClass)) {
             // 构建失败保留提供者类名，便于定位配置了错误类型的 SPI 声明。
             try (MetContext ignored = settings.buildContext(loader)) {
@@ -72,7 +77,7 @@ public class ContextIsolationTest extends BootstrapTestSupport {
         // 编码器可以被发现，但初始化自身失败时仍应阻止上下文构建。
         String coderClass = FailingCoder.class.getName();
 
-        MetConfiguration settings = new MetConfiguration();
+        MetConfiguration settings = TestConfigurationUtils.create();
         try (URLClassLoader loader = this.spiLoader(coderClass)) {
             // 初始化异常应转换为序列化错误，并保留具体编码器信息。
             try (MetContext ignored = settings.buildContext(loader)) {
@@ -91,7 +96,7 @@ public class ContextIsolationTest extends BootstrapTestSupport {
         // SPI 提供者缺少默认构造方法，服务加载器无法实例化它。
         String coderClass = NoDefaultConstructorCoder.class.getName();
 
-        MetConfiguration settings = new MetConfiguration();
+        MetConfiguration settings = TestConfigurationUtils.create();
         try (URLClassLoader loader = this.spiLoader(coderClass)) {
             // 构建层不能丢失 ServiceConfigurationError 及失败类名。
             try (MetContext ignored = settings.buildContext(loader)) {
@@ -112,7 +117,7 @@ public class ContextIsolationTest extends BootstrapTestSupport {
         // 第一套 SPI 加载器提供带 first 标记的编码器。
         String tag = "first-";
 
-        MetConfiguration settings = new MetConfiguration();
+        MetConfiguration settings = TestConfigurationUtils.create();
         Class<? extends SerializeCoder> coderClass = TaggedCoder.class;
         try (URLClassLoader loader = this.spiLoader(coderClass.getName()); //
              MetContext runtime = settings.buildContext(loader)) {
@@ -143,7 +148,7 @@ public class ContextIsolationTest extends BootstrapTestSupport {
         // 第二套 SPI 加载器提供带 second 标记的编码器。
         String tag = "second-";
 
-        MetConfiguration settings = new MetConfiguration();
+        MetConfiguration settings = TestConfigurationUtils.create();
         Class<? extends SerializeCoder> coderClass = SecondTaggedCoder.class;
         try (URLClassLoader loader = this.spiLoader(coderClass.getName()); //
              MetContext runtime = settings.buildContext(loader)) {
@@ -170,14 +175,15 @@ public class ContextIsolationTest extends BootstrapTestSupport {
     }
 
     @Test
-    public void runtimesOwnIdentityAndCodersWhenSharingSettings() throws Exception {
-        // 同一份配置经不同加载器构建，运行态对象应各自独立。
+    public void runtimesOwnIdentityAndCodersWithIndependentDataDirectories() throws Exception {
+        // 同一份配置经不同加载器构建，各实例使用独立目录且运行态对象各自独立。
         MetConfiguration settings = new MetConfiguration();
-        settings.setDataHome(Paths.get("runtime-data"));
+        settings.setDataHome(this.data.resolve("first"));
         try (URLClassLoader firstLoader = this.spiLoader(TaggedCoder.class.getName()); //
              URLClassLoader secondLoader = this.spiLoader(TaggedCoder.class.getName()); //
              MetContext first = settings.buildContext(firstLoader); //
-             MetContext second = settings.buildContext(secondLoader)) {
+             MetContext second = settings.setDataHome(this.data.resolve("second")) //
+                     .buildContext(secondLoader)) {
             assertNotSame(first.getSettings(), second.getSettings());
             TaggedCoder firstTagged = (TaggedCoder) first.getSerializeCoder("Tagged");
             TaggedCoder secondTagged = (TaggedCoder) second.getSerializeCoder("Tagged");
@@ -185,7 +191,7 @@ public class ContextIsolationTest extends BootstrapTestSupport {
             assertSame(firstLoader, firstTagged.getInitializedLoader());
             assertSame(secondLoader, secondTagged.getInitializedLoader());
 
-            // 实例标识及类加载器分别归属各上下文，共享的目录配置保持一致。
+            // 实例标识及类加载器分别归属各上下文，构建后保留各自的数据目录。
             String firstID = first.getInstanceID();
             String secondID = second.getInstanceID();
             assertFalse(firstID.isEmpty());
@@ -193,8 +199,8 @@ public class ContextIsolationTest extends BootstrapTestSupport {
             assertNotEquals(firstID, secondID);
             assertSame(firstLoader, first.getClassLoader());
             assertSame(secondLoader, second.getClassLoader());
-            assertEquals(Paths.get("runtime-data"), first.getSettings().getDataHome());
-            assertEquals(Paths.get("runtime-data"), second.getSettings().getDataHome());
+            assertEquals(this.data.resolve("first").toAbsolutePath().normalize(), first.getSettings().getDataHome());
+            assertEquals(this.data.resolve("second").toAbsolutePath().normalize(), second.getSettings().getDataHome());
 
             // 内置编码器也应按上下文缓存，而不能在不同实例间共享。
             SerializeCoder firstCoder = first.getSerializeCoder("Java");

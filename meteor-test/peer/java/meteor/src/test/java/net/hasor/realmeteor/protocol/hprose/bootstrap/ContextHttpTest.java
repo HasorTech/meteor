@@ -39,7 +39,10 @@ public class ContextHttpTest extends BootstrapTestSupport {
     public void hproseHttpRequestReachesRegisteredServiceWithoutHasor() throws Exception {
         // 使用原生 HTTP 客户端发送 Hprose 报文，验证协议入口。
         MetConfiguration config = this.configuration();
-        config.connector("http").bind("127.0.0.1", 0).protocol("hprose").contextPath("/hprose");
+        config.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("hprose") //
+                .contextPath("/hprose");
         try (MetContext server = config.buildContext()) {
             // 先启动 HTTP 应用，再发布本场景使用的服务。
             server.start();
@@ -58,9 +61,14 @@ public class ContextHttpTest extends BootstrapTestSupport {
         // 正式 Hprose 与测试别名共享 HTTP 地址和端口，按路径分流。
         MetConfiguration config = this.configuration();
         int sharedPort = this.port();
-        MetConfiguration.ConnectorSettings http = config.connector("http").bind("127.0.0.1", sharedPort);
-        http.protocol("hprose").addressScheme("http").contextPath("/a");
-        http.protocol("hprosea").addressScheme("http").contextPath("/b");
+        MetConfiguration.ConnectorSettings http = config.connector("http") //
+                .bind("127.0.0.1", sharedPort);
+        http.protocol("hprose") //
+                .addressScheme("http") //
+                .contextPath("/a");
+        http.protocol("hprosea") //
+                .addressScheme("http") //
+                .contextPath("/b");
         try (MetContext server = config.buildContext()) {
             // 先启动 HTTP 应用，再发布本场景使用的服务。
             server.start();

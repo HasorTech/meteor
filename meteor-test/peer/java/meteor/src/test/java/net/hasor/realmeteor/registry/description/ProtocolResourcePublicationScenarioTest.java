@@ -178,19 +178,27 @@ public class ProtocolResourcePublicationScenarioTest {
         MemoryRegistryConfiguration registry = new MemoryRegistryConfiguration();
         registry.setManagementToken("resource-publication-tests");
         registry.setRefreshMillis(60000);
-        MetConfiguration configuration = new MetConfiguration().addExtension(registry);
+        MetConfiguration configuration = new MetConfiguration() //
+                .addExtension(registry);
         configuration.setDataHome(Files.createDirectory(this.data.resolve("provider")));
         for (int index = 0; index < endpointCount; index++) {
-            configuration.connector("http").bind("127.0.0.1", 0).protocol("grpc").contextPath("/rpc");
+            configuration.connector("http") //
+                    .bind("127.0.0.1", 0) //
+                    .protocol("grpc") //
+                    .contextPath("/rpc");
         }
-        configuration.connector("tcp").protocol("rsf");
+        configuration.connector("tcp") //
+                .protocol("rsf");
         return configuration;
     }
 
     private MetConfiguration consumerConfiguration() throws Exception {
         MetConfiguration configuration = new MetConfiguration();
         configuration.setDataHome(Files.createDirectory(this.data.resolve("consumer")));
-        configuration.connector("http").option("httpVersion", 2).protocol("grpc").contextPath("/rpc");
+        configuration.connector("http") //
+                .option("httpVersion", 2) //
+                .protocol("grpc") //
+                .contextPath("/rpc");
         return configuration;
     }
 

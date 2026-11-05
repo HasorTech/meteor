@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap.go;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URL;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -28,10 +29,13 @@ public class SoapGoInteropTest {
     public void gowsdlClientCallsMeteorProvider() throws Exception {
         // Meteor 绑定已有 Echo WSDL；Go 客户端由同一份契约及其导入的 XSD 生成。
         URL contract = this.getClass().getResource("/protocol/wsdl/echo.wsdl");
-        MetConfiguration configuration = new MetConfiguration().setDefaultProtocol("soap");
+        MetConfiguration configuration = TestConfigurationUtils.create() //
+                .setDefaultProtocol("soap");
         configuration.setDefaultTimeout(10000);
-        configuration.connector("http").bind(ContainerProcess.runnerHost(), 0) //
-                .protocol("soap").contextPath("/services");
+        configuration.connector("http") //
+                .bind(ContainerProcess.runnerHost(), 0) //
+                .protocol("soap") //
+                .contextPath("/services");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(EchoService.class, message -> message + "|meteor") //

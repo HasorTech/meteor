@@ -19,6 +19,7 @@ import net.hasor.meteor.registry.shared.DecoratedRegistryConfiguration;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
 import net.hasor.meteor.registry.shared.storage.domain.EntInstanceRuntimeData;
 import org.junit.jupiter.api.Test;
+import static net.hasor.meteor.registry.shared.RegistryTestUtils.createConfiguration;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** 大目录验证读取范围和单页契约，不作为真实集群性能基准。 */
@@ -56,7 +57,8 @@ public class DirectoryPaginationTest {
             });
         });
         observed.setManagementToken("secret");
-        MetConfiguration configuration = new MetConfiguration().addExtension(observed);
+        MetConfiguration configuration = createConfiguration() //
+                .addExtension(observed);
         try (MetContext context = configuration.buildContext()) {
             MetClusterAdmin admin = context.getExtension(RegistryAdmin.class).getClusterAdmin();
             MetDirectoryQuery query = new MetDirectoryQuery();

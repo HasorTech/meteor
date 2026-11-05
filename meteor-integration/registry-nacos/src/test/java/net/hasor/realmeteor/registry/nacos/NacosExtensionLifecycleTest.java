@@ -19,6 +19,7 @@ import net.hasor.meteor.registry.admin.MetServiceAdmin;
 import net.hasor.meteor.registry.admin.MetServiceMember;
 import net.hasor.meteor.registry.nacos.MockNacosSdk;
 import net.hasor.meteor.registry.nacos.NacosRegistryConfiguration;
+import net.hasor.meteor.registry.nacos.NacosTestUtils;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -33,10 +34,16 @@ public class NacosExtensionLifecycleTest {
         try (MockNacosSdk sdk = new MockNacosSdk()) {
             NacosRegistryConfiguration registry = sdk.configuration();
             registry.setRefreshMillis(60000);
-            MetConfiguration provider = new MetConfiguration().addExtension(registry);
-            provider.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-            MetConfiguration consumer = new MetConfiguration().addExtension(registry);
-            consumer.connector("tcp").protocol("rsf");
+            registry.setManagementToken("nacos-test-management");
+            MetConfiguration provider = NacosTestUtils.createConfiguration() //
+                    .addExtension(registry);
+            provider.connector("tcp") //
+                    .bind("127.0.0.1", 0) //
+                    .protocol("rsf");
+            MetConfiguration consumer = NacosTestUtils.createConfiguration() //
+                    .addExtension(registry);
+            consumer.connector("tcp") //
+                    .protocol("rsf");
 
             try (MetContext server = provider.buildContext(); //
                  MetContext client = consumer.buildContext()) {
@@ -66,8 +73,12 @@ public class NacosExtensionLifecycleTest {
         try (MockNacosSdk sdk = new MockNacosSdk()) {
             NacosRegistryConfiguration registry = sdk.configuration();
             registry.setRefreshMillis(60000);
-            MetConfiguration provider = new MetConfiguration().addExtension(registry);
-            provider.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+            registry.setManagementToken("nacos-test-management");
+            MetConfiguration provider = NacosTestUtils.createConfiguration() //
+                    .addExtension(registry);
+            provider.connector("tcp") //
+                    .bind("127.0.0.1", 0) //
+                    .protocol("rsf");
 
             try (MetContext server = provider.buildContext()) {
                 // 发布接口并启动应用，等待提供者登记真正完成。
@@ -95,10 +106,15 @@ public class NacosExtensionLifecycleTest {
         try (MockNacosSdk sdk = new MockNacosSdk()) {
             NacosRegistryConfiguration registry = sdk.configuration();
             registry.setRefreshMillis(60000);
-            MetConfiguration provider = new MetConfiguration().addExtension(registry);
-            provider.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-            MetConfiguration consumer = new MetConfiguration().addExtension(registry);
-            consumer.connector("tcp").protocol("rsf");
+            MetConfiguration provider = NacosTestUtils.createConfiguration() //
+                    .addExtension(registry);
+            provider.connector("tcp") //
+                    .bind("127.0.0.1", 0) //
+                    .protocol("rsf");
+            MetConfiguration consumer = NacosTestUtils.createConfiguration() //
+                    .addExtension(registry);
+            consumer.connector("tcp") //
+                    .protocol("rsf");
 
             try (MetContext server = provider.buildContext(); //
                  MetContext client = consumer.buildContext()) {
@@ -125,10 +141,15 @@ public class NacosExtensionLifecycleTest {
         try (MockNacosSdk sdk = new MockNacosSdk()) {
             NacosRegistryConfiguration registry = sdk.configuration();
             registry.setRefreshMillis(60000);
-            MetConfiguration provider = new MetConfiguration().addExtension(registry);
-            provider.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-            MetConfiguration consumer = new MetConfiguration().addExtension(registry);
-            consumer.connector("tcp").protocol("rsf");
+            MetConfiguration provider = NacosTestUtils.createConfiguration() //
+                    .addExtension(registry);
+            provider.connector("tcp") //
+                    .bind("127.0.0.1", 0) //
+                    .protocol("rsf");
+            MetConfiguration consumer = NacosTestUtils.createConfiguration() //
+                    .addExtension(registry);
+            consumer.connector("tcp") //
+                    .protocol("rsf");
 
             try (MetContext server = provider.buildContext(); //
                  MetContext client = consumer.buildContext()) {
