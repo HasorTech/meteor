@@ -21,6 +21,7 @@ import net.hasor.meteor.connector.transport.NetworkChannel;
 import net.hasor.meteor.connector.transport.NetworkConnector;
 import net.hasor.meteor.connector.transport.NetworkListen;
 import net.hasor.meteor.connector.transport.tcp.TcpProtocolProvider;
+import net.hasor.meteor.connector.transport.http.HttpProtocolProvider;
 import net.hasor.meteor.connector.transport.udp.UdpProtocolProvider;
 import net.hasor.meteor.domain.ProtocolConfig;
 import net.hasor.meteor.domain.payload.Payload;
@@ -335,6 +336,14 @@ final class ConnectorEndpoint<M> {
         } catch (RuntimeException | Error failure) {
             channel.fail(failure);
         }
+    }
+
+    Set<String> endpointTypes(String protocol) {
+        ProtocolMountBinding<M> binding = this.plan.protocolBindings().get(protocol);
+        if (binding != null && binding.provider() instanceof HttpProtocolProvider http) {
+            return Set.copyOf(http.endpointTypes());
+        }
+        return Set.of();
     }
 
     ConnectorChannel<M> createChannel() {

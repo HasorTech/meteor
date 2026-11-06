@@ -625,6 +625,11 @@ public class ConnectorManager implements AutoCloseable {
         return addresses.get(0);
     }
 
+    public synchronized Set<String> getEndpointTypes(String connectorName, String protocol) {
+        ConnectorEndpoint<?> endpoint = this.endpoints.get(connectorName);
+        return endpoint == null ? Set.of() : endpoint.endpointTypes(protocol);
+    }
+
     /** Returns an active listener selected by its configured connector, protocol name and public scheme. */
     public synchronized InterAddress getListenAddress(//
             String connectorName, String protocol, String addressScheme) {

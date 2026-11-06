@@ -551,6 +551,11 @@ public final class MetContextImpl implements MetContext {
     }
 
     @Override
+    public Set<String> getEndpointTypes(String connectorName, String protocol) {
+        return this.connectors.getEndpointTypes(connectorName, protocol);
+    }
+
+    @Override
     public InterAddress getListenAddress(String connectorName, String protocol, String addressScheme) {
         return this.connectors.getListenAddress(connectorName, protocol, addressScheme);
     }
@@ -634,48 +639,48 @@ public final class MetContextImpl implements MetContext {
     private record Publisher(MetPublisher publisher) implements MetPublisher {
 
         @Override
-            public MetSettings getSettings() {
-                return this.publisher.getSettings();
-            }
-
-            @Override
-            public MetPublisher bindFilter(String filterID, MetFilter instance) {
-                this.publisher.bindFilter(filterID, instance);
-                return this;
-            }
-
-            @Override
-            public MetPublisher bindFilter(String filterID, Supplier<? extends MetFilter> provider) {
-                this.publisher.bindFilter(filterID, provider);
-                return this;
-            }
-
-            @Override
-            public MetPublisher bindFilter(String filterID, Class<? extends MetFilter> filterType) {
-                this.publisher.bindFilter(filterID, filterType);
-                return this;
-            }
-
-            @Override
-            public <T> LinkedBuilder<T> rsfService(Class<T> type) {
-                LinkedBuilder<T> builder = this.publisher.rsfService(type);
-                builder.aliasName("Hprose", StringUtils.firstCharToLowerCase(type.getSimpleName()));
-                return builder;
-            }
-
-            @Override
-            public <T> ConfigurationBuilder<T> rsfService(Class<T> type, T instance) {
-                return this.rsfService(type).toInstance(instance);
-            }
-
-            @Override
-            public <T> ConfigurationBuilder<T> rsfService(Class<T> type, Class<? extends T> implementation) {
-                return this.rsfService(type).to(implementation);
-            }
-
-            @Override
-            public <T> ConfigurationBuilder<T> rsfService(Class<T> type, Supplier<T> provider) {
-                return this.rsfService(type).toProvider(provider);
-            }
+        public MetSettings getSettings() {
+            return this.publisher.getSettings();
         }
+
+        @Override
+        public MetPublisher bindFilter(String filterID, MetFilter instance) {
+            this.publisher.bindFilter(filterID, instance);
+            return this;
+        }
+
+        @Override
+        public MetPublisher bindFilter(String filterID, Supplier<? extends MetFilter> provider) {
+            this.publisher.bindFilter(filterID, provider);
+            return this;
+        }
+
+        @Override
+        public MetPublisher bindFilter(String filterID, Class<? extends MetFilter> filterType) {
+            this.publisher.bindFilter(filterID, filterType);
+            return this;
+        }
+
+        @Override
+        public <T> LinkedBuilder<T> rsfService(Class<T> type) {
+            LinkedBuilder<T> builder = this.publisher.rsfService(type);
+            builder.aliasName("Hprose", StringUtils.firstCharToLowerCase(type.getSimpleName()));
+            return builder;
+        }
+
+        @Override
+        public <T> ConfigurationBuilder<T> rsfService(Class<T> type, T instance) {
+            return this.rsfService(type).toInstance(instance);
+        }
+
+        @Override
+        public <T> ConfigurationBuilder<T> rsfService(Class<T> type, Class<? extends T> implementation) {
+            return this.rsfService(type).to(implementation);
+        }
+
+        @Override
+        public <T> ConfigurationBuilder<T> rsfService(Class<T> type, Supplier<T> provider) {
+            return this.rsfService(type).toProvider(provider);
+        }
+    }
 }
