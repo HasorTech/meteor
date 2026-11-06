@@ -869,7 +869,7 @@ public class ThriftHttpSessionTest {
 
         @Override
         public InterAddress getLocal() {
-            return new InterAddress("thrift-http", "127.0.0.1", 8080, "default");
+            return new InterAddress("thrift-http", "127.0.0.1", 8080);
         }
 
         @Override

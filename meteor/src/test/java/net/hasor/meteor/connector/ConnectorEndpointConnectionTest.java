@@ -28,6 +28,54 @@ import static org.junit.jupiter.api.Assertions.*;
 /** 用可控的传输激活与协议握手验证端点连接结果的所有权。 */
 public class ConnectorEndpointConnectionTest {
     @Test
+    public void concurrentWaitersShareOneConnectionWithoutSharingCancellation() throws Exception {
+        try (ConnectionFixture fixture = new ConnectionFixture()) {
+            Future<MetChannel> first = fixture.connect();
+            Future<MetChannel> second = fixture.connect();
+            assertEquals(1, fixture.network.attempts);
+            assertTrue(first.cancel());
+            assertFalse(second.isDone());
+            assertFalse(fixture.network.connecting.isCancelled());
+
+            fixture.session.ready.completed(null);
+            fixture.network.attach();
+            fixture.network.activate();
+            MetChannel established = second.get(1, TimeUnit.SECONDS);
+            assertNotNull(established);
+            assertTrue(first.isCancelled());
+            assertTrue(fixture.network.channel.isOpen());
+        }
+    }
+
+    @Test
+    public void repeatedConnectionsReuseTheEstablishedSession() throws Exception {
+        try (ConnectionFixture fixture = new ConnectionFixture()) {
+            fixture.session.ready.completed(null);
+            Future<MetChannel> first = fixture.connect();
+            fixture.network.attach();
+            fixture.network.activate();
+            MetChannel established = first.get(1, TimeUnit.SECONDS);
+
+            for (int i = 0; i < 1000; i++) {
+                assertSame(established, fixture.connect().get(1, TimeUnit.SECONDS));
+            }
+            assertEquals(1, fixture.network.attempts);
+            assertEquals(1, fixture.sessionsCreated);
+        }
+    }
+
+    @Test
+    public void failedConnectionDoesNotRemainInTheReusableConnections() throws Exception {
+        try (ConnectionFixture fixture = new ConnectionFixture()) {
+            fixture.network.connectionFailure = new IllegalStateException("connect failed");
+            assertThrows(ExecutionException.class, () -> fixture.connect().get(1, TimeUnit.SECONDS));
+            assertThrows(ExecutionException.class, () -> fixture.connect().get(1, TimeUnit.SECONDS));
+            assertEquals(2, fixture.network.attempts);
+            assertTrue(fixture.endpoint.drainChannels().isEmpty());
+        }
+    }
+
+    @Test
     public void alreadyReadySessionWaitsForTransportActivation() throws Exception {
         // 协议在创建前已经就绪，但底层通道还没有交付 connected 事件。
         try (ConnectionFixture fixture = new ConnectionFixture()) {
@@ -273,7 +321,7 @@ public class ConnectorEndpointConnectionTest {
         private ConnectionFixture() throws Exception {
             // 使用真实的端点组装对象，替换传输时序和协议握手，避免依赖线程调度或休眠。
             ProtocolConfig protocol = ProtocolConfig.newConfig("rawprotocol", "raw", Map.of("serializeType", "Java"));
-            InterAddress local = InterAddress.forBinding("tcp", "127.0.0.1", 0, "test");
+            InterAddress local = InterAddress.forBinding("tcp", "127.0.0.1", 0);
             ConnectorConfig config = new ConnectorConfig("client", local, Map.of(), List.of(protocol), false);
             this.manager = EndpointFixture.manager(config);
             RouteMountIndex index = new RouteMountIndex(config.name(), protocol);
@@ -357,6 +405,7 @@ public class ConnectorEndpointConnectionTest {
         private final ControlledChannel              channel    = new ControlledChannel(this.relay::closed);
         private       ChannelListenerFactory<byte[]> factory;
         private       RuntimeException               connectionFailure;
+        private       int                            attempts;
 
         private ControlledNetwork() {
             this.connecting.onCancel(done -> this.channel.close());
@@ -371,6 +420,7 @@ public class ConnectorEndpointConnectionTest {
         @Override
         public Future<Void> connect(String initial, InterAddress address, RouteTable<byte[]> routes,  //
                 ChannelListenerFactory<byte[]> factory) {
+            this.attempts++;
             if (this.connectionFailure != null) {
                 throw this.connectionFailure;
             }

@@ -227,7 +227,7 @@ public class TargetAdminTest {
 
             // 直连查询返回实际监听地址，不把注册中心的发布地址混入本地端点。
             InterAddress bound = provider.getListenAddress("rsf");
-            InterAddress local = new InterAddress("rsf", "127.0.0.1", bound.getPort(), bound.getFormUnit());
+            InterAddress local = new InterAddress("rsf", "127.0.0.1", bound.getPort(), bound.getPath());
             MetServiceAdmin localService = targets.getServiceAdminByAddress(local, id);
             assertEquals(id, localService.info().getServiceId());
             MetServiceMember member = localService.providers(null, null).getItems().get(0);
@@ -320,9 +320,9 @@ public class TargetAdminTest {
             String id = target.publisher().rsfService(Echo.class).register().getBindID();
             target.start();
             caller.start();
-            InterAddress first = new InterAddress("rsf://127.0.0.1:2181/default");
-            InterAddress second = new InterAddress("rsf://127.0.0.1:2182/default");
-            InterAddress http = new InterAddress("http://127.0.0.1:8080/default");
+            InterAddress first = new InterAddress("rsf://127.0.0.1:2181");
+            InterAddress second = new InterAddress("rsf://127.0.0.1:2182");
+            InterAddress http = new InterAddress("http://127.0.0.1:8080");
             target.getUpdater().appendStaticAddress(id, List.of(first, second, http));
             target.getExtension(RegistryClient.class).pushSync().get(5, TimeUnit.SECONDS);
 
@@ -606,7 +606,7 @@ public class TargetAdminTest {
 
             // 两侧均未配置存储，通过已知地址完成真实 TCP 管理调用。
             InterAddress listen = target.getListenAddress("rsf");
-            InterAddress address = new InterAddress("rsf", "127.0.0.1", listen.getPort(), listen.getFormUnit());
+            InterAddress address = new InterAddress("rsf", "127.0.0.1", listen.getPort(), listen.getPath());
             MetInstanceAdmin instance = targets.getInstanceAdminByAddress(address);
             MetServiceAdmin service = targets.getServiceAdminByAddress(address, id);
             MetBindInfo<ManagementRPC> management = caller.getServiceInfo(ManagementRPC.class);

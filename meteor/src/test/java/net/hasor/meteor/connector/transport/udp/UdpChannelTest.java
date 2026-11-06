@@ -20,10 +20,9 @@ import net.hasor.meteor.connector.*;
 import net.hasor.meteor.connector.transport.*;
 import net.hasor.meteor.domain.ProtocolConfig;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static net.hasor.meteor.connector.TransportTestConfigs.transport;
 import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 /**
  * 通过真实 UDP 对端验证数据报 SPI，不依赖 RPC 运行时。
@@ -35,7 +34,7 @@ public class UdpChannelTest {
     public void datagramsAndSeparateRepliesPreserveBoundaries() throws Exception {
         // 明确创建真实对端与传输资源，连接准备失败也会关闭传输。
         try (DatagramSocket peer = new DatagramSocket()) {
-            InterAddress remote = new InterAddress("udp", "127.0.0.1", peer.getLocalPort(), "default");
+            InterAddress remote = new InterAddress("udp", "127.0.0.1", peer.getLocalPort());
             ConnectorConfig config = this.config(remote);
             Receiver receiver = new Receiver();
             ClassLoader loader = this.getClass().getClassLoader();
@@ -68,7 +67,7 @@ public class UdpChannelTest {
     public void outboundRepliesKeepTheInitiallySelectedProtocol() throws Exception {
         // 主动连接选择 alpha 协议，同时准备一个会匹配回包内容的 beta 协议探针。
         try (DatagramSocket peer = new DatagramSocket()) {
-            InterAddress remote = new InterAddress("udp", "127.0.0.1", peer.getLocalPort(), "default");
+            InterAddress remote = new InterAddress("udp", "127.0.0.1", peer.getLocalPort());
             ConnectorConfig config = this.config(remote);
             RoutedFactory receiver = new RoutedFactory("alpha");
             ClassLoader loader = this.getClass().getClassLoader();
@@ -110,7 +109,7 @@ public class UdpChannelTest {
 
         // 明确创建真实对端与传输资源，连接准备失败也会关闭传输。
         try (DatagramSocket peer = new DatagramSocket(local)) {
-            InterAddress remote = new InterAddress("udp", "::1", peer.getLocalPort(), "default");
+            InterAddress remote = new InterAddress("udp", "::1", peer.getLocalPort());
             ConnectorConfig config = this.config(remote);
             Receiver receiver = new Receiver();
             ClassLoader loader = this.getClass().getClassLoader();
@@ -149,7 +148,7 @@ public class UdpChannelTest {
     public void emptyDatagramIsRejected() throws Exception {
         // 创建真实数据报对端并通过 SocketRuntime 安装 UDP SPI。
         try (DatagramSocket peer = new DatagramSocket()) {
-            InterAddress remote = new InterAddress("udp", "127.0.0.1", peer.getLocalPort(), "default");
+            InterAddress remote = new InterAddress("udp", "127.0.0.1", peer.getLocalPort());
             ConnectorConfig config = this.config(remote, Map.of("maxDatagramSize", "32"));
             Receiver receiver = new Receiver();
             ClassLoader loader = this.getClass().getClassLoader();
@@ -186,7 +185,7 @@ public class UdpChannelTest {
     public void oversizedDatagramIsRejected() throws Exception {
         // 创建真实数据报对端并通过 SocketRuntime 安装 UDP SPI。
         try (DatagramSocket peer = new DatagramSocket()) {
-            InterAddress remote = new InterAddress("udp", "127.0.0.1", peer.getLocalPort(), "default");
+            InterAddress remote = new InterAddress("udp", "127.0.0.1", peer.getLocalPort());
             ConnectorConfig config = this.config(remote, Map.of("maxDatagramSize", "32"));
             Receiver receiver = new Receiver();
             ClassLoader loader = this.getClass().getClassLoader();
@@ -223,7 +222,7 @@ public class UdpChannelTest {
     public void queuedDatagramCopiesCallerBuffer() throws Exception {
         // 创建真实数据报对端并通过 SocketRuntime 安装 UDP SPI。
         try (DatagramSocket peer = new DatagramSocket()) {
-            InterAddress remote = new InterAddress("udp", "127.0.0.1", peer.getLocalPort(), "default");
+            InterAddress remote = new InterAddress("udp", "127.0.0.1", peer.getLocalPort());
             ConnectorConfig config = this.config(remote, Map.of("maxDatagramSize", "32"));
             Receiver receiver = new Receiver();
             ClassLoader loader = this.getClass().getClassLoader();
@@ -263,7 +262,7 @@ public class UdpChannelTest {
     public void cancelledQueuedDatagramDoesNotReachPeer() throws Exception {
         // 创建真实数据报对端并通过 SocketRuntime 安装 UDP SPI。
         try (DatagramSocket peer = new DatagramSocket()) {
-            InterAddress remote = new InterAddress("udp", "127.0.0.1", peer.getLocalPort(), "default");
+            InterAddress remote = new InterAddress("udp", "127.0.0.1", peer.getLocalPort());
             ConnectorConfig config = this.config(remote, Map.of("maxDatagramSize", "32"));
             Receiver receiver = new Receiver();
             ClassLoader loader = this.getClass().getClassLoader();
@@ -314,7 +313,7 @@ public class UdpChannelTest {
     public void drainClosesAfterQueuedWritesWithoutPeerReply() throws Exception {
         // 创建真实数据报对端并通过 SocketRuntime 安装 UDP SPI。
         try (DatagramSocket peer = new DatagramSocket()) {
-            InterAddress remote = new InterAddress("udp", "127.0.0.1", peer.getLocalPort(), "default");
+            InterAddress remote = new InterAddress("udp", "127.0.0.1", peer.getLocalPort());
             ConnectorConfig config = this.config(remote, Map.of("maxDatagramSize", "32"));
             Receiver receiver = new Receiver();
             ClassLoader loader = this.getClass().getClassLoader();

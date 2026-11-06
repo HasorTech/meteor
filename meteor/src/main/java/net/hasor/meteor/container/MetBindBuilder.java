@@ -259,8 +259,7 @@ final class MetBindBuilder implements MetPublisher {
 
         @Override
         public RegisterBuilder<T> bindAddress(String rsfHost, int port) throws UnknownHostException {
-            String unitName = MetBindBuilder.this.getSettings().getUnitName();
-            return this.bindAddress(new InterAddress(rsfHost, port, unitName));
+            return this.bindAddress(new InterAddress(rsfHost, port));
         }
 
         @Override

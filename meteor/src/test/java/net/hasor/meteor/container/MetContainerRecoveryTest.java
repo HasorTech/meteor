@@ -71,7 +71,7 @@ public class MetContainerRecoveryTest {
         // 发布带别名、静态地址和私有过滤器的提供者，并预热过滤器缓存。
         List<String> serviceChanges = new ArrayList<>();
         this.container.subscribe(event -> serviceChanges.add(event.getServiceId()));
-        InterAddress oldAddress = new InterAddress("rsf://127.0.0.1:2101/unit");
+        InterAddress oldAddress = new InterAddress("rsf://127.0.0.1:2101");
         MetFilter oldFilter = new PassFilter();
         var firstBuilder = this.publisher.rsfService(Echo.class, new EchoImpl());
         firstBuilder.aliasName("http", "old");

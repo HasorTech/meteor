@@ -58,7 +58,7 @@ final class ProtocolNetworkChannel<M> implements NetworkChannel<M> {
             return null;
         } else {
             String scheme = this.protocol.scheme();
-            return new InterAddress(scheme, address.getHost(), address.getPort(), address.getFormUnit());
+            return new InterAddress(scheme, address.getHost(), address.getPort(), address.getPath());
         }
     }
 

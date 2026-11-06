@@ -69,7 +69,7 @@ final class MetContextFactory {
         String connectTimeout = Integer.toString(configuration.getConnectTimeout());
         if (endpoints.isEmpty()) {
             // 默认端点仅属于本次构建，不写回用户配置。
-            InterAddress address = InterAddress.forBinding("tcp", bindAddress, 2181, configuration.getUnitName());
+            InterAddress address = InterAddress.forBinding("tcp", bindAddress, 2181);
             Map<String, String> options = new LinkedHashMap<>();
             options.put("workerThread", "2");
             options.put("taskThread", "2");
@@ -93,8 +93,7 @@ final class MetContextFactory {
             // 只构建端点快照；SPI 发现、协议参数准备与启动计划编译仍由连接管理器负责。
             boolean bindEnabled = endpoint.getHost() != null;
             String host = bindEnabled ? endpoint.getHost() : bindAddress;
-            InterAddress address = InterAddress.forBinding(endpoint.getType(), host, endpoint.getPort(), //
-                    configuration.getUnitName());
+            InterAddress address = InterAddress.forBinding(endpoint.getType(), host, endpoint.getPort());
             String id = endpoint.getType() + "-" + configured.size();
             configured.add(new ConnectorConfig(id, address, options, protocols, bindEnabled));
         }

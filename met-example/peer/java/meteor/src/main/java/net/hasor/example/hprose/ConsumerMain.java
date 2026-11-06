@@ -38,7 +38,7 @@ public final class ConsumerMain {
                     .register();
 
             // 直连本地服务，保存并查询订单。
-            InterAddress address = new InterAddress("hprose", "127.0.0.1", 8080, "local");
+            InterAddress address = new InterAddress("hprose", "127.0.0.1", 8080);
             OrderDemoService orders = context.getRsfClient(address).getRemote(binding);
             orders.save(OrderExampleUtils.newOrder(1001, "hprose"));
             OrderQuery query = new OrderQuery();

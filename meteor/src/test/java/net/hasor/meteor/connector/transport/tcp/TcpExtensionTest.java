@@ -25,9 +25,9 @@ import net.hasor.neta.channel.*;
 import net.hasor.neta.channel.data.ProtoRcvQueue;
 import net.hasor.neta.channel.data.ProtoSndQueue;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static net.hasor.meteor.connector.TransportTestConfigs.transport;
 import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.Timeout;
 
 /** A small test-only multiplexed protocol; no Payload, MetChannel or RPC runtime. */
 public class TcpExtensionTest {
@@ -46,7 +46,7 @@ public class TcpExtensionTest {
             RouteTable<byte[]> routes = RouteTestAccess.activate(Collections.emptyMap(), null);
             NetworkListen listen = server.bind(address, routes, this.receiver(true, responder));
             int port = listen.getAddress().getPort();
-            InterAddress remote = new InterAddress("mux", "127.0.0.1", port, "default");
+            InterAddress remote = new InterAddress("mux", "127.0.0.1", port);
             AtomicReference<MuxSession> requester = new AtomicReference<>();
             Future<Void> connecting = client.connect(null, remote, routes, this.receiver(false, requester));
             connecting.get(2, TimeUnit.SECONDS);
@@ -80,7 +80,7 @@ public class TcpExtensionTest {
             RouteTable<byte[]> routes = RouteTestAccess.activate(Collections.emptyMap(), null);
             NetworkListen listen = server.bind(address, routes, this.receiver(true, responder));
             int port = listen.getAddress().getPort();
-            InterAddress remote = new InterAddress("mux", "127.0.0.1", port, "default");
+            InterAddress remote = new InterAddress("mux", "127.0.0.1", port);
             AtomicReference<MuxSession> requester = new AtomicReference<>();
             Future<Void> connecting = client.connect(null, remote, routes, this.receiver(false, requester));
             connecting.get(2, TimeUnit.SECONDS);
@@ -114,7 +114,7 @@ public class TcpExtensionTest {
             RouteTable<byte[]> routes = RouteTestAccess.activate(Collections.emptyMap(), null);
             NetworkListen listen = server.bind(address, routes, this.receiver(true, responder));
             int port = listen.getAddress().getPort();
-            InterAddress remote = new InterAddress("mux", "127.0.0.1", port, "default");
+            InterAddress remote = new InterAddress("mux", "127.0.0.1", port);
             AtomicReference<MuxSession> requester = new AtomicReference<>();
             Future<Void> connecting = client.connect(null, remote, routes, this.receiver(false, requester));
             connecting.get(2, TimeUnit.SECONDS);
@@ -151,7 +151,7 @@ public class TcpExtensionTest {
             RouteTable<byte[]> routes = RouteTestAccess.activate(Collections.emptyMap(), null);
             NetworkListen listen = server.bind(address, routes, this.receiver(true, responder));
             int port = listen.getAddress().getPort();
-            InterAddress remote = new InterAddress("mux", "127.0.0.1", port, "default");
+            InterAddress remote = new InterAddress("mux", "127.0.0.1", port);
             AtomicReference<MuxSession> requester = new AtomicReference<>();
             Future<Void> connecting = client.connect(null, remote, routes, this.receiver(false, requester));
             connecting.get(2, TimeUnit.SECONDS);
@@ -196,7 +196,7 @@ public class TcpExtensionTest {
             RouteTable<byte[]> routes = RouteTestAccess.activate(Collections.emptyMap(), null);
             NetworkListen listen = server.bind(address, routes, this.receiver(true, responder));
             int port = listen.getAddress().getPort();
-            InterAddress remote = new InterAddress("mux", "127.0.0.1", port, "default");
+            InterAddress remote = new InterAddress("mux", "127.0.0.1", port);
             AtomicReference<MuxSession> requester = new AtomicReference<>();
             Future<Void> connecting = client.connect(null, remote, routes, this.receiver(false, requester));
             connecting.get(2, TimeUnit.SECONDS);
@@ -241,7 +241,7 @@ public class TcpExtensionTest {
             RouteTable<byte[]> routes = RouteTestAccess.activate(Collections.emptyMap(), null);
             NetworkListen listen = server.bind(address, routes, this.receiver(true, responder));
             int port = listen.getAddress().getPort();
-            InterAddress remote = new InterAddress("mux", "127.0.0.1", port, "default");
+            InterAddress remote = new InterAddress("mux", "127.0.0.1", port);
             AtomicReference<MuxSession> requester = new AtomicReference<>();
             Future<Void> connecting = client.connect(null, remote, routes, this.receiver(false, requester));
             connecting.get(2, TimeUnit.SECONDS);
@@ -267,7 +267,7 @@ public class TcpExtensionTest {
     private ConnectorConfig config(Map<String, String> extensions) {
         Map<String, String> options = new HashMap<>(extensions);
         options.put("workerThread", "1");
-        InterAddress address = InterAddress.forBinding("tcp", "127.0.0.1", 0, "default");
+        InterAddress address = InterAddress.forBinding("tcp", "127.0.0.1", 0);
         ProtocolConfig mount = ProtocolConfig.newConfig("mux", "mux", options);
         return new ConnectorConfig("mux", address, options, List.of(mount), true);
     }

@@ -7,10 +7,10 @@
  */
 package net.hasor.meteor.address.route.unit;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import net.hasor.cobble.MatchUtils;
-import net.hasor.cobble.StringUtils;
 import net.hasor.cobble.setting.Settings;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.address.route.AbstractRule;
@@ -71,7 +71,7 @@ public class UnitFlowControl extends AbstractRule {
     }
 
     /** 筛选本机房地址 */
-    public List<InterAddress> siftUnitAddress(String unitName, List<InterAddress> address) {
+    public List<InterAddress> siftUnitAddress(Collection<InterAddress> unitAddresses, List<InterAddress> address) {
         if (address == null || address.isEmpty()) {
             return null;
         }
@@ -92,7 +92,7 @@ public class UnitFlowControl extends AbstractRule {
             }
             //B.如果匹配规则,则直接标记appendMark为 true
             if (!appendMark) {
-                appendMark = StringUtils.equalsIgnoreCase(unitName, inter.getFormUnit());
+                appendMark = unitAddresses.contains(inter);
             }
 
             if (appendMark) {

@@ -46,7 +46,7 @@ public class MetCallerProtocolSelectionTest {
     public void emptySelectionUsesDefaultLogicalProtocol() throws Exception {
         // 同一 HTTPS 地址挂载两个逻辑协议，服务不显式选择。
         ConnectorConfig shared = endpoint("shared", "https", 8443, "grpc", "hprose");
-        InterAddress target = new InterAddress("https://127.0.0.1:9443/default");
+        InterAddress target = new InterAddress("https://127.0.0.1:9443");
         try (Host host = new Host("grpc", List.of(shared), Collections.emptySet(), target)) {
             // 发起调用后应把默认逻辑协议传给连接管理器。
             MetFuture future = host.invoke();
@@ -60,7 +60,7 @@ public class MetCallerProtocolSelectionTest {
         // 默认协议为 RSF，但调用方显式连接唯一的 Hprose 地址。
         ConnectorConfig tcp = endpoint("tcp", "rsf", 2181, "rsf");
         ConnectorConfig http = endpoint("http", "hprose", 8080, "hprose");
-        InterAddress target = new InterAddress("hprose://127.0.0.1:9080/default");
+        InterAddress target = new InterAddress("hprose://127.0.0.1:9080");
         try (Host host = new Host("rsf", List.of(tcp, http), Collections.emptySet(), target)) {
             // 未声明协议时，唯一地址挂载可以覆盖不适用的默认协议。
             MetFuture future = host.invoke();
@@ -73,7 +73,7 @@ public class MetCallerProtocolSelectionTest {
     public void explicitProtocolOverridesDefaultProtocol() throws Exception {
         // 服务显式选择 Hprose，端点默认协议仍为 gRPC。
         ConnectorConfig shared = endpoint("shared", "https", 8443, "grpc", "hprose");
-        InterAddress target = new InterAddress("https://127.0.0.1:9443/default");
+        InterAddress target = new InterAddress("https://127.0.0.1:9443");
         try (Host host = new Host("grpc", List.of(shared), Set.of("hprose"), target)) {
             // 连接必须使用服务声明，不能回退到默认协议。
             MetFuture future = host.invoke();
@@ -87,7 +87,7 @@ public class MetCallerProtocolSelectionTest {
         // 服务同时声明 gRPC 和 RSF，目标地址只与 HTTPS 挂载匹配。
         ConnectorConfig http = endpoint("http", "https", 8443, "grpc");
         ConnectorConfig tcp = endpoint("tcp", "rsf", 2181, "rsf");
-        InterAddress target = new InterAddress("https://127.0.0.1:9443/default");
+        InterAddress target = new InterAddress("https://127.0.0.1:9443");
         try (Host host = new Host("rsf", List.of(http, tcp), Set.of("grpc", "rsf"), target)) {
             // 地址别名应将候选收敛为唯一的 gRPC 挂载。
             MetFuture future = host.invoke();
@@ -100,7 +100,7 @@ public class MetCallerProtocolSelectionTest {
     public void protocolNameMatchesOnlyTheDeclaredProtocol() throws Exception {
         // 一个协议的名称与另一个协议的 HTTPS 地址前缀相同。
         ConnectorConfig shared = endpoint("shared", "https", 8443, "https", "grpc");
-        InterAddress target = new InterAddress("https://127.0.0.1:9443/default");
+        InterAddress target = new InterAddress("https://127.0.0.1:9443");
         try (Host host = new Host("grpc", List.of(shared), Set.of("https"), target)) {
             // 服务声明只选择同名协议，其它协议的地址前缀不参与协议匹配。
             MetFuture future = host.invoke();
@@ -113,7 +113,7 @@ public class MetCallerProtocolSelectionTest {
     public void addressSchemeCannotBeUsedAsProtocolName() throws Exception {
         // 唯一挂载的协议名为 gRPC，对外地址前缀为 HTTPS。
         ConnectorConfig endpoint = endpoint("http", "https", 8443, "grpc");
-        InterAddress target = new InterAddress("https://127.0.0.1:9443/default");
+        InterAddress target = new InterAddress("https://127.0.0.1:9443");
         try (Host host = new Host("grpc", List.of(endpoint), Set.of("https"), target)) {
             // 即使目标地址匹配，服务声明 HTTPS 也不能隐式选择 gRPC。
             MetException failure = failure(host.invoke());
@@ -128,10 +128,10 @@ public class MetCallerProtocolSelectionTest {
         Map<String, String> endpointOptions = Collections.emptyMap();
         ProtocolConfig named = ProtocolConfig.newConfig("https", "tcp", Collections.emptyMap());
         ProtocolConfig alias = ProtocolConfig.newConfig("grpc", "https", Collections.emptyMap());
-        InterAddress local = InterAddress.forBinding("tcp", "127.0.0.1", 8443, "default");
+        InterAddress local = InterAddress.forBinding("tcp", "127.0.0.1", 8443);
         ConnectorConfig shared = new ConnectorConfig(//
                 "shared", local, endpointOptions, List.of(named, alias), true);
-        InterAddress target = new InterAddress("https://127.0.0.1:9443/default");
+        InterAddress target = new InterAddress("https://127.0.0.1:9443");
 
         // 声明的协议没有对应地址挂载时，不改选地址前缀相同的其它协议。
         try (Host host = new Host("grpc", List.of(shared), Set.of("https"), target)) {
@@ -146,7 +146,7 @@ public class MetCallerProtocolSelectionTest {
         // 同一个 RSF 协议分别挂载在明文端点和安全端点。
         ConnectorConfig plain = endpoint("plain", "rsf", 2181, "rsf");
         ConnectorConfig secure = endpoint("secure", "rsfs", 2182, "rsf");
-        InterAddress target = new InterAddress("rsfs://127.0.0.1:3182/default");
+        InterAddress target = new InterAddress("rsfs://127.0.0.1:3182");
         try (Host host = new Host("rsf", List.of(plain, secure), Set.of("RSF"), target)) {
             // 协议名保持 RSF，目标前缀决定实际使用的端点及挂载。
             MetFuture future = host.invoke();
@@ -160,7 +160,7 @@ public class MetCallerProtocolSelectionTest {
     public void sameAliasLeavesSeveralDeclaredProtocolsAmbiguous() throws Exception {
         // gRPC 和 Hprose 共用 HTTPS，服务又同时声明两者。
         ConnectorConfig shared = endpoint("shared", "https", 8443, "grpc", "hprose");
-        InterAddress target = new InterAddress("https://127.0.0.1:9443/default");
+        InterAddress target = new InterAddress("https://127.0.0.1:9443");
         try (Host host = new Host("grpc", List.of(shared), Set.of("grpc", "hprose"), target)) {
             // 地址别名不能继续消除歧义时，调用应明确失败且不发起连接。
             MetException failure = failure(host.invoke());
@@ -175,7 +175,7 @@ public class MetCallerProtocolSelectionTest {
         // 入站端点和纯出站端点都挂载同一个 gRPC over HTTPS 能力。
         ConnectorConfig incoming = endpoint("incoming", "https", 8443, true, "grpc");
         ConnectorConfig outgoing = endpoint("outgoing", "https", 0, false, "grpc");
-        InterAddress target = new InterAddress("https://127.0.0.1:9443/default");
+        InterAddress target = new InterAddress("https://127.0.0.1:9443");
         try (Host host = new Host("grpc", List.of(incoming, outgoing), Set.of("grpc"), target)) {
             // Caller 不能任取一个端点，错误应列出两个候选及其模式。
             MetException failure = failure(host.invoke());
@@ -190,7 +190,7 @@ public class MetCallerProtocolSelectionTest {
     public void unmatchedAddressAliasFailsBeforeConnecting() throws Exception {
         // 服务只声明 RSF，但目标地址使用 HTTPS。
         ConnectorConfig tcp = endpoint("tcp", "rsf", 2181, "rsf");
-        InterAddress target = new InterAddress("https://127.0.0.1:9443/default");
+        InterAddress target = new InterAddress("https://127.0.0.1:9443");
         try (Host host = new Host("rsf", List.of(tcp), Set.of("rsf"), target)) {
             // 没有符合目标别名的挂载时，调用不能静默选择其他协议。
             MetException failure = failure(host.invoke());
@@ -204,11 +204,11 @@ public class MetCallerProtocolSelectionTest {
     public void requestKeepsTheResolvedProtocolAddress() throws Exception {
         // 两个逻辑协议共用 HTTPS，单值 scheme 查询会产生歧义。
         ConnectorConfig shared = endpoint("shared", "https", 8443, "grpc", "hprose");
-        InterAddress target = new InterAddress("https://127.0.0.1:9443/default");
+        InterAddress target = new InterAddress("https://127.0.0.1:9443");
         try (Host host = new Host("grpc", List.of(shared), Set.of("grpc"), target)) {
             // Caller 按端点和逻辑协议保存本地地址，请求对象不再按 scheme 二次查询。
             MetFuture future = host.invoke();
-            InterAddress expected = new InterAddress("https://127.0.0.1:8443/default");
+            InterAddress expected = new InterAddress("https://127.0.0.1:8443");
             assertEquals(expected, future.getRequest().getRemoteAddress());
             assertEquals(shared.name(), host.connectedEndpoint.get());
             assertEquals("grpc", host.connectedProtocol.get());
@@ -221,8 +221,8 @@ public class MetCallerProtocolSelectionTest {
         // 注册管理 RSF 与业务 gRPC 同时安装，发现结果也同时包含两种业务地址。
         ConnectorConfig tcp = endpoint("tcp", "rsf", 2181, "rsf");
         ConnectorConfig http = endpoint("http", "grpc", 8080, "grpc");
-        InterAddress rsf = new InterAddress("rsf://127.0.0.1:3181/default");
-        InterAddress grpc = new InterAddress("grpc://127.0.0.1:9080/default");
+        InterAddress rsf = new InterAddress("rsf://127.0.0.1:3181");
+        InterAddress grpc = new InterAddress("grpc://127.0.0.1:9080");
         try (Host host = new Host("rsf", List.of(tcp, http), Set.of("grpc"), null)) {
             AddressPool pool = firstAddressPool(host.service.getBindID(), rsf, grpc);
 
@@ -240,8 +240,8 @@ public class MetCallerProtocolSelectionTest {
         // 逻辑协议名为 gRPC，但地址以 HTTPS 发布，不能直接按协议名筛地址前缀。
         ConnectorConfig tcp = endpoint("tcp", "rsf", 2181, "rsf");
         ConnectorConfig http = endpoint("http", "https", 8443, "grpc");
-        InterAddress rsf = new InterAddress("rsf://127.0.0.1:3181/default");
-        InterAddress https = new InterAddress("https://127.0.0.1:9443/default");
+        InterAddress rsf = new InterAddress("rsf://127.0.0.1:3181");
+        InterAddress https = new InterAddress("https://127.0.0.1:9443");
         try (Host host = new Host("rsf", List.of(tcp, http), Set.of("GRPC"), null)) {
             AddressPool pool = firstAddressPool(host.service.getBindID(), rsf, https);
 
@@ -258,8 +258,8 @@ public class MetCallerProtocolSelectionTest {
         // 名为 HTTPS 的逻辑协议使用 TCP scheme，gRPC 则使用 HTTPS scheme。
         ConnectorConfig named = endpoint("named", "tcp", 2181, "https");
         ConnectorConfig alias = endpoint("alias", "https", 8443, "grpc");
-        InterAddress https = new InterAddress("https://127.0.0.1:9443/default");
-        InterAddress tcp = new InterAddress("tcp://127.0.0.1:3181/default");
+        InterAddress https = new InterAddress("https://127.0.0.1:9443");
+        InterAddress tcp = new InterAddress("tcp://127.0.0.1:3181");
         try (Host host = new Host("grpc", List.of(named, alias), Set.of("https"), null)) {
             AddressPool pool = firstAddressPool(host.service.getBindID(), https, tcp);
 
@@ -275,7 +275,7 @@ public class MetCallerProtocolSelectionTest {
     public void unavailableDeclaredProtocolDoesNotFallBackToAnotherDiscoveredProtocol() throws Exception {
         // 服务显式声明 gRPC，但连接器和发现结果都只有 RSF。
         ConnectorConfig tcp = endpoint("tcp", "rsf", 2181, "rsf");
-        InterAddress rsf = new InterAddress("rsf://127.0.0.1:3181/default");
+        InterAddress rsf = new InterAddress("rsf://127.0.0.1:3181");
         try (Host host = new Host("rsf", List.of(tcp), Set.of("grpc"), null)) {
             AddressPool pool = firstAddressPool(host.service.getBindID(), rsf);
 
@@ -292,7 +292,7 @@ public class MetCallerProtocolSelectionTest {
         // 服务没有显式协议，默认 RSF 与实际发现的唯一 Hprose 地址不匹配。
         ConnectorConfig tcp = endpoint("tcp", "rsf", 2181, "rsf");
         ConnectorConfig http = endpoint("http", "hprose", 8080, "hprose");
-        InterAddress hprose = new InterAddress("hprose://127.0.0.1:9080/default");
+        InterAddress hprose = new InterAddress("hprose://127.0.0.1:9080");
         try (Host host = new Host("rsf", List.of(tcp, http), Set.of(), null)) {
             AddressPool pool = firstAddressPool(host.service.getBindID(), hprose);
 
@@ -309,8 +309,8 @@ public class MetCallerProtocolSelectionTest {
         // 两个调用绑定使用同一服务身份、相同完整地址本，但分别选择 gRPC 和 RSF。
         ConnectorConfig tcp = endpoint("tcp", "rsf", 2181, "rsf");
         ConnectorConfig http = endpoint("http", "grpc", 8080, "grpc");
-        InterAddress rsf = new InterAddress("rsf://127.0.0.1:3181/default");
-        InterAddress grpc = new InterAddress("grpc://127.0.0.1:9080/default");
+        InterAddress rsf = new InterAddress("rsf://127.0.0.1:3181");
+        InterAddress grpc = new InterAddress("grpc://127.0.0.1:9080");
         try (Host grpcHost = new Host("rsf", List.of(tcp, http), Set.of("grpc"), null); //
              Host rsfHost = new Host("rsf", List.of(tcp, http), Set.of("rsf"), null)) {
             AddressPool pool = firstAddressPool(grpcHost.service.getBindID(), rsf, grpc);
@@ -350,7 +350,7 @@ public class MetCallerProtocolSelectionTest {
             ProtocolConfig mount = ProtocolConfig.newConfig(protocol, scheme, Collections.emptyMap());
             mounts.add(mount);
         }
-        InterAddress address = InterAddress.forBinding("tcp", "127.0.0.1", port, "default");
+        InterAddress address = InterAddress.forBinding("tcp", "127.0.0.1", port);
         return new ConnectorConfig(name, address, endpointOptions, mounts, bindEnabled);
     }
 
@@ -485,7 +485,7 @@ public class MetCallerProtocolSelectionTest {
                     }
                     InterAddress configured = endpoint.address();
                     return new InterAddress(protocol.scheme(), configured.getHost(), configured.getPort(), //
-                            configured.getFormUnit());
+                            configured.getPath());
                 }
             }
             return null;

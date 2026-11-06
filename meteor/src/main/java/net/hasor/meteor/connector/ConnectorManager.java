@@ -31,6 +31,7 @@ import net.hasor.meteor.domain.MetException;
 import net.hasor.meteor.domain.ProtocolConfig;
 import net.hasor.meteor.domain.ProtocolStatus;
 import net.hasor.meteor.domain.payload.Payload;
+import net.hasor.meteor.utils.ContextPathUtils;
 
 /**
  * Manages configured network endpoints, protocol routes and message subscribers.
@@ -384,7 +385,7 @@ public class ConnectorManager implements AutoCloseable {
             ResolvedMount target;
             synchronized (this) {
                 this.requireReady();
-                target = this.resolve(address.getSchema(), protocol);
+                target = this.resolve(address, protocol);
             }
             return this.connect(target, address);
         } catch (Exception failure) {
@@ -437,9 +438,29 @@ public class ConnectorManager implements AutoCloseable {
         }
     }
 
-    private ResolvedMount resolve(String scheme, String protocol) {
-        List<ResolvedMount> candidates = this.findConfiguredMounts(scheme, protocol);
-        return this.requireSingleMount(candidates, scheme, protocol);
+    private ResolvedMount resolve(InterAddress address, String protocol) {
+        List<ResolvedMount> candidates = this.findConfiguredMounts(address.getSchema(), protocol);
+        if (candidates.size() > 1 && !address.getPath().isEmpty()) {
+            List<ResolvedMount> selected = new ArrayList<>();
+            int longest = -1;
+            for (ResolvedMount candidate : candidates) {
+                for (String path : ContextPathUtils.contextPaths(candidate.mount().options())) {
+                    String prefix = path;
+                    if (!prefix.endsWith("/"))
+                        prefix += "/";
+                    if (!StringUtils.equals(path, address.getPath()) && !address.getPath().startsWith(prefix))
+                        continue;
+                    if (path.length() > longest) {
+                        selected.clear();
+                        longest = path.length();
+                    }
+                    if (path.length() == longest && !selected.contains(candidate))
+                        selected.add(candidate);
+                }
+            }
+            candidates = selected;
+        }
+        return this.requireSingleMount(candidates, address.getSchema(), protocol);
     }
 
     private List<ResolvedMount> findConfiguredMounts(String scheme, String protocol) {
@@ -620,7 +641,7 @@ public class ConnectorManager implements AutoCloseable {
         if (config == null || !StringUtils.equalsIgnoreCase(config.scheme(), addressScheme)) {
             return null;
         }
-        return new InterAddress(config.scheme(), actual.getHost(), actual.getPort(), actual.getFormUnit());
+        return new InterAddress(config.scheme(), actual.getHost(), actual.getPort(), config.option("contextPath", ""));
     }
 
     private List<ResolvedMount> findBoundMountsByProtocol(String protocol) {

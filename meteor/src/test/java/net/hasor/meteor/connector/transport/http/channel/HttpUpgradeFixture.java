@@ -40,7 +40,7 @@ public final class HttpUpgradeFixture {
         }
 
         private static TransportConfig config() {
-            InterAddress address = InterAddress.forBinding("http", "127.0.0.1", 0, "default");
+            InterAddress address = InterAddress.forBinding("http", "127.0.0.1", 0);
             return new TransportConfig("unit", address, false, Map.of(), Map.of());
         }
 

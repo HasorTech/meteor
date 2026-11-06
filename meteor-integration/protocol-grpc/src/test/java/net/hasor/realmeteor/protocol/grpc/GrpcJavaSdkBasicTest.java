@@ -90,7 +90,7 @@ public class GrpcJavaSdkBasicTest {
                         .bindResource("grpc", resource).register();
 
                 // SDK 前缀与数值变化来自网络服务，当前 Meteor 容器不发布任何本地实现。
-                InterAddress address = new InterAddress("grpc", "127.0.0.1", server.getPort(), "default");
+                InterAddress address = new InterAddress("grpc", "127.0.0.1", server.getPort());
                 Echo remote = client.getRsfClient(address).getRemote(service);
                 Message result = remote.echo(Message.of("反向 Java 🙂", 6));
                 assertEquals("grpc-sdk:反向 Java 🙂", result.getValue());

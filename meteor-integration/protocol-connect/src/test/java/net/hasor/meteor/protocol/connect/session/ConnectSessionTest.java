@@ -646,7 +646,7 @@ public class ConnectSessionTest {
 
         @Override
         public InterAddress getLocal() {
-            return new InterAddress("connect", "127.0.0.1", 8080, "default");
+            return new InterAddress("connect", "127.0.0.1", 8080);
         }
 
         @Override

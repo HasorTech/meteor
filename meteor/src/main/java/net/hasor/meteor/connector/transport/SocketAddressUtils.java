@@ -21,6 +21,6 @@ public final class SocketAddressUtils {
 
         InetSocketAddress local = (InetSocketAddress) address;
         String host = local.getAddress().getHostAddress();
-        return new InterAddress(configured.getSchema(), host, local.getPort(), configured.getFormUnit());
+        return new InterAddress(configured.getSchema(), host, local.getPort(), configured.getPath());
     }
 }

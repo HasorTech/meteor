@@ -8,13 +8,12 @@
 package net.hasor.meteor.address;
 import java.net.*;
 import java.util.*;
-import java.util.regex.Pattern;
 import net.hasor.cobble.StringUtils;
 import net.hasor.cobble.logging.Logger;
 import net.hasor.cobble.logging.LoggerFactory;
 
 /**
- * 服务地址例：“rsf://127.0.0.1:8000/unit”
+ * 服务地址例：“rsf://127.0.0.1:8000”
  * @author 赵永春 (zyc@hasor.net)
  * @version : 2014年9月12日
  */
@@ -22,7 +21,7 @@ public final class InterAddress {
     private static final Logger logger         = LoggerFactory.getLogger(InterAddress.class);
     public static final  String DEFAULT_SCHEMA = "rsf";
     private final        String schema;                                              //协议
-    private final        String formUnit;                                            //所属单元
+    private final        String path;                                                //完整挂载路径
     private final        String hostAddress;                                         //地址
     private final        int    hostPort;                                            //端口
     private final        String hostSchema;
@@ -40,38 +39,54 @@ public final class InterAddress {
             throw new IllegalStateException(newAddressURL + " format error.");
         }
 
-        String formPath = newAddressURL.getPath();
-        if (formPath.startsWith("/")) {
-            formPath = formPath.substring(1);
-        }
-
         this.schema = newAddressURL.getScheme().toLowerCase(Locale.ROOT);
-        this.formUnit = formPath.split("/")[0];
-        this.hostAddress = newAddressURL.getHost();//
+        this.path = newAddressURL.getRawPath() == null ? "" : newAddressURL.getRawPath();
+        this.hostAddress = newAddressURL.getHost().toLowerCase(Locale.ROOT);
         this.hostPort = newAddressURL.getPort();
-        this.hostSchema = String.format("%s://%s:%s/%s", this.schema, this.hostAddress, this.hostPort, this.formUnit);
+        this.hostSchema = this.schema + "://" + hostPort(this.hostAddress, this.hostPort) + this.path;
     }
 
-    public InterAddress(String hostAddress, int hostPort, String formUnit) {
-        this(DEFAULT_SCHEMA, hostAddress, hostPort, formUnit);
+    /** 使用默认 RSF 协议创建无挂载路径的接入地址。 */
+    public InterAddress(String hostAddress, int hostPort) {
+        this(DEFAULT_SCHEMA, hostAddress, hostPort);
     }
 
-    public InterAddress(String schema, String hostAddress, int hostPort, String formUnit) {
-        this(addressURI(schema, hostAddress, hostPort, formUnit));
+    /** 使用指定协议创建无挂载路径的接入地址。 */
+    public InterAddress(String schema, String hostAddress, int hostPort) {
+        this(schema, hostAddress, hostPort, "");
+    }
+
+    public InterAddress(String hostAddress, int hostPort, String path) {
+        this(DEFAULT_SCHEMA, hostAddress, hostPort, path);
+    }
+
+    public InterAddress(String schema, String hostAddress, int hostPort, String path) {
+        this(addressURI(schema, hostAddress, hostPort, path));
+    }
+
+    /** 创建无挂载路径的本地绑定地址，允许端口为零。 */
+    public static InterAddress forBinding(String schema, String host, int port) {
+        return forBinding(schema, host, port, "");
     }
 
     /** Local endpoint configuration may use port zero; remote service addresses must use a concrete port. */
-    public static InterAddress forBinding(String schema, String host, int port, String unit) {
-        return new InterAddress(addressURI(schema, host, port, unit), true);
+    public static InterAddress forBinding(String schema, String host, int port, String path) {
+        return new InterAddress(addressURI(schema, host, port, path), true);
     }
 
-    private static URI addressURI(String schema, String host, int port, String unit) {
+    private static URI addressURI(String schema, String host, int port, String path) {
         Objects.requireNonNull(schema, "schema is null.");
         Objects.requireNonNull(host, "hostAddress is null.");
-        Objects.requireNonNull(unit, "formUnit is null.");
 
         try {
-            return new URI(schema, null, host, port, "/" + unit, null, null);
+            String suffix = path;
+            if (suffix == null) {
+                suffix = "";
+            }
+            if (!suffix.isEmpty() && !suffix.startsWith("/")) {
+                suffix = "/" + suffix;
+            }
+            return new URI(schema + "://" + hostPort(host, port) + suffix);
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException("Invalid service address", e);
         }
@@ -89,9 +104,9 @@ public final class InterAddress {
         return this.schema;
     }
 
-    /** 返回地址所属单元 */
-    public String getFormUnit() {
-        return this.formUnit;
+    /** 返回完整挂载路径；无路径时返回空字符串。 */
+    public String getPath() {
+        return this.path;
     }
 
     /** 返回目标IP地址 */
@@ -133,10 +148,10 @@ public final class InterAddress {
 
     /** 转换地址为URL形式 */
     public URI toURI() throws URISyntaxException {
-        return new URI(this.getSchema(), null, this.getHost(), this.getPort(), "/" + this.formUnit, null, null);
+        return new URI(this.hostSchema);
     }
 
-    /** 返回RSF协议形式表述的主机地址。格式为：“rsf://127.0.0.1:8000/unit” */
+    /** 返回RSF协议形式表述的主机地址。格式为：“rsf://127.0.0.1:8000” */
     public String toHostSchema() {
         return this.hostSchema;
     }
@@ -154,7 +169,7 @@ public final class InterAddress {
     public boolean equals(Object obj) {
         if (obj instanceof InterAddress) {
             String diffURI = ((InterAddress) obj).toHostSchema();
-            return StringUtils.equalsIgnoreCase(diffURI, this.toHostSchema());
+            return StringUtils.equals(diffURI, this.toHostSchema());
         } else {
             return false;
         }
@@ -179,7 +194,7 @@ public final class InterAddress {
 
     @Override
     public int hashCode() {
-        return this.hostSchema.toLowerCase(Locale.ROOT).hashCode();
+        return this.hostSchema.hashCode();
     }
 
     public String toString() {
@@ -204,14 +219,8 @@ public final class InterAddress {
             return false;
         }
 
-        String path = serviceURL.getPath();
-        if (path == null || !path.startsWith("/") || path.length() == 1) {
-            return false;
-        }
-
-        // Keep the existing first-path-segment unit convention.
-        String unit = path.substring(1).split("/", 2)[0];
-        return Pattern.matches("[A-Za-z0-9_.]+", unit);
+        // 地址不携带单元。查询串、片段和用户信息不属于 RPC 接入点身份。
+        return serviceURL.getRawUserInfo() == null && serviceURL.getRawQuery() == null && serviceURL.getRawFragment() == null;
     }
 
     /** 获取本机地址 */

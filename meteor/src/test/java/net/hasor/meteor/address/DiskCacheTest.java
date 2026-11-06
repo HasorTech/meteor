@@ -6,19 +6,12 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor.address;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -26,7 +19,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import net.hasor.meteor.address.route.FlowControlScripts;
 import org.junit.jupiter.api.Test;
-import java.nio.file.Path;
 import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -34,9 +26,9 @@ public class DiskCacheTest {
     private static final long CACHE_INTERVAL_MS = TimeUnit.HOURS.toMillis(1);
 
     @TempDir
-    public Path temporary;
-    private final InterAddress    a         = new InterAddress("127.0.0.1", 8000, "zone");
-    private final InterAddress    b         = new InterAddress("127.0.0.2", 8000, "zone");
+    public        Path         temporary;
+    private final InterAddress a = new InterAddress("127.0.0.1", 8000);
+    private final InterAddress b = new InterAddress("127.0.0.2", 8000);
 
     @Test
     public void bucketZipRoundTripPreservesStaticAndDynamicAddresses() throws Exception {
@@ -357,9 +349,9 @@ public class DiskCacheTest {
 
     @Test
     public void invalidAddressLineDoesNotDiscardOtherValidLines() throws Exception {
-        // 在两个有效地址之间插入缺少单元信息的无效地址行。
+        // 在两个有效地址之间插入端口无效的地址行。
         AddressBucket bucket = new AddressBucket("s", "zone");
-        String lines = "# comment\nD|" + this.a + "\nD|rsf://127.0.0.9:8000/\nD|" + this.b + "\n";
+        String lines = "# comment\nD||" + this.a + "\nD||rsf://127.0.0.9:0\nD||" + this.b + "\n";
         byte[] snapshot = zipEntry("address.sal", lines);
         AddressPool pool = new AddressPool();
         File home = Files.createTempDirectory(this.temporary, "junit").toFile();

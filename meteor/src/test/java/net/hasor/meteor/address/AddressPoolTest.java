@@ -11,16 +11,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.hasor.meteor.address.route.speed.SpeedFlowControl;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class AddressPoolTest {
-    private final InterAddress localAddress  = new InterAddress("127.0.0.1", 8000, "local");
-    private final InterAddress remoteAddress = new InterAddress("127.0.0.2", 8000, "remote");
+    private final InterAddress localAddress  = new InterAddress("127.0.0.1", 8000);
+    private final InterAddress remoteAddress = new InterAddress("127.0.0.2", 8000);
 
     @Test
     public void missingServiceHasNoAddressOrConfiguration() {

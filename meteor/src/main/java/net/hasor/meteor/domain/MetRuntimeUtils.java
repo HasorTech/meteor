@@ -12,8 +12,8 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import net.hasor.cobble.ClassUtils;
 import net.hasor.cobble.StringUtils;
 import net.hasor.cobble.logging.Logger;
@@ -28,8 +28,13 @@ import net.hasor.meteor.domain.meta.ServiceMetaParser;
  * @author 赵永春 (zyc@hasor.net)
  */
 public class MetRuntimeUtils {
-    private static final Logger                                                 logger      = LoggerFactory.getLogger(MetRuntimeUtils.class);
-    private static final ConcurrentMap<Class<?>, ConcurrentMap<String, Method>> methodCache = new ConcurrentHashMap<>();
+    private static final Logger                          logger      = LoggerFactory.getLogger(MetRuntimeUtils.class);
+    private static final ClassValue<Map<String, Method>> methodCache = new ClassValue<>() {
+        @Override
+        protected Map<String, Method> computeValue(Class<?> type) {
+            return new ConcurrentHashMap<>();
+        }
+    };
 
     private MetRuntimeUtils() {
     }
@@ -158,14 +163,7 @@ public class MetRuntimeUtils {
     /** 查找可调用的服务方法，被忽略的方法与非服务方法不进入缓存。 */
     public static Method getServiceMethod(Class<?> serviceType, String methodName, Class<?>[] parameterTypes) {
         // 先取得服务类型对应的方法缓存。
-        ConcurrentMap<String, Method> methodMap = methodCache.get(serviceType);
-        if (methodMap == null) {
-            ConcurrentMap<String, Method> newMethodMap = new ConcurrentHashMap<String, Method>();
-            methodMap = methodCache.putIfAbsent(serviceType, newMethodMap);
-            if (methodMap == null) {
-                methodMap = newMethodMap;
-            }
-        }
+        Map<String, Method> methodMap = methodCache.get(serviceType);
 
         // 参数类型共同构成方法键，用于区分重载。
         StringBuilder oriStr = new StringBuilder(methodName).append('(');

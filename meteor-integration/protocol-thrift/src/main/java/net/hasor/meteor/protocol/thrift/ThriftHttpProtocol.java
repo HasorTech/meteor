@@ -50,6 +50,7 @@ public final class ThriftHttpProtocol implements HttpProtocolProvider {
         // 从本端点已准备的契约导出描述，再一次创建完整绑定。
         ObjectNode description = meta.createServiceDescription(config, this.defaultSerialize());
         definition.describeContract(description);
+        description.put("multiplexed", Boolean.parseBoolean(config.option("multiplexed", "false")));
         return meta.build(config, definition, description);
     }
 

@@ -14,9 +14,9 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AddressPoolProtocolTest {
-    private final InterAddress rsf     = new InterAddress("rsf", "127.0.0.1", 28001, "local");
-    private final InterAddress jsonrpc = new InterAddress("jsonrpc", "127.0.0.2", 28002, "remote");
-    private final InterAddress hessian = new InterAddress("hessian", "127.0.0.3", 28003, "local");
+    private final InterAddress rsf     = new InterAddress("127.0.0.1", 28001);
+    private final InterAddress jsonrpc = new InterAddress("jsonrpc", "127.0.0.2", 28002);
+    private final InterAddress hessian = new InterAddress("hessian", "127.0.0.3", 28003);
 
     @Test
     void filtersCandidatesWithoutDeletingOriginalAddresses() {
@@ -72,7 +72,7 @@ class AddressPoolProtocolTest {
         pool.appendStaticAddress("service", this.rsf);
         pool.appendAddress("service", this.jsonrpc);
         pool.configProtocols(Set.of("jsonrpc"));
-        InterAddress next = new InterAddress("jsonrpc", "127.0.0.4", 28004, "local");
+        InterAddress next = new InterAddress("jsonrpc", "127.0.0.4", 28004);
         pool.refreshAddress("service", List.of(next, this.hessian));
         assertEquals(Set.of("jsonrpc"), pool.getSupportedProtocols("service"));
         assertEquals(List.of(next), pool.queryAvailableAddresses("service"));
@@ -144,6 +144,7 @@ class AddressPoolProtocolTest {
         // 本单元只有 RSF，远端才有 JSON RPC；全局单元优先原本选择本地地址。
         AddressPool pool = new AddressPool("local", 30000);
         pool.appendAddress("service", List.of(this.rsf, this.jsonrpc));
+        pool.refreshAddress("service", java.util.Map.of("local", List.of(this.rsf), "remote", List.of(this.jsonrpc)));
         String control = "<controlSet>" + FlowControlScripts.unit(true, 0, "") + "</controlSet>";
         assertTrue(pool.updateFlowControl("service", control));
         assertEquals(List.of(this.rsf), pool.queryLocalUnitAddresses("service"));
@@ -159,8 +160,9 @@ class AddressPoolProtocolTest {
     void callProtocolSchemesPreserveUnitPreferenceForMatchingAddresses() {
         // JSON RPC 同时有本地与远端地址，RSF 也有本地地址。
         AddressPool pool = new AddressPool("local", 30000);
-        InterAddress local = new InterAddress("jsonrpc", "127.0.0.4", 28004, "local");
+        InterAddress local = new InterAddress("jsonrpc", "127.0.0.4", 28004);
         pool.appendAddress("service", List.of(this.rsf, this.jsonrpc, local));
+        pool.refreshAddress("service", java.util.Map.of("local", List.of(this.rsf, local), "remote", List.of(this.jsonrpc)));
         String control = "<controlSet>" + FlowControlScripts.unit(true, 0, "") + "</controlSet>";
         assertTrue(pool.updateFlowControl("service", control));
 

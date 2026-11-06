@@ -10,11 +10,7 @@ import java.net.URI;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetPublisher;
 import net.hasor.meteor.MetSettings;
@@ -55,7 +51,7 @@ public class MetContainerAddressTest {
         try {
             Future<MetBindInfo<Echo>> publishing = worker.submit(() -> {
                 var serviceBuilder = local.createPublisher().rsfService(Echo.class);
-                serviceBuilder.bindAddress("rsf://localhost:2181/default");
+                serviceBuilder.bindAddress("rsf://localhost:2181");
                 return serviceBuilder.register();
             });
             try {
@@ -82,8 +78,8 @@ public class MetContainerAddressTest {
     public void registrationPreservesAddressesDiscoveredBeforeServiceDeclaration() throws Exception {
         // 服务声明之前，地址发现已写入动态地址与方法路由。
         String id = "[default]" + Echo.class.getName() + "-1.0";
-        InterAddress discovered = new InterAddress("rsf://localhost:2181/default");
-        InterAddress fixed = new InterAddress("rsf://localhost:2182/default");
+        InterAddress discovered = new InterAddress("rsf://localhost:2181");
+        InterAddress fixed = new InterAddress("rsf://localhost:2182");
         this.addresses.appendAddress(id, discovered);
         String methodRoute = "<route><return value='addresses'/></route>";
         this.addresses.updateMethodRoute(id, methodRoute);
@@ -100,8 +96,8 @@ public class MetContainerAddressTest {
     @Test
     public void uriAddressListRegistersAllAddresses() throws Exception {
         // URI 可变参数中的每个地址都进入容器使用的地址池。
-        URI first = new URI("rsf://127.0.0.1:2101/unit");
-        URI second = new URI("rsf://127.0.0.1:2102/unit");
+        URI first = new URI("rsf://127.0.0.1:2101");
+        URI second = new URI("rsf://127.0.0.1:2102");
         var serviceBuilder = this.publisher.rsfService(Echo.class);
         serviceBuilder.bindAddress(first, second);
         MetBindInfo<Echo> service = serviceBuilder.register();
@@ -117,7 +113,7 @@ public class MetContainerAddressTest {
         builder.bindAddress("127.0.0.1", 2101);
         MetBindInfo<Echo> service = builder.register();
         List<InterAddress> addresses = this.addresses.queryAllAddresses(service.getBindID());
-        InterAddress expected = new InterAddress("rsf://127.0.0.1:2101/unit");
+        InterAddress expected = new InterAddress("rsf://127.0.0.1:2101");
         assertEquals(List.of(expected), addresses);
     }
 
@@ -125,10 +121,10 @@ public class MetContainerAddressTest {
     public void stringAddressListRegistersAllAddresses() throws Exception {
         // 字符串可变参数中的每个地址都进入容器使用的地址池。
         var builder = this.publisher.rsfService(Echo.class);
-        builder.bindAddress("rsf://127.0.0.1:2102/unit", "rsf://127.0.0.1:2103/unit");
+        builder.bindAddress("rsf://127.0.0.1:2102", "rsf://127.0.0.1:2103");
         MetBindInfo<Echo> service = builder.register();
-        InterAddress first = new InterAddress("rsf://127.0.0.1:2102/unit");
-        InterAddress second = new InterAddress("rsf://127.0.0.1:2103/unit");
+        InterAddress first = new InterAddress("rsf://127.0.0.1:2102");
+        InterAddress second = new InterAddress("rsf://127.0.0.1:2103");
         Set<InterAddress> actual = new HashSet<>(this.addresses.queryAllAddresses(service.getBindID()));
         assertEquals(Set.of(first, second), actual);
     }
@@ -138,13 +134,13 @@ public class MetContainerAddressTest {
         // 同一个声明先使用主机端口重载，再追加字符串列表。
         var builder = this.publisher.rsfService(Echo.class);
         builder.bindAddress("127.0.0.1", 2101);
-        builder.bindAddress("rsf://127.0.0.1:2102/unit", "rsf://127.0.0.1:2103/unit");
+        builder.bindAddress("rsf://127.0.0.1:2102", "rsf://127.0.0.1:2103");
         MetBindInfo<Echo> service = builder.register();
 
         // 后一次配置不能覆盖前一次已经加入的地址。
-        InterAddress hostAddress = new InterAddress("rsf://127.0.0.1:2101/unit");
-        InterAddress firstString = new InterAddress("rsf://127.0.0.1:2102/unit");
-        InterAddress secondString = new InterAddress("rsf://127.0.0.1:2103/unit");
+        InterAddress hostAddress = new InterAddress("rsf://127.0.0.1:2101");
+        InterAddress firstString = new InterAddress("rsf://127.0.0.1:2102");
+        InterAddress secondString = new InterAddress("rsf://127.0.0.1:2103");
         Set<InterAddress> expected = Set.of(hostAddress, firstString, secondString);
         Set<InterAddress> actual = new HashSet<>(this.addresses.queryAllAddresses(service.getBindID()));
         assertEquals(expected, actual);
@@ -153,8 +149,8 @@ public class MetContainerAddressTest {
     @Test
     public void publishedServiceRoutesReachTheAddressPoolBeforeSelection() {
         // 服务声明携带两个地址，并以服务路由选择其中一个端口。
-        InterAddress first = new InterAddress("rsf", "127.0.0.1", 2101, "unit");
-        InterAddress second = new InterAddress("rsf", "127.0.0.1", 2102, "unit");
+        InterAddress first = new InterAddress("127.0.0.1", 2101);
+        InterAddress second = new InterAddress("127.0.0.1", 2102);
         String route = """
                 <route>
                     <filter name="selected" from="addresses" item="a" test="a.port == 2102"/>
@@ -175,8 +171,8 @@ public class MetContainerAddressTest {
     @Test
     public void replacementDoesNotInheritRecoveredServiceRoute() {
         // 旧服务的规则只允许 2102 端口，回收时应随地址本一并清理。
-        InterAddress first = new InterAddress("rsf", "127.0.0.1", 2101, "unit");
-        InterAddress second = new InterAddress("rsf", "127.0.0.1", 2102, "unit");
+        InterAddress first = new InterAddress("127.0.0.1", 2101);
+        InterAddress second = new InterAddress("127.0.0.1", 2102);
         String route = """
                 <route>
                     <filter name="selected" from="addresses" item="a" test="a.port == 2102"/>

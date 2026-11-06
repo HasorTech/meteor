@@ -6,14 +6,15 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor.registry.client.support;
+import java.net.URI;
 import java.util.*;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetPublisher;
 import net.hasor.meteor.MetUpdater;
-import net.hasor.meteor.address.AddressPool;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.connector.ConnectorConfig;
 import net.hasor.meteor.domain.MetServiceType;
@@ -170,25 +171,21 @@ public final class ManagementRPCImpl implements ManagementRPC {
     }
 
     /** 完整保留发现的提供者地址，去重后交给地址池计算本地可用结果。 */
-    void updateAddresses(String serviceId, Collection<String> providers, boolean force) throws Exception {
+    void updateAddresses(String serviceId, Map<String, List<String>> providers, boolean force) throws Exception {
         this.requireService(serviceId);
-        Set<InterAddress> discovered = new HashSet<>();
-        for (String value : providers) {
-            discovered.add(new InterAddress(value));
+        Map<String, List<InterAddress>> discovered = new TreeMap<>();
+        for (Map.Entry<String, List<String>> group : providers.entrySet()) {
+            Set<InterAddress> addresses = new LinkedHashSet<>();
+            for (String value : group.getValue())
+                addresses.add(new InterAddress(value));
+            List<InterAddress> ordered = new ArrayList<>(addresses);
+            ordered.sort(Comparator.comparing(InterAddress::toString));
+            discovered.put(group.getKey(), ordered);
         }
 
         MetUpdater updater = this.context.getUpdater();
-        Set<InterAddress> current = new HashSet<>(updater.queryAllAddresses(serviceId));
-        // 标准地址池已有公开的静态地址查询能力；静态地址不参与发现结果比较。
-        if (updater instanceof AddressPool pool) {
-            List<InterAddress> fixed = pool.getBucket(serviceId).getStaticAddresses();
-            current.removeAll(fixed);
-            discovered.removeAll(fixed);
-        }
-        if (force || !discovered.equals(current)) {
-            List<InterAddress> addresses = new ArrayList<>(discovered);
-            addresses.sort(Comparator.comparing(InterAddress::toString));
-            updater.refreshAddress(serviceId, addresses);
+        if (force || !discovered.equals(updater.queryAddressesByUnit(serviceId))) {
+            updater.refreshAddress(serviceId, discovered);
         }
     }
 
@@ -224,7 +221,7 @@ public final class ManagementRPCImpl implements ManagementRPC {
                     managementAddress = address;
                     if (StringUtils.isNotBlank(this.publishHost)) {
                         managementAddress = new InterAddress(//
-                                address.getSchema(), this.publishHost, address.getPort(), address.getFormUnit());
+                                address.getSchema(), this.publishHost, address.getPort(), address.getPath());
                     }
                 }
 
@@ -239,13 +236,16 @@ public final class ManagementRPCImpl implements ManagementRPC {
                     endpoint.setProtocolName(protocol.name());
                     endpoint.setScheme(protocol.scheme());
                     endpoint.setContextPath(path);
-                    endpoint.setListenAddress(address.toString());
+                    endpoint.setListenAddress(new InterAddress(address.getSchema(), address.getHost(), address.getPort(), path).toString());
+                    if (StringUtils.equals(connector.transportType(), "http")) {
+                        endpoint.setHttpEndpoints(this.httpEndpoints(connector, protocol, address, path));
+                    }
 
                     // 同一监听器的各上下文独立上报，管理地址只属于管理服务实际接受的挂载。
                     if (binding != null) {
                         var managementContexts = binding.getContextPath();
                         if (managementContexts == null || managementContexts.getPaths().contains(path)) {
-                            endpoint.setManagementAddress(managementAddress.toString());
+                            endpoint.setManagementAddress(new InterAddress(managementAddress.getSchema(), managementAddress.getHost(), managementAddress.getPort(), path).toString());
                         }
                     }
                     endpoints.add(endpoint);
@@ -253,6 +253,56 @@ public final class ManagementRPCImpl implements ManagementRPC {
             }
         }
         result.setEndpoints(endpoints.toArray(InstanceEndpointData[]::new));
+        return result;
+    }
+
+    private Map<String, List<String>> httpEndpoints(ConnectorConfig connector, ProtocolConfig protocol, InterAddress address, String path) {
+        String scheme = protocol.option("httpScheme", connector.options().getOrDefault("httpScheme", "http"));
+        if (Boolean.parseBoolean(connector.options().getOrDefault("tlsEnabled", "false"))) {
+            scheme = "https";
+        }
+        URI base;
+        try {
+            base = new URI(scheme, null, address.getHost(), address.getPort(), "/", null, null);
+        } catch (java.net.URISyntaxException failure) {
+            throw new IllegalStateException("Invalid HTTP endpoint", failure);
+        }
+        Map<String, List<String>> result = new LinkedHashMap<>();
+        for (MetBindInfo<?> service : this.bindings()) {
+            if (service.getServiceType() != MetServiceType.Provider) {
+                continue;
+            }
+            ProtocolMeta meta = MetBindInfoWrap.unwrap(service).getProtocolMetas().get(protocol.name());
+            ProtocolBinding binding = meta == null ? null : meta.getEndpoint(connector.name());
+            if (binding == null || binding.getContextPath() == null) {
+                continue;
+            }
+            JsonNode description = binding.getDescription();
+            JsonNode definitions = description == null ? null : description.get("httpEndpoints");
+            if (definitions == null || !definitions.isObject()) {
+                continue;
+            }
+            List<String> mounts = ContextPathUtils.contextPaths(protocol.options());
+            definitions.fields().forEachRemaining(route -> {
+                // 自定义服务路径归入此连接器的第一个挂载，避免多个实例挂载重复列出它。
+                boolean selected = StringUtils.equals(route.getKey(), path);
+                if (!mounts.contains(route.getKey()) && !mounts.isEmpty() && StringUtils.equals(mounts.get(0), path)) {
+                    selected = true;
+                }
+                if (!selected) {
+                    return;
+                }
+                route.getValue().fields().forEachRemaining(entry -> {
+                    // 仅使用协议发布时确认的路径；不按协议名猜测 WSDL 或 schema URL。
+                    List<String> documents = new ArrayList<>();
+                    entry.getValue().forEach(document -> documents.add(base.resolve(document.asText()).toASCIIString()));
+                    result.put(base.resolve(entry.getKey()).toASCIIString(), documents);
+                });
+            });
+        }
+        if (result.isEmpty()) {
+            result.put(base.resolve(StringUtils.defaultIfBlank(path, "/")).toASCIIString(), List.of());
+        }
         return result;
     }
 
@@ -668,7 +718,7 @@ public final class ManagementRPCImpl implements ManagementRPC {
                     endpoint.setContextPath(path);
                     endpoint.setBindEnabled(connector.bindEnabled());
                     endpoint.setConfiguredAddress(connector.address().toString());
-                    endpoint.setListenAddress(listen == null ? null : listen.toString());
+                    endpoint.setListenAddress(listen == null ? null : new InterAddress(listen.getSchema(), listen.getHost(), listen.getPort(), path).toString());
                     result.add(endpoint);
                 }
             }
@@ -726,7 +776,7 @@ public final class ManagementRPCImpl implements ManagementRPC {
 
     private InterAddress toPublishAddress(InterAddress address) throws Exception {
         if (StringUtils.isNotBlank(this.publishHost)) {
-            return new InterAddress(address.getSchema(), this.publishHost, address.getPort(), address.getFormUnit());
+            return new InterAddress(address.getSchema(), this.publishHost, address.getPort(), address.getPath());
         }
         if (address.toSocketAddress().getAddress().isAnyLocalAddress()) {
             throw new IllegalArgumentException("Set registry publishHost when binding a wildcard address");

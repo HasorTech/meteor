@@ -19,14 +19,13 @@ import net.hasor.example.protocol.soap.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
+import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.soap.definition.SoapWsdlResource;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class WebServicesBootstrapTest {
     @Test
@@ -264,7 +263,9 @@ public class WebServicesBootstrapTest {
             // 两次真实调用分别命中自己的路径，不能被同名服务覆盖。
             MetClient caller = client.getRsfClient(server.getListenAddress("soap"));
             assertEquals("first:hello", caller.getRemote(first).echo("hello"));
-            assertEquals("second:hello", caller.getRemote(second).echo("hello"));
+            var listener = server.getListenAddress("soap");
+            InterAddress secondAddress = new InterAddress("soap", listener.getHost(), listener.getPort(), "/second");
+            assertEquals("second:hello", client.getRsfClient(secondAddress).getRemote(second).echo("hello"));
         }
     }
 

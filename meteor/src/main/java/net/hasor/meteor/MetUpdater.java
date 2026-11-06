@@ -9,6 +9,7 @@ package net.hasor.meteor;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import net.hasor.meteor.address.InterAddress;
 
@@ -76,8 +77,20 @@ public interface MetUpdater {
      */
     void appendStaticAddress(String serviceID, Collection<InterAddress> newHostSet);
 
+    /** 按单元追加动态地址。 */
+    void appendAddress(String serviceID, Map<String, List<InterAddress>> units);
+
+    /** 按单元追加静态地址，注册发现不会覆盖这些地址。 */
+    void appendStaticAddress(String serviceID, Map<String, List<InterAddress>> units);
+
     /**刷新服务的地址本，使其使用全新的地址本。*/
     void refreshAddress(String serviceID, List<InterAddress> addressList);
+
+    /** 按单元替换注册发现地址，保留独立配置的静态地址。 */
+    void refreshAddress(String serviceID, Map<String, List<InterAddress>> units);
+
+    /** 注册发现地址的单元分组快照，不包含静态地址。 */
+    Map<String, List<InterAddress>> queryAddressesByUnit(String serviceID);
 
     /**使用新的地址本替换已有的地址本。*/
     void refreshAddressCache();

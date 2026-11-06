@@ -24,9 +24,8 @@ import net.hasor.neta.channel.NetChannel;
 import net.hasor.neta.channel.SoConfig;
 import net.hasor.neta.channel.transport.tcp.TcpSoConfig;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** HTTP upgrade authorization ordering at the Neta handshake boundary. */
 public class HttpUpgradeAuthorizationTest {
@@ -192,7 +191,7 @@ public class HttpUpgradeAuthorizationTest {
         }
 
         private static TransportConfig config() {
-            InterAddress address = InterAddress.forBinding("http", "127.0.0.1", 0, "default");
+            InterAddress address = InterAddress.forBinding("http", "127.0.0.1", 0);
             return new TransportConfig("unit", address, false, Map.of(), Map.of());
         }
 

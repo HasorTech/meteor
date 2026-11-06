@@ -285,8 +285,8 @@ public class RpcModuleTest {
     public void clientsKeepIndependentProvidersAndDynamicRoutingRunsPerCall() throws Exception {
         // 一个动态地址提供者与一个固定提供者共享调用器，配置应互不影响。
         try (Host host = new Host(true)) {
-            InterAddress first = new InterAddress("rsf://localhost:2181/default");
-            InterAddress second = new InterAddress("rsf://localhost:2182/default");
+            InterAddress first = new InterAddress("rsf://localhost:2181");
+            InterAddress second = new InterAddress("rsf://localhost:2182");
             AtomicReference<InterAddress> selected = new AtomicReference<>(first);
             AtomicInteger selections = new AtomicInteger();
             AddressProvider dynamic = new AddressProvider() {
@@ -521,10 +521,10 @@ public class RpcModuleTest {
             this.service.setServiceType(MetServiceType.Provider);
             this.service.setSerializeType("Java");
             this.service.setDistributed(true);
-            InterAddress peer = new InterAddress("rsf://127.0.0.1:2181/default");
+            InterAddress peer = new InterAddress("rsf://127.0.0.1:2181");
             Map<String, String> endpointOptions = Collections.emptyMap();
             ProtocolConfig protocol = ProtocolConfig.newConfig("rsf", "rsf", Collections.emptyMap());
-            InterAddress local = InterAddress.forBinding("tcp", "127.0.0.1", 0, "default");
+            InterAddress local = InterAddress.forBinding("tcp", "127.0.0.1", 0);
             ConnectorConfig endpoint = new ConnectorConfig(//
                     "rpc", local, endpointOptions, Collections.singletonList(protocol), false);
             AtomicReference<Collection<ConnectorConfig>> configured = new AtomicReference<>(Collections.emptyList());

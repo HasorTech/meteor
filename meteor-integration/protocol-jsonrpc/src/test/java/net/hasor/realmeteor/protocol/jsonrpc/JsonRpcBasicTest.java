@@ -45,6 +45,28 @@ public class JsonRpcBasicTest {
         }
     }
 
+    @Test
+    public void remoteAddressMountOverridesTheConsumerDefaultPath() throws Exception {
+        MetConfiguration incoming = TestConfigurationUtils.create().setDefaultProtocol("jsonrpc");
+        incoming.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("jsonrpc") //
+                .contextPath("/api/Orders");
+        MetConfiguration outgoing = TestConfigurationUtils.create().setDefaultProtocol("jsonrpc");
+        outgoing.connector("http") //
+                .protocol("jsonrpc") //
+                .contextPath("/consumer-default");
+        try (MetContext server = incoming.buildContext(); MetContext client = outgoing.buildContext()) {
+            server.publisher().rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()).register();
+            MetBindInfo<JsonRpcDemoService> service = client.publisher().rsfService(JsonRpcDemoService.class).register();
+            server.start();
+            client.start();
+            assertEquals("/api/Orders", server.getListenAddress("jsonrpc").getPath());
+            JsonRpcDemoService remote = client.getRsfClient(server.getListenAddress("jsonrpc")).getRemote(service);
+            assertEquals("address-path", remote.echo("address-path"));
+        }
+    }
+
     private MetConfiguration serverConfiguration() {
         MetConfiguration configuration = TestConfigurationUtils.create() //
                 .setDefaultProtocol("jsonrpc");

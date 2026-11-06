@@ -25,9 +25,9 @@ class AddressBookTest {
             assertEquals(1, book.getServices().size());
             AddressBook.Service service = book.getServices().get(0);
             assertEquals("[billing]order-query-1.0", service.getServiceID());
-            assertEquals(4, service.getAddresses().size());
+            assertEquals(4, service.getAddresses().values().stream().mapToInt(java.util.List::size).sum());
             Set<String> schemes = new HashSet<>();
-            service.getAddresses().forEach(address -> schemes.add(address.getSchema()));
+            service.getAddresses().values().forEach(addresses -> addresses.forEach(address -> schemes.add(address.getSchema())));
             assertEquals(Set.of("rsf", "jsonrpc", "hessian"), schemes);
             assertThrows(UnsupportedOperationException.class, () -> service.getAddresses().clear());
             assertThrows(UnsupportedOperationException.class, () -> book.getServices().clear());
@@ -41,7 +41,15 @@ class AddressBookTest {
             assertNotNull(input);
             AddressBook.Service service = AddressBook.parse(input).getServices().get(0);
             assertEquals("[billing]order-query-1.0", service.getServiceID());
-            assertEquals(2, service.getAddresses().size());
+            assertEquals(2, service.getAddresses().values().stream().mapToInt(java.util.List::size).sum());
+        }
+    }
+
+    @Test
+    void explicitlyBlankUnitIsRejected() throws Exception {
+        try (InputStream input = getClass().getResourceAsStream("/address-book/dtd-empty-unit.xml")) {
+            var error = assertThrows(IOException.class, () -> AddressBook.parse(input));
+            assertTrue(error.getMessage().contains("unit"));
         }
     }
 

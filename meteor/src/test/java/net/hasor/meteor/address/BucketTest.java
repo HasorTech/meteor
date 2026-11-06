@@ -13,8 +13,8 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class BucketTest {
-    private final InterAddress localAddress  = new InterAddress("127.0.0.1", 8000, "local");
-    private final InterAddress remoteAddress = new InterAddress("127.0.0.2", 8000, "remote");
+    private final InterAddress localAddress  = new InterAddress("127.0.0.1", 8000);
+    private final InterAddress remoteAddress = new InterAddress("127.0.0.2", 8000);
 
     private AddressBucket populatedBucket() {
         AddressBucket bucket = new AddressBucket("s", "local");

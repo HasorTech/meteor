@@ -215,7 +215,7 @@ public class RpcbindClientTest {
     @Test
     public void ipv4UniversalAddressUsesLastTwoOctetsAsPort() {
         // 地址正文不能整体按点分八位组当作端口。
-        InterAddress address = RpcbindClient.toAddress("oncrpc", "127.0.0.1.31.187", "unit");
+        InterAddress address = RpcbindClient.toAddress("oncrpc", "127.0.0.1.31.187");
         assertEquals("127.0.0.1", address.getHost());
         assertEquals(8123, address.getPort());
     }
@@ -223,7 +223,7 @@ public class RpcbindClientTest {
     @Test
     public void ipv6UniversalAddressPreservesLiteralHost() {
         // IPv6 的冒号保持在 host 中，只有最后两个点号分隔端口字节。
-        InterAddress address = RpcbindClient.toAddress("oncrpc", "::1.31.187", "unit");
+        InterAddress address = RpcbindClient.toAddress("oncrpc", "::1.31.187");
         assertEquals(8123, address.getPort());
         assertTrue(address.getHost().contains("::1"));
     }
@@ -231,34 +231,34 @@ public class RpcbindClientTest {
     @Test
     public void emptyUniversalAddressMeansAbsent() {
         // rpcbind 未找到映射时不构造伪目标地址。
-        assertNull(RpcbindClient.toAddress("oncrpc", "", "unit"));
+        assertNull(RpcbindClient.toAddress("oncrpc", ""));
     }
 
     @Test
     public void zeroUniversalPortMeansAbsent() {
         // 零端口不能作为业务调用目标。
-        assertNull(RpcbindClient.toAddress("oncrpc", "127.0.0.1.0.0", "unit"));
+        assertNull(RpcbindClient.toAddress("oncrpc", "127.0.0.1.0.0"));
     }
 
     @Test
     public void invalidUniversalPortOctetIsRejected() {
         // 单个端口字节必须落在 0 到 255 之间。
         assertThrows(IllegalArgumentException.class, //
-                () -> RpcbindClient.toAddress("oncrpc", "127.0.0.1.256.1", "unit"));
+                () -> RpcbindClient.toAddress("oncrpc", "127.0.0.1.256.1"));
     }
 
     @Test
     public void nonDecimalUniversalPortOctetIsRejected() {
         // 正负号与其它字符都不是通用地址的十进制端口字节。
         assertThrows(IllegalArgumentException.class, //
-                () -> RpcbindClient.toAddress("oncrpc", "127.0.0.1.+1.1", "unit"));
+                () -> RpcbindClient.toAddress("oncrpc", "127.0.0.1.+1.1"));
     }
 
     @Test
     public void incompleteUniversalAddressIsRejected() {
         // 缺少两个端口字节时不尝试猜测地址。
         assertThrows(IllegalArgumentException.class, //
-                () -> RpcbindClient.toAddress("oncrpc", "localhost.1", "unit"));
+                () -> RpcbindClient.toAddress("oncrpc", "localhost.1"));
     }
 
     @Test
@@ -270,12 +270,12 @@ public class RpcbindClientTest {
     }
 
     private RpcbindClient client(String scheme, String host) {
-        return new RpcbindClient(this.context, new InterAddress(scheme, host, 111, "unit"));
+        return new RpcbindClient(this.context, new InterAddress(scheme, host, 111));
     }
 
     private void configure(String transport, String scheme) {
         ProtocolConfig protocol = ProtocolConfig.newConfig("oncrpc", scheme, Map.of());
-        InterAddress address = InterAddress.forBinding(transport, "127.0.0.1", 0, "unit");
+        InterAddress address = InterAddress.forBinding(transport, "127.0.0.1", 0);
         ConnectorConfig connector = new ConnectorConfig("rpcbind", address, Map.of(), List.of(protocol), false);
         MetSettings settings = mock(MetSettings.class);
         when(settings.getConnectorConfigs()).thenReturn(List.of(connector));

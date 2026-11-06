@@ -10,5 +10,6 @@ dependencies {
     api project(':meteor')
 
     // for test
+    testImplementation project(':meteor-protocol-soap')
     testImplementation "ognl:ognl:${property('lib.ognl')}"
 }

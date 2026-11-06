@@ -26,14 +26,18 @@ final class ConnectorChannel<M> implements MetChannel, ChannelListener<M> {
     private final    BasicFuture<MetChannel>   ready     = new BasicFuture<>();
     private final    BasicFuture<MetChannel>   closed    = new BasicFuture<>();
     private final    Set<BasicFuture<?>>       submitted = new HashSet<>();
-    private          boolean                   draining;
-    private          ProtocolNetworkChannel<M> connection;
+    private volatile boolean                   draining;
+    private volatile ProtocolNetworkChannel<M> connection;
     private volatile ProtocolSession<M>        session;
 
     ConnectorChannel(ConnectorEndpoint<M> endpoint) {
         this.channelId = endpoint.manager().nextChannelId();
         this.endpoint = endpoint;
         this.ready.onCancel(done -> this.close());
+    }
+
+    boolean isReusable() {
+        return !this.draining && !this.closed.isDone() && (this.connection == null || this.connection.isOpen());
     }
 
     Future<MetChannel> ready() {

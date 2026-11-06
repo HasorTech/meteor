@@ -128,7 +128,7 @@ public class TripleJavaSdkBasicTest {
                             .serialize("Hessian2").register();
 
                     // 当前 Meteor 容器不发布本地实现，SDK 专属前缀证明请求经过网络服务端。
-                    InterAddress address = new InterAddress("triple", "127.0.0.1", actualPort, "default");
+                    InterAddress address = new InterAddress("triple", "127.0.0.1", actualPort);
                     WireEcho remote = client.getRsfClient(address).getRemote(service);
                     assertEquals("triple-sdk:反向 Java 🙂", remote.echo("反向 Java 🙂"));
                 }

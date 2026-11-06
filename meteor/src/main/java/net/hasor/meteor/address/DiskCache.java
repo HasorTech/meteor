@@ -268,24 +268,22 @@ public class DiskCache implements Closeable {
 
     /** The caller owns out; finishing an inner ZIP must not close the outer archive. */
     protected boolean saveToZip(AddressBucket bucket, OutputStream out) throws IOException {
-        List<InterAddress> all;
-        Set<InterAddress> fixed;
+        Map<String, List<InterAddress>> dynamic;
+        Map<String, List<InterAddress>> fixed;
         String control;
         RuleRef rules;
         // 同一服务的地址与规则在锁内采样，之后不再访问可变地址本。
         synchronized (bucket) {
-            all = bucket.getAllAddresses();
-            fixed = new HashSet<>(bucket.getStaticAddresses());
+            dynamic = bucket.getAddressesByUnit(AddressTypeEnum.Dynamic);
+            fixed = bucket.getAddressesByUnit(AddressTypeEnum.Static);
             control = bucket.getFlowControlRef().flowControlScript;
             rules = bucket.getRuleRef();
         }
 
         try (ZipOutputStream zip = new ZipOutputStream(nonClosing(out))) {
             StringBuilder addresses = new StringBuilder();
-            for (InterAddress address : all) {
-                addresses.append(fixed.contains(address) ? "S|" : "D|");
-                addresses.append(address.toHostSchema()).append('\n');
-            }
+            appendAddresses(addresses, "S", fixed);
+            appendAddresses(addresses, "D", dynamic);
 
             writeEntry(zip, addresses.toString(), AddressList_ZipEntry);
             if (control != null) {
@@ -314,8 +312,9 @@ public class DiskCache implements Closeable {
                 entries.put(entry.getName(), bytes.toString(StandardCharsets.UTF_8));
             }
         }
-        List<InterAddress> staticAddresses = new ArrayList<>();
-        List<InterAddress> dynamicAddresses = new ArrayList<>();
+
+        Map<String, List<InterAddress>> staticAddresses = new LinkedHashMap<>();
+        Map<String, List<InterAddress>> dynamicAddresses = new LinkedHashMap<>();
         String addresses = entries.get(AddressList_ZipEntry);
         if (addresses != null) {
             for (String line : addresses.split("\\r?\\n")) {
@@ -324,11 +323,15 @@ public class DiskCache implements Closeable {
                 }
 
                 try {
-                    InterAddress address = new InterAddress(line.substring(2));
+                    String[] parts = line.split("\\|", 3);
+                    if (parts.length != 3)
+                        throw new IllegalArgumentException("Missing unit group");
+                    String unit = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
+                    InterAddress address = new InterAddress(parts[2]);
                     if (line.startsWith("S|")) {
-                        staticAddresses.add(address);
+                        staticAddresses.computeIfAbsent(unit, key -> new ArrayList<>()).add(address);
                     } else {
-                        dynamicAddresses.add(address);
+                        dynamicAddresses.computeIfAbsent(unit, key -> new ArrayList<>()).add(address);
                     }
                 } catch (URISyntaxException | IllegalArgumentException | IllegalStateException e) {
                     logger.warn("Ignoring malformed address in snapshot: " + line);
@@ -344,6 +347,15 @@ public class DiskCache implements Closeable {
         restoreScript(bucket, entries, ServiceLevelScript_ZipEntry, RouteTypeEnum.ServiceLevel);
         restoreScript(bucket, entries, MethodLevelScript_ZipEntry, RouteTypeEnum.MethodLevel);
         restoreScript(bucket, entries, ArgsLevelScript_ZipEntry, RouteTypeEnum.ArgsLevel);
+    }
+
+    private static void appendAddresses(StringBuilder output, String type, Map<String, List<InterAddress>> groups) {
+        groups.forEach((unit, addresses) -> {
+            String encoded = Base64.getUrlEncoder().withoutPadding().encodeToString(unit.getBytes(StandardCharsets.UTF_8));
+            for (InterAddress address : addresses) {
+                output.append(type).append('|').append(encoded).append('|').append(address.toHostSchema()).append('\n');
+            }
+        });
     }
 
     private static void restoreScript(AddressBucket bucket, Map<String, String> entries, String name, RouteTypeEnum type) {

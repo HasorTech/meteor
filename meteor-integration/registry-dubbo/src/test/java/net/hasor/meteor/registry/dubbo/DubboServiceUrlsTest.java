@@ -29,7 +29,7 @@ public class DubboServiceUrlsTest {
         // 方法的 Java 名称与公共远程名称不同。
         try (MetContext context = this.configuration().buildContext()) {
             MetBindInfo<?> service = context.publisher().rsfService(MappedMethods.class).register();
-            InterAddress address = new InterAddress("dubbo", "127.0.0.1", 20880, "default");
+            InterAddress address = new InterAddress("dubbo", "127.0.0.1", 20880);
 
             // 注册 URL 上报协议调用使用的名称，不上报原 Java 方法名。
             URL provider = DubboServiceUrls.provider(context, service, address, null, "dubbos");
@@ -44,7 +44,7 @@ public class DubboServiceUrlsTest {
         // 被忽略的方法来自父接口，仍不得进入注册中心方法清单。
         try (MetContext context = this.configuration().buildContext()) {
             MetBindInfo<?> service = context.publisher().rsfService(MappedMethods.class).register();
-            InterAddress address = new InterAddress("dubbo", "127.0.0.1", 20880, "default");
+            InterAddress address = new InterAddress("dubbo", "127.0.0.1", 20880);
 
             // 清单与服务公共描述使用同一份方法筛选结果。
             URL provider = DubboServiceUrls.provider(context, service, address, null, "dubbos");
@@ -173,13 +173,13 @@ public class DubboServiceUrlsTest {
     @Test
     public void providerCarriesItsServiceIdentityAndApplication() throws Exception {
         // 服务组、版本、接口别名和应用名称共同构成原生服务身份。
-        try (MetContext context = this.configuration().buildContext()) {
+        try (MetContext context = this.configuration().setUnitName("provider_zone").buildContext()) {
             MetBindInfo<RegistryEchoService> service = context.publisher() //
                     .rsfService(RegistryEchoService.class, value -> value) //
                     .group("blue").version("1.2").aliasName("dubbo", "example.RemoteEcho").register();
 
             // URL 使用实际监听地址，身份参数与发布描述保持一致。
-            InterAddress address = new InterAddress("dubbo", "127.0.0.1", 20880, "provider_zone");
+            InterAddress address = new InterAddress("dubbo", "127.0.0.1", 20880);
             URL provider = DubboServiceUrls.provider(context, service, address, null, "dubbos");
             assertEquals("dubbo", provider.getProtocol());
             assertEquals("127.0.0.1", provider.getHost());
@@ -197,7 +197,7 @@ public class DubboServiceUrlsTest {
         // 桥接只声明插件实际提供的 Hessian2 编码，不发布其他编码器的能力。
         try (MetContext context = this.configuration().buildContext()) {
             MetBindInfo<RegistryEchoService> service = this.consumer(context);
-            InterAddress address = new InterAddress("dubbo", "127.0.0.1", 20880, "zone");
+            InterAddress address = new InterAddress("dubbo", "127.0.0.1", 20880);
             URL provider = DubboServiceUrls.provider(context, service, address, null, "dubbos");
             assertEquals("provider", provider.getParameter("side"));
             assertEquals("providers", provider.getParameter("category"));
@@ -215,7 +215,7 @@ public class DubboServiceUrlsTest {
         try (MetContext context = this.configuration().buildContext()) {
             MetBindInfo<RegistryMethodCatalogue> service = context.publisher() //
                     .rsfService(RegistryMethodCatalogue.class).register();
-            InterAddress address = new InterAddress("dubbo", "127.0.0.1", 20880, "zone");
+            InterAddress address = new InterAddress("dubbo", "127.0.0.1", 20880);
             URL provider = DubboServiceUrls.provider(context, service, address, null, "dubbos");
             assertEquals("echo,ping", provider.getParameter("methods"));
         }
@@ -226,7 +226,7 @@ public class DubboServiceUrlsTest {
         // TLS 是同一 Dubbo 线协议的安全传输，不成为另一套原生注册协议。
         try (MetContext context = this.configuration().buildContext()) {
             MetBindInfo<RegistryEchoService> service = this.consumer(context);
-            InterAddress address = new InterAddress("dubbos", "127.0.0.1", 20881, "zone");
+            InterAddress address = new InterAddress("dubbos", "127.0.0.1", 20881);
             URL provider = DubboServiceUrls.provider(context, service, address, null, "dubbos");
             assertEquals("dubbo", provider.getProtocol());
             assertTrue(provider.getParameter("ssl-enabled", false));
@@ -238,7 +238,7 @@ public class DubboServiceUrlsTest {
         // URI scheme 的大小写不影响 TLS 提供者声明。
         try (MetContext context = this.configuration().buildContext()) {
             MetBindInfo<RegistryEchoService> service = this.consumer(context);
-            InterAddress address = new InterAddress("dubbos", "127.0.0.1", 20881, "zone");
+            InterAddress address = new InterAddress("dubbos", "127.0.0.1", 20881);
             URL provider = DubboServiceUrls.provider(context, service, address, null, "DUBBOS");
             assertTrue(provider.getParameter("ssl-enabled", false));
         }
@@ -249,7 +249,7 @@ public class DubboServiceUrlsTest {
         // 对所有网卡监听时，用户显式给出远端可访问的发布地址。
         try (MetContext context = this.configuration().buildContext()) {
             MetBindInfo<RegistryEchoService> service = this.consumer(context);
-            InterAddress address = InterAddress.forBinding("dubbo", "0.0.0.0", 20880, "zone");
+            InterAddress address = InterAddress.forBinding("dubbo", "0.0.0.0", 20880);
             URL provider = DubboServiceUrls.provider(context, service, address, "provider.example", "dubbos");
             assertEquals("provider.example", provider.getHost());
         }
@@ -260,7 +260,7 @@ public class DubboServiceUrlsTest {
         // 通配 IPv4 地址不能作为其他进程的调用目标。
         try (MetContext context = this.configuration().buildContext()) {
             MetBindInfo<RegistryEchoService> service = this.consumer(context);
-            InterAddress address = InterAddress.forBinding("dubbo", "0.0.0.0", 20880, "zone");
+            InterAddress address = InterAddress.forBinding("dubbo", "0.0.0.0", 20880);
             assertThrows(IllegalArgumentException.class, //
                     () -> DubboServiceUrls.provider(context, service, address, null, "dubbos"));
         }
@@ -271,7 +271,7 @@ public class DubboServiceUrlsTest {
         // IPv6 通配监听地址同样不能直接发布。
         try (MetContext context = this.configuration().buildContext()) {
             MetBindInfo<RegistryEchoService> service = this.consumer(context);
-            InterAddress address = InterAddress.forBinding("dubbo", "::", 20880, "zone");
+            InterAddress address = InterAddress.forBinding("dubbo", "::", 20880);
             assertThrows(IllegalArgumentException.class, //
                     () -> DubboServiceUrls.provider(context, service, address, null, "dubbos"));
         }
@@ -282,7 +282,7 @@ public class DubboServiceUrlsTest {
         // 即使通过覆盖参数设置，也不能把通配 IPv6 地址发布出去。
         try (MetContext context = this.configuration().buildContext()) {
             MetBindInfo<RegistryEchoService> service = this.consumer(context);
-            InterAddress address = new InterAddress("dubbo", "127.0.0.1", 20880, "zone");
+            InterAddress address = new InterAddress("dubbo", "127.0.0.1", 20880);
             assertThrows(IllegalArgumentException.class, //
                     () -> DubboServiceUrls.provider(context, service, address, "::", "dubbos"));
         }
@@ -293,7 +293,7 @@ public class DubboServiceUrlsTest {
         // 显式覆盖为空白时应报告配置错误，而不是偷偷回退监听地址。
         try (MetContext context = this.configuration().buildContext()) {
             MetBindInfo<RegistryEchoService> service = this.consumer(context);
-            InterAddress address = new InterAddress("dubbo", "127.0.0.1", 20880, "zone");
+            InterAddress address = new InterAddress("dubbo", "127.0.0.1", 20880);
             assertThrows(IllegalArgumentException.class, //
                     () -> DubboServiceUrls.provider(context, service, address, " ", "dubbos"));
         }
@@ -337,8 +337,8 @@ public class DubboServiceUrlsTest {
         try (MetContext context = this.configuration().buildContext()) {
             MetBindInfo<RegistryEchoService> service = this.consumer(context);
             URL provider = this.provider().addParameter("meteor.unit", "remote_zone");
-            List<InterAddress> addresses = DubboServiceUrls.providers(context, service, List.of(provider), "dubbos");
-            assertEquals(List.of(new InterAddress("dubbo", "127.0.0.1", 20880, "remote_zone")), addresses);
+            Map<String, List<InterAddress>> addresses = DubboServiceUrls.providers(context, service, List.of(provider), "dubbos");
+            assertEquals(Map.of("remote_zone", List.of(new InterAddress("dubbo", "127.0.0.1", 20880))), addresses);
         }
     }
 
@@ -348,8 +348,8 @@ public class DubboServiceUrlsTest {
         try (MetContext context = this.configuration().buildContext()) {
             MetBindInfo<RegistryEchoService> service = this.consumer(context);
             List<URL> notification = List.of(this.provider());
-            List<InterAddress> addresses = DubboServiceUrls.providers(context, service, notification, "dubbos");
-            assertEquals(List.of(new InterAddress("dubbo", "127.0.0.1", 20880, "consumer_zone")), addresses);
+            Map<String, List<InterAddress>> addresses = DubboServiceUrls.providers(context, service, notification, "dubbos");
+            assertEquals(Map.of("consumer_zone", List.of(new InterAddress("dubbo", "127.0.0.1", 20880))), addresses);
         }
     }
 
@@ -365,8 +365,8 @@ public class DubboServiceUrlsTest {
             // 注册中心上的 ssl-enabled 映射到消费方实际已配置的安全挂载。
             MetBindInfo<RegistryEchoService> service = this.consumer(context);
             URL provider = this.provider().addParameter("ssl-enabled", true);
-            List<InterAddress> addresses = DubboServiceUrls.providers(context, service, List.of(provider), "dubbo+tls");
-            assertEquals("dubbo+tls", addresses.get(0).getSchema());
+            Map<String, List<InterAddress>> addresses = DubboServiceUrls.providers(context, service, List.of(provider), "dubbo+tls");
+            assertEquals("dubbo+tls", addresses.values().iterator().next().get(0).getSchema());
         }
     }
 
@@ -390,9 +390,9 @@ public class DubboServiceUrlsTest {
 
             // 同批通知中的明文地址不能成为安全服务的降级调用目标。
             List<URL> notification = List.of(plain, secure);
-            List<InterAddress> addresses = DubboServiceUrls.providers(context, service, notification, "dubbos");
-            InterAddress expected = new InterAddress("dubbos", "127.0.0.1", 20881, "consumer_zone");
-            assertEquals(List.of(expected), addresses);
+            Map<String, List<InterAddress>> addresses = DubboServiceUrls.providers(context, service, notification, "dubbos");
+            InterAddress expected = new InterAddress("dubbos", "127.0.0.1", 20881);
+            assertEquals(List.of(expected), addresses.values().stream().flatMap(List::stream).toList());
         }
     }
 
@@ -406,9 +406,9 @@ public class DubboServiceUrlsTest {
 
             // 仅已配置的明文提供者进入地址本，TLS 通知被排除。
             List<URL> notification = List.of(plain, secure);
-            List<InterAddress> addresses = DubboServiceUrls.providers(context, service, notification, "dubbos");
-            InterAddress expected = new InterAddress("dubbo", "127.0.0.1", 20880, "consumer_zone");
-            assertEquals(List.of(expected), addresses);
+            Map<String, List<InterAddress>> addresses = DubboServiceUrls.providers(context, service, notification, "dubbos");
+            InterAddress expected = new InterAddress("dubbo", "127.0.0.1", 20880);
+            assertEquals(List.of(expected), addresses.values().stream().flatMap(List::stream).toList());
         }
     }
 
@@ -429,10 +429,10 @@ public class DubboServiceUrlsTest {
 
             // 两种提供者各自使用对应地址 scheme，发现过程不丢弃其中一种。
             List<URL> notification = List.of(plain, secure);
-            List<InterAddress> addresses = DubboServiceUrls.providers(context, service, notification, "dubbos");
-            InterAddress plainAddress = new InterAddress("dubbo", "127.0.0.1", 20880, "consumer_zone");
-            InterAddress secureAddress = new InterAddress("dubbos", "127.0.0.1", 20881, "consumer_zone");
-            assertEquals(List.of(plainAddress, secureAddress), addresses);
+            Map<String, List<InterAddress>> addresses = DubboServiceUrls.providers(context, service, notification, "dubbos");
+            InterAddress plainAddress = new InterAddress("dubbo", "127.0.0.1", 20880);
+            InterAddress secureAddress = new InterAddress("dubbos", "127.0.0.1", 20881);
+            assertEquals(Map.of("consumer_zone", List.of(plainAddress, secureAddress)), addresses);
         }
     }
 
@@ -444,7 +444,7 @@ public class DubboServiceUrlsTest {
             URL first = this.provider();
             URL duplicate = first.addParameter("timestamp", "123456");
             List<URL> notification = List.of(first, duplicate);
-            List<InterAddress> addresses = DubboServiceUrls.providers(context, service, notification, "dubbos");
+            Map<String, List<InterAddress>> addresses = DubboServiceUrls.providers(context, service, notification, "dubbos");
             assertEquals(1, addresses.size());
         }
     }
@@ -457,9 +457,9 @@ public class DubboServiceUrlsTest {
             URL first = this.provider().setPort(20881);
             URL second = this.provider();
             List<URL> notification = List.of(first, second);
-            List<InterAddress> addresses = DubboServiceUrls.providers(context, service, notification, "dubbos");
-            assertEquals(20881, addresses.get(0).getPort());
-            assertEquals(20880, addresses.get(1).getPort());
+            Map<String, List<InterAddress>> addresses = DubboServiceUrls.providers(context, service, notification, "dubbos");
+            assertEquals(20881, addresses.values().iterator().next().get(0).getPort());
+            assertEquals(20880, addresses.values().iterator().next().get(1).getPort());
         }
     }
 
@@ -570,7 +570,7 @@ public class DubboServiceUrlsTest {
             MetBindInfo<RegistryEchoService> service = context.publisher() //
                     .rsfService(RegistryEchoService.class).group("").version("").register();
             URL provider = new URL("dubbo", "127.0.0.1", 20880, RegistryEchoService.class.getName());
-            List<InterAddress> addresses = DubboServiceUrls.providers(context, service, List.of(provider), "dubbos");
+            Map<String, List<InterAddress>> addresses = DubboServiceUrls.providers(context, service, List.of(provider), "dubbos");
             assertEquals(1, addresses.size());
         }
     }
@@ -583,7 +583,7 @@ public class DubboServiceUrlsTest {
                     .rsfService(RegistryEchoService.class) //
                     .group("blue").version("1.2").aliasName("dubbo", "example.RemoteEcho").register();
             URL provider = this.provider().setPath("example.RemoteEcho");
-            List<InterAddress> addresses = DubboServiceUrls.providers(context, service, List.of(provider), "dubbos");
+            Map<String, List<InterAddress>> addresses = DubboServiceUrls.providers(context, service, List.of(provider), "dubbos");
             assertEquals(1, addresses.size());
         }
     }
@@ -615,7 +615,7 @@ public class DubboServiceUrlsTest {
         try (MetContext context = this.configuration().buildContext()) {
             MetBindInfo<RegistryEchoService> service = context.publisher() //
                     .rsfService(RegistryEchoService.class, value -> value).register();
-            InterAddress address = new InterAddress("dubbo", "127.0.0.1", 20880, "zone");
+            InterAddress address = new InterAddress("dubbo", "127.0.0.1", 20880);
             URL provider = DubboServiceUrls.provider(context, service, address, null, "dubbos");
             assertEquals("default", provider.getParameter("group"));
             assertEquals("1.0.0", provider.getParameter("version"));
@@ -655,7 +655,7 @@ public class DubboServiceUrlsTest {
             MetBindInfo<RegistryEchoService> service = this.consumer(context);
             service.setMetaData("dubbo.registry.group", "");
             service.setMetaData("dubbo.registry.version", "");
-            InterAddress address = new InterAddress("dubbo", "127.0.0.1", 20880, "zone");
+            InterAddress address = new InterAddress("dubbo", "127.0.0.1", 20880);
             URL provider = DubboServiceUrls.provider(context, service, address, null, "dubbos");
             assertNull(provider.getParameters().get("group"));
             assertNull(provider.getParameters().get("version"));
@@ -685,7 +685,7 @@ public class DubboServiceUrlsTest {
             service.setMetaData("dubbo.registry.group", "");
             service.setMetaData("dubbo.registry.version", "");
             URL provider = new URL("dubbo", "127.0.0.1", 20880, RegistryEchoService.class.getName());
-            List<InterAddress> addresses = DubboServiceUrls.providers(context, service, List.of(provider), "dubbos");
+            Map<String, List<InterAddress>> addresses = DubboServiceUrls.providers(context, service, List.of(provider), "dubbos");
             assertEquals(1, addresses.size());
         }
     }
@@ -719,7 +719,7 @@ public class DubboServiceUrlsTest {
             MetBindInfo<RegistryEchoService> service = this.consumer(context);
             service.setMetaData("dubbo.registry.group", "");
             service.setMetaData("dubbo.registry.version", "");
-            InterAddress address = new InterAddress("dubbo", "127.0.0.1", 20880, "zone");
+            InterAddress address = new InterAddress("dubbo", "127.0.0.1", 20880);
             URL provider = DubboServiceUrls.provider(context, service, address, null, "dubbos");
             URL consumer = new URL("consumer", "127.0.0.1", 0, RegistryEchoService.class.getName());
 

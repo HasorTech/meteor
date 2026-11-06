@@ -22,31 +22,33 @@ import net.hasor.meteor.domain.payload.Payload;
 import net.hasor.meteor.domain.payload.RequestPayload;
 import net.hasor.meteor.domain.payload.ResponsePayload;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static net.hasor.example.connector.protocol.UdpTestProtocol.*;
 import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 /** 通过正式 SPI 和真实回环报文验证 UDP 连接器契约，不依赖 RPC 调度器。 */
 public class UdpConnectorTest {
     @Test
     @Timeout(value = 10000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void peersWithTheSameRequestIdRemainIndependent() throws Exception {
-        // 同一客户端建立两个 UDP peer，并使用相同请求号验证按通道隔离。
+        // 两个独立客户端建立 UDP peer，并使用相同请求号验证按通道隔离。
         ConnectorConfig serverConfig = SocketTestSupport.udpConfig(65507, "testprotocol");
         ConnectorConfig clientConfig = SocketTestSupport.udpConfig(65507, "testprotocol");
         try (ConnectorManager server = SocketTestSupport.manager(serverConfig); //
-             ConnectorManager client = SocketTestSupport.manager(clientConfig)) {
+             ConnectorManager client = SocketTestSupport.manager(clientConfig); //
+             ConnectorManager peer = SocketTestSupport.manager(clientConfig)) {
             server.init();
             client.init();
+            peer.init();
             Inbox serverInbox = new Inbox();
             Inbox clientInbox = new Inbox();
             server.subscribe(serverInbox);
             client.subscribe(clientInbox);
+            peer.subscribe(clientInbox);
             server.startInbound();
             InterAddress listenAddress = server.getListenAddress("testprotocol");
             MetChannel first = client.connect(listenAddress).get(2, TimeUnit.SECONDS);
-            MetChannel second = client.connect(listenAddress).get(2, TimeUnit.SECONDS);
+            MetChannel second = peer.connect(listenAddress).get(2, TimeUnit.SECONDS);
             assertNotSame(first, second);
 
             // 接收端按源地址建立不同通道，不能把相同请求号合并为同一个 peer。
@@ -324,7 +326,7 @@ public class UdpConnectorTest {
         // 地址模型允许表达零端口，但 UDP 监听必须明确拒绝这个配置。
         Map<String, String> options = Map.of("workerThread", "1");
         ProtocolConfig protocol = ProtocolConfig.newConfig("testprotocol", "udp", options);
-        InterAddress address = InterAddress.forBinding("udp", "127.0.0.1", 0, "default");
+        InterAddress address = InterAddress.forBinding("udp", "127.0.0.1", 0);
         ConnectorConfig config = new ConnectorConfig("udp", address, options, List.of(protocol), true);
         try (ConnectorManager manager = SocketTestSupport.manager(config)) {
             manager.init();

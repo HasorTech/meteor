@@ -72,14 +72,20 @@ final class RegistrationService {
         return value == null ? new EntConfigurationData() : value.getData();
     }
 
-    Set<String> providers(String serviceId) throws Exception {
-        Set<String> result = new TreeSet<>();
+    Map<String, List<String>> providers(String serviceId) throws Exception {
+        Map<String, List<String>> result = new TreeMap<>();
         DirectoryQuery query = new DirectoryQuery();
         query.setLimit(1000);
+
         do {
             RecordPage<RefServiceRelationData> page = this.storage.members(serviceId, MetServiceType.Provider, query);
             for (RefServiceRelationData member : page.getItems()) {
-                Collections.addAll(result, member.getService().getAddresses());
+                String unit = Objects.requireNonNullElse(member.getInstance().getUnitName(), "");
+                List<String> addresses = result.computeIfAbsent(unit, key -> new ArrayList<>());
+                for (String address : member.getService().getAddresses()) {
+                    if (!addresses.contains(address))
+                        addresses.add(address);
+                }
             }
             query.setCursor(page.getNextCursor());
         } while (query.getCursor() != null);

@@ -35,10 +35,9 @@ import net.hasor.meteor.domain.payload.RequestPayload;
 import net.hasor.neta.channel.ProtoBuildContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 /** 验证 SPI 发现、配置准备和连接器延迟创建契约。 */
 public class ProtocolSpiTest {
@@ -180,7 +179,7 @@ public class ProtocolSpiTest {
              ServerSocket server = new ServerSocket(0)) {
             // 主动连接首次创建传输，协议会话直接使用已准备的挂载配置。
             manager.init();
-            InterAddress target = new InterAddress("custom", "127.0.0.1", server.getLocalPort(), "test");
+            InterAddress target = new InterAddress("custom", "127.0.0.1", server.getLocalPort());
             MetChannel channel = manager.connect(target).get(3, TimeUnit.SECONDS);
             assertSame(mount, CustomProtocol.configurations.poll(3, TimeUnit.SECONDS));
             server.setSoTimeout(3000);
@@ -217,7 +216,7 @@ public class ProtocolSpiTest {
         try (ConnectorManager manager = this.manager(loader, config); //
              ServerSocket peer = new ServerSocket(0)) {
             manager.init();
-            InterAddress target = new InterAddress("custom", "127.0.0.1", peer.getLocalPort(), "test");
+            InterAddress target = new InterAddress("custom", "127.0.0.1", peer.getLocalPort());
             manager.connect(target).get(3, TimeUnit.SECONDS);
 
             // SPI 收到出站标记和所属上下文，不能把本地连接地址当作监听地址。
@@ -236,7 +235,7 @@ public class ProtocolSpiTest {
         Class<?>[] transports = { CustomTransport.class };
         Class<?>[] protocols = { CustomProtocol.class };
         ClassLoader loader = this.loader(transports, protocols);
-        InterAddress local = InterAddress.forBinding("custom", "127.0.0.1", 0, "test");
+        InterAddress local = InterAddress.forBinding("custom", "127.0.0.1", 0);
         ProtocolConfig protocol = ProtocolConfig.newConfig("custom-protocol", "published", Map.of());
         ConnectorConfig config = new ConnectorConfig("server", local, //
                 Map.of("workerThread", "1"), List.of(protocol), true);
@@ -268,7 +267,7 @@ public class ProtocolSpiTest {
              ServerSocket peer = new ServerSocket(0)) {
             manager.init();
             manager.startInbound();
-            InterAddress target = new InterAddress("custom", "127.0.0.1", peer.getLocalPort(), "test");
+            InterAddress target = new InterAddress("custom", "127.0.0.1", peer.getLocalPort());
             manager.connect(target).get(3, TimeUnit.SECONDS);
 
             // 监听地址可供协议握手发布，但不能因此把主动连接标记成入站会话。
@@ -291,7 +290,7 @@ public class ProtocolSpiTest {
         AdmissionNetwork network = null;
         try {
             manager.init();
-            InterAddress target = new InterAddress("custom", "127.0.0.1", 8123, "test");
+            InterAddress target = new InterAddress("custom", "127.0.0.1", 8123);
             lifecycle.execute(() -> manager.connect(target));
             network = AdmissionTransportFactory.creations.poll(3, TimeUnit.SECONDS);
             assertNotNull(network);
@@ -333,7 +332,7 @@ public class ProtocolSpiTest {
         CloseBarrierNetwork network = null;
         try {
             manager.init();
-            InterAddress target = new InterAddress("custom", "127.0.0.1", 8123, "test");
+            InterAddress target = new InterAddress("custom", "127.0.0.1", 8123);
             manager.connect(target);
             network = CloseBarrierTransportFactory.creations.poll(3, TimeUnit.SECONDS);
             assertNotNull(network);
@@ -539,7 +538,7 @@ public class ProtocolSpiTest {
     }
 
     private static ConnectorConfig config(String protocol, Map<String, String> extensions) {
-        InterAddress localAddress = InterAddress.forBinding("custom", "127.0.0.1", 0, "test");
+        InterAddress localAddress = InterAddress.forBinding("custom", "127.0.0.1", 0);
         ProtocolConfig mount = ProtocolConfig.newConfig(protocol, "custom", Collections.emptyMap());
         Map<String, String> options = new LinkedHashMap<>();
         options.put("workerThread", "1");

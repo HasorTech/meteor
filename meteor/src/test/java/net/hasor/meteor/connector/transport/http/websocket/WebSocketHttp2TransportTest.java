@@ -28,12 +28,11 @@ import net.hasor.meteor.connector.transport.http.channel.HttpExchange;
 import net.hasor.meteor.connector.transport.http.channel.HttpResponse;
 import net.hasor.meteor.domain.ProtocolConfig;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static net.hasor.meteor.connector.HttpTransportPlans.routes;
 import static net.hasor.meteor.connector.TransportTestConfigs.transport;
 import static net.hasor.meteor.connector.transport.TransportTestServices.newHttpConnector;
 import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 /** 在真实 HTTP/2 连接上验证 WebSocket stream 的准入与排空边界。 */
 public class WebSocketHttp2TransportTest {
@@ -368,7 +367,7 @@ public class WebSocketHttp2TransportTest {
     private static ConnectorConfig config(int capacity) {
         Map<String, String> options = Map.of("httpVersion", "2", //
                 "maxPendingRequests", Integer.toString(capacity));
-        InterAddress address = InterAddress.forBinding("http", "127.0.0.1", 0, "default");
+        InterAddress address = InterAddress.forBinding("http", "127.0.0.1", 0);
         ProtocolConfig protocol = ProtocolConfig.newConfig("websocket", "websocket", //
                 Map.of("contextPath", "/ws", "upgrade", "websocket"));
         return new ConnectorConfig("http", address, options, List.of(protocol), true);
@@ -376,7 +375,7 @@ public class WebSocketHttp2TransportTest {
 
     private static ConnectorConfig mixedConfig() {
         Map<String, String> options = Map.of("httpVersion", "2");
-        InterAddress address = InterAddress.forBinding("http", "127.0.0.1", 0, "default");
+        InterAddress address = InterAddress.forBinding("http", "127.0.0.1", 0);
         ProtocolConfig plain = ProtocolConfig.newConfig("http", "http", Map.of("contextPath", "/plain"));
         ProtocolConfig websocket = ProtocolConfig.newConfig("websocket", "websocket", //
                 Map.of("contextPath", "/ws", "upgrade", "websocket"));

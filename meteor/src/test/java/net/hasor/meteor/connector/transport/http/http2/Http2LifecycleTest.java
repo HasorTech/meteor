@@ -27,10 +27,10 @@ import net.hasor.meteor.connector.transport.http.channel.HttpResponse;
 import net.hasor.neta.channel.*;
 import net.hasor.neta.codec.http.HttpObject;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static net.hasor.meteor.connector.transport.TransportTestServices.closeSocketRuntime;
 import static net.hasor.meteor.connector.transport.TransportTestServices.newSocketRuntime;
 import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.Timeout;
 
 /** 明确控制发送完成和输入 EOF 的顺序，验证完整正文的消费归属及失败传播。 */
 public class Http2LifecycleTest {
@@ -228,7 +228,7 @@ public class Http2LifecycleTest {
         private Fixture() throws Exception {
             // 复用现有测试桥接创建 Runtime，受控连接只借用测试自己持有的网络上下文。
             ClassLoader loader = this.getClass().getClassLoader();
-            InterAddress remote = new InterAddress("http", "127.0.0.1", 12345, "default");
+            InterAddress remote = new InterAddress("http", "127.0.0.1", 12345);
             TransportConfig config = new TransportConfig("http2-lifecycle", remote, false, //
                     Map.of("workerThread", "1", "taskThread", "1", "httpVersion", "2"), Map.of());
             this.runtime = newSocketRuntime(config, loader);

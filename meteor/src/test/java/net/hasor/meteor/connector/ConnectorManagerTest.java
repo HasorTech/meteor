@@ -33,7 +33,7 @@ public class ConnectorManagerTest {
         Map<String, String> endpointOptions = Map.of("workerThread", "1");
         ProtocolConfig logical = ProtocolConfig.newConfig("wirea", "tcp", Map.of());
         ProtocolConfig alias = ProtocolConfig.newConfig("wireb", "wirea", Map.of());
-        InterAddress local = InterAddress.forBinding("tcp", "127.0.0.1", 0, "test");
+        InterAddress local = InterAddress.forBinding("tcp", "127.0.0.1", 0);
         ConnectorConfig config = new ConnectorConfig(//
                 "client", local, endpointOptions, List.of(logical, alias), false);
 

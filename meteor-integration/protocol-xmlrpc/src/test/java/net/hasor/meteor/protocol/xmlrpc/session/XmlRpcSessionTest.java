@@ -555,7 +555,7 @@ public class XmlRpcSessionTest {
         BiFunction<Runnable, Long, Cancellable> scheduler = (action, delay) -> {
             throw new AssertionError("XML-RPC must reuse RPC request deadlines");
         };
-        InterAddress address = new InterAddress("xmlrpc", "127.0.0.1", 8080, "default");
+        InterAddress address = new InterAddress("xmlrpc", "127.0.0.1", 8080);
         ProtocolConfig config = configuration();
         ProtocolSessionContext runtime = ProtocolSessionContextTestAccess.newContext( //
                 context, scheduler, address, outbound, config);
@@ -618,7 +618,7 @@ public class XmlRpcSessionTest {
 
         @Override
         public InterAddress getLocal() {
-            return new InterAddress("xmlrpc", "127.0.0.1", 8080, "default");
+            return new InterAddress("xmlrpc", "127.0.0.1", 8080);
         }
 
         @Override

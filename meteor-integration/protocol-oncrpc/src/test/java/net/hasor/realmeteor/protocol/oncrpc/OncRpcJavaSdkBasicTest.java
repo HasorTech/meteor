@@ -9,6 +9,7 @@ package net.hasor.realmeteor.protocol.oncrpc;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.oncrpc.OncRpcDemoCodecs;
 import net.hasor.example.protocol.oncrpc.OncRpcDemoService;
 import net.hasor.example.protocol.oncrpc.OncRpcDemoServiceImpl;
@@ -22,9 +23,8 @@ import org.acplt.oncrpc.OncRpcTcpClient;
 import org.acplt.oncrpc.OncRpcUdpClient;
 import org.acplt.oncrpc.XdrString;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** 本插件基础验证：同一 JUnit 进程内，Meteor 与 RemoteTea SDK 经 TCP、UDP 双向真实调用。 */
 public class OncRpcJavaSdkBasicTest {
@@ -111,7 +111,7 @@ public class OncRpcJavaSdkBasicTest {
 
             // SDK 分派添加响应前缀，证明调用经过真实 RemoteTea 网络服务。
             String unit = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("oncrpc", "127.0.0.1", server.getPort(), unit);
+            InterAddress address = new InterAddress("oncrpc", "127.0.0.1", server.getPort());
             OncRpcDemoService remote = client.getRsfClient(address).getRemote(service);
             assertEquals("remotetea-sdk:Meteor TCP", remote.echo("Meteor TCP"));
         }
@@ -134,7 +134,7 @@ public class OncRpcJavaSdkBasicTest {
 
             // 直连 SDK 已绑定的真实端口，响应前缀不能由本地调用捷径产生。
             String unit = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("oncrpc-udp", "127.0.0.1", server.getPort(), unit);
+            InterAddress address = new InterAddress("oncrpc-udp", "127.0.0.1", server.getPort());
             OncRpcDemoService remote = client.getRsfClient(address).getRemote(service);
             assertEquals("remotetea-sdk:Meteor UDP", remote.echo("Meteor UDP"));
         }

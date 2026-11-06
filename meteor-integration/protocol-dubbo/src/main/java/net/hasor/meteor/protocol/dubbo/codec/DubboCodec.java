@@ -561,7 +561,11 @@ public final class DubboCodec {
     }
 
     private String alias(MetBindInfo<?> service) {
-        String alias = service.getAliasName(this.config.name());
+        return serviceName(service, this.config.name());
+    }
+
+    public static String serviceName(MetBindInfo<?> service, String protocol) {
+        String alias = service.getAliasName(protocol);
         if (StringUtils.isBlank(alias)) {
             alias = service.getAliasName("dubbo");
         }

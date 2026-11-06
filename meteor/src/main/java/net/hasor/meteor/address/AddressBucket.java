@@ -8,8 +8,6 @@
 package net.hasor.meteor.address;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import net.hasor.cobble.StringUtils;
 import net.hasor.cobble.logging.Logger;
 import net.hasor.cobble.logging.LoggerFactory;
@@ -31,31 +29,31 @@ import net.hasor.meteor.address.route.unit.UnitFlowControl;
  * @version : 2014年9月12日
  */
 public class AddressBucket extends Observable {
-    public static final    String                                        LOGGER_NAME   = "rsf-address";
-    protected static final Logger                                        addressLogger = LoggerFactory.getLogger(LOGGER_NAME);
-    protected static final Logger                                        logger        = LoggerFactory.getLogger(AddressBucket.class);
+    public static final    String                              LOGGER_NAME   = "rsf-address";
+    protected static final Logger                              addressLogger = LoggerFactory.getLogger(LOGGER_NAME);
+    protected static final Logger                              logger        = LoggerFactory.getLogger(AddressBucket.class);
     //流控&路由
-    private volatile       FlowControlRef                                flowControlRef;     //默认流控规则引用
-    private volatile       RuleRef                                       ruleRef;
+    private volatile       FlowControlRef                      flowControlRef;     //默认流控规则引用
+    private volatile       RuleRef                             ruleRef;
     //原始数据
-    private final          String                                        serviceID;          //服务ID
-    private final          String                                        unitName;           //服务所属单元
-    private final          List<InterAddress>                            allAddressList;     //所有备选地址
-    private final          List<InterAddress>                            staticAddressList;  //不会失效的地址（即使是注册中心推送也不会失效）
-    private                Set<String>                                   protocols     = Set.of();
+    private final          String                              serviceID;          //服务ID
+    private final          String                              unitName;           //当前消费者所属单元
+    private final          List<AddressEntry>                  allAddressList;     //所有备选地址
+    private final          List<AddressEntry>                  staticAddressList;  //不会失效的地址（即使是注册中心推送也不会失效）
+    private                Set<String>                         protocols     = Set.of();
     //运行时动态更新的地址
-    private final          ConcurrentMap<InterAddress, InnerInvalidInfo> invalidAddresses;   //失效状态统计信息
+    private final          Map<InterAddress, InnerInvalidInfo> invalidAddresses;   //失效状态统计信息
     //下面时计算出来的数据
-    private                List<InterAddress>                            localUnitAddresses; //本单元地址
-    private                List<InterAddress>                            availableAddresses; //所有可用地址（包括本地单元）
+    private                List<InterAddress>                  localUnitAddresses; //本单元地址
+    private                List<InterAddress>                  availableAddresses; //所有可用地址（包括本地单元）
 
     public AddressBucket(String serviceID, String unitName) {
         this.flowControlRef = FlowControlRef.defaultRef();
         this.ruleRef = new RuleRef(null);
         this.serviceID = serviceID;
         this.unitName = unitName;
-        this.allAddressList = new CopyOnWriteArrayList<>();
-        this.staticAddressList = new CopyOnWriteArrayList<>();
+        this.allAddressList = new ArrayList<>();
+        this.staticAddressList = new ArrayList<>();
         this.invalidAddresses = new ConcurrentHashMap<>();
         this.localUnitAddresses = new ArrayList<>();
         this.availableAddresses = new ArrayList<>();
@@ -77,15 +75,8 @@ public class AddressBucket extends Observable {
     /** 合入已准备好的服务初始配置，保留提前发现的地址及未覆盖的规则。 */
     void initialize(AddressBucket prepared) {
         synchronized (this) {
-            for (InterAddress address : prepared.staticAddressList) {
-                if (!this.allAddressList.contains(address)) {
-                    this.allAddressList.add(address);
-                }
-                if (!this.staticAddressList.contains(address)) {
-                    this.staticAddressList.add(address);
-                }
-                this.invalidAddresses.remove(address);
-            }
+            this.appendEntries(prepared.staticAddressList);
+            prepared.staticAddressList.forEach(entry -> this.invalidAddresses.remove(entry.address()));
             if (prepared.flowControlRef.flowControlScript != null) {
                 this.flowControlRef = prepared.flowControlRef;
             }
@@ -136,12 +127,12 @@ public class AddressBucket extends Observable {
 
     /** 获取所有地址（包括本地的和无效的） */
     public synchronized List<InterAddress> getAllAddresses() {
-        return new ArrayList<>(this.allAddressList);
+        return addresses(this.allAddressList);
     }
 
     /** 获取静态地址 */
     public synchronized List<InterAddress> getStaticAddresses() {
-        return new ArrayList<>(this.staticAddressList);
+        return addresses(this.staticAddressList);
     }
 
     /** 获取计算之后可用的地址 */
@@ -161,24 +152,102 @@ public class AddressBucket extends Observable {
 
     /** 新增地址支持动态新增 */
     public void newAddress(Collection<InterAddress> newHostSet, AddressTypeEnum type) {
+        this.newAddress(Map.of("", newHostSet), type);
+    }
+
+    public void newAddress(Map<String, ? extends Collection<InterAddress>> groups, AddressTypeEnum type) {
+        List<AddressEntry> prepared = this.prepareEntries(groups, type);
         synchronized (this) {
-            Objects.requireNonNull(newHostSet, "addresses");
-            Objects.requireNonNull(type, "address type");
-            for (InterAddress address : newHostSet) {
-                if (address == null) {
-                    continue;
-                }
-                if (!this.allAddressList.contains(address)) {
-                    this.allAddressList.add(address);
-                }
-                if (type == AddressTypeEnum.Static && !this.staticAddressList.contains(address)) {
-                    this.staticAddressList.add(address);
-                }
-                this.invalidAddresses.remove(address);
-            }
-            refreshAvailableAddress();
+            this.appendEntries(prepared);
+            prepared.forEach(entry -> this.invalidAddresses.remove(entry.address()));
+            this.refreshAvailableAddress();
         }
-        notifyObservers(this);
+        this.notifyObservers(this);
+    }
+
+    public synchronized Map<String, List<InterAddress>> getAddressesByUnit(AddressTypeEnum type) {
+        Objects.requireNonNull(type, "address type");
+        return groupedAddresses(this.allAddressList.stream().filter(entry -> entry.type() == type).toList());
+    }
+
+    public synchronized Map<String, List<InterAddress>> getAddressesByUnit() {
+        return groupedAddresses(this.allAddressList);
+    }
+
+    private List<AddressEntry> prepareEntries(Map<String, ? extends Collection<InterAddress>> groups, AddressTypeEnum type) {
+        Objects.requireNonNull(type, "address type");
+        Objects.requireNonNull(groups, "unit groups");
+        Map<InterAddress, Set<String>> entries = new LinkedHashMap<>();
+        new TreeMap<>(groups).forEach((unit, addresses) -> {
+            String effectiveUnit = unit;
+            if (StringUtils.isBlank(effectiveUnit)) {
+                effectiveUnit = this.unitName;
+            }
+            for (InterAddress address : Objects.requireNonNull(addresses, "addresses")) {
+                if (address != null) {
+                    entries.computeIfAbsent(address, key -> new LinkedHashSet<>()).add(effectiveUnit);
+                }
+            }
+        });
+        List<AddressEntry> result = new ArrayList<>();
+        entries.forEach((address, units) -> result.add(new AddressEntry(address, units, type)));
+        return result;
+    }
+
+    /** 静态列表引用全量列表中的同一条目，动态刷新只替换动态来源的条目。 */
+    private void appendEntries(List<AddressEntry> entries) {
+        for (AddressEntry entry : entries) {
+            int previousIndex = -1;
+            for (int index = 0; index < this.allAddressList.size(); index++) {
+                AddressEntry previous = this.allAddressList.get(index);
+                if (previous.type() == entry.type() && previous.address().equals(entry.address())) {
+                    previousIndex = index;
+                    break;
+                }
+            }
+            if (previousIndex < 0) {
+                this.allAddressList.add(entry);
+                if (entry.type() == AddressTypeEnum.Static) {
+                    this.staticAddressList.add(entry);
+                }
+                continue;
+            }
+            AddressEntry previous = this.allAddressList.get(previousIndex);
+            Set<String> units = new LinkedHashSet<>(previous.units());
+            units.addAll(entry.units());
+            AddressEntry merged = new AddressEntry(entry.address(), units, entry.type());
+            this.allAddressList.set(previousIndex, merged);
+            if (entry.type() == AddressTypeEnum.Static) {
+                this.staticAddressList.set(this.staticAddressList.indexOf(previous), merged);
+            }
+        }
+    }
+
+    private static List<InterAddress> addresses(List<AddressEntry> entries) {
+        Set<InterAddress> addresses = new LinkedHashSet<>();
+        entries.forEach(entry -> addresses.add(entry.address()));
+        return new ArrayList<>(addresses);
+    }
+
+    private static Map<String, List<InterAddress>> groupedAddresses(List<AddressEntry> entries) {
+        Map<String, Set<InterAddress>> groups = new TreeMap<>();
+        for (AddressEntry entry : entries) {
+            for (String unit : entry.units()) {
+                groups.computeIfAbsent(unit, key -> new LinkedHashSet<>()).add(entry.address());
+            }
+        }
+        Map<String, List<InterAddress>> result = new LinkedHashMap<>();
+        groups.forEach((unit, values) -> result.put(unit, List.copyOf(values)));
+        return Collections.unmodifiableMap(result);
+    }
+
+    /** 单元和来源属于地址条目，不参与接入地址及连接缓存的身份判断。 */
+    private record AddressEntry(InterAddress address, Set<String> units, AddressTypeEnum type) {
+        private AddressEntry {
+            Objects.requireNonNull(address, "address");
+            units = Set.copyOf(units);
+            Objects.requireNonNull(type, "address type");
+        }
     }
 
     /**
@@ -188,7 +257,9 @@ public class AddressBucket extends Observable {
      */
     public void invalidAddress(InterAddress address, long timeoutMs) {
         synchronized (this) {
-            if (this.staticAddressList.contains(address) || !this.allAddressList.contains(address)) {
+            boolean fixed = this.staticAddressList.stream().anyMatch(entry -> entry.address().equals(address));
+            boolean known = this.allAddressList.stream().anyMatch(entry -> entry.address().equals(address));
+            if (fixed || !known) {
                 return;
             }
 
@@ -210,15 +281,15 @@ public class AddressBucket extends Observable {
      */
     public void removeAddress(InterAddress address) {
         synchronized (this) {
-            if (!this.allAddressList.contains(address)) {
+            if (this.allAddressList.stream().noneMatch(entry -> entry.address().equals(address))) {
                 addressLogger.warn("removeAddress(" + this.serviceID + ") -> targetAddress =" + address + " ,addr is not exist.");
                 return;
             } else {
                 addressLogger.info("removeAddress(" + this.serviceID + ") -> targetAddress =" + address);
             }
 
-            this.allAddressList.remove(address);
-            this.staticAddressList.remove(address);
+            this.allAddressList.removeIf(entry -> entry.address().equals(address));
+            this.staticAddressList.removeIf(entry -> entry.address().equals(address));
             this.invalidAddresses.remove(address);
             refreshAvailableAddress();
         }
@@ -235,28 +306,38 @@ public class AddressBucket extends Observable {
 
     /** Replace registry-provided addresses, preserving explicitly configured static addresses. */
     public void refreshAddressToNew(List<InterAddress> addressList) {
+        this.refreshAddressToNew(Map.of("", addressList));
+    }
+
+    public void refreshAddressToNew(Map<String, ? extends Collection<InterAddress>> groups) {
+        List<AddressEntry> prepared = this.prepareEntries(groups, AddressTypeEnum.Dynamic);
         synchronized (this) {
-            Objects.requireNonNull(addressList, "addresses");
-            LinkedHashSet<InterAddress> replacement = new LinkedHashSet<>(this.staticAddressList);
-            for (InterAddress address : addressList) {
-                if (address != null) {
-                    replacement.add(address);
+            this.allAddressList.removeIf(entry -> entry.type() == AddressTypeEnum.Dynamic);
+            this.appendEntries(prepared);
+            this.invalidAddresses.clear();
+            this.refreshAvailableAddress();
+        }
+        this.notifyObservers(this);
+    }
+
+    public synchronized Set<InterAddress> getUnitAddresses(String unitName) {
+        Set<InterAddress> local = new HashSet<>();
+        for (AddressEntry entry : this.allAddressList) {
+            for (String unit : entry.units()) {
+                if (StringUtils.equalsIgnoreCase(unitName, unit)) {
+                    local.add(entry.address());
+                    break;
                 }
             }
-
-            this.allAddressList.clear();
-            this.allAddressList.addAll(replacement);
-            this.invalidAddresses.clear();
-            refreshAvailableAddress();
         }
-        notifyObservers(this);
+        return local;
     }
 
     /** 刷新地址 */
     private void refreshAvailableAddress() {
         //1.计算出有效的地址。
         List<InterAddress> availableList = new ArrayList<>();
-        for (InterAddress addressInfo : this.allAddressList) {
+        for (InterAddress addressInfo : this.getAllAddresses()) {
             if (!this.protocols.isEmpty() && !this.protocols.contains(addressInfo.getSchema())) {
                 continue;
             }
@@ -283,7 +364,7 @@ public class AddressBucket extends Observable {
         List<InterAddress> unitList = availableList;
         if (this.flowControlRef != null && this.flowControlRef.unitFlowControl != null) {
             UnitFlowControl unitFlowControl = this.flowControlRef.unitFlowControl;
-            unitList = unitFlowControl.siftUnitAddress(this.unitName, availableList);
+            unitList = unitFlowControl.siftUnitAddress(this.getUnitAddresses(this.unitName), availableList);
             if (unitList == null || unitList.isEmpty()) {
                 unitList = availableList;
             }
@@ -368,10 +449,10 @@ public class AddressBucket extends Observable {
     }
 
     @Override
-    public String toString() {
+    public synchronized String toString() {
         return "AddressBucket - " + this.getServiceID() + //
                 " ,unit = " + this.unitName + //
-                " ,allAddress size = " + this.allAddressList.size();
+                " ,allAddress size = " + this.getAllAddresses().size();
     }
 
 }

@@ -63,7 +63,7 @@ final class DubboServiceUrls {
         parameters.put("methods", methodNames(service.getBindType()));
         boolean secure = StringUtils.equalsIgnoreCase(secureScheme, address.getSchema());
         parameters.put("ssl-enabled", Boolean.toString(secure));
-        parameters.put("meteor.unit", address.getFormUnit());
+        parameters.put("meteor.unit", context.getSettings().getUnitName());
         return new URL("dubbo", host, address.getPort(), serviceInterface(service), parameters);
     }
 
@@ -82,9 +82,9 @@ final class DubboServiceUrls {
         return subscription.addParameter("category", "consumers").addParameter("dynamic", true);
     }
 
-    static List<InterAddress> providers(MetContext context, MetBindInfo<?> service, //
+    static Map<String, List<InterAddress>> providers(MetContext context, MetBindInfo<?> service, //
             List<URL> urls, String secureScheme) {
-        Set<InterAddress> addresses = new LinkedHashSet<>();
+        Map<String, List<InterAddress>> addresses = new LinkedHashMap<>();
         Set<String> schemes = selectedSchemes(context, service);
         for (URL provider : urls) {
             if (!matches(service, provider)) {
@@ -96,10 +96,12 @@ final class DubboServiceUrls {
                 continue;
             }
             String unit = provider.getParameter("meteor.unit", context.getSettings().getUnitName());
-            InterAddress address = new InterAddress(scheme, provider.getHost(), provider.getPort(), unit);
-            addresses.add(address);
+            InterAddress address = new InterAddress(scheme, provider.getHost(), provider.getPort());
+            List<InterAddress> group = addresses.computeIfAbsent(unit, key -> new ArrayList<>());
+            if (!group.contains(address))
+                group.add(address);
         }
-        return new ArrayList<>(addresses);
+        return addresses;
     }
 
     private static boolean matches(MetBindInfo<?> service, URL provider) {

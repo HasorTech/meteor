@@ -870,7 +870,7 @@ public class SoapSessionTest {
 
         @Override
         public InterAddress getLocal() {
-            return new InterAddress("soap", "127.0.0.1", 2181, "default");
+            return new InterAddress("soap", "127.0.0.1", 2181);
         }
 
         @Override

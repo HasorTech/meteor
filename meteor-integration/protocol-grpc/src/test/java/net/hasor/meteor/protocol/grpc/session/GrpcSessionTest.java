@@ -301,7 +301,7 @@ public class GrpcSessionTest {
         private final CountDownLatch     queued = new CountDownLatch(1);
 
         public InterAddress getLocal() {
-            return new InterAddress("grpc", "127.0.0.1", 2181, "default");
+            return new InterAddress("grpc", "127.0.0.1", 2181);
         }
 
         public InterAddress getRemote() {

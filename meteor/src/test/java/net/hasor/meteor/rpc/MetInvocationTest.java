@@ -910,9 +910,9 @@ public class MetInvocationTest {
             this.channel = proxy(MetChannel.class, (p, method, args) -> {
                 switch (method.getName()) {
                     case "getLocal":
-                        return new InterAddress("rsf://localhost:2180/default");
+                        return new InterAddress("rsf://localhost:2180");
                     case "getRemote":
-                        return new InterAddress("rsf://localhost:2181/default");
+                        return new InterAddress("rsf://localhost:2181");
                     case "sendData":
                         this.responses.add((ResponsePayload) args[0]);
                         return new BasicFuture<>((MetChannel) p);

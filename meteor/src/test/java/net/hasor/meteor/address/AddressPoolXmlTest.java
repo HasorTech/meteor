@@ -41,7 +41,7 @@ class AddressPoolXmlTest {
             assertTrue(context.getUpdater().queryAllAddresses(service.getBindID()).isEmpty());
             context.start();
             assertTrue(context.isOnline());
-            assertEquals(List.of(new InterAddress("rsf://127.0.0.1:28001/example")), context.getUpdater().queryAllAddresses(service.getBindID()));
+            assertEquals(List.of(new InterAddress("rsf://127.0.0.1:28001")), context.getUpdater().queryAllAddresses(service.getBindID()));
         }
     }
 
@@ -70,8 +70,8 @@ class AddressPoolXmlTest {
             context.getUpdater().loadAddressBook(context.getClassLoader(), file);
             List<InterAddress> addresses = context.getUpdater().queryAllAddresses(service.getBindID());
             assertEquals(2, addresses.size());
-            assertTrue(addresses.contains(new InterAddress("rsf://127.0.0.1:28001/example")));
-            assertTrue(addresses.contains(new InterAddress("rsf://127.0.0.1:28002/example")));
+            assertTrue(addresses.contains(new InterAddress("rsf://127.0.0.1:28001")));
+            assertTrue(addresses.contains(new InterAddress("rsf://127.0.0.1:28002")));
         }
     }
 
@@ -85,8 +85,8 @@ class AddressPoolXmlTest {
             MetBindInfo<EchoService> second = context.publisher().rsfService(EchoService.class) // 第二版服务。
                     .group("billing").name("order-query").version("2.0").register();
             context.getUpdater().loadAddressBook(context.getClassLoader(), file);
-            assertEquals(List.of(new InterAddress("rsf://127.0.0.1:28001/example")), context.getUpdater().queryAllAddresses(first.getBindID()));
-            assertEquals(List.of(new InterAddress("rsf://127.0.0.1:28002/example")), context.getUpdater().queryAllAddresses(second.getBindID()));
+            assertEquals(List.of(new InterAddress("rsf://127.0.0.1:28001")), context.getUpdater().queryAllAddresses(first.getBindID()));
+            assertEquals(List.of(new InterAddress("rsf://127.0.0.1:28002")), context.getUpdater().queryAllAddresses(second.getBindID()));
         }
     }
 
@@ -113,7 +113,7 @@ class AddressPoolXmlTest {
                     .group("billing").name("order-query").version("1.0").register();
             context.getUpdater().loadAddressBook(context.getClassLoader(), file);
             context.getUpdater().refreshAddress(service.getBindID(), List.of());
-            assertEquals(List.of(new InterAddress("rsf://127.0.0.1:28001/example")), context.getUpdater().queryAllAddresses(service.getBindID()));
+            assertEquals(List.of(new InterAddress("rsf://127.0.0.1:28001")), context.getUpdater().queryAllAddresses(service.getBindID()));
         }
     }
 
@@ -209,7 +209,7 @@ class AddressPoolXmlTest {
             MetBindInfo<EchoService> service = context.publisher().rsfService(EchoService.class) // 已登记的业务服务。
                     .group("billing").name("order-query").version("1.0").register();
             context.getUpdater().loadAddressBook(context.getClassLoader(), file);
-            assertEquals(List.of(new InterAddress("rsf://127.0.0.1:28001/example")), context.getUpdater().queryAllAddresses(service.getBindID()));
+            assertEquals(List.of(new InterAddress("rsf://127.0.0.1:28001")), context.getUpdater().queryAllAddresses(service.getBindID()));
         }
     }
 
@@ -256,7 +256,7 @@ class AddressPoolXmlTest {
             MetBindInfo<EchoService> service = context.publisher().rsfService(EchoService.class) // SYSTEM 声明同样离线加载。
                     .group("billing").name("order-query").version("1.0").register();
             context.getUpdater().loadAddressBook(context.getClassLoader(), file);
-            assertEquals(List.of(new InterAddress("rsf://127.0.0.1:28001/example")), context.getUpdater().queryAllAddresses(service.getBindID()));
+            assertEquals(List.of(new InterAddress("rsf://127.0.0.1:28001")), context.getUpdater().queryAllAddresses(service.getBindID()));
         }
     }
 
@@ -332,8 +332,8 @@ class AddressPoolXmlTest {
         // XML 不携带协议范围；加载空列表不能重置连接器筛选或清除注册发现结果。
         AddressPool pool = new AddressPool();
         String id = "[billing]order-query-1.0";
-        InterAddress rsf = new InterAddress("rsf", "127.0.0.1", 28001, "local");
-        InterAddress jsonrpc = new InterAddress("jsonrpc", "127.0.0.2", 28002, "local");
+        InterAddress rsf = new InterAddress("127.0.0.1", 28001);
+        InterAddress jsonrpc = new InterAddress("jsonrpc", "127.0.0.2", 28002);
         pool.appendAddress(id, List.of(rsf, jsonrpc));
         pool.configProtocols(Set.of("rsf"));
         assertEquals(rsf, pool.nextAddress(id, "echo", new Object[0]));

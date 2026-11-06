@@ -26,6 +26,7 @@ import net.hasor.meteor.connector.transport.http.channel.HttpRequest;
 import net.hasor.meteor.connector.transport.http.channel.HttpResponse;
 import net.hasor.meteor.domain.ProtocolConfig;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.Parameter;
 import org.junit.jupiter.params.ParameterizedClass;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -33,8 +34,6 @@ import static net.hasor.meteor.connector.HttpTransportPlans.routes;
 import static net.hasor.meteor.connector.TransportTestConfigs.transport;
 import static net.hasor.meteor.connector.transport.TransportTestServices.newHttpConnector;
 import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 /** 同一组消息契约分别通过真实 HTTP/1 和 HTTP/2 连接验证。 */
 @ParameterizedClass(name = "HTTP/{0}", autoCloseArguments = false, quoteTextArguments = false)
@@ -548,7 +547,7 @@ public class HttpBodyTransportTest {
     private ConnectorConfig bodyModeConfig(boolean endpointStreaming, boolean protocolStreaming) {
         Map<String, String> options = Map.of(//
                 "httpVersion", String.valueOf(this.version), "streamBody", String.valueOf(endpointStreaming));
-        InterAddress address = InterAddress.forBinding("http", "127.0.0.1", 0, "default");
+        InterAddress address = InterAddress.forBinding("http", "127.0.0.1", 0);
         Map<String, String> otherOptions = Map.of(//
                 "contextPath", "/other", "streamBody", String.valueOf(!protocolStreaming));
         Map<String, String> selectedOptions = Map.of(//
@@ -565,7 +564,7 @@ public class HttpBodyTransportTest {
         Map<String, String> values = new HashMap<>();
         values.put("httpVersion", String.valueOf(this.version));
         values.put("streamBody", String.valueOf(streaming));
-        InterAddress address = InterAddress.forBinding("http", "127.0.0.1", 0, "default");
+        InterAddress address = InterAddress.forBinding("http", "127.0.0.1", 0);
         ProtocolConfig protocol = ProtocolConfig.newConfig("http", "http", Map.of("contextPath", "/"));
         return new ConnectorConfig("http", address, values, List.of(protocol), true);
     }

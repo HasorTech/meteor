@@ -44,7 +44,7 @@ public class ContextSettingsSnapshotTest {
             assertEquals("rsf", settings.getDefaultProtocol());
             assertEquals(Set.of("rsf"), settings.getProtocols());
             ConnectorConfig endpoint = settings.getConnectorConfigs().iterator().next();
-            assertEquals("tcp://127.0.0.1:2181/default", endpoint.address().toHostSchema());
+            assertEquals("tcp://127.0.0.1:2181", endpoint.address().toHostSchema());
             assertTrue(endpoint.bindEnabled());
             assertEquals("2", endpoint.options().get("workerThread"));
             assertEquals("2", endpoint.options().get("taskThread"));

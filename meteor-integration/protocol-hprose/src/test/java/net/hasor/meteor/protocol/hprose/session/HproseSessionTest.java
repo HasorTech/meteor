@@ -710,7 +710,7 @@ public class HproseSessionTest {
         };
 
         // 将协议与内存网络组装成已连接会话，收到的消息交由测试观察。
-        InterAddress address = new InterAddress("hprose", "127.0.0.1", 8080, "default");
+        InterAddress address = new InterAddress("hprose", "127.0.0.1", 8080);
         ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
         ProtocolSessionContext context = ProtocolSessionContextTestAccess.newContext( //
                 runtime, scheduler, address, outbound, config);
@@ -756,7 +756,7 @@ public class HproseSessionTest {
         private       int                drainCalls;
 
         public InterAddress getLocal() {
-            return new InterAddress("hprose", "127.0.0.1", 2181, "default");
+            return new InterAddress("hprose", "127.0.0.1", 2181);
         }
 
         public InterAddress getRemote() {

@@ -100,7 +100,7 @@ public final class RpcbindClient {
     public boolean setMapping(RpcbindMapping mapping) throws Exception {
         this.requireLocalTarget();
         requireNetid(mapping.getNetid());
-        InterAddress address = toAddress("oncrpc", mapping.getAddress(), "rpcbind");
+        InterAddress address = toAddress("oncrpc", mapping.getAddress());
         if (address == null || !localAddress(address.getHost())) {
             throw new IllegalArgumentException("rpcbind SET requires a local universal address");
         }
@@ -117,7 +117,7 @@ public final class RpcbindClient {
     }
 
     /** Convert an IP universal address, including IPv6; its final two decimal components encode the port. */
-    public static InterAddress toAddress(String scheme, String universalAddress, String unit) {
+    public static InterAddress toAddress(String scheme, String universalAddress) {
         if (universalAddress == null || universalAddress.isEmpty()) {
             return null;
         }
@@ -133,7 +133,7 @@ public final class RpcbindClient {
             return null;
         }
         String host = universalAddress.substring(0, highSeparator);
-        return new InterAddress(scheme, host, port, unit);
+        return new InterAddress(scheme, host, port);
     }
 
     private static <T> MetBindInfo<T> service(MetContext context, Class<T> type) {

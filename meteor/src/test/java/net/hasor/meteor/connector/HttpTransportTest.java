@@ -33,9 +33,8 @@ import net.hasor.meteor.domain.payload.ResponsePayload;
 import net.hasor.meteor.domain.payload.ThrowPayload;
 import net.hasor.meteor.serialize.coder.JavaSerializeCoder;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 直接验证连接器、队列和生命周期契约；真实网络的用户调用另见场景测试。 */
 public class HttpTransportTest {
@@ -52,7 +51,7 @@ public class HttpTransportTest {
         options.put("workerThread", "1");
         options.put("protocol", protocol.getSimpleName().toLowerCase(Locale.ROOT));
         String protocolName = options.getOrDefault("protocol", schema);
-        InterAddress localAddress = InterAddress.forBinding("http", "127.0.0.1", port, "default");
+        InterAddress localAddress = InterAddress.forBinding("http", "127.0.0.1", port);
         ProtocolConfig mount = ProtocolConfig.newConfig(protocolName, protocolName, options);
         return new ConnectorConfig(schema, localAddress, options, Collections.singletonList(mount), true);
     }
@@ -520,7 +519,7 @@ public class HttpTransportTest {
         // 客户端连接对象延迟建立物理连接，发送时才报告对端不可达。
         ConnectorConfig clientConfig = config("http", 0);
         try (Endpoint client = new Endpoint(clientConfig, new Inbox())) {
-            InterAddress missingAddress = new InterAddress("textprotocol", "127.0.0.1", port(), "default");
+            InterAddress missingAddress = new InterAddress("textprotocol", "127.0.0.1", port());
             MetChannel missing = connect(client, missingAddress).get(2, TimeUnit.SECONDS);
 
             ExecutionException failure = assertThrows(ExecutionException.class, () -> {

@@ -18,13 +18,13 @@ final class EndpointFixture {
     }
 
     static InterAddress address(String scheme) {
-        return new InterAddress(scheme, "127.0.0.1", 1234, "test");
+        return new InterAddress(scheme, "127.0.0.1", 1234);
     }
 
     static ConnectorConfig rsfEndpoint(String name, boolean bindEnabled) {
         Map<String, String> options = Map.of("workerThread", "1");
         ProtocolConfig protocol = ProtocolConfig.newConfig("rsf", "rsf", Map.of());
-        InterAddress address = InterAddress.forBinding("tcp", "127.0.0.1", 0, "test");
+        InterAddress address = InterAddress.forBinding("tcp", "127.0.0.1", 0);
         return new ConnectorConfig(name, address, options, List.of(protocol), bindEnabled);
     }
 

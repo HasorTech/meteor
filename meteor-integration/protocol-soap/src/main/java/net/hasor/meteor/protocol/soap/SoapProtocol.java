@@ -161,7 +161,25 @@ public final class SoapProtocol implements HttpProtocolProvider {
         // 定义与描述复用同一份准备结果，绑定只在全部映射成功后创建。
         ObjectNode description = meta.createServiceDescription(config, this.defaultSerialize());
         prepared.describeContract(description);
-        return meta.build(config, prepared, description);
+        ProtocolBinding binding = meta.build(config, prepared, description);
+        if (binding.getContextPath() == null) {
+            return binding;
+        }
+
+        // 契约入口属于具体服务，精确路径不能再次追加服务名。
+        ObjectNode httpEndpoints = description.putObject("httpEndpoints");
+        for (String path : binding.getContextPath().getPaths()) {
+            String endpoint = path;
+            if (!binding.getContextPath().isExact()) {
+                endpoint = (path.endsWith("/") ? path : path + "/") + prepared.serviceName();
+            }
+            String publicBase = config.option("publicBaseUrl", null);
+            if (StringUtils.isNotBlank(publicBase)) {
+                endpoint = (publicBase.endsWith("/") ? publicBase.substring(0, publicBase.length() - 1) : publicBase) + endpoint;
+            }
+            httpEndpoints.putObject(path).putArray(endpoint).add(endpoint + "?wsdl");
+        }
+        return binding;
     }
 
     private boolean supports(MetBindInfo<?> service) {

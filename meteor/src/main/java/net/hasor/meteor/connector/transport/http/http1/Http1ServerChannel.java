@@ -52,7 +52,7 @@ class Http1ServerChannel extends HttpChannel {
         InetSocketAddress remote = (InetSocketAddress) channel.getRemoteAddr();
         String scheme = this.config.address().getSchema();
         String host = remote.getAddress().getHostAddress();
-        this.remote = new InterAddress(scheme, host, remote.getPort(), "unknown");
+        this.remote = new InterAddress(scheme, host, remote.getPort());
     }
 
     void activated(ChannelListenerFactory<HttpExchange> factory) {

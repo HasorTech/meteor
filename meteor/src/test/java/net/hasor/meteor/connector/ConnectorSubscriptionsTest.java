@@ -23,8 +23,8 @@ import net.hasor.meteor.domain.payload.Payload;
 import net.hasor.meteor.domain.payload.RequestPayload;
 import net.hasor.meteor.domain.payload.ResponsePayload;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 通过公开管理器、传输 SPI 和协议 SPI 验证消息订阅边界。 */
 public class ConnectorSubscriptionsTest {
@@ -152,7 +152,7 @@ public class ConnectorSubscriptionsTest {
         Map<String, String> options = new HashMap<>();
         options.put("workerThread", "1");
         ProtocolConfig protocol = ProtocolConfig.newConfig("wirea", "a", Collections.emptyMap());
-        InterAddress address = InterAddress.forBinding("tcp", "127.0.0.1", 0, "test");
+        InterAddress address = InterAddress.forBinding("tcp", "127.0.0.1", 0);
         return new ConnectorConfig("subscriptions", address, options, List.of(protocol), true);
     }
 

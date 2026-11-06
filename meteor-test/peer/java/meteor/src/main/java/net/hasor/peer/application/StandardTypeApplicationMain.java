@@ -74,7 +74,7 @@ public final class StandardTypeApplicationMain {
                 String path = "/standard";
                 if (StringUtils.equals("rsf", protocol)) {
                     scheme = protocol;
-                    path = "/" + address.getFormUnit();
+                    path = "/" + address.getPath();
                 } else if (StringUtils.equals("hessian", protocol)) {
                     String service = "complexValues";
                     if (StringUtils.equals("scalar-v1", api)) {
@@ -140,8 +140,7 @@ public final class StandardTypeApplicationMain {
         return configuration;
     }
 
-    private static <T> ConfigurationBuilder<T> configure(ConfigurationBuilder<T> declaration, String protocol,
-            String service, boolean provider) {
+    private static <T> ConfigurationBuilder<T> configure(ConfigurationBuilder<T> declaration, String protocol, String service, boolean provider) {
         declaration.name("meteor.standard." + service).version("1").protocol(protocol).timeout(5000);
         if (StringUtils.equals("hessian", protocol)) {
             declaration.serialize("Hessian");

@@ -45,8 +45,8 @@ public class EndpointFilterTest {
             // 同一个成员发布 TCP、HTTP 两个挂载。
             ServiceEndpointData tcp = endpoint("tcp-0", "tcp", "rsf", null);
             ServiceEndpointData http = endpoint("http-1", "http", "hprose", "/api");
-            http.setListenAddress("hprose://0.0.0.0:8080/default");
-            http.setPublishedAddress("hprose://example.com:8080/default");
+            http.setListenAddress("hprose://0.0.0.0:8080");
+            http.setPublishedAddress("hprose://example.com:8080");
             store(backend, MetServiceType.Provider, new ServiceEndpointData[] { tcp, http });
             MetServiceAdmin api = admin.getServiceAdmin("echo");
 

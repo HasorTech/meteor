@@ -54,7 +54,7 @@ public abstract class SocketConnector<M> implements NetworkConnector<M> {
 
                 InetSocketAddress remote = (InetSocketAddress) stack.getChannel().getRemoteAddr();
                 String host = remote.getAddress().getHostAddress();
-                InterAddress target = new InterAddress(address.getSchema(), host, remote.getPort(), "unknown");
+                InterAddress target = new InterAddress(address.getSchema(), host, remote.getPort());
                 ChannelListenerFactory<M> tracked = channel -> {
                     try {
                         ChannelListener<M> receiver = factory.createListener(channel);

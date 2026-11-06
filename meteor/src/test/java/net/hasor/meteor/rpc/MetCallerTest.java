@@ -24,7 +24,10 @@ import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.address.dsl.RouteContext;
 import net.hasor.meteor.address.provider.AddressProvider;
 import net.hasor.meteor.address.provider.InstanceAddressProvider;
-import net.hasor.meteor.connector.*;
+import net.hasor.meteor.connector.ConnectorConfig;
+import net.hasor.meteor.connector.ConnectorManager;
+import net.hasor.meteor.connector.ConnectorSubscriber;
+import net.hasor.meteor.connector.MetChannel;
 import net.hasor.meteor.domain.*;
 import net.hasor.meteor.domain.payload.Payload;
 import net.hasor.meteor.domain.payload.RequestPayload;
@@ -1089,7 +1092,7 @@ public class MetCallerTest {
             server.bind();
 
             // 首次连接失败后，唯一的请求槽位应立即释放。
-            InterAddress missing = new InterAddress("memory", "missing", 1, "default");
+            InterAddress missing = new InterAddress("memory", "missing", 1);
             MetFuture missingCall = client.invoke(missing);
             assertTrue(failure(missingCall) instanceof IOException);
             assertEquals(1, client.cancelledTimers.get());
@@ -1123,7 +1126,7 @@ public class MetCallerTest {
     public void unknownSchemeFailsThroughRpcFuture() throws Exception {
         // 未注册的地址协议通过调用 Future 暴露失败。
         try (Host client = new Host(10000, "normal")) {
-            InterAddress unknown = new InterAddress("unknown", "localhost", 1, "default");
+            InterAddress unknown = new InterAddress("unknown", "localhost", 1);
             Throwable failure = failure(client.invoke(unknown));
 
             // 协议选择在登记请求前失败，不创建连接器和超时任务。
@@ -1679,7 +1682,7 @@ public class MetCallerTest {
         private Host(int timeout, String mode) {
             // 配置独立地址、服务元信息和内存连接器故障模式。
             int port = IDS.incrementAndGet();
-            this.address = new InterAddress("memory", "localhost", port, "default");
+            this.address = new InterAddress("memory", "localhost", port);
             this.service = new ServiceDomain<>(Echo.class);
             this.service.setBindName("Echo");
             this.service.setServiceType(MetServiceType.Provider);
@@ -1854,7 +1857,7 @@ public class MetCallerTest {
                 if (protocolMatched && schemeMatched) {
                     InterAddress configured = this.config.address();
                     return new InterAddress(//
-                            protocol.scheme(), configured.getHost(), configured.getPort(), configured.getFormUnit());
+                            protocol.scheme(), configured.getHost(), configured.getPort(), configured.getPath());
                 }
             }
             return null;

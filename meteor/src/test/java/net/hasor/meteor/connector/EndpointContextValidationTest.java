@@ -1387,7 +1387,7 @@ public class EndpointContextValidationTest {
     }
 
     private ConnectorConfig endpoint(String name, ProtocolConfig... protocols) {
-        InterAddress address = InterAddress.forBinding("http", "127.0.0.1", 0, "test");
+        InterAddress address = InterAddress.forBinding("http", "127.0.0.1", 0);
         return new ConnectorConfig(name, address, Map.of(), List.of(protocols), false);
     }
 

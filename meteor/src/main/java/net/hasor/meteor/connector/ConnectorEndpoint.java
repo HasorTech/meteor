@@ -10,6 +10,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.ObjLongConsumer;
+import net.hasor.cobble.StringUtils;
 import net.hasor.cobble.concurrent.future.BasicFuture;
 import net.hasor.cobble.concurrent.future.Future;
 import net.hasor.cobble.concurrent.future.FutureListener;
@@ -26,18 +27,19 @@ import net.hasor.meteor.domain.payload.Payload;
 
 /** Owns one configured endpoint, its listeners, transport connections and protocol channels. */
 final class ConnectorEndpoint<M> {
-    private static final Logger                          logger         = Logger.getLogger(ConnectorEndpoint.class);
-    private final        PlanEndpoint<M>                 plan;
-    private final        RouteTable<M>                   routes;
-    private final        ConnectorManager                manager;
-    private final        Map<Long, ConnectorChannel<?>>  channels       = new LinkedHashMap<>();
-    private final        Map<NetworkChannel<M>, Boolean> connections    = new ConcurrentHashMap<>();
-    private final        Set<NetworkChannel<M>>          closingInbound = ConcurrentHashMap.newKeySet();
-    private              BasicFuture<NetworkListen>      binding;
-    private              NetworkListen                   listen;
-    private              NetworkConnector<M>             networkConnector;
-    private volatile     State                           state          = State.NEW;
-    private              boolean                         bindDisabled;
+    private static final Logger                                logger         = Logger.getLogger(ConnectorEndpoint.class);
+    private final        PlanEndpoint<M>                       plan;
+    private final        RouteTable<M>                         routes;
+    private final        ConnectorManager                      manager;
+    private final        Map<Long, ConnectorChannel<?>>        channels       = new LinkedHashMap<>();
+    private final        Map<InterAddress, OutboundConnection> outgoing       = new HashMap<>();
+    private final        Map<NetworkChannel<M>, Boolean>       connections    = new ConcurrentHashMap<>();
+    private final        Set<NetworkChannel<M>>                closingInbound = ConcurrentHashMap.newKeySet();
+    private              BasicFuture<NetworkListen>            binding;
+    private              NetworkListen                         listen;
+    private              NetworkConnector<M>                   networkConnector;
+    private volatile     State                                 state          = State.NEW;
+    private              boolean                               bindDisabled;
 
     private enum State {
         NEW,
@@ -220,21 +222,100 @@ final class ConnectorEndpoint<M> {
     }
 
     Future<MetChannel> connect(String protocolName, InterAddress target) {
-        if (!this.acceptsWrites()) {
-            return failed(new IllegalStateException("Connector endpoint is not ready for connections"));
+        BasicFuture<MetChannel> result = new BasicFuture<>();
+        OutboundConnection shared;
+        boolean opening = false;
+        boolean established;
+        synchronized (this) {
+            if (!this.acceptsWrites()) {
+                return failed(new IllegalStateException("Connector endpoint is not ready for connections"));
+            }
+            shared = this.outgoing.get(target);
+            if (shared != null && !StringUtils.equals(shared.protocol, protocolName)) {
+                return failed(new IllegalArgumentException("One address cannot select multiple protocols: " + target));
+            }
+
+            if (shared == null || !shared.channel.isReusable()) {
+                shared = new OutboundConnection(protocolName, target, this.createChannel());
+                this.outgoing.put(target, shared);
+                opening = true;
+            }
+            established = shared.established;
+            if (!established) {
+                shared.waiters.add(result);
+            }
         }
 
-        // 协议名和地址前缀已经由 Manager 的公开连接入口统一校验。
-        try {
-            return this.openSession(protocolName, target);
-        } catch (Exception | Error failure) {
-            return failed(failure);
+        OutboundConnection connection = shared;
+        result.onCancel(done -> {
+            this.cancelConnection(connection, result);
+        });
+
+        if (opening) {
+            connection.channel.ready().onFinal(done -> {
+                this.completeConnection(connection, done);
+            });
+            this.openSession(connection.channel, protocolName, target);
+        } else if (established) {
+            result.completed(connection.channel);
+        }
+        return result;
+    }
+
+    private void completeConnection(OutboundConnection connection, Future<MetChannel> ready) {
+        List<BasicFuture<MetChannel>> waiters;
+        synchronized (this) {
+            connection.established = !ready.isCancelled() && ready.getCause() == null;
+            if (!connection.established) {
+                this.removeOutgoing(connection);
+            }
+            waiters = new ArrayList<>(connection.waiters);
+            connection.waiters.clear();
+        }
+        for (BasicFuture<MetChannel> waiter : waiters) {
+            if (ready.isCancelled()) {
+                waiter.cancel();
+            } else if (ready.getCause() != null) {
+                waiter.failed(ready.getCause());
+            } else {
+                waiter.completed(ready.getResult());
+            }
         }
     }
 
-    private Future<MetChannel> openSession(String protocolName, InterAddress address) {
-        // 先创建逻辑通道，让同一个 ready 覆盖底层连接和协议握手。
-        ConnectorChannel<M> channel = this.createChannel();
+    private void cancelConnection(OutboundConnection connection, BasicFuture<MetChannel> waiter) {
+        boolean cancel;
+        synchronized (this) {
+            cancel = connection.waiters.remove(waiter) && connection.waiters.isEmpty() && !connection.channel.ready().isDone();
+            if (cancel) {
+                this.removeOutgoing(connection);
+            }
+        }
+        // 每个调用方只取消自己的等待；所有等待者均退出时才终止尚未完成的连接。
+        if (cancel) {
+            connection.channel.ready().cancel();
+        }
+    }
+
+    private void removeOutgoing(OutboundConnection connection) {
+        this.outgoing.remove(connection.target, connection);
+    }
+
+    private final class OutboundConnection {
+        private final String                       protocol;
+        private final InterAddress                 target;
+        private final ConnectorChannel<M>          channel;
+        private final Set<BasicFuture<MetChannel>> waiters = new HashSet<>();
+        private       boolean                      established;
+
+        private OutboundConnection(String protocol, InterAddress target, ConnectorChannel<M> channel) {
+            this.protocol = protocol;
+            this.target = target;
+            this.channel = channel;
+        }
+    }
+
+    private void openSession(ConnectorChannel<M> channel, String protocolName, InterAddress address) {
         try {
             ChannelListenerFactory<M> factory = networkChannel -> {
                 this.attachChannel(channel, protocolName, networkChannel, true);
@@ -254,7 +335,6 @@ final class ConnectorEndpoint<M> {
         } catch (RuntimeException | Error failure) {
             channel.fail(failure);
         }
-        return channel.ready();
     }
 
     ConnectorChannel<M> createChannel() {
@@ -280,18 +360,27 @@ final class ConnectorEndpoint<M> {
     ProtocolSession<M> createSession(ProtocolNetworkChannel<M> connection, ObjLongConsumer<Payload> messages) {
         ProtocolMountBinding<M> binding = this.plan.protocolBindings().get(connection.getProtocol());
         ProtocolConfig protocolConfig = binding.config();
+        RouteMountIndex routes = binding.routes();
+        String remotePath = connection.getRemote().getPath();
+        if (connection.isOutbound() && !remotePath.isEmpty() && StringUtils.equals(this.config().transportType(), "http")) {
+            Map<String, String> options = new HashMap<>(protocolConfig.options());
+            options.put("contextPath", remotePath);
+            options.remove("contextPaths");
+            protocolConfig = ProtocolConfig.newConfig(protocolConfig.name(), protocolConfig.scheme(), options);
+            routes = new RouteMountIndex(this.config().name(), protocolConfig);
+        }
 
         // 监听地址以当前协议的公开前缀传给会话，未开启监听时保持为空。
         InterAddress local = this.getBindAddress();
         InterAddress advertised = null;
         if (local != null) {
             String scheme = protocolConfig.scheme();
-            advertised = new InterAddress(scheme, local.getHost(), local.getPort(), local.getFormUnit());
+            advertised = new InterAddress(scheme, local.getHost(), local.getPort(), local.getPath());
         }
 
         // 会话使用端点已经确定的配置、路由与管理器公共资源。
         ProtocolSessionContext context = new ProtocolSessionContext(//
-                this.manager.context(), this.manager::schedule, advertised, connection.isOutbound(), binding.routes());
+                this.manager.context(), this.manager::schedule, advertised, connection.isOutbound(), routes);
         return binding.provider().createSession(protocolConfig, context, connection, messages);
     }
 
@@ -328,6 +417,7 @@ final class ConnectorEndpoint<M> {
 
     synchronized void unregisterChannel(ConnectorChannel<?> channel) {
         this.channels.remove(channel.channelId(), channel);
+        this.outgoing.values().removeIf(connection -> connection.channel == channel);
     }
 
     void publishMessage(MetChannel channel, long requestId, Payload payload) {

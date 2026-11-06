@@ -18,11 +18,10 @@ import net.hasor.meteor.domain.payload.Payload;
 import net.hasor.meteor.domain.payload.RequestPayload;
 import net.hasor.meteor.domain.payload.ResponsePayload;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static net.hasor.example.connector.protocol.UdpTestProtocol.request;
 import static net.hasor.example.connector.protocol.UdpTestProtocol.response;
 import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 /** Verifies that secure UDP endpoint options reach Neta as a DTLS pipeline. */
 public class UdpDtlsTransportTest {
@@ -165,7 +164,7 @@ public class UdpDtlsTransportTest {
 
                 // 业务写入在握手后完成，证明重传恢复的是完整 DTLS 会话。
                 InterAddress relayAddress = new InterAddress(serverAddress.getSchema(), "127.0.0.1", relay.port(), //
-                        serverAddress.getFormUnit());
+                        serverAddress.getPath());
                 MetChannel outgoing = client.connect(relayAddress).get(3, TimeUnit.SECONDS);
                 outgoing.sendData(request(21, "retransmitted-request")).get(5, TimeUnit.SECONDS);
                 Delivery accepted = serverInbox.take();
@@ -194,7 +193,7 @@ public class UdpDtlsTransportTest {
         try (SilentUdpPeer peer = SilentUdpPeer.start(); //
              ConnectorManager client = SocketTestSupport.manager(clientConfig)) {
             client.init();
-            InterAddress target = new InterAddress("testprotocol", "127.0.0.1", peer.port(), "default");
+            InterAddress target = new InterAddress("testprotocol", "127.0.0.1", peer.port());
             MetChannel outgoing = client.connect(target).get(3, TimeUnit.SECONDS);
 
             // 握手期间提交的业务报文必须在总超时到达时失败，而不能永久留在写队列。
@@ -298,7 +297,7 @@ public class UdpDtlsTransportTest {
     }
 
     private ConnectorConfig endpoint(int port, boolean bindEnabled, Map<String, String> options) {
-        InterAddress address = InterAddress.forBinding("udp", "127.0.0.1", port, "default");
+        InterAddress address = InterAddress.forBinding("udp", "127.0.0.1", port);
         ProtocolConfig protocol = ProtocolConfig.newConfig("testprotocol", null, Map.of());
         return new ConnectorConfig("udp-0", address, options, List.of(protocol), bindEnabled);
     }

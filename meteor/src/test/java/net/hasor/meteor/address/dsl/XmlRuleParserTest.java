@@ -17,8 +17,8 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class XmlRuleParserTest {
-    private final        InterAddress east       = new InterAddress("rsf", "127.0.0.1", 2181, "east");
-    private final        InterAddress west       = new InterAddress("rsf", "127.0.0.1", 2182, "west");
+    private final        InterAddress east       = new InterAddress("127.0.0.1", 2181);
+    private final        InterAddress west       = new InterAddress("127.0.0.1", 2182);
     private static final String       UNIT_ROUTE = """
             <route>
                 <bind name="unit" value="utils.defaultIfBlank(service.meta['unit'], env.unitName)"/>
@@ -26,7 +26,7 @@ public class XmlRuleParserTest {
                     <bind name="unit" value="utils.defaultIfBlank(args[0].unit, unit)"/>
                 </if>
                 <filter name="targets" from="addresses" item="address"
-                        test="utils.equals(address.formUnit, unit)"/>
+                        test="env.units[unit] != null &amp;&amp; env.units[unit].contains(address)"/>
                 <if test="!targets.isEmpty()"><return value="targets"/></if>
                 <return value="addresses"/>
             </route>
@@ -38,6 +38,7 @@ public class XmlRuleParserTest {
         RouteRule rule = new XmlRuleParser().parse(UNIT_ROUTE);
         RouteContext input = new RouteContext("service", "query", new Object[] { new Query("west") });
         input.getEnv().put("unitName", "east");
+        input.getEnv().put("units", Map.of("east", List.of(this.east), "west", List.of(this.west)));
         input.getService().put("meta", Map.of("unit", "east"));
         List<InterAddress> addresses = List.of(this.east, this.west);
 
@@ -52,6 +53,7 @@ public class XmlRuleParserTest {
         RouteRule rule = new XmlRuleParser().parse(UNIT_ROUTE);
         RouteContext input = new RouteContext("service", "query", new Object[] { new Query("west") });
         input.getEnv().put("unitName", "east");
+        input.getEnv().put("units", Map.of("east", List.of(this.east), "west", List.of(this.west)));
         input.getService().put("meta", Map.of("unit", "east"));
         List<InterAddress> addresses = List.of(this.east, this.west);
         assertEquals(List.of(this.west), rule.evaluate(input, addresses));
@@ -67,6 +69,7 @@ public class XmlRuleParserTest {
         RouteRule rule = new XmlRuleParser().parse(UNIT_ROUTE);
         RouteContext input = new RouteContext("service", "other", new Object[] { new Query("west") });
         input.getEnv().put("unitName", "east");
+        input.getEnv().put("units", Map.of("east", List.of(this.east), "west", List.of(this.west)));
         input.getService().put("meta", Map.of("unit", "east"));
         List<InterAddress> addresses = List.of(this.east, this.west);
         assertEquals(List.of(this.east), rule.evaluate(input, addresses));

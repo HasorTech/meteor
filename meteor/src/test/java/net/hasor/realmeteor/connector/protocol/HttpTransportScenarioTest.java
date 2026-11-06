@@ -76,7 +76,7 @@ public class HttpTransportScenarioTest {
             MetBindInfo<HttpEchoService> service = client.publisher().rsfService(HttpEchoService.class) //
                     .group("http").name("http.echo").version("1").serialize("Java").register();
             client.start();
-            InterAddress target = new InterAddress("textprotocol", "127.0.0.1", listener.getLocalPort(), "default");
+            InterAddress target = new InterAddress("textprotocol", "127.0.0.1", listener.getLocalPort());
 
             // 异步业务调用经真实网络发出，外部服务器确认方法和正文。
             MetClient remote = client.getRsfClient(target);

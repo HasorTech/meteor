@@ -33,16 +33,39 @@ import net.hasor.meteor.connector.transport.http.channel.HttpRequest;
 import net.hasor.meteor.connector.transport.http.channel.HttpResponse;
 import net.hasor.meteor.domain.ProtocolConfig;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static java.net.http.HttpRequest.newBuilder;
 import static net.hasor.meteor.connector.HttpTransportPlans.routes;
 import static net.hasor.meteor.connector.TransportTestConfigs.transport;
 import static net.hasor.meteor.connector.transport.TransportTestServices.newHttpConnector;
 import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 /** 在真实明文连接上验证 HTTP/2 传输 SPI。 */
 public class Http2TransportTest {
+    @Test
+    @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
+    public void selectedProtocolCanEnableHttp2WithoutChangingConnectorDefaults() throws Exception {
+        InterAddress address = InterAddress.forBinding("http", "127.0.0.1", 0);
+        ProtocolConfig protocol = ProtocolConfig.newConfig("http", "http", Map.of("contextPath", "/", "httpVersion", "2"));
+        ConnectorConfig config = new ConnectorConfig("http", address, Map.of(), List.of(protocol), true);
+        BasicFuture<NetworkChannel<HttpExchange>> accepted = new BasicFuture<>();
+        LinkedBlockingQueue<HttpExchange> received = new LinkedBlockingQueue<>();
+        ClassLoader loader = getClass().getClassLoader();
+        try (NetworkConnector<HttpExchange> server = newHttpConnector(transport(config), loader); NetworkConnector<HttpExchange> client = newHttpConnector(transport(config), loader); NetworkListen listen = server.bind(address, routes(config), receiver(accepted, received))) {
+            BasicFuture<NetworkChannel<HttpExchange>> connected = new BasicFuture<>();
+            client.connect("http", listen.getAddress(), routes(config), receiver(connected, new LinkedBlockingQueue<>())).get(3, TimeUnit.SECONDS);
+            HttpRequest request = HttpRequest.newBuffered("GET", "/selected", Map.of(), new byte[0], 2, Map.of());
+            connected.get(3, TimeUnit.SECONDS).write(new HttpExchange(request)).get(3, TimeUnit.SECONDS);
+            HttpExchange incoming = received.poll(3, TimeUnit.SECONDS);
+            assertNotNull(incoming);
+            assertEquals("/selected", incoming.request().uri());
+            assertEquals(2, incoming.request().version());
+            if (incoming.request().stream() != null) {
+                incoming.request().stream().close();
+            }
+        }
+    }
+
     @Test
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void acceptedSocketPublishesOnlySelectedHttp2Branch() throws Exception {
@@ -464,7 +487,7 @@ public class Http2TransportTest {
     }
 
     private static ConnectorConfig routingConfig() {
-        InterAddress address = InterAddress.forBinding("http", "127.0.0.1", 0, "default");
+        InterAddress address = InterAddress.forBinding("http", "127.0.0.1", 0);
         Map<String, String> options = Map.of("httpVersion", "2");
         Map<String, String> buffered = Map.of("contextPath", "/buffered", "streamBody", "false");
         Map<String, String> streaming = Map.of("contextPath", "/streaming", "streamBody", "true");
@@ -530,7 +553,7 @@ public class Http2TransportTest {
 
     private static ConnectorConfig config(Map<String, String> options) {
         Map<String, String> values = new HashMap<>(options);
-        InterAddress address = InterAddress.forBinding("http", "127.0.0.1", 0, "default");
+        InterAddress address = InterAddress.forBinding("http", "127.0.0.1", 0);
         ProtocolConfig protocol = ProtocolConfig.newConfig("http", "http", Map.of("contextPath", "/"));
         return new ConnectorConfig("http", address, values, List.of(protocol), true);
     }

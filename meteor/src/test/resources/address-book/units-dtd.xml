@@ -1,0 +1,8 @@
+<!DOCTYPE address-book SYSTEM "https://www.hasor.net/rsf/schema/meteor-address-book.dtd">
+<address-book>
+    <service group="billing" name="order-query" version="1.0">
+        <address unit="east">jsonrpc://127.0.0.1:28001/api/Orders</address>
+        <address unit="west">jsonrpc://127.0.0.1:28001/api/Orders</address>
+        <address unit="west">jsonrpc://127.0.0.2:28002/api/Orders</address>
+    </service>
+</address-book>

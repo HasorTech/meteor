@@ -29,9 +29,8 @@ import net.hasor.meteor.domain.payload.ResponsePayload;
 import net.hasor.meteor.domain.payload.ThrowPayload;
 import net.hasor.meteor.serialize.coder.JavaSerializeCoder;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 连接器与协议 SPI 契约的单元覆盖，使用真实 socket 验证传输及资源行为。 */
 public class TcpTransportTest {
@@ -361,7 +360,7 @@ public class TcpTransportTest {
             ConnectorConfig shortHandshake = new ConnectorConfig("rsf", localAddress, options, mounts, true);
             try (Endpoint client = new Endpoint(shortHandshake, new Inbox())) {
                 client.startInbound();
-                InterAddress target = new InterAddress("rsf", "127.0.0.1", silentPeer.getLocalPort(), "default");
+                InterAddress target = new InterAddress("127.0.0.1", silentPeer.getLocalPort());
                 Future<MetChannel> connection = client.connect(target);
                 try (Socket accepted = silentPeer.accept()) {
                     assertFalse(connection.isDone());
@@ -386,7 +385,7 @@ public class TcpTransportTest {
             peer.setSoTimeout(2000);
             ConnectorConfig clientSettings = config("rsf", 1);
             try (Endpoint client = new Endpoint(clientSettings, new Inbox())) {
-                InterAddress target = new InterAddress("rsf", "127.0.0.1", peer.getLocalPort(), "default");
+                InterAddress target = new InterAddress("127.0.0.1", peer.getLocalPort());
                 Future<MetChannel> connecting = client.connect(target);
                 try (Socket accepted = peer.accept()) {
                     accepted.setSoTimeout(2000);

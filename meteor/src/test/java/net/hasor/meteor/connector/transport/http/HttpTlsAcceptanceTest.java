@@ -32,11 +32,11 @@ import net.hasor.meteor.connector.transport.http.channel.HttpRequest;
 import net.hasor.meteor.connector.transport.http.channel.HttpResponse;
 import net.hasor.meteor.domain.ProtocolConfig;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static net.hasor.meteor.connector.HttpTransportPlans.routes;
 import static net.hasor.meteor.connector.TransportTestConfigs.transport;
 import static net.hasor.meteor.connector.transport.TransportTestServices.newHttpConnector;
 import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.Timeout;
 
 /** 验证 HTTP 明文路由以及生产 TLS、ALPN 和客户端身份校验边界。 */
 public class HttpTlsAcceptanceTest {
@@ -365,7 +365,7 @@ public class HttpTlsAcceptanceTest {
     private ConnectorConfig config(boolean bind, int version, Map<String, String> options) {
         Map<String, String> values = new HashMap<>(options);
         values.put("httpVersion", String.valueOf(version));
-        InterAddress address = InterAddress.forBinding("http", "127.0.0.1", 0, "default");
+        InterAddress address = InterAddress.forBinding("http", "127.0.0.1", 0);
         ProtocolConfig protocol = ProtocolConfig.newConfig("http", "http", Map.of("contextPath", "/"));
         return new ConnectorConfig("http", address, values, List.of(protocol), bind);
     }

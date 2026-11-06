@@ -86,15 +86,15 @@ public class ServiceContextPublicationTest {
             context.start();
             context.getExtension(RegistryClient.class).pushSync().get(5, TimeUnit.SECONDS);
 
-            // 存储保存完整端点列表，网络发现地址仍按监听地址去重。
+            // 每个挂载路径对应独立的完整发现地址。
             EntServiceRuntimeData stored = storage.getInstanceService(context.getInstanceID(), id);
             List<String> storedPaths = Arrays.stream(stored.getEndpoints()) //
                     .map(RefProtocolMountData::getContextPath).toList();
             assertEquals(List.of("/one", "/two"), storedPaths);
-            assertEquals(1, stored.getAddresses().length);
-            String address = stored.getAddresses()[0];
-            assertEquals(address, stored.getEndpoints()[0].getPublishedAddress());
-            assertEquals(address, stored.getEndpoints()[1].getPublishedAddress());
+            assertEquals(2, stored.getAddresses().length);
+            assertEquals(stored.getAddresses()[0], stored.getEndpoints()[0].getPublishedAddress());
+            assertEquals(stored.getAddresses()[1], stored.getEndpoints()[1].getPublishedAddress());
+            assertNotEquals(stored.getAddresses()[0], stored.getAddresses()[1]);
 
             // 按其中任一路径筛选仍返回完整成员，不截断其他已发布上下文。
             MetServiceAdmin service = context.getExtension(RegistryAdmin.class).getServiceAdmin(id);

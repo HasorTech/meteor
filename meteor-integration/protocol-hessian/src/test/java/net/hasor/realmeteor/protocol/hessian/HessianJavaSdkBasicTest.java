@@ -75,7 +75,7 @@ public class HessianJavaSdkBasicTest {
                     .register();
 
             // 前缀只能由 SDK 服务端添加，确保不是同 JVM 的本地调用捷径或普通回显。
-            InterAddress address = new InterAddress("hessian", "127.0.0.1", server.getPort(), "default");
+            InterAddress address = new InterAddress("hessian", "127.0.0.1", server.getPort());
             HessianDemoService remote = client.getRsfClient(address).getRemote(service);
             assertEquals("sdk-server:Java SDK 中文 <&>", remote.echo("Java SDK 中文 <&>"));
         }

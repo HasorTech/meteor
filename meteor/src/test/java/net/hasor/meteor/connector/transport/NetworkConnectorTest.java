@@ -25,12 +25,11 @@ import net.hasor.meteor.connector.transport.tcp.TcpTransportFactory;
 import net.hasor.meteor.connector.transport.udp.UdpTransportFactory;
 import net.hasor.meteor.domain.ProtocolConfig;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static net.hasor.meteor.connector.TransportTestConfigs.transport;
 import static net.hasor.meteor.connector.transport.TransportTestServices.newHttpConnector;
 import static net.hasor.meteor.connector.transport.TransportTestServices.newRuntimeServices;
 import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 /**
  * 通过真实网络验证独立传输 SPI；不包含应用协议或 RPC 场景。
@@ -126,7 +125,7 @@ public class NetworkConnectorTest {
         try (ServerSocket peer = new ServerSocket(0); //
              NetworkConnector<byte[]> client = this.createConnector(//
                      new TcpTransportFactory(), config, runtimeServices)) {
-            InterAddress target = new InterAddress("tcp", "127.0.0.1", peer.getLocalPort(), "default");
+            InterAddress target = new InterAddress("tcp", "127.0.0.1", peer.getLocalPort());
             RouteTable<byte[]> routes = this.routePlan(config);
 
             // 工厂看到通道后立即失败，connect Future 必须结束且通道关闭 Future 不能悬挂。
@@ -227,7 +226,7 @@ public class NetworkConnectorTest {
         try (DatagramSocket available = new DatagramSocket(new InetSocketAddress("127.0.0.1", 0))) {
             port = available.getLocalPort();
         }
-        InterAddress address = new InterAddress("udp", "127.0.0.1", port, "default");
+        InterAddress address = new InterAddress("udp", "127.0.0.1", port);
         Map<String, String> options = Map.of();
         ProtocolConfig protocol = ProtocolConfig.newConfig("udp", "udp", options);
         ConnectorConfig config = new ConnectorConfig("udp", address, options, List.of(protocol), true);
@@ -294,7 +293,7 @@ public class NetworkConnectorTest {
         try (DatagramSocket peer = new DatagramSocket(); //
              NetworkConnector<byte[]> client = this.createConnector(//
                      new UdpTransportFactory(), config, runtimeServices)) {
-            InterAddress target = new InterAddress("udp", "127.0.0.1", peer.getLocalPort(), "default");
+            InterAddress target = new InterAddress("udp", "127.0.0.1", peer.getLocalPort());
             RouteTable<byte[]> routes = this.routePlan(config);
 
             // 工厂失败必须同步反映到连接 Future，并由已经安装的 close 通知结束通道 Future。
@@ -321,7 +320,7 @@ public class NetworkConnectorTest {
         try (DatagramSocket available = new DatagramSocket(new InetSocketAddress("127.0.0.1", 0))) {
             port = available.getLocalPort();
         }
-        InterAddress address = new InterAddress("udp", "127.0.0.1", port, "default");
+        InterAddress address = new InterAddress("udp", "127.0.0.1", port);
         Map<String, String> options = Map.of();
         ProtocolConfig protocol = ProtocolConfig.newConfig("udp", "udp", options);
         ConnectorConfig config = new ConnectorConfig("udp", address, options, List.of(protocol), true);
@@ -336,7 +335,7 @@ public class NetworkConnectorTest {
             };
 
             // 校验实际绑定参数，直接拒绝零端口且不创建对端通道。
-            InterAddress zeroPort = InterAddress.forBinding("udp", "127.0.0.1", 0, "default");
+            InterAddress zeroPort = InterAddress.forBinding("udp", "127.0.0.1", 0);
             RouteTable<byte[]> routes = this.routePlan(config);
             IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> {
                 server.bind(zeroPort, routes, receiver);
@@ -438,7 +437,7 @@ public class NetworkConnectorTest {
         BasicFuture<NetworkChannel<HttpExchange>> connected = new BasicFuture<>();
         BasicFuture<Void> closed = new BasicFuture<>();
         try {
-            InterAddress unusedRemote = new InterAddress("http", "127.0.0.1", 1, "default");
+            InterAddress unusedRemote = new InterAddress("http", "127.0.0.1", 1);
             RouteTable<HttpExchange> routes = this.routePlan(config);
             String initialProtocol = this.protocolName(config);
             client.connect(initialProtocol, unusedRemote, routes, channel -> new ChannelListener<HttpExchange>() {
@@ -466,7 +465,7 @@ public class NetworkConnectorTest {
     }
 
     private ConnectorConfig config(String type) {
-        InterAddress address = InterAddress.forBinding(type, "127.0.0.1", 0, "default");
+        InterAddress address = InterAddress.forBinding(type, "127.0.0.1", 0);
         Map<String, String> options = new HashMap<>();
         ProtocolConfig protocol = ProtocolConfig.newConfig(type, type, options);
         return new ConnectorConfig(type, address, options, Collections.singletonList(protocol), true);

@@ -499,7 +499,7 @@ public class GrpcWebChannelTest {
         private final Queue<Runnable>    tasks   = new ArrayDeque<>();
 
         public InterAddress getLocal() {
-            return new InterAddress("grpc-web", "127.0.0.1", 2181, "default");
+            return new InterAddress("grpc-web", "127.0.0.1", 2181);
         }
 
         public InterAddress getRemote() {

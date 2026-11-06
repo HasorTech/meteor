@@ -92,7 +92,18 @@ final class HttpConnector extends SocketConnector<HttpExchange> {
     @Override
     public Future<Void> connect(String initial, InterAddress target, RouteTable<HttpExchange> routes,  //
             ChannelListenerFactory<HttpExchange> factory) {
-        if (this.config.integer("httpVersion", 1) == 2) {
+        // 出站连接优先使用所选协议的 HTTP 版本，未声明时沿用连接器默认值。
+        String version = this.config.option("httpVersion", "1");
+        String protocol = routes.resolveProtocol(initial);
+        if (protocol != null) {
+            version = routes.definitions().get(protocol).options().getOrDefault("httpVersion", version);
+        }
+        int httpVersion = Integer.parseInt(version);
+        if (httpVersion <= 0) {
+            throw new IllegalArgumentException("httpVersion must be positive");
+        }
+
+        if (httpVersion == 2) {
             return super.connect(initial, target, routes, factory);
         } else {
             try {

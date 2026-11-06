@@ -28,12 +28,41 @@ import net.hasor.meteor.domain.payload.RequestPayload;
 import net.hasor.meteor.domain.payload.ResponsePayload;
 import net.hasor.meteor.serialize.coder.JavaSerializeCoder;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 通过真实 socket 验证端点路由和协议视图的内部契约。 */
 public class EndpointRoutingTest {
+    @Test
+    public void fullHttpAddressesSelectTheirProtocolOnASharedPort() throws Exception {
+        ConnectorConfig config = endpointConfig("http", HttpA.class, HttpB.class, "http", "http");
+        try (ConnectorManager server = SocketTestSupport.manager(config); ConnectorManager client = SocketTestSupport.manager(config)) {
+            server.init();
+            client.init();
+            server.startInbound();
+            InterAddress first = server.getListenAddress("httpa");
+            InterAddress second = server.getListenAddress("httpb");
+            assertEquals(first.getHostPort(), second.getHostPort());
+            assertNotEquals(first, second);
+            assertEquals("httpa", client.connect(first).get(3, TimeUnit.SECONDS).getProtocol());
+            assertEquals("httpb", client.connect(second).get(3, TimeUnit.SECONDS).getProtocol());
+        }
+    }
+
+    @Test
+    @Timeout(value = 10000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
+    public void rootMountHandlesPathsOutsideTheMoreSpecificMount() throws Exception {
+        ConnectorConfig config = new ConnectorConfig("shared", InterAddress.forBinding("http", "127.0.0.1", 0), Map.of("workerThread", "1"), Arrays.asList(ProtocolConfig.newConfig("httpa", "http", Map.of("contextPath", "/")), ProtocolConfig.newConfig("httpb", "http", Map.of("contextPath", "/b"))), true);
+        try (ConnectorManager server = SocketTestSupport.manager(config); ConnectorManager client = SocketTestSupport.manager(config)) {
+            server.init();
+            client.init();
+            server.startInbound();
+            int port = server.getListenAddress("httpa").getPort();
+            assertEquals("httpa", client.connect(new InterAddress("http", "127.0.0.1", port, "/other")).get(3, TimeUnit.SECONDS).getProtocol());
+            assertEquals("httpb", client.connect(new InterAddress("http", "127.0.0.1", port, "/b/child")).get(3, TimeUnit.SECONDS).getProtocol());
+        }
+    }
+
     @Test
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void httpPartitionsSharePortAndConnectionWithoutMixingReplies() throws Exception {
@@ -45,7 +74,8 @@ public class EndpointRoutingTest {
             endpoint.subscribe(inbox);
             endpoint.startInbound();
             InterAddress shared = endpoint.getListenAddress("httpa");
-            assertEquals(shared, endpoint.getListenAddress("httpb"));
+            assertEquals(shared.getHostPort(), endpoint.getListenAddress("httpb").getHostPort());
+            assertNotEquals(shared, endpoint.getListenAddress("httpb"));
             int port = shared.getPort();
             try (Socket socket = new Socket("127.0.0.1", port)) {
                 socket.setSoTimeout(3000);
@@ -181,7 +211,7 @@ public class EndpointRoutingTest {
             server.startInbound();
             int port = server.getListenAddress("httpa").getPort();
             String scheme = "a";
-            InterAddress target = new InterAddress(scheme, "127.0.0.1", port, "test");
+            InterAddress target = new InterAddress(scheme, "127.0.0.1", port);
             MetChannel channel = client.connect(target).get(3, TimeUnit.SECONDS);
             assertEquals(scheme, channel.getRemote().getSchema());
             assertNull(client.getListenAddress("httpa"));
@@ -218,7 +248,7 @@ public class EndpointRoutingTest {
             server.startInbound();
             int port = server.getListenAddress("httpb").getPort();
             String scheme = "b";
-            InterAddress target = new InterAddress(scheme, "127.0.0.1", port, "test");
+            InterAddress target = new InterAddress(scheme, "127.0.0.1", port);
             MetChannel channel = client.connect(target).get(3, TimeUnit.SECONDS);
             assertEquals(scheme, channel.getRemote().getSchema());
             assertNull(client.getListenAddress("httpb"));
@@ -448,7 +478,7 @@ public class EndpointRoutingTest {
             client.subscribe(clientInbox);
             server.startInbound();
             int port = server.getListenAddress("wireb").getPort();
-            InterAddress target = new InterAddress("b", "127.0.0.1", port, "test");
+            InterAddress target = new InterAddress("b", "127.0.0.1", port);
             MetChannel channel = client.connect(target).get(3, TimeUnit.SECONDS);
             assertNull(client.getListenAddress("wireb"));
             channel.sendData(response(1, "first write")).get(3, TimeUnit.SECONDS);
@@ -545,7 +575,7 @@ public class EndpointRoutingTest {
         if (StringUtils.equals(transport, "udp")) {
             port = SocketTestSupport.availableUdpPort();
         }
-        InterAddress address = InterAddress.forBinding(transport, "127.0.0.1", port, "test");
+        InterAddress address = InterAddress.forBinding(transport, "127.0.0.1", port);
         List<ProtocolConfig> configMounts = Arrays.asList(first, second);
         return new ConnectorConfig("shared", address, options, configMounts, true);
     }
@@ -559,7 +589,7 @@ public class EndpointRoutingTest {
         options.put("workerThread", "1");
         ProtocolConfig rsf = ProtocolConfig.newConfig("rsf", "rsf", Map.of());
         ProtocolConfig other = ProtocolConfig.newConfig(alternateProtocol, "b", Map.of());
-        InterAddress address = InterAddress.forBinding("tcp", "127.0.0.1", 0, "test");
+        InterAddress address = InterAddress.forBinding("tcp", "127.0.0.1", 0);
         return new ConnectorConfig("shared", address, options, Arrays.asList(rsf, other), true);
     }
 

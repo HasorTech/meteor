@@ -2,6 +2,6 @@
         "https://www.hasor.net/rsf/schema/meteor-address-book.dtd">
 <address-book>
     <service group="billing" name="order-query">
-        <address>rsf://127.0.0.1:28001/example</address>
+        <address unit="default">rsf://127.0.0.1:28001</address>
     </service>
 </address-book>

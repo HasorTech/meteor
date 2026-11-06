@@ -44,8 +44,8 @@ public class RouteScriptTest {
                 <return value="selected"/>
             </route>
             """;
-    private final        InterAddress first    = new InterAddress("rsf", "127.0.0.1", 2181, "east");
-    private final        InterAddress second   = new InterAddress("rsf", "127.0.0.1", 2182, "west");
+    private final        InterAddress first    = new InterAddress("127.0.0.1", 2181);
+    private final        InterAddress second   = new InterAddress("127.0.0.1", 2182);
 
     @Test
     public void argsRouteUsesCurrentCallArguments() {

@@ -380,7 +380,7 @@ public class JsonRpcSessionTest {
         BiFunction<Runnable, Long, Cancellable> scheduler = (action, delay) -> {
             throw new AssertionError("JSON-RPC must use RPC request deadlines");
         };
-        InterAddress address = new InterAddress("jsonrpc", "127.0.0.1", 8080, "default");
+        InterAddress address = new InterAddress("jsonrpc", "127.0.0.1", 8080);
         ProtocolConfig config = configuration();
         ProtocolSessionContext runtime = ProtocolSessionContextTestAccess.newContext( //
                 context, scheduler, address, outbound, config);
@@ -438,7 +438,7 @@ public class JsonRpcSessionTest {
 
         @Override
         public InterAddress getLocal() {
-            return new InterAddress("jsonrpc", "127.0.0.1", 8080, "default");
+            return new InterAddress("jsonrpc", "127.0.0.1", 8080);
         }
 
         @Override

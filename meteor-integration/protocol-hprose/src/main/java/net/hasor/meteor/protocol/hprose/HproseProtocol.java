@@ -52,6 +52,7 @@ public final class HproseProtocol implements HttpProtocolProvider {
             return null;
         }
         ObjectNode description = meta.createServiceDescription(config, this.defaultSerialize(), methods);
+        description.put("name", meta.getService().getAliasName("Hprose"));
         return meta.build(config, methods, description);
     }
 

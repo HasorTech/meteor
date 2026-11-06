@@ -34,11 +34,11 @@ import net.hasor.meteor.connector.transport.http.channel.HttpRequest;
 import net.hasor.meteor.connector.transport.http.channel.HttpResponse;
 import net.hasor.meteor.domain.ProtocolConfig;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static net.hasor.meteor.connector.HttpTransportPlans.routes;
 import static net.hasor.meteor.connector.TransportTestConfigs.transport;
 import static net.hasor.meteor.connector.transport.TransportTestServices.newHttpConnector;
 import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.Timeout;
 
 /** 使用独立 Netty HTTP/2 对端，在真实连接上验证传输 SPI 的 GOAWAY 边界。 */
 public class Http2GoawayInteropTest {
@@ -280,7 +280,7 @@ public class Http2GoawayInteropTest {
     }
 
     private static ConnectorConfig config(Map<String, String> options, boolean server) {
-        InterAddress local = InterAddress.forBinding("http", "127.0.0.1", 0, "default");
+        InterAddress local = InterAddress.forBinding("http", "127.0.0.1", 0);
         Map<String, String> values = new HashMap<>(options);
         ProtocolConfig protocol = ProtocolConfig.newConfig("http", "http", Map.of("contextPath", "/"));
         return new ConnectorConfig("http", local, values, List.of(protocol), server);
@@ -366,7 +366,7 @@ public class Http2GoawayInteropTest {
 
         private InterAddress address() {
             InetSocketAddress local = (InetSocketAddress) this.listener.localAddress();
-            return new InterAddress("http", "127.0.0.1", local.getPort(), "default");
+            return new InterAddress("http", "127.0.0.1", local.getPort());
         }
 
         private List<Http2StreamChannel> receive(int count) throws Exception {

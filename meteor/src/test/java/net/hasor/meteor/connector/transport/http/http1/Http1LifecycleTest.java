@@ -32,13 +32,12 @@ import net.hasor.meteor.connector.transport.http.channel.HttpRequest;
 import net.hasor.meteor.connector.transport.http.channel.HttpResponse;
 import net.hasor.meteor.domain.ProtocolConfig;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static java.net.http.HttpRequest.newBuilder;
 import static net.hasor.meteor.connector.HttpTransportPlans.routes;
 import static net.hasor.meteor.connector.TransportTestConfigs.transport;
 import static net.hasor.meteor.connector.transport.TransportTestServices.newHttpConnector;
 import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 /** 在真实连接上验证 HTTP/1 传输 SPI 的正文与关闭契约。 */
 public class Http1LifecycleTest {
@@ -207,7 +206,7 @@ public class Http1LifecycleTest {
                 }
                 return null;
             });
-            InterAddress target = new InterAddress("http", "127.0.0.1", listener.getLocalPort(), "default");
+            InterAddress target = new InterAddress("http", "127.0.0.1", listener.getLocalPort());
             BasicFuture<NetworkChannel<HttpExchange>> connected = new BasicFuture<>();
             client.connect(null, target, routes(config), receiver(connected, new LinkedBlockingQueue<>())) //
                     .get(3, TimeUnit.SECONDS);
@@ -259,7 +258,7 @@ public class Http1LifecycleTest {
                 }
                 return null;
             });
-            InterAddress target = new InterAddress("http", "127.0.0.1", listener.getLocalPort(), "default");
+            InterAddress target = new InterAddress("http", "127.0.0.1", listener.getLocalPort());
             BasicFuture<NetworkChannel<HttpExchange>> connected = new BasicFuture<>();
             client.connect(null, target, routes(config), receiver(connected, new LinkedBlockingQueue<>())) //
                     .get(3, TimeUnit.SECONDS);
@@ -409,7 +408,7 @@ public class Http1LifecycleTest {
     }
 
     private static ConnectorConfig config(boolean streaming) {
-        InterAddress address = InterAddress.forBinding("http", "127.0.0.1", 0, "default");
+        InterAddress address = InterAddress.forBinding("http", "127.0.0.1", 0);
         Map<String, String> options = Map.of("streamBody", String.valueOf(streaming));
         ProtocolConfig protocol = ProtocolConfig.newConfig("http", "http", Map.of("contextPath", "/"));
         return new ConnectorConfig("http", address, options, List.of(protocol), true);

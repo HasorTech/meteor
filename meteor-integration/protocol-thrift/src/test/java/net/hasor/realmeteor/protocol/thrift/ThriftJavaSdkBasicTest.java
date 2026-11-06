@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.thrift;
+import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.thrift.TestConfigurationUtils;
 import net.hasor.example.protocol.thrift.ThriftDemoService;
 import net.hasor.example.protocol.thrift.ThriftDemoServiceImpl;
@@ -22,9 +23,8 @@ import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.layered.TFramedTransport;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** 本插件基础验证：同一 JUnit 进程内，Meteor 与 Apache SDK 经 TCP、HTTP 双向真实调用。 */
 public class ThriftJavaSdkBasicTest {
@@ -105,7 +105,7 @@ public class ThriftJavaSdkBasicTest {
 
             // SDK Processor 中的业务前缀证明调用确实经过真实网络。
             String unit = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift", "127.0.0.1", server.getPort(), unit);
+            InterAddress address = new InterAddress("thrift", "127.0.0.1", server.getPort());
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
             assertEquals("thrift-sdk:Meteor TCP 中文🙂", remote.echo("Meteor TCP 中文🙂"));
@@ -131,7 +131,7 @@ public class ThriftJavaSdkBasicTest {
 
             // 正式消费者代理访问 SDK 实际端口，不手写 Thrift 报文。
             String unit = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift-http", "127.0.0.1", server.getPort(), unit);
+            InterAddress address = new InterAddress("thrift-http", "127.0.0.1", server.getPort());
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
             assertEquals("thrift-sdk:Meteor HTTP 中文🙂", remote.echo("Meteor HTTP 中文🙂"));

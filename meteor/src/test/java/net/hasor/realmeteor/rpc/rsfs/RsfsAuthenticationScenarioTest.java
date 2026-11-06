@@ -155,7 +155,7 @@ public class RsfsAuthenticationScenarioTest {
 
             // 故意以不匹配的 scheme 访问对端端口，连接必须失败而不是降级。
             InterAddress bound = server.getListenAddress("rsf");
-            InterAddress target = new InterAddress("rsfs", bound.getHost(), bound.getPort(), bound.getFormUnit());
+            InterAddress target = new InterAddress("rsfs", bound.getHost(), bound.getPort(), bound.getPath());
             MetFuture call = client.getRsfClient(target) //
                     .asyncInvoke(service, "echo", new Class<?>[] { String.class }, new Object[] { "rejected" });
             ExecutionException failure = assertThrows(ExecutionException.class, () -> call.get(8, TimeUnit.SECONDS));
@@ -187,7 +187,7 @@ public class RsfsAuthenticationScenarioTest {
 
             // 故意以不匹配的 scheme 访问对端端口，连接必须失败而不是降级。
             InterAddress bound = server.getListenAddress("rsf", "rsfs");
-            InterAddress target = new InterAddress("rsf", bound.getHost(), bound.getPort(), bound.getFormUnit());
+            InterAddress target = new InterAddress("rsf", bound.getHost(), bound.getPort(), bound.getPath());
             MetFuture call = client.getRsfClient(target) //
                     .asyncInvoke(service, "echo", new Class<?>[] { String.class }, new Object[] { "rejected" });
             ExecutionException failure = assertThrows(ExecutionException.class, () -> call.get(8, TimeUnit.SECONDS));

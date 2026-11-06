@@ -117,7 +117,7 @@ public class RsfsSchemeTest {
     public void rsfsCannotBeSelectedAsAProtocolSpi() {
         // 端点只按 SPI 名称选择协议，rsfs 仅是启用 TLS 后生成的地址 scheme。
         Map<String, String> options = Map.of();
-        InterAddress address = InterAddress.forBinding("tcp", "127.0.0.1", 0, "default");
+        InterAddress address = InterAddress.forBinding("tcp", "127.0.0.1", 0);
         ProtocolConfig protocol = ProtocolConfig.newConfig("rsfs", "rsfs", options);
         ConnectorConfig config = new ConnectorConfig("invalid", address, options, List.of(protocol), false);
 
@@ -165,7 +165,7 @@ public class RsfsSchemeTest {
     }
 
     private ConnectorConfig endpoint(Map<String, String> options) {
-        InterAddress address = InterAddress.forBinding("tcp", "127.0.0.1", 0, "default");
+        InterAddress address = InterAddress.forBinding("tcp", "127.0.0.1", 0);
         ProtocolConfig protocol = ProtocolConfig.newConfig("rsf", "rsfs", options);
         return new ConnectorConfig("secure", address, options, List.of(protocol), true);
     }

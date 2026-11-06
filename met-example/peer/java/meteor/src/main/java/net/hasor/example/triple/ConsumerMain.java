@@ -44,7 +44,7 @@ public final class ConsumerMain {
                     .register();
 
             // 连接本地提供者，保存并查询订单。
-            InterAddress target = new InterAddress("triple", "127.0.0.1", 8080, "local");
+            InterAddress target = new InterAddress("triple", "127.0.0.1", 8080);
             OrderDemoService orders = context.getRsfClient(target).getRemote(binding);
             orders.save(OrderExampleUtils.newOrder(1001, "triple"));
             OrderQuery query = new OrderQuery();

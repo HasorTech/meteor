@@ -42,6 +42,7 @@ public final class DubboProtocol implements TcpProtocolProvider {
             return null;
         }
         ObjectNode description = meta.createServiceDescription(config, this.defaultSerialize(), methods);
+        description.put("name", DubboCodec.serviceName(meta.getService(), config.name()));
         return meta.build(config, methods, description);
     }
 

@@ -30,8 +30,8 @@ import net.hasor.meteor.connector.transport.http.channel.HttpResponse;
 import net.hasor.neta.channel.*;
 import net.hasor.neta.codec.http.HttpObject;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 以明确的任务顺序验证完整响应、发送结果与连接 EOF 的交错。 */
 public class Http1ClientEofTest {
@@ -341,7 +341,7 @@ public class Http1ClientEofTest {
 
         private Fixture() throws Exception {
             // 保留正常构造和对象所有权，仅将串行执行器换成由测试推进的任务队列。
-            InterAddress address = new InterAddress("http", "127.0.0.1", 1, "default");
+            InterAddress address = new InterAddress("http", "127.0.0.1", 1);
             Map<String, String> options = Map.of("workerThread", "1", "taskThread", "1");
             TransportConfig config = new TransportConfig("eof-test", address, false, options, Map.of());
             ClassLoader loader = getClass().getClassLoader();

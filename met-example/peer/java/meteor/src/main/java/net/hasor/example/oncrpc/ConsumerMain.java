@@ -39,7 +39,7 @@ public final class ConsumerMain {
                     .register();
 
             // 连接本地提供者，保存并查询订单。
-            InterAddress target = new InterAddress("oncrpc", "127.0.0.1", 8080, "local");
+            InterAddress target = new InterAddress("oncrpc", "127.0.0.1", 8080);
             OncRpcOrderService orders = context.getRsfClient(target).getRemote(binding);
             orders.save(OrderExampleUtils.newOrder(1001, "oncrpc"));
             OrderExampleUtils.print(orders.find(1001));

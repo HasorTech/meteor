@@ -14,9 +14,8 @@ import net.hasor.example.connector.protocol.RawSocketTestProtocol;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.domain.payload.RequestPayload;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 以真实 TCP 对端验证管理器对物理写入、入站接纳和连接关闭的编排。 */
 public class SocketLifecycleTest {
@@ -124,6 +123,6 @@ public class SocketLifecycleTest {
     }
 
     private InterAddress address(int port) {
-        return new InterAddress("raw", "127.0.0.1", port, "default");
+        return new InterAddress("raw", "127.0.0.1", port);
     }
 }

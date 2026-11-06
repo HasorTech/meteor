@@ -112,7 +112,7 @@ public class GrpcWebJavaSdkBasicTest {
                         .bindResource("grpc-web", resource).register();
 
                 // SDK 前缀与数值变化证明请求确实经过该服务；消费者无本地实现。
-                InterAddress address = new InterAddress("grpc-web", "127.0.0.1", server.activeLocalPort(), "default");
+                InterAddress address = new InterAddress("grpc-web", "127.0.0.1", server.activeLocalPort());
                 Echo remote = client.getRsfClient(address).getRemote(service);
                 Message result = remote.echo(Message.of("反向 Java 🙂", 6));
                 assertEquals("grpc-web-sdk:反向 Java 🙂", result.getValue());

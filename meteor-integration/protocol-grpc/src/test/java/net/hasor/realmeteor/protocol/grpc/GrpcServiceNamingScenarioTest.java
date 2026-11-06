@@ -15,6 +15,7 @@ import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.annotation.MetService;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.address.InterAddress;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import static org.junit.jupiter.api.Assertions.*;
@@ -129,7 +130,9 @@ public class GrpcServiceNamingScenarioTest {
                     .aliasName("grpc", "catalog.Echo").serialize("Json") //
                     .contextPathByPrefix("grpc", "/second").register();
             Echo firstRemote = client.getRsfClient(server.getListenAddress("grpc")).getRemote(firstService);
-            Echo secondRemote = client.getRsfClient(server.getListenAddress("grpc")).getRemote(secondService);
+            var listener = server.getListenAddress("grpc");
+            var secondAddress = new InterAddress("grpc", listener.getHost(), listener.getPort(), "/second");
+            Echo secondRemote = client.getRsfClient(secondAddress).getRemote(secondService);
             assertEquals("first", firstRemote.echo(Message.of("first", 1)).getValue());
             assertEquals("second", secondRemote.echo(Message.of("second", 2)).getValue());
             assertEquals(1, first.getCalls());

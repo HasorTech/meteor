@@ -44,7 +44,7 @@ public class WebSocketLifecycleTest {
             client.start();
             MetBindInfo<WebSocketSample> service = client.publisher().rsfService(WebSocketSample.class) //
                     .protocol("jsonws").serialize("Json").register();
-            InterAddress address = new InterAddress("jsonws", "127.0.0.1", listener.getLocalPort(), "default");
+            InterAddress address = new InterAddress("jsonws", "127.0.0.1", listener.getLocalPort());
             MetClient remote = client.getRsfClient(address);
             Class<?>[] parameterTypes = { String.class };
             Object[] arguments = { "pending" };
@@ -153,7 +153,7 @@ public class WebSocketLifecycleTest {
             client.start();
             MetBindInfo<WebSocketSample> service = client.publisher().rsfService(WebSocketSample.class) //
                     .protocol("jsonws").serialize("Json").register();
-            InterAddress address = new InterAddress("jsonws", "127.0.0.1", listener.getLocalPort(), "default");
+            InterAddress address = new InterAddress("jsonws", "127.0.0.1", listener.getLocalPort());
             MetClient remote = client.getRsfClient(address);
             Class<?>[] parameterTypes = { String.class };
             Object[] arguments = { "rejected" };

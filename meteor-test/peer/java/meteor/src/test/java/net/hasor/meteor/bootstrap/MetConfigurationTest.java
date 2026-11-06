@@ -76,7 +76,7 @@ public class MetConfigurationTest extends BootstrapTestSupport {
             assertEquals("configured", runtimeSettings.getRequestOptions().getOption("client.tag"));
             assertEquals(this.data.resolve("custom-rsf-data").toAbsolutePath().normalize(), runtimeSettings.getDataHome());
             ConnectorConfig connector = runtimeSettings.getConnectorConfigs().iterator().next();
-            assertEquals("zone_a", connector.address().getFormUnit());
+            assertEquals("zone_a", connector.address().getPath());
             assertEquals(17, runtimeSettings.getMaximumRequest());
             assertEquals(23, runtimeSettings.getQueueMaxSize());
         }
@@ -292,8 +292,8 @@ public class MetConfigurationTest extends BootstrapTestSupport {
                 assertEquals("/second", newEndpoint.protocol("hprose").option("contextPath", null));
                 assertEquals("first", firstSettings.getResponseOptions().getOption("tag"));
                 assertEquals("second", secondSettings.getResponseOptions().getOption("tag"));
-                assertEquals("default", oldEndpoint.address().getFormUnit());
-                assertEquals("new_unit", newEndpoint.address().getFormUnit());
+                assertEquals("default", oldEndpoint.address().getPath());
+                assertEquals("new_unit", newEndpoint.address().getPath());
                 assertEquals(Collections.singleton("hprose"), firstSettings.getProtocols());
                 assertEquals("hprose", first.getDefaultProtocol());
             }

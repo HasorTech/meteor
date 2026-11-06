@@ -66,7 +66,7 @@ class SpringIntegrationTest {
             MetContext context = app.getBean(MetContext.class);
             String orderID = context.getServiceInfo(OrderService.class).getBindID();
             String inventoryID = context.getServiceInfo(InventoryService.class).getBindID();
-            List<InterAddress> expected = List.of(new InterAddress("rsf://127.0.0.1:28780/example"));
+            List<InterAddress> expected = List.of(new InterAddress("rsf://127.0.0.1:28780"));
             assertEquals("spring-order-consumer", context.getApplicationName());
             assertEquals(Set.of("rsf"), context.getUpdater().getSupportedProtocols(orderID));
             assertEquals(Set.of("rsf"), context.getUpdater().getSupportedProtocols(inventoryID));

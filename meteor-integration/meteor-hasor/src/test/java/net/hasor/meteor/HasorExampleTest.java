@@ -46,7 +46,7 @@ class HasorExampleTest {
             String inventoryId = context.getServiceInfo(InventoryService.class).getBindID();
 
             // 服务坐标对应两个消费接口；XML 提供静态地址，连接器提供协议支持范围。
-            List<InterAddress> expected = List.of(new InterAddress("rsf://127.0.0.1:28760/example"));
+            List<InterAddress> expected = List.of(new InterAddress("rsf://127.0.0.1:28760"));
             assertEquals("hasor-order-consumer", context.getApplicationName());
             assertEquals(Set.of("rsf"), context.getUpdater().getSupportedProtocols(orderId));
             assertEquals(Set.of("rsf"), context.getUpdater().getSupportedProtocols(inventoryId));
@@ -74,7 +74,7 @@ class HasorExampleTest {
             try (InputStream input = getClass().getResourceAsStream("/hasor-address-book.xml")) {
                 assertNotNull(input);
                 String xml = new String(input.readAllBytes(), StandardCharsets.UTF_8);
-                Files.writeString(book, xml.replace("rsf://127.0.0.1:28760/example", address));
+                Files.writeString(book, xml.replace("rsf://127.0.0.1:28760", address));
             }
             consumerSettings.setProperty("meteor.address-book", book.toUri().toString());
 

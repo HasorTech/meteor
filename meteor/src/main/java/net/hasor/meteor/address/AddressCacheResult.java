@@ -25,6 +25,7 @@ class AddressCacheResult {
             return null;
         }
 
+        input.getEnv().put("units", snapshot.units);
         List<InterAddress> candidates = snapshot.addresses;
         Set<String> schemes = input.getAddressSchemes();
         if (schemes != null) {
@@ -37,7 +38,7 @@ class AddressCacheResult {
             }
             UnitFlowControl unit = snapshot.unitFlowControl;
             if (unit != null) {
-                List<InterAddress> local = unit.siftUnitAddress(this.addressPool.getUnitName(), candidates);
+                List<InterAddress> local = unit.siftUnitAddress(snapshot.unitAddresses, candidates);
                 if (local != null && unit.isLocalUnit(candidates.size(), local.size())) {
                     candidates = local;
                 }
@@ -62,19 +63,23 @@ class AddressCacheResult {
         for (Map.Entry<String, AddressBucket> entry : this.addressPool.addressPool.entrySet()) {
             AddressBucket bucket = entry.getValue();
             synchronized (bucket) {
-                updated.put(entry.getKey(), new BucketSnapshot(bucket));
+                updated.put(entry.getKey(), new BucketSnapshot(bucket, this.addressPool.getUnitName()));
             }
         }
         this.buckets = updated;
     }
 
     private static final class BucketSnapshot {
-        private final List<InterAddress>    addresses;
-        private final List<InterAddress>    availableAddresses;
-        private final UnitFlowControl       unitFlowControl;
-        private final List<InnerRuleEngine> rules;
+        private final List<InterAddress>              addresses;
+        private final List<InterAddress>              availableAddresses;
+        private final Set<InterAddress>               unitAddresses;
+        private final Map<String, List<InterAddress>> units;
+        private final UnitFlowControl                 unitFlowControl;
+        private final List<InnerRuleEngine>           rules;
 
-        private BucketSnapshot(AddressBucket bucket) {
+        private BucketSnapshot(AddressBucket bucket, String unitName) {
+            this.unitAddresses = bucket.getUnitAddresses(unitName);
+            this.units = bucket.getAddressesByUnit();
             this.addresses = bucket.getLocalUnitAddresses();
             this.availableAddresses = bucket.getAvailableAddresses();
             this.unitFlowControl = bucket.getFlowControlRef().unitFlowControl;

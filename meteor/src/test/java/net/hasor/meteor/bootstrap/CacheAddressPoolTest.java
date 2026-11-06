@@ -33,8 +33,8 @@ public class CacheAddressPoolTest {
                 .protocol("rsf") //
                 .addressScheme("edge-rsf");
         try (MetContext context = configuration.buildContext()) {
-            InterAddress configured = new InterAddress("edge-rsf://127.0.0.1:2111/default");
-            InterAddress unsupported = new InterAddress("rsf://127.0.0.1:2112/default");
+            InterAddress configured = new InterAddress("edge-rsf://127.0.0.1:2111");
+            InterAddress unsupported = new InterAddress("rsf://127.0.0.1:2112");
             context.getUpdater().appendStaticAddress("service", List.of(configured, unsupported));
 
             // 启动前即可选到匹配的地址；不支持的地址仍完整保留。
@@ -51,8 +51,8 @@ public class CacheAddressPoolTest {
         try (CacheAddressPool pool = new CacheAddressPool(this.snapshot(configuration))) {
             MetUpdater updater = pool;
             AddressProvider provider = pool.getProvider();
-            InterAddress pooled = new InterAddress("rsf://127.0.0.1:2111/default");
-            InterAddress fixed = new InterAddress("rsf://127.0.0.1:2112/default");
+            InterAddress pooled = new InterAddress("rsf://127.0.0.1:2111");
+            InterAddress fixed = new InterAddress("rsf://127.0.0.1:2112");
             updater.appendAddress("service", Collections.singletonList(pooled));
             assertTrue(provider.isDistributed());
             RouteContext request = new RouteContext("service", "echo", new Object[0]);
@@ -73,8 +73,8 @@ public class CacheAddressPoolTest {
         // 同一服务同时包含动态和静态地址，连接失败只使动态地址失效。
         MetConfiguration configuration = this.settings();
         try (CacheAddressPool pool = new CacheAddressPool(this.snapshot(configuration))) {
-            InterAddress dynamic = new InterAddress("rsf://127.0.0.1:2111/default");
-            InterAddress fixed = new InterAddress("rsf://127.0.0.1:2112/default");
+            InterAddress dynamic = new InterAddress("rsf://127.0.0.1:2111");
+            InterAddress fixed = new InterAddress("rsf://127.0.0.1:2112");
             pool.appendAddress("service", Collections.singletonList(dynamic));
             pool.appendStaticAddress("service", Collections.singletonList(fixed));
 
@@ -138,7 +138,7 @@ public class CacheAddressPoolTest {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         MetConfiguration configuration = this.settings();
         try (CacheAddressPool pool = new CacheAddressPool(this.snapshot(configuration))) {
-            InterAddress address = new InterAddress("rsf://127.0.0.1:2111/default");
+            InterAddress address = new InterAddress("rsf://127.0.0.1:2111");
             pool.appendAddress("service", Collections.singletonList(address));
             pool.getBucket("service").addObserver((source, event) -> {
                 entered.countDown();
@@ -208,7 +208,7 @@ public class CacheAddressPoolTest {
     public void diskCacheRestoresBeforeStartReturnsAndOwnsItsMaintenance() throws Exception {
         // 先生成磁盘快照，再用独立地址池验证启动恢复。
         MetConfiguration configuration = this.settings();
-        InterAddress address = new InterAddress("rsf://127.0.0.1:2111/default");
+        InterAddress address = new InterAddress("rsf://127.0.0.1:2111");
         try (CacheAddressPool seed = new CacheAddressPool(this.snapshot(configuration)); //
              DiskCache cache = new DiskCache(seed, this.temporary.toFile(), 60000, 3600000)) {
             seed.appendAddress("service", address);
@@ -233,7 +233,7 @@ public class CacheAddressPoolTest {
     public void disabledDiskCacheIgnoresExistingSnapshotAndBorrowsScheduler() throws Exception {
         // 磁盘上存在快照，但未启用磁盘缓存的地址池仍从空地址集启动。
         MetConfiguration configuration = this.settings();
-        InterAddress address = new InterAddress("rsf://127.0.0.1:2111/default");
+        InterAddress address = new InterAddress("rsf://127.0.0.1:2111");
         try (CacheAddressPool seed = new CacheAddressPool(this.snapshot(configuration)); //
              DiskCache cache = new DiskCache(seed, this.temporary.toFile(), 60000, 3600000)) {
             seed.appendAddress("service", address);
@@ -256,8 +256,8 @@ public class CacheAddressPoolTest {
         // 地址池按请求的实际参数执行 XML 路由筛选。
         MetConfiguration configuration = this.settings();
         try (CacheAddressPool pool = new CacheAddressPool(this.snapshot(configuration))) {
-            InterAddress first = new InterAddress("rsf://127.0.0.1:2111/default");
-            InterAddress second = new InterAddress("rsf://127.0.0.1:2112/default");
+            InterAddress first = new InterAddress("rsf://127.0.0.1:2111");
+            InterAddress second = new InterAddress("rsf://127.0.0.1:2112");
             pool.appendAddress("service", Arrays.asList(first, second));
             String argsScript = """
                     <route>

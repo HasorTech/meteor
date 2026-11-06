@@ -20,6 +20,41 @@ import static org.junit.jupiter.api.Assertions.*;
 /** 通过已组装的传输与协议端点验证公开入站生命周期。 */
 public class ConnectorConnectionsTest {
     @Test
+    public void repeatedNetworkConnectionsKeepOneClientPort() throws Exception {
+        ConnectorConfig serverConfig = EndpointFixture.rsfEndpoint("server", true);
+        ConnectorConfig clientConfig = EndpointFixture.rsfEndpoint("client", false);
+        try (ConnectorManager server = EndpointFixture.manager(serverConfig); ConnectorManager client = EndpointFixture.manager(clientConfig)) {
+            server.init();
+            client.init();
+            server.startInbound();
+            InterAddress address = server.getListenAddress("rsf");
+            MetChannel first = client.connect(address).get(3, TimeUnit.SECONDS);
+            for (int i = 0; i < 5000; i++) {
+                MetChannel repeated = client.connect(address).get(3, TimeUnit.SECONDS);
+                assertSame(first, repeated);
+                assertEquals(first.getLocal(), repeated.getLocal());
+            }
+        }
+    }
+
+    @Test
+    public void closedNetworkConnectionIsReplaced() throws Exception {
+        ConnectorConfig serverConfig = EndpointFixture.rsfEndpoint("server", true);
+        ConnectorConfig clientConfig = EndpointFixture.rsfEndpoint("client", false);
+        try (ConnectorManager server = EndpointFixture.manager(serverConfig); ConnectorManager client = EndpointFixture.manager(clientConfig)) {
+            server.init();
+            client.init();
+            server.startInbound();
+            InterAddress address = server.getListenAddress("rsf");
+            MetChannel first = client.connect(address).get(3, TimeUnit.SECONDS);
+            ((ConnectorChannel<?>) first).close().get(3, TimeUnit.SECONDS);
+            MetChannel replacement = client.connect(address).get(3, TimeUnit.SECONDS);
+            assertNotSame(first, replacement);
+            assertNotEquals(first.getLocal(), replacement.getLocal());
+        }
+    }
+
+    @Test
     public void stoppingInboundSuspendsThePublishedAddress() throws Exception {
         // 通过组装后的 RSF 端点打开真实 TCP 监听器。
         ConnectorConfig config = EndpointFixture.rsfEndpoint("server", true);
@@ -99,7 +134,7 @@ public class ConnectorConnectionsTest {
     @Test
     public void protocolNameConnectsThroughItsPublishedAddressScheme() throws Exception {
         // 协议名仍为 rsf，地址前缀单独配置，连接时同时匹配这两个属性。
-        InterAddress address = InterAddress.forBinding("tcp", "127.0.0.1", 0, "test");
+        InterAddress address = InterAddress.forBinding("tcp", "127.0.0.1", 0);
         ProtocolConfig protocol = ProtocolConfig.newConfig("rsf", "published-rsf", Map.of());
         Map<String, String> options = Map.of("workerThread", "1");
         ConnectorConfig incoming = new ConnectorConfig("server", address, options, List.of(protocol), true);
@@ -123,10 +158,10 @@ public class ConnectorConnectionsTest {
     @Test
     public void connectRejectsAnAddressSchemeAsProtocolName() throws Exception {
         // 仅配置出站端点，目标地址的前缀与协议名不同。
-        InterAddress local = InterAddress.forBinding("tcp", "127.0.0.1", 0, "test");
+        InterAddress local = InterAddress.forBinding("tcp", "127.0.0.1", 0);
         ProtocolConfig protocol = ProtocolConfig.newConfig("rsf", "published-rsf", Map.of());
         ConnectorConfig config = new ConnectorConfig("client", local, Map.of(), List.of(protocol), false);
-        InterAddress target = new InterAddress("published-rsf", "127.0.0.1", 1, "test");
+        InterAddress target = new InterAddress("published-rsf", "127.0.0.1", 1);
 
         try (ConnectorManager manager = EndpointFixture.manager(config)) {
             manager.init();

@@ -17,7 +17,7 @@ public class AddressProviderTest {
     @Test
     public void fixedProviderKeepsItsAddressAcrossServices() throws Exception {
         // 固定地址提供器只持有显式给定的目标地址。
-        InterAddress address = new InterAddress("rsf://127.0.0.1:2181/default");
+        InterAddress address = new InterAddress("rsf://127.0.0.1:2181");
         AddressProvider provider = new InstanceAddressProvider(address);
 
         // 服务、方法和参数变化都不会改变固定目标。
@@ -30,7 +30,7 @@ public class AddressProviderTest {
     @Test
     public void fixedProviderIsNotDistributed() throws Exception {
         // 创建绑定单个地址的提供器。
-        InterAddress address = new InterAddress("rsf://127.0.0.1:2181/default");
+        InterAddress address = new InterAddress("rsf://127.0.0.1:2181");
         AddressProvider provider = new InstanceAddressProvider(address);
 
         // 固定地址调用不声明分布式选址能力。
@@ -51,8 +51,8 @@ public class AddressProviderTest {
     public void poolProviderUsesXmlRoute() throws Exception {
         // 为服务提供两个候选地址，并安装仅允许第二个端口的规则。
         AddressPool pool = new AddressPool();
-        InterAddress first = new InterAddress("rsf://127.0.0.1:2181/default");
-        InterAddress second = new InterAddress("rsf://127.0.0.1:2182/default");
+        InterAddress first = new InterAddress("rsf://127.0.0.1:2181");
+        InterAddress second = new InterAddress("rsf://127.0.0.1:2182");
         pool.appendAddress("service", Arrays.asList(first, second));
         AddressProvider provider = new PoolAddressProvider(pool);
         String serviceScript = """
@@ -72,7 +72,7 @@ public class AddressProviderTest {
     public void clearingPoolRouteRestoresProviderCandidates() throws Exception {
         // 唯一候选地址被当前规则排除，提供器暂时无法选址。
         AddressPool pool = new AddressPool();
-        InterAddress first = new InterAddress("rsf://127.0.0.1:2181/default");
+        InterAddress first = new InterAddress("rsf://127.0.0.1:2181");
         pool.appendAddress("service", first);
         AddressProvider provider = new PoolAddressProvider(pool);
         String serviceScript = """
@@ -94,8 +94,8 @@ public class AddressProviderTest {
     public void poolProviderTracksAddressRemoval() throws Exception {
         // 在同一个地址池中登记两个候选地址。
         AddressPool pool = new AddressPool();
-        InterAddress first = new InterAddress("rsf://127.0.0.1:2181/default");
-        InterAddress second = new InterAddress("rsf://127.0.0.1:2182/default");
+        InterAddress first = new InterAddress("rsf://127.0.0.1:2181");
+        InterAddress second = new InterAddress("rsf://127.0.0.1:2182");
         pool.appendAddress("service", Arrays.asList(first, second));
         AddressProvider provider = new PoolAddressProvider(pool);
 
@@ -109,7 +109,7 @@ public class AddressProviderTest {
     public void poolProviderReturnsNullAfterLastAddressRemoval() throws Exception {
         // 先确认提供器能够返回服务的最后一个地址。
         AddressPool pool = new AddressPool();
-        InterAddress first = new InterAddress("rsf://127.0.0.1:2181/default");
+        InterAddress first = new InterAddress("rsf://127.0.0.1:2181");
         pool.appendAddress("service", first);
         AddressProvider provider = new PoolAddressProvider(pool);
         RouteContext input = new RouteContext("service", "echo", null);

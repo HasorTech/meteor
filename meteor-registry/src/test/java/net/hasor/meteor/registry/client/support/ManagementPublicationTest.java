@@ -41,11 +41,7 @@ import net.hasor.meteor.registry.client.RegistryClient;
 import net.hasor.meteor.registry.memory.MemoryRegistryConfiguration;
 import net.hasor.meteor.registry.shared.DecoratedRegistryConfiguration;
 import net.hasor.meteor.registry.shared.StorageProbe;
-import net.hasor.meteor.registry.shared.rpc.InstanceData;
-import net.hasor.meteor.registry.shared.rpc.InstanceEndpointData;
-import net.hasor.meteor.registry.shared.rpc.ManagementRPC;
-import net.hasor.meteor.registry.shared.rpc.ServiceData;
-import net.hasor.meteor.registry.shared.rpc.ServiceMemberData;
+import net.hasor.meteor.registry.shared.rpc.*;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
 import net.hasor.meteor.registry.shared.storage.domain.*;
 import net.hasor.meteor.registry.shared.utils.RegistryJson;
@@ -138,8 +134,8 @@ public class ManagementPublicationTest {
             changed.getInstance().setApplicationName("changed");
             InstanceEndpointData injectedEndpoint = new InstanceEndpointData();
             injectedEndpoint.setProtocolName("changed");
-            injectedEndpoint.setListenAddress("rsf://127.0.0.1:1/default");
-            injectedEndpoint.setManagementAddress("rsf://127.0.0.1:1/default");
+            injectedEndpoint.setListenAddress("rsf://127.0.0.1:1");
+            injectedEndpoint.setManagementAddress("rsf://127.0.0.1:1");
             changed.getInstance().setEndpoints(new InstanceEndpointData[] { injectedEndpoint });
             changed.getService().setName("changed");
             changed.getService().getProtocols()[0] = "changed";
@@ -182,9 +178,9 @@ public class ManagementPublicationTest {
                 .addressScheme("http");
         try (MetContext context = configuration.buildContext()) {
             String serviceId = context.publisher().rsfService(Echo.class).register().getBindID();
-            InterAddress first = new InterAddress("rsf://127.0.0.1:2181/default");
-            InterAddress second = new InterAddress("rsf://127.0.0.1:2182/default");
-            InterAddress third = new InterAddress("http://127.0.0.1:8080/default");
+            InterAddress first = new InterAddress("rsf://127.0.0.1:2181");
+            InterAddress second = new InterAddress("rsf://127.0.0.1:2182");
+            InterAddress third = new InterAddress("http://127.0.0.1:8080");
             context.getUpdater().appendStaticAddress(serviceId, List.of(first, second, third));
 
             // 只观察公开上下文的地址本访问次数，不替换采样内容或服务定义。
@@ -441,7 +437,7 @@ public class ManagementPublicationTest {
             assertEquals("registry-http", admin.getProtocolName());
             assertEquals("http", admin.getScheme());
             assertEquals("/admin", admin.getContextPath());
-            assertEquals(listenAddress, admin.getListenAddress());
+            assertEquals(listenAddress.replace("/orders", "/admin"), admin.getListenAddress());
             assertNull(admin.getManagementAddress());
         }
     }
@@ -578,13 +574,13 @@ public class ManagementPublicationTest {
         // 同一 SPI 协议跨两个端点，各自挂载订单和管理上下文。
         Map<String, String> mountOptions = Map.of("contextPath", "/orders", "contextPaths", "[\"/admin\"]");
         ProtocolConfig protocolA = ProtocolConfig.newConfig("registry-http", "http", mountOptions);
-        ConnectorConfig edgeA = new ConnectorConfig("edge-a", InterAddress.forBinding("http", "0.0.0.0", 0, "default"), //
+        ConnectorConfig edgeA = new ConnectorConfig("edge-a", InterAddress.forBinding("http", "0.0.0.0", 0), //
                 Map.of(), List.of(protocolA), true);
         ProtocolConfig protocolB = ProtocolConfig.newConfig("registry-http", "http", mountOptions);
-        ConnectorConfig edgeB = new ConnectorConfig("edge-b", InterAddress.forBinding("http", "0.0.0.0", 0, "default"), //
+        ConnectorConfig edgeB = new ConnectorConfig("edge-b", InterAddress.forBinding("http", "0.0.0.0", 0), //
                 Map.of(), List.of(protocolB), true);
-        InterAddress listenA = new InterAddress("http", "0.0.0.0", 8100, "default");
-        InterAddress listenB = new InterAddress("http", "0.0.0.0", 8200, "default");
+        InterAddress listenA = new InterAddress("http", "0.0.0.0", 8100);
+        InterAddress listenB = new InterAddress("http", "0.0.0.0", 8200);
         AtomicInteger addressQueries = new AtomicInteger();
         MetConfiguration application = createConfiguration();
         application.connector("tcp") //
@@ -649,8 +645,8 @@ public class ManagementPublicationTest {
             // 完整快照保留逻辑协议、地址 scheme 和每个上下文，不用复合字符串表示端点身份。
             RegistrationSnapshot snapshot = rpc.snapshot(null);
             assertEquals(4, addressQueries.get());
-            String publishedA = new InterAddress("http", "127.0.0.1", 8100, "default").toString();
-            String publishedB = new InterAddress("http", "127.0.0.1", 8200, "default").toString();
+            String publishedA = new InterAddress("http", "127.0.0.1", 8100).toString();
+            String publishedB = new InterAddress("http", "127.0.0.1", 8200).toString();
             EntInstanceEndpointData[] instanceEndpoints = snapshot.getInstance().getEndpoints();
             assertEquals(4, instanceEndpoints.length);
             assertInstanceEndpoint(instanceEndpoints[0], "edge-a", "/orders", listenA.toString(), publishedA);
@@ -668,7 +664,7 @@ public class ManagementPublicationTest {
             assertEndpoint(endpoints[1], "edge-a", "/admin", edgeA.address().toString(), listenA.toString(), publishedA);
             assertEndpoint(endpoints[2], "edge-b", "/orders", edgeB.address().toString(), listenB.toString(), publishedB);
             assertEndpoint(endpoints[3], "edge-b", "/admin", edgeB.address().toString(), listenB.toString(), publishedB);
-            assertEquals(Set.of(publishedA, publishedB), Set.of(service.getAddresses()));
+            assertEquals(Set.of(publishedA + "/orders", publishedA + "/admin", publishedB + "/orders", publishedB + "/admin"), Set.of(service.getAddresses()));
             assertArrayEquals(new String[] { "registry-http" }, rpc.service(null, serviceId).getService().getProtocols());
             assertArrayEquals(new String[] { "registry-http" }, rpc.services(null)[0].getProtocols());
         }
@@ -791,8 +787,8 @@ public class ManagementPublicationTest {
             MetInstanceAdmin instance = admin.getInstanceAdmin(context.getInstanceID());
 
             // 发现结果按支持的协议过滤并去重，旧快照不随后续公告改变。
-            String supported = "rsf://127.0.0.1:2181/default";
-            publishAddresses(storage, id, supported, supported, "hprose://127.0.0.1:8080/default");
+            String supported = "rsf://127.0.0.1:2181";
+            publishAddresses(storage, id, supported, supported, "hprose://127.0.0.1:8080");
             client.pullSync(id).get(5, TimeUnit.SECONDS);
             List<InterAddress> snapshot = context.getUpdater().queryAvailableAddresses(id);
             assertEquals(List.of(new InterAddress(supported)), snapshot);
@@ -824,6 +820,40 @@ public class ManagementPublicationTest {
     }
 
     @Test
+    public void discoveryKeepsTheSameEndpointInDifferentUnits() throws Exception {
+        MemoryRegistryConfiguration registry = new MemoryRegistryConfiguration();
+        registry.setRefreshMillis(600000);
+        MetConfiguration configuration = createConfiguration().addExtension(registry);
+        configuration.connector("tcp").protocol("rsf");
+        try (MetContext context = configuration.buildContext(); StorageAccess storage = registry.openStorage()) {
+            String id = context.publisher().rsfService(Echo.class).register().getBindID();
+            context.start();
+            String target = "rsf://127.0.0.1:2181";
+            for (String unit : List.of("east", "west")) {
+                EntInstanceRuntimeData instance = new EntInstanceRuntimeData();
+                instance.setInstanceId("provider-" + unit);
+                instance.setApplicationName("provider");
+                instance.setIpAddress("127.0.0.1");
+                instance.setUnitName(unit);
+                storage.registerInstance(instance);
+                EntServiceRuntimeData service = new EntServiceRuntimeData();
+                service.setServiceId(id);
+                service.setRole(MetServiceType.Provider);
+                service.setAddresses(new String[] { target });
+                storage.registerService(instance.getInstanceId(), service);
+            }
+            RegistryClient client = context.getExtension(RegistryClient.class);
+            client.pullSync(id).get(5, TimeUnit.SECONDS);
+            InterAddress address = new InterAddress(target);
+            assertEquals(Map.of("east", List.of(address), "west", List.of(address)), context.getUpdater().queryAddressesByUnit(id));
+            storage.unregisterService("provider-east", id);
+            client.pullSync(id).get(5, TimeUnit.SECONDS);
+            assertEquals(Map.of("west", List.of(address)), context.getUpdater().queryAddressesByUnit(id));
+            assertEquals(List.of(address), context.getUpdater().queryAllAddresses(id));
+        }
+    }
+
+    @Test
     public void discoveryPreservesEverySchemeAndOnlySelectsSupportedAddresses() throws Exception {
         // 真实客户端从内存注册存储发现两个协议，应用只配置 RSF 消费连接器。
         MemoryRegistryConfiguration registry = new MemoryRegistryConfiguration();
@@ -836,8 +866,8 @@ public class ManagementPublicationTest {
              StorageAccess storage = registry.openStorage()) {
             String id = context.publisher().rsfService(Echo.class).register().getBindID();
             context.start();
-            InterAddress supported = new InterAddress("rsf://127.0.0.1:2181/default");
-            InterAddress unsupported = new InterAddress("hprose://127.0.0.1:8080/default");
+            InterAddress supported = new InterAddress("rsf://127.0.0.1:2181");
+            InterAddress unsupported = new InterAddress("hprose://127.0.0.1:8080");
             publishAddresses(storage, id, supported.toString(), unsupported.toString());
             context.getExtension(RegistryClient.class).pullSync(id).get(5, TimeUnit.SECONDS);
 
@@ -866,8 +896,8 @@ public class ManagementPublicationTest {
             String id = context.publisher().rsfService(Echo.class).register().getBindID();
             context.start();
             RegistryClient client = context.getExtension(RegistryClient.class);
-            InterAddress fixed = new InterAddress("rsf://127.0.0.1:2181/default");
-            InterAddress discovered = new InterAddress("rsf://127.0.0.1:2182/default");
+            InterAddress fixed = new InterAddress("rsf://127.0.0.1:2181");
+            InterAddress discovered = new InterAddress("rsf://127.0.0.1:2182");
             context.getUpdater().appendStaticAddress(id, List.of(fixed));
             publishAddresses(storage, id, discovered.toString());
             client.pullSync(id).get(5, TimeUnit.SECONDS);
@@ -911,6 +941,17 @@ public class ManagementPublicationTest {
         assertEquals(ProtocolStatus.Forbidden, ((MetException) failure).getStatus());
     }
 
+    private static String withPath(String address, String path) {
+        if (address == null)
+            return null;
+        try {
+            InterAddress parsed = new InterAddress(address);
+            return new InterAddress(parsed.getSchema(), parsed.getHost(), parsed.getPort(), path).toString();
+        } catch (Exception failure) {
+            throw new IllegalArgumentException(failure);
+        }
+    }
+
     private static void assertEndpoint(RefProtocolMountData endpoint, String connectorName, String contextPath, //
             String configuredAddress, String listenAddress, String publishedAddress) {
         assertEquals(connectorName, endpoint.getConnectorName());
@@ -920,8 +961,8 @@ public class ManagementPublicationTest {
         assertEquals(contextPath, endpoint.getContextPath());
         assertTrue(endpoint.isBindEnabled());
         assertEquals(configuredAddress, endpoint.getConfiguredAddress());
-        assertEquals(listenAddress, endpoint.getListenAddress());
-        assertEquals(publishedAddress, endpoint.getPublishedAddress());
+        assertEquals(withPath(listenAddress, contextPath), endpoint.getListenAddress());
+        assertEquals(withPath(publishedAddress, contextPath), endpoint.getPublishedAddress());
     }
 
     private static InstanceEndpointData instanceEndpoint(String connectorName, String transport, String protocolName, //
@@ -944,8 +985,8 @@ public class ManagementPublicationTest {
         assertEquals("registry-http", endpoint.getProtocolName());
         assertEquals("http", endpoint.getScheme());
         assertEquals(contextPath, endpoint.getContextPath());
-        assertEquals(listenAddress, endpoint.getListenAddress());
-        assertEquals(managementAddress, endpoint.getManagementAddress());
+        assertEquals(withPath(listenAddress, contextPath), endpoint.getListenAddress());
+        assertEquals(withPath(managementAddress, contextPath), endpoint.getManagementAddress());
     }
 
     private static MetServiceMember member(RegistryAdmin admin, String serviceId) {
@@ -962,6 +1003,7 @@ public class ManagementPublicationTest {
         EntInstanceRuntimeData runtime = new EntInstanceRuntimeData();
         runtime.setInstanceId("remote");
         runtime.setApplicationName("remote-app");
+        runtime.setUnitName("remote");
         runtime.setIpAddress("127.0.0.1");
         storage.registerInstance(runtime);
         EntServiceRuntimeData service = new EntServiceRuntimeData();

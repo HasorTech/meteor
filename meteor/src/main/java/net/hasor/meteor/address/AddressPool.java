@@ -198,8 +198,20 @@ public class AddressPool {
         this._appendAddress(serviceID, newHostSet, AddressTypeEnum.Dynamic);
     }
 
+    public void appendAddress(String serviceID, Map<String, List<InterAddress>> units) {
+        this._appendAddress(serviceID, units, AddressTypeEnum.Dynamic);
+    }
+
+    public void appendStaticAddress(String serviceID, Map<String, List<InterAddress>> units) {
+        this._appendAddress(serviceID, units, AddressTypeEnum.Static);
+    }
+
     private void _appendAddress(String serviceID, Collection<InterAddress> newHostSet, AddressTypeEnum type) {
-        String hosts = StringUtils.join(newHostSet.toArray(), ", ");
+        this._appendAddress(serviceID, Map.of("", List.copyOf(newHostSet)), type);
+    }
+
+    private void _appendAddress(String serviceID, Map<String, List<InterAddress>> newHostSet, AddressTypeEnum type) {
+        String hosts = newHostSet.toString();
         logger.info("updateAddress of service " + serviceID + " , new Address set = " + hosts);
         //1.AddressBucketd
         AddressBucket bucket = this.addressPool.get(serviceID);
@@ -297,6 +309,19 @@ public class AddressPool {
         }
         bucket.refreshAddressToNew(addressList);
         this.rulerCache.reset();
+    }
+
+    public void refreshAddress(String serviceID, Map<String, List<InterAddress>> units) {
+        AddressBucket bucket = this.addressPool.get(serviceID);
+        if (bucket != null) {
+            bucket.refreshAddressToNew(units);
+            this.rulerCache.reset();
+        }
+    }
+
+    public Map<String, List<InterAddress>> queryAddressesByUnit(String serviceID) {
+        AddressBucket bucket = this.addressPool.get(serviceID);
+        return bucket == null ? Map.of() : bucket.getAddressesByUnit(AddressTypeEnum.Dynamic);
     }
 
     /** 刷新地址缓存 */

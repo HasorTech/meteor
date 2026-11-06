@@ -96,7 +96,7 @@ public class ConnectorAssemblyTest {
         // 管理器从上下文加载尚未支持的端点配置。
         Map<String, String> options = Map.of();
         ProtocolConfig protocol = ProtocolConfig.newConfig("rsf", "rsf", Map.of());
-        InterAddress local = InterAddress.forBinding("missing", "127.0.0.1", 0, "test");
+        InterAddress local = InterAddress.forBinding("missing", "127.0.0.1", 0);
         ConnectorConfig config = new ConnectorConfig("server", local, options, List.of(protocol), true);
         try (ConnectorManager manager = EndpointFixture.manager(config)) {
             // 不支持的传输类型在端点构建前被拒绝。

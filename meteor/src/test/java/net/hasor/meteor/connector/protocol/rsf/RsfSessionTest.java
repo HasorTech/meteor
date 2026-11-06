@@ -337,10 +337,8 @@ public class RsfSessionTest {
         assertTrue(session.ready().isDone());
     }
 
-    private ProtocolSession<byte[]> session( //
-            Connection connection, List<OptionInfo> messages, //
-            Map<String, String> options) throws Exception {
-        InterAddress address = new InterAddress("rsf", "127.0.0.1", 2181, "default");
+    private ProtocolSession<byte[]> session(Connection connection, List<OptionInfo> messages, Map<String, String> options) throws Exception {
+        InterAddress address = new InterAddress("127.0.0.1", 2181);
         ProtocolConfig config = config(options);
         RouteMountIndex routes = new RouteMountIndex("unit", config);
         ProtocolSessionContext protocol = ProtocolTestAccess.context( //

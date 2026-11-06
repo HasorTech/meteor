@@ -70,7 +70,8 @@ public final class FrameworkPeerUtils {
             if (StringUtils.isBlank(host)) {
                 throw new IllegalStateException("METEOR_TEST_HOST_JAVA is required for framework provider readiness");
             }
-            InterAddress reachable = new InterAddress(listen.getSchema(), host, listen.getPort(), listen.getFormUnit());
+
+            InterAddress reachable = new InterAddress(listen.getSchema(), host, listen.getPort(), listen.getPath());
             report.put("event", "ready");
             report.put("target", reachable.toHostSchema());
         }

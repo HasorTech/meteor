@@ -23,15 +23,14 @@ import net.hasor.meteor.address.route.random.RandomFlowControl;
 import net.hasor.meteor.address.route.speed.SpeedFlowControl;
 import net.hasor.meteor.address.route.unit.UnitFlowControl;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static net.hasor.meteor.address.route.FlowControlScripts.speed;
 import static net.hasor.meteor.address.route.FlowControlScripts.unit;
 import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 public class FlowControlTest {
-    private final InterAddress local  = new InterAddress("127.0.0.1", 8000, "local");
-    private final InterAddress remote = new InterAddress("127.0.0.2", 8000, "remote");
+    private final InterAddress local  = new InterAddress("127.0.0.1", 8000);
+    private final InterAddress remote = new InterAddress("127.0.0.2", 8000);
 
     @Test
     public void unitThresholdIncludesEquality() {
@@ -70,7 +69,7 @@ public class FlowControlTest {
         UnitFlowControl rule = (UnitFlowControl) new RuleParser().ruleSettings(xml);
 
         // 空候选列表不产生本单元地址。
-        assertNull(rule.siftUnitAddress("local", Collections.emptyList()));
+        assertNull(rule.siftUnitAddress(Collections.singleton(this.local), Collections.emptyList()));
     }
 
     @Test
@@ -80,18 +79,18 @@ public class FlowControlTest {
         UnitFlowControl rule = (UnitFlowControl) new RuleParser().ruleSettings(xml);
 
         // 空引用候选不产生本单元地址。
-        assertNull(rule.siftUnitAddress("local", null));
+        assertNull(rule.siftUnitAddress(Collections.singleton(this.local), null));
     }
 
     @Test
-    public void unitNameMatchingIgnoresCase() {
+    public void unitFilterUsesExplicitMembership() {
         // 规则按本单元筛选，调用方使用大写单元名。
         String xml = unit(true, 0.5, "192.0.2.*");
         UnitFlowControl rule = (UnitFlowControl) new RuleParser().ruleSettings(xml);
         List<InterAddress> candidates = Arrays.asList(this.local, this.remote);
 
         // 大小写不影响本单元匹配。
-        List<InterAddress> selected = rule.siftUnitAddress("LOCAL", candidates);
+        List<InterAddress> selected = rule.siftUnitAddress(Collections.singleton(this.local), candidates);
         assertEquals(Collections.singletonList(this.local), selected);
     }
 
@@ -103,7 +102,7 @@ public class FlowControlTest {
         List<InterAddress> candidates = Arrays.asList(this.local, this.remote);
 
         // 没有跨单元例外时，只保留本单元地址。
-        List<InterAddress> selected = rule.siftUnitAddress("local", candidates);
+        List<InterAddress> selected = rule.siftUnitAddress(Collections.singleton(this.local), candidates);
         assertEquals(Collections.singletonList(this.local), selected);
     }
 
@@ -114,7 +113,7 @@ public class FlowControlTest {
         List<InterAddress> candidates = Arrays.asList(this.local, this.remote);
 
         // 排除名单中的提供者与本单元地址共同参与选址。
-        assertEquals(candidates, rule.siftUnitAddress("local", candidates));
+        assertEquals(candidates, rule.siftUnitAddress(Collections.singleton(this.local), candidates));
     }
 
     @Test
@@ -122,6 +121,7 @@ public class FlowControlTest {
         // 配置本单元优先，并确认本地地址可用。
         AddressPool pool = new AddressPool("local", 30000);
         pool.appendAddress("s", Arrays.asList(this.local, this.remote));
+        pool.refreshAddress("s", java.util.Map.of("local", List.of(this.local), "remote", List.of(this.remote)));
         String flowScript = "<controlSet>" + unit(true, 0.5, "192.0.2.*") + "</controlSet>";
         pool.updateFlowControl("s", flowScript);
         assertEquals(this.local, pool.nextAddress("s", "get", null));
@@ -136,6 +136,7 @@ public class FlowControlTest {
         // 配置一条禁用的单元规则。
         AddressPool pool = new AddressPool("local", 30000);
         pool.appendAddress("s", Arrays.asList(this.local, this.remote));
+        pool.refreshAddress("s", java.util.Map.of("local", List.of(this.local), "remote", List.of(this.remote)));
         String disabledRule = "<controlSet>" + unit(false, 0.5, "192.0.2.*") + "</controlSet>";
         pool.updateFlowControl("s", disabledRule);
 
@@ -229,7 +230,9 @@ public class FlowControlTest {
         AddressPool pool = new AddressPool("local", 30000);
         List<InterAddress> candidates = Arrays.asList(this.local, this.remote);
         pool.appendAddress("one", candidates);
+        pool.refreshAddress("one", java.util.Map.of("local", List.of(this.local), "remote", List.of(this.remote)));
         pool.appendAddress("two", candidates);
+        pool.refreshAddress("two", java.util.Map.of("local", List.of(this.local), "remote", List.of(this.remote)));
         String enabledRule = "<controlSet>" + unit(true, 0.5, "192.0.2.*") + "</controlSet>";
         pool.updateFlowControl("one", enabledRule);
         String disabledRule = "<controlSet>" + unit(false, 0.5, "192.0.2.*") + "</controlSet>";
@@ -246,6 +249,7 @@ public class FlowControlTest {
         // 准备已有服务，排除服务不存在这一失败原因。
         AddressPool pool = new AddressPool();
         pool.appendAddress("s", this.local);
+        pool.refreshAddress("s", java.util.Map.of("local", List.of(this.local)));
 
         // 非 XML 更新应报告失败。
         assertFalse(pool.updateFlowControl("s", "not xml"));
@@ -256,6 +260,7 @@ public class FlowControlTest {
         // 准备已有服务，排除服务不存在这一失败原因。
         AddressPool pool = new AddressPool();
         pool.appendAddress("s", this.local);
+        pool.refreshAddress("s", java.util.Map.of("local", List.of(this.local)));
 
         // 空配置更新应报告失败。
         assertFalse(pool.updateFlowControl("s", ""));
@@ -521,6 +526,7 @@ public class FlowControlTest {
         // 先启用本单元筛选，确认当前配置已经生效。
         AddressPool pool = new AddressPool("local", 30000);
         pool.appendAddress("s", Arrays.asList(this.local, this.remote));
+        pool.refreshAddress("s", java.util.Map.of("local", List.of(this.local), "remote", List.of(this.remote)));
         String unitRule = "<controlSet>" + unit(true, 0.5, "") + "</controlSet>";
         assertTrue(pool.updateFlowControl("s", unitRule));
         assertEquals(Collections.singletonList(this.local), pool.queryLocalUnitAddresses("s"));
@@ -536,6 +542,7 @@ public class FlowControlTest {
         // 先发布一份有效的单元规则。
         AddressPool pool = new AddressPool("local", 30000);
         pool.appendAddress("s", Arrays.asList(this.local, this.remote));
+        pool.refreshAddress("s", java.util.Map.of("local", List.of(this.local), "remote", List.of(this.remote)));
         String original = "<controlSet>" + unit(true, 0.5, "") + "</controlSet>";
         assertTrue(pool.updateFlowControl("s", original));
 
@@ -553,6 +560,7 @@ public class FlowControlTest {
         // 先发布有效的单元筛选规则。
         AddressPool pool = new AddressPool("local", 30000);
         pool.appendAddress("s", Arrays.asList(this.local, this.remote));
+        pool.refreshAddress("s", java.util.Map.of("local", List.of(this.local), "remote", List.of(this.remote)));
         String valid = "<controlSet>" + unit(true, 0.5, "192.0.2.*") + "</controlSet>";
         pool.updateFlowControl("s", valid);
 

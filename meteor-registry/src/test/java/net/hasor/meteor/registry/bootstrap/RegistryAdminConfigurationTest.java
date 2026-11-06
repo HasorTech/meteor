@@ -6,6 +6,10 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor.registry.bootstrap;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -17,6 +21,7 @@ import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.registry.RegistryAdmin;
 import net.hasor.meteor.registry.RegistryConfiguration;
 import net.hasor.meteor.registry.admin.MetClusterAdmin;
+import net.hasor.meteor.registry.admin.MetInstanceEndpoint;
 import net.hasor.meteor.registry.admin.MetPage;
 import net.hasor.meteor.registry.admin.MetServiceInfo;
 import net.hasor.meteor.registry.client.RegistryClient;
@@ -29,13 +34,43 @@ import net.hasor.meteor.registry.shared.rpc.InstanceData;
 import net.hasor.meteor.registry.shared.rpc.InstanceEndpointData;
 import net.hasor.meteor.registry.shared.rpc.ManagementRPC;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
+import net.hasor.meteor.registry.shared.storage.domain.EntInstanceEndpointData;
 import net.hasor.meteor.registry.shared.storage.domain.EntServiceCatalogData;
+import net.hasor.meteor.registry.shared.utils.RegistryJson;
 import org.junit.jupiter.api.Test;
 import static net.hasor.meteor.registry.shared.RegistryTestUtils.createConfiguration;
 import static net.hasor.meteor.registry.shared.RegistryTestUtils.createDataHome;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RegistryAdminConfigurationTest {
+    @Test
+    public void httpEndpointsReportActualSoapServicesAndWsdlAddresses() throws Exception {
+        MetConfiguration configuration = createConfiguration().addExtension(new RegistryConfiguration().setOnline(false));
+        configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        configuration.connector("http").bind("127.0.0.1", 0).protocol("soap").contextPath("/soap");
+        try (MetContext context = configuration.buildContext()) {
+            context.start();
+            context.publisher().rsfService(Echo.class).toInstance(value -> value).name("one").protocol("soap").aliasName("soap", "First").register();
+            context.publisher().rsfService(Echo.class).toInstance(value -> value).name("two").protocol("soap").aliasName("soap", "Second").contextPathByExact("soap", "/exact").register();
+            ManagementRPC management = context.getServiceProvider(context.getServiceInfo(ManagementRPC.class)).get();
+            InstanceEndpointData endpoint = Arrays.stream(management.instance(null).getEndpoints()).filter(item -> StringUtils.equals(item.getProtocolName(), "soap")).findFirst().orElseThrow();
+            String base = "http://127.0.0.1:" + context.getListenAddress("soap").getPort();
+            assertEquals(List.of(base + "/soap/First?wsdl"), endpoint.getHttpEndpoints().get(base + "/soap/First"));
+            assertEquals(List.of(base + "/exact?wsdl"), endpoint.getHttpEndpoints().get(base + "/exact"));
+            // 精确服务不能冒充为 /soap/Second。
+            assertFalse(endpoint.getHttpEndpoints().containsKey(base + "/soap/Second"));
+            HttpClient client = HttpClient.newHttpClient();
+            for (String definition : endpoint.getHttpEndpoints().values().stream().flatMap(List::stream).toList()) {
+                var response = client.send(HttpRequest.newBuilder(URI.create(definition)).GET().build(), HttpResponse.BodyHandlers.ofString());
+                assertEquals(200, response.statusCode(), response.body());
+                assertTrue(response.body().contains("definitions"), response.body());
+            }
+            EntInstanceEndpointData stored = RegistryJson.copy(endpoint, EntInstanceEndpointData.class);
+            MetInstanceEndpoint restored = RegistryJson.copy(stored, MetInstanceEndpoint.class);
+            assertEquals(endpoint.getHttpEndpoints(), restored.getHttpEndpoints());
+        }
+    }
+
     @Test
     public void defaultsManagementPublicationToRsf() throws Exception {
         // 业务端点包含 HTTP，默认管理服务仍只选择 RSF。

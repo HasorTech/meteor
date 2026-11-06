@@ -38,7 +38,7 @@ public final class ContainerFixtures {
                     return "unit";
                 case "getConnectorConfigs":
                     ProtocolConfig protocol = ProtocolConfig.newConfig("rsf", "rsf", Map.of());
-                    InterAddress address = InterAddress.forBinding("tcp", "127.0.0.1", 0, "unit");
+                    InterAddress address = InterAddress.forBinding("tcp", "127.0.0.1", 0);
                     ConnectorConfig connector = new ConnectorConfig("tcp", address, Map.of(), List.of(protocol), false);
                     return List.of(connector);
                 default:

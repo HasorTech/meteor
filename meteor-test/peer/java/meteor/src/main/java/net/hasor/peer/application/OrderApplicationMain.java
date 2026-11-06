@@ -11,11 +11,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import net.hasor.cobble.StringUtils;
-import net.hasor.example.Order;
-import net.hasor.example.OrderDemoService;
-import net.hasor.example.OrderDemoServiceImpl;
-import net.hasor.example.OrderExampleUtils;
-import net.hasor.example.OrderQuery;
+import net.hasor.example.*;
+import net.hasor.example.discovery.AddressSelectionAwaiter;
 import net.hasor.example.oncrpc.OncRpcOrderBridge;
 import net.hasor.example.oncrpc.OncRpcOrderService;
 import net.hasor.example.oncrpc.OrderXdrCodec;
@@ -31,7 +28,6 @@ import net.hasor.meteor.registry.dubbo.DubboRegistryClient;
 import net.hasor.meteor.registry.dubbo.DubboRegistryConfiguration;
 import net.hasor.meteor.registry.nacos.NacosRegistryConfiguration;
 import net.hasor.meteor.registry.zookeeper.ZookeeperRegistryConfiguration;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
 
 /** 测试自有的单协议应用入口；每个提供者和消费者在独立 JVM 中启动。 */
 public final class OrderApplicationMain {
@@ -93,8 +89,7 @@ public final class OrderApplicationMain {
         }
     }
 
-    private static MetConfiguration configuration(String protocol, boolean provider, String discovery,
-            String registryAddress, String registryScope) throws IOException {
+    private static MetConfiguration configuration(String protocol, boolean provider, String discovery, String registryAddress, String registryScope) throws IOException {
         MetConfiguration configuration = new MetConfiguration() //
                 .setUnitName("local");
         String role = "consumer";
@@ -121,7 +116,8 @@ public final class OrderApplicationMain {
                     .setAddress(registryAddress).setPublishHost(publishHost()));
             case "dubbo" -> configuration.addExtension(new DubboRegistryConfiguration() //
                     .setAddress("zookeeper://" + registryAddress).setPublishHost(publishHost()));
-            case "direct" -> { }
+            case "direct" -> {
+            }
             default -> throw new IllegalArgumentException("Unknown discovery: " + discovery);
         }
 
@@ -169,8 +165,7 @@ public final class OrderApplicationMain {
         }
 
         // 注册客户端的管理 RPC 使用独立 RSF 挂载，业务服务仍只发布到当前协议。
-        boolean managedRegistry = StringUtils.equals("nacos", discovery)
-                || StringUtils.equals("zookeeper", discovery);
+        boolean managedRegistry = StringUtils.equals("nacos", discovery) || StringUtils.equals("zookeeper", discovery);
         if (managedRegistry && !StringUtils.equals("rsf", protocol)) {
             var management = configuration.connector("tcp");
             if (provider) {
@@ -181,8 +176,7 @@ public final class OrderApplicationMain {
         return configuration;
     }
 
-    private static MetBindInfo<?> bind(MetContext context, String protocol, boolean provider, String discovery,
-            String registryScope) throws IOException {
+    private static MetBindInfo<?> bind(MetContext context, String protocol, boolean provider, String discovery, String registryScope) throws IOException {
         // ONC RPC 使用标量查询签名，桥接到同一份测试订单实现。
         if (StringUtils.equals("oncrpc", protocol)) {
             ConfigurationBuilder<OncRpcOrderService> builder;
@@ -235,20 +229,18 @@ public final class OrderApplicationMain {
         return builder.register();
     }
 
-    private static void consume(MetContext context, MetBindInfo<?> binding, String protocol, String discovery)
-            throws Exception {
+    private static void consume(MetContext context, MetBindInfo<?> binding, String protocol, String discovery) throws Exception {
         // 创建消费代理，原生 Dubbo 发现由 reference 显式建立订阅。
         boolean direct = StringUtils.equals("direct", discovery);
         MetClient client = context.getRsfClient();
         if (direct) {
             URI target = URI.create(environment("METEOR_ORDER_TARGET", protocol + "://127.0.0.1:8080"));
-            client = context.getRsfClient(new InterAddress(protocol, target.getHost(), target.getPort(), "local"));
+            client = context.getRsfClient(new InterAddress(protocol, target.getHost(), target.getPort()));
         }
         Object remote;
         if (StringUtils.equals("dubbo", discovery)) {
             DubboRegistryClient registry = context.getExtension(DubboRegistryClient.class);
-            @SuppressWarnings("unchecked")
-            MetBindInfo<OrderDemoService> typedBinding = (MetBindInfo<OrderDemoService>) binding;
+            @SuppressWarnings("unchecked") MetBindInfo<OrderDemoService> typedBinding = (MetBindInfo<OrderDemoService>) binding;
             remote = registry.reference(typedBinding);
         } else {
             remote = client.getRemote(binding);

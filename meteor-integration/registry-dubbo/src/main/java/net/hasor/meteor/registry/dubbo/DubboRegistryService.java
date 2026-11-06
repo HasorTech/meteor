@@ -279,7 +279,8 @@ final class DubboRegistryService implements DubboRegistryClient, AutoCloseable {
         if (!this.running || this.context.getServiceInfo(service.getBindID()) == null) {
             return;
         }
-        List<InterAddress> addresses = DubboServiceUrls.providers(this.context, service, urls, this.secureScheme);
+
+        Map<String, List<InterAddress>> addresses = DubboServiceUrls.providers(this.context, service, urls, this.secureScheme);
         this.context.getUpdater().refreshAddress(service.getBindID(), addresses);
     }
 

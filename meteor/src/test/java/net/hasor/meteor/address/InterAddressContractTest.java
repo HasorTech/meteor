@@ -10,15 +10,17 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class InterAddressContractTest {
     @Test
     public void canonicalUriAndSocketRoundTrip() throws Exception {
-        // 解析地址时归一化协议名，保留主机、端口和单元。
-        InterAddress address = new InterAddress("RSF://127.0.0.1:8000/zone");
+        // 解析地址时归一化协议名，保留主机、端口和完整路径。
+        InterAddress address = new InterAddress("RSF://127.0.0.1:8000");
         assertEquals("rsf", address.getSchema());
-        assertEquals("zone", address.getFormUnit());
+        assertEquals("", address.getPath());
         assertEquals("127.0.0.1", address.getHost());
         assertEquals(8000, address.getPort());
         assertEquals("127.0.0.1:8000", address.getHostPort());
@@ -26,14 +28,46 @@ public class InterAddressContractTest {
         // URI、Socket、字符串和组件构造形式均指向同一目标。
         assertEquals(address, new InterAddress(address.toURI()));
         assertEquals(8000, address.toSocketAddress().getPort());
-        assertEquals("rsf://127.0.0.1:8000/zone", address.toString());
-        assertEquals(address, new InterAddress("127.0.0.1", 8000, "zone"));
+        assertEquals("rsf://127.0.0.1:8000", address.toString());
+        assertEquals(address, new InterAddress("127.0.0.1", 8000));
+    }
+
+    @Test
+    public void hostAndPortConstructorUsesRsfWithoutAPath() {
+        // 默认协议的无路径入口无需填写空字符串。
+        InterAddress address = new InterAddress("127.0.0.1", 8000);
+        assertEquals("rsf://127.0.0.1:8000", address.toString());
+        assertEquals("", address.getPath());
+    }
+
+    @Test
+    public void explicitProtocolConstructorPreservesTheSchemeWithoutAPath() {
+        // 显式协议的短构造保留原有协议及 IPv6 主机格式。
+        InterAddress address = new InterAddress("jsonrpc", "::1", 8000);
+        assertEquals("jsonrpc://[::1]:8000", address.toString());
+        assertEquals("", address.getPath());
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    public void optionalPathMatchesThePathlessConstructors(String path) {
+        // null 和空字符串均表示无挂载路径。
+        assertEquals(new InterAddress("127.0.0.1", 8000), new InterAddress("127.0.0.1", 8000, path));
+        assertEquals(new InterAddress("jsonrpc", "127.0.0.1", 8000),
+                new InterAddress("jsonrpc", "127.0.0.1", 8000, path));
+    }
+
+    @Test
+    public void pathlessRemoteConstructorsStillRejectPortZero() {
+        // 省略路径不会放宽远端地址的端口校验。
+        assertThrows(IllegalStateException.class, () -> new InterAddress("127.0.0.1", 0));
+        assertThrows(IllegalStateException.class, () -> new InterAddress("jsonrpc", "127.0.0.1", 0));
     }
 
     @Test
     public void hostEqualityIgnoresProtocolAndUnit() throws Exception {
         // 同一主机和端口可属于不同协议、单元。
-        InterAddress address = new InterAddress("rsf://127.0.0.1:8000/zone");
+        InterAddress address = new InterAddress("rsf://127.0.0.1:8000");
         InterAddress otherProtocolAndUnit = new InterAddress("http", "127.0.0.1", 8000, "other");
 
         // 主机比较只比较连接目标。
@@ -44,44 +78,44 @@ public class InterAddressContractTest {
     @Test
     public void nullHostStringDoesNotMatch() throws Exception {
         // 字符串形式的空目标不匹配有效主机。
-        InterAddress address = new InterAddress("rsf://127.0.0.1:8000/zone");
+        InterAddress address = new InterAddress("rsf://127.0.0.1:8000");
         assertFalse(address.equalsHost((String) null));
     }
 
     @Test
     public void nullHostAddressDoesNotMatch() throws Exception {
         // 地址形式的空目标不匹配有效主机。
-        InterAddress address = new InterAddress("rsf://127.0.0.1:8000/zone");
+        InterAddress address = new InterAddress("rsf://127.0.0.1:8000");
         assertFalse(address.equalsHost((InterAddress) null));
     }
 
     @Test
     public void addressEqualityRejectsNull() throws Exception {
         // 完整地址不能等于空对象。
-        InterAddress address = new InterAddress("rsf://127.0.0.1:8000/zone");
+        InterAddress address = new InterAddress("rsf://127.0.0.1:8000");
         assertNotEquals(address, null);
     }
 
     @Test
     public void addressEqualityRejectsItsStringRepresentation() throws Exception {
         // 相同文本不能替代地址对象参与完整地址相等比较。
-        InterAddress address = new InterAddress("rsf://127.0.0.1:8000/zone");
+        InterAddress address = new InterAddress("rsf://127.0.0.1:8000");
         assertNotEquals(address, address.toString());
     }
 
     @Test
     public void addressEqualityDistinguishesProtocols() throws Exception {
-        // 同一主机和单元采用不同协议时仍是不同服务地址。
-        InterAddress address = new InterAddress("rsf://127.0.0.1:8000/zone");
-        InterAddress http = new InterAddress("http", "127.0.0.1", 8000, "zone");
+        // 同一主机和路径采用不同协议时仍是不同服务地址。
+        InterAddress address = new InterAddress("rsf://127.0.0.1:8000");
+        InterAddress http = new InterAddress("http", "127.0.0.1", 8000);
         assertNotEquals(address, http);
     }
 
     @Test
     public void caseInsensitiveEqualityWorksAsMapKey() throws Exception {
-        // 仅主机和单元大小写不同的地址作为同一个映射键。
-        InterAddress upper = new InterAddress("rsf://LOCALHOST:8000/ZONE");
-        InterAddress lower = new InterAddress("rsf://localhost:8000/zone");
+        // 仅主机大小写不同的地址作为同一个映射键。
+        InterAddress upper = new InterAddress("rsf://LOCALHOST:8000");
+        InterAddress lower = new InterAddress("rsf://localhost:8000");
         assertEquals(upper, lower);
         Map<InterAddress, String> map = new HashMap<>();
         map.put(upper, "provider");
@@ -98,17 +132,17 @@ public class InterAddressContractTest {
     public void differentProtocolsRemainDistinctMapKeys() throws Exception {
         // 同一目标主机的两个协议在映射中各占一个位置。
         Map<InterAddress, String> map = new HashMap<>();
-        map.put(new InterAddress("rsf://localhost:8000/zone"), "rsf");
-        map.put(new InterAddress("http", "localhost", 8000, "zone"), "http");
+        map.put(new InterAddress("rsf://localhost:8000"), "rsf");
+        map.put(new InterAddress("http", "localhost", 8000), "http");
         assertEquals(2, map.size());
     }
 
     @Test
     public void localHostAliasResolvesWithoutChangingItsDeclaredAddress() throws Exception {
         // local 别名用于解析本机地址，同时保留原始声明文本。
-        InterAddress address = new InterAddress("rsf://local:8000/unit");
+        InterAddress address = new InterAddress("rsf://local:8000");
         String resolvedHost = address.getHost();
-        assertEquals("rsf://local:8000/unit", address.toString());
+        assertEquals("rsf://local:8000", address.toString());
         assertNotNull(resolvedHost);
         assertFalse(resolvedHost.isEmpty());
         assertNotEquals("local", resolvedHost);
@@ -117,7 +151,7 @@ public class InterAddressContractTest {
     @Test
     public void ipv6UriRoundTrip() throws Exception {
         // IPv6 地址往返 URI 并转换为 Socket 后保留原目标和端口。
-        InterAddress address = new InterAddress("rsf://[::1]:8000/zone");
+        InterAddress address = new InterAddress("rsf://[::1]:8000");
         assertEquals(address, new InterAddress(address.toURI()));
         assertEquals(8000, address.toSocketAddress().getPort());
     }
@@ -125,7 +159,7 @@ public class InterAddressContractTest {
     @Test
     public void ipv6ComponentConstructorProducesParseableAddress() throws Exception {
         // 组件构造的 IPv6 地址在文本中补足括号，能够再次解析。
-        InterAddress address = new InterAddress("rsf", "::1", 8000, "zone");
+        InterAddress address = new InterAddress("::1", 8000);
         InterAddress fromUri = new InterAddress(address.toURI());
         InterAddress fromText = new InterAddress(address.toHostSchema());
         assertEquals(fromUri, fromText);
@@ -147,30 +181,30 @@ public class InterAddressContractTest {
     @Test
     public void zeroServicePortIsRejected() {
         // 远程服务地址必须使用实际端口，不能使用绑定占位端口零。
-        URI address = URI.create("rsf://127.0.0.1:0/zone");
+        URI address = URI.create("rsf://127.0.0.1:0");
         assertFalse(InterAddress.checkFormat(address));
     }
 
     @Test
     public void localEndpointCanRequestAnEphemeralPortWithoutRelaxingServiceAddresses() {
         // 本地绑定允许端口零，但它仍不能作为远程服务地址使用。
-        InterAddress local = InterAddress.forBinding("tcp", "127.0.0.1", 0, "default");
+        InterAddress local = InterAddress.forBinding("tcp", "127.0.0.1", 0);
         assertEquals(0, local.getPort());
-        assertEquals("tcp://127.0.0.1:0/default", local.toHostSchema());
+        assertEquals("tcp://127.0.0.1:0", local.toHostSchema());
         assertFalse(InterAddress.checkFormat(URI.create(local.toHostSchema())));
     }
 
     @Test
     public void missingPortIsRejected() {
         // 服务地址缺少端口时返回校验失败。
-        URI address = URI.create("rsf://127.0.0.1/zone");
+        URI address = URI.create("rsf://127.0.0.1");
         assertFalse(InterAddress.checkFormat(address));
     }
 
     @Test
     public void outOfRangePortIsRejected() {
         // 服务地址不能使用超过端口上限的数值。
-        URI address = URI.create("rsf://127.0.0.1:65536/zone");
+        URI address = URI.create("rsf://127.0.0.1:65536");
         assertFalse(InterAddress.checkFormat(address));
     }
 
@@ -182,16 +216,16 @@ public class InterAddressContractTest {
     }
 
     @Test
-    public void malformedUnitReturnsFalseInsteadOfThrowing() {
+    public void rootPathIsAValidEndpoint() {
         // 只有路径分隔符的地址缺少单元，校验返回 false。
         URI address = URI.create("rsf://127.0.0.1:8000/");
-        assertFalse(InterAddress.checkFormat(address));
+        assertTrue(InterAddress.checkFormat(address));
     }
 
     @Test
-    public void invalidUnitSuffixIsNotAcceptedByPartialMatch() {
+    public void pathCharactersAreNotValidatedAsUnitNames() {
         // 单元尾部含非法字符时，不能仅匹配合法前缀就放行。
-        URI address = URI.create("rsf://127.0.0.1:8000/zone!");
-        assertFalse(InterAddress.checkFormat(address));
+        URI address = URI.create("soap://127.0.0.1:8000/api/Order!");
+        assertTrue(InterAddress.checkFormat(address));
     }
 }

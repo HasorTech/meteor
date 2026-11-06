@@ -194,7 +194,7 @@ public class MetContainerEventTest {
         List<MetContextEventType> events = new ArrayList<>();
         local.subscribe(event -> events.add(event.getType()));
         var service = publisher.rsfService(Echo.class, value -> value);
-        service.aliasName("test", "echo").bindAddress("rsf://localhost:2181/default");
+        service.aliasName("test", "echo").bindAddress("rsf://localhost:2181");
 
         // 失败只撤销本次登记，不影响同一容器已有的其它服务。
         IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, service::register);

@@ -87,9 +87,9 @@ public class ConsumerProtocolTest {
             context.start();
             MetServiceAdmin service = context.getExtension(RegistryAdmin.class).getServiceAdmin(first);
             MetServiceAdmin other = context.getExtension(RegistryAdmin.class).getServiceAdmin(second);
-            InterAddress rsf = new InterAddress("rsf://127.0.0.1:19001/default");
+            InterAddress rsf = new InterAddress("rsf://127.0.0.1:19001");
             InterAddress alternate = new InterAddress("custom://127.0.0.1:19002/default");
-            InterAddress duplicate = new InterAddress("rsf://127.0.0.1:19003/default");
+            InterAddress duplicate = new InterAddress("rsf://127.0.0.1:19003");
             context.getUpdater().appendStaticAddress(first, List.of(rsf, alternate, duplicate));
 
             // 周期上报本地地址变更；协议取自地址本，不由连接器配置推断。
@@ -125,7 +125,7 @@ public class ConsumerProtocolTest {
         try (MetContext context = configuration.buildContext()) {
             String id = context.publisher().rsfService(Echo.class).register().getBindID();
             context.start();
-            context.getUpdater().appendStaticAddress(id, List.of(new InterAddress("rsf://127.0.0.1:19001/default")));
+            context.getUpdater().appendStaticAddress(id, List.of(new InterAddress("rsf://127.0.0.1:19001")));
             TargetAdmin target = context.getExtension(TargetAdmin.class);
             MetServiceAdmin service = target.getServiceAdminByAddress(context.getListenAddress("rsf"), id);
             MetServiceMember member = service.consumers(null, null).getItems().get(0);

@@ -6,26 +6,22 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor.address;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class AddressConcurrencyTest {
     @TempDir
-    public Path directory;
-    private final InterAddress    first     = new InterAddress("127.0.0.1", 8000, "unit");
-    private final InterAddress    second    = new InterAddress("127.0.0.2", 8000, "unit");
+    public        Path         directory;
+    private final InterAddress first  = new InterAddress("127.0.0.1", 8000);
+    private final InterAddress second = new InterAddress("127.0.0.2", 8000);
 
     @Test
     public void slowBucketOutputDoesNotBlockAddressChanges() throws Exception {

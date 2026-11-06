@@ -7,6 +7,7 @@
  */
 package net.hasor.realmeteor.protocol.soap;
 import java.net.URI;
+import java.util.concurrent.TimeUnit;
 import javax.xml.namespace.QName;
 import com.sun.xml.ws.developer.JAXWSProperties;
 import com.sun.xml.ws.developer.WSBindingProvider;
@@ -21,9 +22,8 @@ import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.peer.protocol.soap.SoapJavaSdkServer;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** 当前插件与原生 Java SDK 的同 JVM 双向基础网络调用。 */
 public class SoapJavaSdkBasicTest {
@@ -87,7 +87,7 @@ public class SoapJavaSdkBasicTest {
                     .register();
 
             // 前缀只能由 SDK 服务端添加，确保不是同 JVM 的本地调用捷径或普通回显。
-            InterAddress address = new InterAddress("soap", "127.0.0.1", server.getPort(), "default");
+            InterAddress address = new InterAddress("soap", "127.0.0.1", server.getPort());
             EchoService remote = client.getRsfClient(address).getRemote(service);
             assertEquals("sdk-server:Java SDK 中文 <&>", remote.echo("Java SDK 中文 <&>"));
         }

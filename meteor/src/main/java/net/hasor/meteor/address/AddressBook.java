@@ -11,8 +11,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -65,7 +64,7 @@ public final class AddressBook {
             }
 
             String serviceID = "[" + group + "]" + name + "-" + version;
-            List<InterAddress> addresses = new ArrayList<>();
+            Map<String, List<InterAddress>> addresses = new LinkedHashMap<>();
             for (Node child = service.getFirstChild(); child != null; child = child.getNextSibling()) {
                 if (!(child instanceof Element address)) {
                     continue;
@@ -74,8 +73,14 @@ public final class AddressBook {
                 if (StringUtils.isBlank(value)) {
                     throw new IOException("Static address must not be blank for " + serviceID);
                 }
+
+                String unit = address.getAttribute("unit").trim();
+                if (address.hasAttribute("unit") && StringUtils.isBlank(unit)) {
+                    throw new IOException("Static address unit must not be blank for " + serviceID);
+                }
+
                 try {
-                    addresses.add(new InterAddress(value));
+                    addresses.computeIfAbsent(unit, key -> new ArrayList<>()).add(new InterAddress(value));
                 } catch (URISyntaxException | IllegalStateException e) {
                     throw new IllegalArgumentException("Invalid static address for " + serviceID + ": " + value, e);
                 }
@@ -87,19 +92,21 @@ public final class AddressBook {
 
     /** 单个服务的身份与全量静态地址，不保存协议筛选策略。 */
     public static final class Service {
-        private final String             serviceID;
-        private final List<InterAddress> addresses;
+        private final String                          serviceID;
+        private final Map<String, List<InterAddress>> addresses;
 
-        private Service(String serviceID, List<InterAddress> addresses) {
+        private Service(String serviceID, Map<String, List<InterAddress>> addresses) {
             this.serviceID = serviceID;
-            this.addresses = List.copyOf(addresses);
+            Map<String, List<InterAddress>> snapshot = new LinkedHashMap<>();
+            addresses.forEach((unit, values) -> snapshot.put(unit, List.copyOf(values)));
+            this.addresses = Collections.unmodifiableMap(snapshot);
         }
 
         public String getServiceID() {
             return this.serviceID;
         }
 
-        public List<InterAddress> getAddresses() {
+        public Map<String, List<InterAddress>> getAddresses() {
             return this.addresses;
         }
     }

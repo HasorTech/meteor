@@ -1238,7 +1238,7 @@ public class TripleSessionTest {
 
         @Override
         public InterAddress getLocal() {
-            return new InterAddress("triple", "127.0.0.1", 8080, "default");
+            return new InterAddress("triple", "127.0.0.1", 8080);
         }
 
         @Override
