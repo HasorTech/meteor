@@ -4,21 +4,22 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.protocol.oncrpc.go;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
+import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.example.protocol.oncrpc.OncRpcDemoCodecs;
 import net.hasor.example.protocol.oncrpc.OncRpcDemoService;
 import net.hasor.example.protocol.oncrpc.OncRpcDemoServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** 固定 SunRPC 源码版本与 Meteor 通过现有 ONC echo 契约验证基础 TCP 双向调用。 */
 @NxnRpc(name = "oncrpc", version = "2")
@@ -68,7 +69,7 @@ public class GoOncRpcInteropTest {
             client.start();
             MetBindInfo<OncRpcDemoService> service = client.publisher().rsfService(OncRpcDemoService.class) //
                     .protocol("oncrpc").bindResource("oncrpc", OncRpcDemoCodecs.resource()).register();
-            InterAddress address = new InterAddress("oncrpc", peer.host(), port, "default");
+            InterAddress address = new InterAddress("oncrpc", peer.host(), port);
             OncRpcDemoService remote = client.getRsfClient(address).getRemote(service);
 
             // XDR string 使用 ASCII；Go 业务结果与 Meteor 实现明确区分。

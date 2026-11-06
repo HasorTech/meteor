@@ -6,20 +6,20 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.oncrpc;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
+import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.oncrpc.OncRpcDemoCodecs;
 import net.hasor.example.protocol.oncrpc.OncRpcDemoService;
 import net.hasor.example.protocol.oncrpc.OncRpcDemoServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 /** TCP record marking 的多个 fragment 经真实网络进入两端协议会话。 */
 @NxnRpc(name = "oncrpc", version = "2")
@@ -52,7 +52,7 @@ public class OncRpcTcpRecordScenarioTest {
             // 透明中继不执行 RPC，仅把两个方向的 record 正文拆成带有独立 marker 的 fragment。
             InterAddress target = server.getListenAddress("oncrpc");
             try (OncRpcRecordRelay relay = new OncRpcRecordRelay(target)) {
-                InterAddress address = new InterAddress("oncrpc", "127.0.0.1", relay.getPort(), target.getFormUnit());
+                InterAddress address = new InterAddress("oncrpc", "127.0.0.1", relay.getPort(), target.getPath());
                 OncRpcDemoService remote = client.getRsfClient(address).getRemote(service);
                 byte[] request = new byte[48000];
                 for (int index = 0; index < request.length; index++) {

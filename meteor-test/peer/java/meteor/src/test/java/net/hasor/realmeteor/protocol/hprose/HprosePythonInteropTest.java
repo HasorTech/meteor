@@ -4,9 +4,10 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.protocol.hprose;
-import net.hasor.example.support.TestConfigurationUtils;
+import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.hprose.Sample;
 import net.hasor.example.protocol.hprose.SampleImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
@@ -15,9 +16,8 @@ import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.python.PythonSdkPeerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** 官方 Python SDK 与 Meteor 的最小双向 HTTP 互通，不扩展类型及注册发现矩阵。 */
 @NxnRpc(name = "hprose")
@@ -62,7 +62,7 @@ public class HprosePythonInteropTest {
                         .protocol("hprose").aliasName("hprose", "sample").register();
 
                 // 订阅接口不带本地实现，从正式客户端入口调用真实 Python 服务。
-                InterAddress address = new InterAddress("hprose", provider.host(), port, "default");
+                InterAddress address = new InterAddress("hprose", provider.host(), port);
                 Sample remote = consumer.getRsfClient(address).getRemote(service);
                 assertEquals("Meteor Hprose 中文", remote.echo("Meteor Hprose 中文"));
             }

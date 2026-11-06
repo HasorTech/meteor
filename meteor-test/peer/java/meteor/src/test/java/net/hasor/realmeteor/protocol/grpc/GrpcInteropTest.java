@@ -6,8 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -35,6 +33,7 @@ import io.grpc.stub.ServerCalls;
 import net.hasor.example.protocol.grpc.Echo;
 import net.hasor.example.protocol.grpc.EchoImpl;
 import net.hasor.example.protocol.grpc.Message;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetFuture;
@@ -44,6 +43,7 @@ import net.hasor.meteor.connector.transport.TransportConfig;
 import net.hasor.meteor.connector.transport.TransportPipeline;
 import net.hasor.meteor.domain.MetTimeoutException;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.neta.channel.ProtoBuildContext;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -212,7 +212,7 @@ public class GrpcInteropTest {
                     .register();
 
             // 使用官方服务的真实端口调用接口，验证返回值经过正确的消息编码。
-            InterAddress address = new InterAddress("grpc", "127.0.0.1", server.getPort(), "default");
+            InterAddress address = new InterAddress("grpc", "127.0.0.1", server.getPort());
             Echo remote = client.getRsfClient(address).getRemote(info);
             Message result = remote.echo(Message.of("outgoing", 2));
             assertEquals("outgoing", result.getValue());
@@ -244,7 +244,7 @@ public class GrpcInteropTest {
             MetBindInfo<Echo> info = publication.aliasName("grpc", "example.Echo").serialize("Json").register();
 
             // 使用官方服务的真实端口调用接口，验证返回值经过正确的消息编码。
-            InterAddress address = new InterAddress("grpc", "127.0.0.1", server.getPort(), "default");
+            InterAddress address = new InterAddress("grpc", "127.0.0.1", server.getPort());
             Echo remote = client.getRsfClient(address).getRemote(info);
             Message result = remote.echo(Message.of("outgoing", 2));
             assertEquals("outgoing", result.getValue());
@@ -560,7 +560,7 @@ public class GrpcInteropTest {
             MetFuture expired = remote.asyncInvoke(info, "slow", types, arguments);
             assertEquals("timeout", entered.poll(3, TimeUnit.SECONDS));
             var failure = assertThrows(ExecutionException.class, () -> expired.getData(3, TimeUnit.SECONDS));
-            assertTrue(failure.getCause() instanceof MetTimeoutException);
+            assertInstanceOf(MetTimeoutException.class, failure.getCause());
 
             // 同一个客户端继续调用，超时与迟到结果不会污染后续响应。
             release.countDown();

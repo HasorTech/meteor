@@ -6,8 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -24,16 +22,18 @@ import io.grpc.stub.ClientCalls;
 import net.hasor.example.protocol.grpc.Echo;
 import net.hasor.example.protocol.grpc.EchoImpl;
 import net.hasor.example.protocol.grpc.Message;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.protocol.grpc.support.GrpcHttp2Peer;
 import net.hasor.realmeteor.protocol.grpc.support.GrpcTlsPeer;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 官方 gRPC-Java 与 Meteor 经真实 TLS 互通，并区分 ALPN、h2c 与 HTTP/1 路径。 */
 @NxnRpc(name = "grpc")
@@ -92,7 +92,7 @@ public class GrpcSecureInteropTest {
                     .register();
 
             // 从公开代理入口发送 gzip 请求，官方服务解码后再以 gzip 返回业务消息。
-            InterAddress address = new InterAddress("https", "127.0.0.1", peer.getPort(), "default");
+            InterAddress address = new InterAddress("https", "127.0.0.1", peer.getPort());
             Echo remote = client.getRsfClient(address).getRemote(info);
             Message result = remote.echo(Message.of("Meteor TLS 中文", 4));
             assertEquals("Meteor TLS 中文", result.getValue());
@@ -155,7 +155,7 @@ public class GrpcSecureInteropTest {
                     .register();
 
             // 真实网络调用成功才证明独立客户端身份被官方服务接受。
-            InterAddress address = new InterAddress("https", "127.0.0.1", peer.getPort(), "default");
+            InterAddress address = new InterAddress("https", "127.0.0.1", peer.getPort());
             Echo remote = client.getRsfClient(address).getRemote(info);
             Message result = remote.echo(Message.of("Meteor mTLS", 6));
             assertEquals("Meteor mTLS", result.getValue());
@@ -219,12 +219,12 @@ public class GrpcSecureInteropTest {
                     .register();
 
             // 调用方应感知网络认证失败，业务实现不应执行，也不接受仅等待超时。
-            InterAddress address = new InterAddress("https", "127.0.0.1", peer.getPort(), "default");
+            InterAddress address = new InterAddress("https", "127.0.0.1", peer.getPort());
             Message request = Message.of("missing Meteor identity", 1);
             var remote = client.getRsfClient(address);
             var pending = remote.asyncInvoke(info, "echo", new Class<?>[] { Message.class }, new Object[] { request });
             ExecutionException error = assertThrows(ExecutionException.class, () -> pending.get(5, TimeUnit.SECONDS));
-            assertTrue(error.getCause() instanceof IOException, error.toString());
+            assertInstanceOf(IOException.class, error.getCause(), error.toString());
             assertEquals(0, calls.get());
         } finally {
             peer.shutdownNow().awaitTermination(5, TimeUnit.SECONDS);

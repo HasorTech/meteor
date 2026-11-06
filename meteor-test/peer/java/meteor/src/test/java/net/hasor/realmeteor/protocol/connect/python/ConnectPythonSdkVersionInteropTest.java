@@ -4,27 +4,28 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.protocol.connect.python;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
-import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.OrderQuery;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** 官方 Connect Python SDK 的基础订单互通，不以 gRPC 或代理链路替代目标协议。 */
 @ParameterizedClass(autoCloseArguments = false, name = "sdk/python/{1}/connectrpc@{0}/{2}/{3}", quoteTextArguments = false)
@@ -43,6 +44,7 @@ public class ConnectPythonSdkVersionInteropTest {
         this.messageApi = messageApi;
         this.direction = direction;
     }
+
     public static Object[][] protocols() {
         // 0.11 切换默认 Protobuf 实现；分别保留 Google 兼容入口和新的原生生成入口。
         List<Object[]> parameters = new ArrayList<>();
@@ -117,7 +119,7 @@ public class ConnectPythonSdkVersionInteropTest {
                     .protocol(this.protocol).aliasName(this.protocol, "meteor.example.OrderDemoService") //
                     .serialize("Protobuf").bindResource(this.protocol, resource).register();
             // 地址前缀沿用当前协议的配置；底层 HTTP 传输不改变协议选择。
-            var address = new InterAddress(this.protocol, peer.host(), port, "default");
+            var address = new InterAddress(this.protocol, peer.host(), port);
             OrderDemoService remote = consumer.getRsfClient(address).getRemote(service);
 
             // 两次真实网络 RPC 验证对端保存状态，以及普通对象、Unicode 和二进制附件。

@@ -6,27 +6,27 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.thrift;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLHandshakeException;
 import net.hasor.example.protocol.thrift.ThriftDemoService;
 import net.hasor.example.protocol.thrift.ThriftDemoServiceImpl;
 import net.hasor.example.protocol.thrift.generated.ExtendedInteropService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
-import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.protocol.thrift.ThriftClient;
 import net.hasor.meteor.protocol.thrift.ThriftServiceResource;
 import net.hasor.meteor.test.nxn.NxnRpc;
+import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.apache.thrift.TException;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 官方独立 JVM 与 Meteor 的 TLS、双向证书和 HTTPS 互通。 */
 @NxnRpc(name = "thrift")
@@ -71,7 +71,7 @@ public class ThriftOfficialSecureScenarioTest {
             MetBindInfo<ThriftDemoService> service = client.publisher().rsfService(ThriftDemoService.class) //
                     .bindResource("thrift", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift", "ExtendedInteropService").register();
-            InterAddress address = new InterAddress("thrifts", peer.host(), port, "default");
+            InterAddress address = new InterAddress("thrifts", peer.host(), port);
 
             // 公开 Thrift 客户端通过真实 TLS 连接调用官方 Processor。
             ThriftDemoService remote = new ThriftClient(client.getRsfClient(address)).getRemote(service);
@@ -122,7 +122,7 @@ public class ThriftOfficialSecureScenarioTest {
             MetBindInfo<ThriftDemoService> service = client.publisher().rsfService(ThriftDemoService.class) //
                     .bindResource("thrift", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift", "ExtendedInteropService").register();
-            InterAddress address = new InterAddress("thrifts", peer.host(), port, "default");
+            InterAddress address = new InterAddress("thrifts", peer.host(), port);
 
             // IDL 代理经双向 TLS 到达官方服务实现，返回原始字符串。
             ThriftDemoService remote = new ThriftClient(client.getRsfClient(address)).getRemote(service);
@@ -170,7 +170,7 @@ public class ThriftOfficialSecureScenarioTest {
             MetBindInfo<ThriftDemoService> service = client.publisher().rsfService(ThriftDemoService.class) //
                     .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift-http", "ExtendedInteropService").register();
-            InterAddress address = new InterAddress("https", peer.host(), port, "default");
+            InterAddress address = new InterAddress("https", peer.host(), port);
 
             // 正式 Thrift 客户端完成证书校验，并由官方服务端返回 JSON 结果。
             ThriftDemoService remote = new ThriftClient(client.getRsfClient(address)).getRemote(service);
@@ -221,7 +221,7 @@ public class ThriftOfficialSecureScenarioTest {
             MetBindInfo<ThriftDemoService> service = client.publisher().rsfService(ThriftDemoService.class) //
                     .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift-http", "ExtendedInteropService").register();
-            InterAddress address = new InterAddress("https", peer.host(), port, "default");
+            InterAddress address = new InterAddress("https", peer.host(), port);
 
             // 真实 HTTPS 请求经过官方 Processor，双向认证后返回业务结果。
             ThriftDemoService remote = new ThriftClient(client.getRsfClient(address)).getRemote(service);
@@ -355,7 +355,7 @@ public class ThriftOfficialSecureScenarioTest {
             MetBindInfo<ThriftDemoService> service = client.publisher().rsfService(ThriftDemoService.class) //
                     .bindResource("thrift", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift", "ExtendedInteropService").register();
-            InterAddress address = new InterAddress("thrifts", peer.host(), port, "default");
+            InterAddress address = new InterAddress("thrifts", peer.host(), port);
             ThriftDemoService remote = new ThriftClient(client.getRsfClient(address)).getRemote(service);
 
             // 调用方保留原始证书异常，不接受 RPC 超时作为身份拒绝的证据。
@@ -364,7 +364,7 @@ public class ThriftOfficialSecureScenarioTest {
             while (certificateFailure.getCause() != null && !(certificateFailure instanceof SSLHandshakeException)) {
                 certificateFailure = certificateFailure.getCause();
             }
-            assertTrue(certificateFailure instanceof SSLHandshakeException, failure.toString());
+            assertInstanceOf(SSLHandshakeException.class, certificateFailure, failure.toString());
         }
     }
 
@@ -385,7 +385,7 @@ public class ThriftOfficialSecureScenarioTest {
             MetBindInfo<ThriftDemoService> service = client.publisher().rsfService(ThriftDemoService.class) //
                     .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift-http", "ExtendedInteropService").register();
-            InterAddress address = new InterAddress("https", peer.host(), port, "default");
+            InterAddress address = new InterAddress("https", peer.host(), port);
             ThriftDemoService remote = new ThriftClient(client.getRsfClient(address)).getRemote(service);
 
             // 原始握手异常到达调用方，验证失败发生在证书身份检查而非业务期限。
@@ -394,7 +394,7 @@ public class ThriftOfficialSecureScenarioTest {
             while (certificateFailure.getCause() != null && !(certificateFailure instanceof SSLHandshakeException)) {
                 certificateFailure = certificateFailure.getCause();
             }
-            assertTrue(certificateFailure instanceof SSLHandshakeException, failure.toString());
+            assertInstanceOf(SSLHandshakeException.class, certificateFailure, failure.toString());
         }
     }
 

@@ -6,24 +6,24 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.net.URI;
 import java.net.URL;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import javax.xml.namespace.QName;
 import jakarta.xml.ws.soap.SOAPBinding;
 import net.hasor.example.protocol.soap.EchoService;
 import net.hasor.example.protocol.soap.EchoServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
-import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.meteor.test.nxn.NxnRpc;
+import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @NxnRpc(name = "soap", version = "1.1")
 public class WebServicesRpcLiteralInteropTest {
@@ -133,7 +133,7 @@ public class WebServicesRpcLiteralInteropTest {
 
                 // 公开 Meteor 代理向 Metro 监听地址发起真实 SOAP 1.1 RPC 调用。
                 int port = server.getPort();
-                InterAddress address = new InterAddress("soap", server.host(), port, "default");
+                InterAddress address = new InterAddress("soap", server.host(), port);
                 EchoService remote = context.getRsfClient(address).getRemote(subscribed);
                 assertEquals("hello Meteor RPC 1.1", remote.echo("hello Meteor RPC 1.1"));
             }
@@ -166,7 +166,7 @@ public class WebServicesRpcLiteralInteropTest {
 
                 // 公开 Meteor 代理向 Metro 监听地址发起真实 SOAP 1.2 RPC 调用。
                 int port = server.getPort();
-                InterAddress address = new InterAddress("soap", server.host(), port, "default");
+                InterAddress address = new InterAddress("soap", server.host(), port);
                 EchoService remote = context.getRsfClient(address).getRemote(subscribed);
                 assertEquals("hello Meteor RPC 1.2", remote.echo("hello Meteor RPC 1.2"));
             }

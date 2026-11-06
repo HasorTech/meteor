@@ -4,10 +4,11 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.protocol.dubbo.go;
-import net.hasor.example.support.TestConfigurationUtils;
+import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.echo.TextEchoService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
@@ -16,9 +17,9 @@ import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Apache Dubbo-Go 的经典 Dubbo 消费与 Triple 双向基础调用证据。 */
 @NxnRpc(name = "dubbo", version = "3")
@@ -74,7 +75,7 @@ public class DubboGoInteropTest {
             MetBindInfo<TextEchoService> service = client.publisher().rsfService(TextEchoService.class) //
                     .group("compat").version("1.0").protocol(protocol) //
                     .aliasName(protocol, SERVICE).serialize("Hessian2").register();
-            InterAddress address = new InterAddress(protocol, peer.host(), port, "default");
+            InterAddress address = new InterAddress(protocol, peer.host(), port);
             TextEchoService remote = client.getRsfClient(address).getRemote(service);
 
             // Go 业务实现产生独有后缀；不能将本地调用或原样回声误记为对端证据。

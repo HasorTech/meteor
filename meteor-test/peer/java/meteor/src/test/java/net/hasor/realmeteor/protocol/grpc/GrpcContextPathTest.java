@@ -6,8 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -24,15 +22,17 @@ import net.hasor.example.protocol.grpc.Echo;
 import net.hasor.example.protocol.grpc.EchoImpl;
 import net.hasor.example.protocol.grpc.Message;
 import net.hasor.example.protocol.grpc.Messages;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.rpc.MetCaller;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import org.junit.jupiter.api.Timeout;
 
 @NxnRpc(name = "grpc")
 public class GrpcContextPathTest {
@@ -311,7 +311,7 @@ public class GrpcContextPathTest {
                     .contextPathByPrefix("grpc", "/admin").register();
 
             // 正式客户端实际发出 unary 请求，只有服务选择的 URI 可以返回结果。
-            InterAddress address = new InterAddress("grpc", "127.0.0.1", server.getPort(), "default");
+            InterAddress address = new InterAddress("grpc", "127.0.0.1", server.getPort());
             Echo remote = client.getRsfClient(address).getRemote(info);
             Message result = remote.echo(Message.of("outbound", 2));
             assertEquals("outbound", result.getValue());
@@ -351,7 +351,7 @@ public class GrpcContextPathTest {
                     .contextPathByPrefix("grpc", "/admin").register();
 
             // 请求经过真实 HTTP/2 连接，完整消费后验证消息内容和顺序。
-            InterAddress address = new InterAddress("grpc", "127.0.0.1", server.getPort(), "default");
+            InterAddress address = new InterAddress("grpc", "127.0.0.1", server.getPort());
             Messages remote = client.getRsfClient(address).getRemote(info);
             List<Message> replies = new ArrayList<>();
             MetCaller.consume(remote.list(Message.of("selected-stream", 3)), replies::add) //

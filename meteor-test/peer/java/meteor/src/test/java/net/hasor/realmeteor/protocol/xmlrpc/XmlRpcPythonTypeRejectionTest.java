@@ -6,31 +6,31 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.xmlrpc;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.hasor.example.contract.types.TypeEchoService;
 import net.hasor.example.contract.types.TypeEchoServiceImpl;
 import net.hasor.example.contract.types.TypeValue;
 import net.hasor.example.contract.types.TypeValueVectors;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 标准 XML-RPC 不支持宽整数；每个向量分别确认两端的明确范围拒绝。 */
 @ParameterizedClass(autoCloseArguments = false, name = "types/python/xmlrpc/direct/{0}/{1}/rejection", quoteTextArguments = false)
@@ -42,6 +42,7 @@ public class XmlRpcPythonTypeRejectionTest {
     public XmlRpcPythonTypeRejectionTest(String type, String vector) {
         this.vector = vector;
     }
+
     public static Collection<Object[]> vectors() throws Exception {
         // 依据实际业务值选择标准 signed int32 无法表示的整数和 Map 成员。
         List<Object[]> parameters = new ArrayList<>();
@@ -101,7 +102,7 @@ public class XmlRpcPythonTypeRejectionTest {
             client.start();
             MetBindInfo<TypeEchoService> service = client.publisher().rsfService(TypeEchoService.class) //
                     .aliasName("xmlrpc", "types").protocol("xmlrpc").register();
-            InterAddress address = new InterAddress("xmlrpc", peer.host(), port, "default");
+            InterAddress address = new InterAddress("xmlrpc", peer.host(), port);
             MetClient remote = client.getRsfClient(address);
             TypeValue request = TypeValueVectors.value(this.vector);
             Class<?>[] types = { TypeValue.class };
@@ -111,7 +112,7 @@ public class XmlRpcPythonTypeRejectionTest {
             ExecutionException failure = assertThrows(ExecutionException.class, () -> {
                 remote.syncInvoke(service, "echo", types, arguments);
             });
-            assertTrue(failure.getCause() instanceof IOException, "Expected XML-RPC range IOException");
+            assertInstanceOf(IOException.class, failure.getCause(), "Expected XML-RPC range IOException");
             assertEquals("XML-RPC integer exceeds signed 32-bit range", failure.getCause().getMessage());
             peer.requireNoInvocation();
         }

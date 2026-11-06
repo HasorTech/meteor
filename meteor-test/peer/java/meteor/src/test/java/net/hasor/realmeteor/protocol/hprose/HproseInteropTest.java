@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hprose;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -19,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.hprose.Person;
 import net.hasor.example.protocol.hprose.Sample;
 import net.hasor.example.protocol.hprose.SampleImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
@@ -26,8 +26,8 @@ import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 @NxnRpc(name = "hprose")
 public class HproseInteropTest {
@@ -483,7 +483,7 @@ public class HproseInteropTest {
                 client.start();
                 var publication = client.publisher().rsfService(Sample.class);
                 MetBindInfo<Sample> info = publication.aliasName("Hprose", "sample").register();
-                InterAddress address = new InterAddress("hprose", ContainerProcess.host(peer), port, "default");
+                InterAddress address = new InterAddress("hprose", ContainerProcess.host(peer), port);
                 Sample remote = client.getRsfClient(address).getRemote(info);
 
                 // 中文与补充字符经过双端编解码后保持原样。
@@ -517,7 +517,7 @@ public class HproseInteropTest {
                 client.start();
                 var publication = client.publisher().rsfService(Sample.class);
                 MetBindInfo<Sample> info = publication.aliasName("Hprose", "sample").register();
-                InterAddress address = new InterAddress("hprose", ContainerProcess.host(peer), port, "default");
+                InterAddress address = new InterAddress("hprose", ContainerProcess.host(peer), port);
                 Sample remote = client.getRsfClient(address).getRemote(info);
 
                 // 两个整数参数由 Node.js 相加，再转换回 Java 整型。
@@ -551,7 +551,7 @@ public class HproseInteropTest {
                 client.start();
                 var publication = client.publisher().rsfService(Sample.class);
                 MetBindInfo<Sample> info = publication.aliasName("Hprose", "sample").register();
-                InterAddress address = new InterAddress("hprose", ContainerProcess.host(peer), port, "default");
+                InterAddress address = new InterAddress("hprose", ContainerProcess.host(peer), port);
                 Sample remote = client.getRsfClient(address).getRemote(info);
 
                 // 验证 Java 有符号 byte 与 Node.js 字节缓冲区的往返。
@@ -587,7 +587,7 @@ public class HproseInteropTest {
                 client.start();
                 var publication = client.publisher().rsfService(Sample.class);
                 MetBindInfo<Sample> info = publication.aliasName("Hprose", "sample").register();
-                InterAddress address = new InterAddress("hprose", ContainerProcess.host(peer), port, "default");
+                InterAddress address = new InterAddress("hprose", ContainerProcess.host(peer), port);
                 Sample remote = client.getRsfClient(address).getRemote(info);
 
                 // 固定毫秒时间戳，验证日期转换没有损失时间值。
@@ -622,7 +622,7 @@ public class HproseInteropTest {
                 client.start();
                 var publication = client.publisher().rsfService(Sample.class);
                 MetBindInfo<Sample> info = publication.aliasName("Hprose", "sample").register();
-                InterAddress address = new InterAddress("hprose", ContainerProcess.host(peer), port, "default");
+                InterAddress address = new InterAddress("hprose", ContainerProcess.host(peer), port);
                 Sample remote = client.getRsfClient(address).getRemote(info);
 
                 // Map 键值经过异构客户端后保持一致。
@@ -658,7 +658,7 @@ public class HproseInteropTest {
                 client.start();
                 var publication = client.publisher().rsfService(Sample.class);
                 MetBindInfo<Sample> info = publication.aliasName("Hprose", "sample").register();
-                InterAddress address = new InterAddress("hprose", ContainerProcess.host(peer), port, "default");
+                InterAddress address = new InterAddress("hprose", ContainerProcess.host(peer), port);
                 Sample remote = client.getRsfClient(address).getRemote(info);
 
                 // 构造带中文字段的业务对象，远端只将年龄增加一岁。
@@ -697,7 +697,7 @@ public class HproseInteropTest {
                 client.start();
                 var publication = client.publisher().rsfService(Sample.class);
                 MetBindInfo<Sample> info = publication.aliasName("Hprose", "sample").register();
-                InterAddress address = new InterAddress("hprose", ContainerProcess.host(peer), port, "default");
+                InterAddress address = new InterAddress("hprose", ContainerProcess.host(peer), port);
                 Sample remote = client.getRsfClient(address).getRemote(info);
 
                 // 构造带中文字段的业务对象，远端只将年龄增加一岁。
@@ -737,7 +737,7 @@ public class HproseInteropTest {
                 client.start();
                 var publication = client.publisher().rsfService(Sample.class);
                 MetBindInfo<Sample> info = publication.aliasName("Hprose", "sample").register();
-                InterAddress address = new InterAddress("hprose", ContainerProcess.host(peer), port, "default");
+                InterAddress address = new InterAddress("hprose", ContainerProcess.host(peer), port);
                 Sample remote = client.getRsfClient(address).getRemote(info);
 
                 // 无返回值调用正常完成即表示 Node.js 的 null 响应被正确接收。
@@ -771,7 +771,7 @@ public class HproseInteropTest {
                 client.start();
                 var publication = client.publisher().rsfService(Sample.class);
                 MetBindInfo<Sample> info = publication.aliasName("Hprose", "sample").register();
-                InterAddress address = new InterAddress("hprose", ContainerProcess.host(peer), port, "default");
+                InterAddress address = new InterAddress("hprose", ContainerProcess.host(peer), port);
                 Sample remote = client.getRsfClient(address).getRemote(info);
 
                 // 业务失败只终止本次调用，同一代理后续调用仍然成功。

@@ -4,20 +4,20 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.protocol.triple.python;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
+import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.triple.interop.TripleInteropProtoService;
 import net.hasor.example.protocol.triple.interop.TripleInteropProtoServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.python.PythonSdkPeerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** 官方 Apache Dubbo Python beta SDK 的双向 Triple unary；不继承 Java SDK 的 POJO 范围。 */
 @NxnRpc(name = "triple")
@@ -75,7 +75,7 @@ public class TriplePythonInteropTest {
                         .bindResource("triple", resource).register();
 
                 // Meteor 从公开远程接口发起网络调用，验证 beta SDK 的提供者返回值。
-                InterAddress address = new InterAddress("triple", provider.host(), port, "default");
+                InterAddress address = new InterAddress("triple", provider.host(), port);
                 TripleInteropProtoService remote = consumer.getRsfClient(address).getRemote(service);
                 assertEquals("Meteor Triple 中文 🙂", remote.echo("Meteor Triple 中文 🙂"));
             }

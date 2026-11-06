@@ -6,8 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.thrift.python;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.util.Collection;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -21,9 +19,10 @@ import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.apache.thrift.TApplicationException;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** Meteor 公开客户端调用官方 Python Processor，不共享编码或业务状态。 */
 @ParameterizedClass(autoCloseArguments = false, name = "python-provider/{0}/framed={1}/security={2}", quoteTextArguments = false)
@@ -39,6 +38,7 @@ public class PythonProviderScenarioTest {
         this.framed = framed;
         this.security = security;
     }
+
     public static Collection<Object[]> parameters() {
         return PythonThriftSettings.parameters();
     }
@@ -59,7 +59,7 @@ public class PythonProviderScenarioTest {
                     .rsfService(OrderDemoService.class) //
                     .protocol("thrift").aliasName("thrift", "OrderThriftService").register();
             String scheme = PythonThriftSettings.scheme(this.security);
-            InterAddress address = new InterAddress(scheme, peer.host(), port, "default");
+            InterAddress address = new InterAddress(scheme, peer.host(), port);
             OrderDemoService remote = client.getRsfClient(address).getRemote(service);
 
             // 保存后再查询同一个订单，验证对端存储的实际值及返回 DTO。
@@ -93,7 +93,7 @@ public class PythonProviderScenarioTest {
                     .rsfService(OrderDemoService.class) //
                     .protocol("thrift").aliasName("thrift", "OrderThriftService").register();
             String scheme = PythonThriftSettings.scheme(this.security);
-            InterAddress address = new InterAddress(scheme, peer.host(), port, "default");
+            InterAddress address = new InterAddress(scheme, peer.host(), port);
             OrderDemoService remote = client.getRsfClient(address).getRemote(service);
 
             // 保存后再查询同一个订单，验证对端存储的实际值及返回 DTO。
@@ -127,7 +127,7 @@ public class PythonProviderScenarioTest {
                     .rsfService(OrderDemoService.class) //
                     .protocol("thrift").aliasName("thrift", "OrderThriftService").register();
             String scheme = PythonThriftSettings.scheme(this.security);
-            InterAddress address = new InterAddress(scheme, peer.host(), port, "default");
+            InterAddress address = new InterAddress(scheme, peer.host(), port);
             OrderDemoService remote = client.getRsfClient(address).getRemote(service);
 
             // 保存后再查询同一个订单，验证对端存储的实际值及返回 DTO。
@@ -161,7 +161,7 @@ public class PythonProviderScenarioTest {
                     .rsfService(OrderDemoService.class) //
                     .protocol("thrift").aliasName("thrift", "OrderThriftService").register();
             String scheme = PythonThriftSettings.scheme(this.security);
-            InterAddress address = new InterAddress(scheme, peer.host(), port, "default");
+            InterAddress address = new InterAddress(scheme, peer.host(), port);
             var remote = client.getRsfClient(address);
 
             // 缺失订单由官方 Processor 返回 INTERNAL_ERROR，不接受连接中断或调用超时代替。
@@ -171,7 +171,7 @@ public class PythonProviderScenarioTest {
                     new Object[] { query });
             ExecutionException rejected = assertThrows(ExecutionException.class, //
                     () -> pending.getData(5, TimeUnit.SECONDS));
-            assertTrue(rejected.getCause() instanceof TApplicationException);
+            assertInstanceOf(TApplicationException.class, rejected.getCause());
             TApplicationException failure = (TApplicationException) rejected.getCause();
             assertEquals(TApplicationException.INTERNAL_ERROR, failure.getType());
             // 官方生成的 Processor 将未声明业务异常映射为固定文案，不能接受本地路由失败。

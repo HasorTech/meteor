@@ -6,21 +6,21 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.thrift;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.thrift.annotated.*;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
-import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.meteor.protocol.thrift.ThriftClient;
 import net.hasor.meteor.protocol.thrift.ThriftIdlResource;
 import net.hasor.meteor.test.nxn.NxnRpc;
+import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 注解方法、声明异常与单向消息分别经官方对端验证。 */
 @NxnRpc(name = "thrift")
@@ -62,7 +62,7 @@ public class ThriftAnnotatedContractScenarioTest {
                     .rsfService(AnnotatedInteropService.class) //
                     .aliasName("thrift", "ExtendedInteropService") //
                     .bindResource("thrift", this.contract()).register();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, "default");
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             AnnotatedInteropService remote = new ThriftClient(client.getRsfClient(address)).getRemote(service);
 
             // 只验证 extended 的注解契约行为。
@@ -107,7 +107,7 @@ public class ThriftAnnotatedContractScenarioTest {
                     .rsfService(AnnotatedInteropService.class) //
                     .aliasName("thrift", "ExtendedInteropService") //
                     .bindResource("thrift", this.contract()).register();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, "default");
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             AnnotatedInteropService remote = new ThriftClient(client.getRsfClient(address)).getRemote(service);
 
             // 只验证 add 的注解契约行为。
@@ -152,7 +152,7 @@ public class ThriftAnnotatedContractScenarioTest {
                     .rsfService(AnnotatedInteropService.class) //
                     .aliasName("thrift", "ExtendedInteropService") //
                     .bindResource("thrift", this.contract()).register();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, "default");
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             AnnotatedInteropService remote = new ThriftClient(client.getRsfClient(address)).getRemote(service);
 
             // 只验证 declared 的注解契约行为。
@@ -199,7 +199,7 @@ public class ThriftAnnotatedContractScenarioTest {
                     .rsfService(AnnotatedInteropService.class) //
                     .aliasName("thrift", "ExtendedInteropService") //
                     .bindResource("thrift", this.contract()).register();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, "default");
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             AnnotatedInteropService remote = new ThriftClient(client.getRsfClient(address)).getRemote(service);
 
             // 只验证 optional 的注解契约行为。
@@ -248,7 +248,7 @@ public class ThriftAnnotatedContractScenarioTest {
                     .rsfService(AnnotatedInteropService.class) //
                     .aliasName("thrift", "ExtendedInteropService") //
                     .bindResource("thrift", this.contract()).register();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, "default");
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             AnnotatedInteropService remote = new ThriftClient(client.getRsfClient(address)).getRemote(service);
 
             // 只验证 defaults 的注解契约行为。
@@ -295,7 +295,7 @@ public class ThriftAnnotatedContractScenarioTest {
                     .rsfService(AnnotatedInteropService.class) //
                     .aliasName("thrift", "ExtendedInteropService") //
                     .bindResource("thrift", this.contract()).register();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, "default");
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             AnnotatedInteropService remote = new ThriftClient(client.getRsfClient(address)).getRemote(service);
 
             // 只验证 union 的注解契约行为。
@@ -345,7 +345,7 @@ public class ThriftAnnotatedContractScenarioTest {
                     .rsfService(AnnotatedInteropService.class) //
                     .aliasName("thrift", "ExtendedInteropService") //
                     .bindResource("thrift", this.contract()).register();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, "default");
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             AnnotatedInteropService remote = new ThriftClient(client.getRsfClient(address)).getRemote(service);
 
             // 只验证 void 的注解契约行为。
@@ -390,7 +390,7 @@ public class ThriftAnnotatedContractScenarioTest {
                     .rsfService(AnnotatedInteropService.class) //
                     .aliasName("thrift", "ExtendedInteropService") //
                     .bindResource("thrift", this.contract()).register();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, "default");
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             AnnotatedInteropService remote = new ThriftClient(client.getRsfClient(address)).getRemote(service);
 
             // 只验证 oneway 的注解契约行为。
@@ -440,7 +440,7 @@ public class ThriftAnnotatedContractScenarioTest {
                     .rsfService(AnnotatedInteropService.class) //
                     .aliasName("thrift-http", "ExtendedInteropService") //
                     .bindResource("thrift-http", this.contract()).register();
-            InterAddress address = new InterAddress("thrift-http", peer.host(), port, "default");
+            InterAddress address = new InterAddress("thrift-http", peer.host(), port);
             AnnotatedInteropService remote = new ThriftClient(client.getRsfClient(address)).getRemote(service);
 
             // 官方响应 extended 正确完成 Java renamed 调用。

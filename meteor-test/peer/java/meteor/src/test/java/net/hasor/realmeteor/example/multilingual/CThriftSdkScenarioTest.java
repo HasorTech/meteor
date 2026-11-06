@@ -4,23 +4,24 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.example.multilingual;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import net.hasor.example.echo.TextEchoService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
-import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Apache Thrift C GLib 与 Meteor 的基本双向调用；只验证一个 String echo。 */
 @ParameterizedClass(autoCloseArguments = false, name = "sdk/c/thrift/Apache-Thrift@{0}/{1}", quoteTextArguments = false)
@@ -32,6 +33,7 @@ public class CThriftSdkScenarioTest {
     public CThriftSdkScenarioTest(String version, String profile, String executable) {
         this.executable = executable;
     }
+
     public static List<Object[]> versions() {
         // 每份 IDL 绑定与生成器、运行库属于同一发布版本。
         List<Object[]> versions = new ArrayList<>();
@@ -79,7 +81,7 @@ public class CThriftSdkScenarioTest {
             consumer.start();
             MetBindInfo<TextEchoService> service = consumer.publisher().rsfService(TextEchoService.class) //
                     .protocol("thrift").aliasName("thrift", "EchoService").register();
-            InterAddress address = new InterAddress("thrift", target.getHost(), target.getPort(), "default");
+            InterAddress address = new InterAddress("thrift", target.getHost(), target.getPort());
             TextEchoService remote = consumer.getRsfClient(address).getRemote(service);
 
             // 只有对端官方 Processor 返回的字符串才作为此方向的通过证据。

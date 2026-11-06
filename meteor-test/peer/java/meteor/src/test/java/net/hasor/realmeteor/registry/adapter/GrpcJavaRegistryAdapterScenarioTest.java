@@ -6,14 +6,10 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.registry.adapter;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import java.nio.file.Files;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,11 +21,7 @@ import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.DynamicMessage;
-import io.grpc.CallOptions;
-import io.grpc.ManagedChannel;
-import io.grpc.MethodDescriptor;
-import io.grpc.Server;
-import io.grpc.ServerServiceDefinition;
+import io.grpc.*;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import io.grpc.protobuf.ProtoUtils;
@@ -39,6 +31,7 @@ import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.OrderQuery;
+import net.hasor.example.discovery.AddressSelectionAwaiter;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
@@ -46,16 +39,16 @@ import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
 import net.hasor.meteor.registry.RegistryConfiguration;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.discovery.ForeignServiceRegistrar;
 import net.hasor.realmeteor.environment.discovery.RegistryAddressResolver;
 import net.hasor.realmeteor.environment.discovery.RegistryDiscoveryEnvironment;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 官方 Java gRPC SDK 的显式存储适配发现；沿用既有同 JVM Netty 对端，业务经真实 HTTP/2 传输。 */
 @ParameterizedClass(autoCloseArguments = false, name = "grpc/java/adapter/{0}", quoteTextArguments = false)
@@ -76,6 +69,7 @@ public class GrpcJavaRegistryAdapterScenarioTest {
     public GrpcJavaRegistryAdapterScenarioTest(String backend) {
         this.backend = backend;
     }
+
     public static Object[][] backends() {
         return new Object[][] { { "jdbc" }, { "zookeeper" }, { "nacos" } };
     }
@@ -146,7 +140,7 @@ public class GrpcJavaRegistryAdapterScenarioTest {
                         .addService(officialService(implementation)).build().start();
                 try (ForeignServiceRegistrar registrar = new ForeignServiceRegistrar(registry)) {
                     String unit = consumer.getSettings().getUnitName();
-                    InterAddress address = new InterAddress("http", "127.0.0.1", server.getPort(), unit);
+                    InterAddress address = new InterAddress("http", "127.0.0.1", server.getPort());
                     registrar.register(service, ProcessHandle.current().pid(), "java", "grpc", "http", address, "/");
                     AddressSelectionAwaiter.await(consumer, service, "save");
 

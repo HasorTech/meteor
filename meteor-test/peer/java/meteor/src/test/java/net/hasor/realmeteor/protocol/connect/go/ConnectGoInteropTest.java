@@ -6,19 +6,17 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.connect.go;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.net.URI;
 import java.net.URL;
+import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.OrderQuery;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
@@ -26,12 +24,14 @@ import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.protocol.connect.ConnectStatusException;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.golang.GoPeerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 普通订单接口与官方 Connect Go 对端双向互通，分别记录提供者与消费者场景。 */
 @ParameterizedClass(autoCloseArguments = false, name = "tls={0}", quoteTextArguments = false)
@@ -44,6 +44,7 @@ public class ConnectGoInteropTest {
     public ConnectGoInteropTest(String tlsMode) {
         this.tlsMode = tlsMode;
     }
+
     public static Object[][] tlsModes() {
         return new Object[][] { { "plain" }, { "tls" }, { "mtls" } };
     }
@@ -85,7 +86,7 @@ public class ConnectGoInteropTest {
                     .aliasName("connect", SERVICE).protocol("connect").serialize("Protobuf") //
                     .bindResource("connect", resource).register();
             String host = endpoint.getHost();
-            InterAddress target = new InterAddress(endpoint.getScheme(), host, endpoint.getPort(), "default");
+            InterAddress target = new InterAddress(endpoint.getScheme(), host, endpoint.getPort());
             OrderDemoService remote = client.getRsfClient(target).getRemote(subscription);
 
             // 保存和查询同一笔订单，分别验证两次真实 RPC 的返回值。
@@ -140,7 +141,7 @@ public class ConnectGoInteropTest {
                     .aliasName("connect", SERVICE).protocol("connect").serialize("Protobuf") //
                     .bindResource("connect", resource).register();
             String host = endpoint.getHost();
-            InterAddress target = new InterAddress(endpoint.getScheme(), host, endpoint.getPort(), "default");
+            InterAddress target = new InterAddress(endpoint.getScheme(), host, endpoint.getPort());
             OrderDemoService remote = client.getRsfClient(target).getRemote(subscription);
 
             // 保存和查询同一笔订单，分别验证两次真实 RPC 的返回值。
@@ -196,7 +197,7 @@ public class ConnectGoInteropTest {
                     .aliasName("connect", SERVICE).protocol("connect").serialize("Protobuf") //
                     .bindResource("connect", resource).register();
             String host = endpoint.getHost();
-            InterAddress target = new InterAddress(endpoint.getScheme(), host, endpoint.getPort(), "default");
+            InterAddress target = new InterAddress(endpoint.getScheme(), host, endpoint.getPort());
             OrderDemoService remote = client.getRsfClient(target).getRemote(subscription);
 
             // 保存和查询同一笔订单，分别验证两次真实 RPC 的返回值。
@@ -252,7 +253,7 @@ public class ConnectGoInteropTest {
                     .aliasName("connect", SERVICE).protocol("connect").serialize("Protobuf") //
                     .bindResource("connect", resource).register();
             String host = endpoint.getHost();
-            InterAddress target = new InterAddress(endpoint.getScheme(), host, endpoint.getPort(), "default");
+            InterAddress target = new InterAddress(endpoint.getScheme(), host, endpoint.getPort());
             OrderDemoService remote = client.getRsfClient(target).getRemote(subscription);
 
             // 保存和查询同一笔订单，分别验证两次真实 RPC 的返回值。
@@ -311,7 +312,7 @@ public class ConnectGoInteropTest {
                     .aliasName("connect", SERVICE).protocol("connect").serialize("Protobuf") //
                     .bindResource("connect", resource).register();
             String host = endpoint.getHost();
-            InterAddress target = new InterAddress(endpoint.getScheme(), host, endpoint.getPort(), "default");
+            InterAddress target = new InterAddress(endpoint.getScheme(), host, endpoint.getPort());
             OrderDemoService remote = client.getRsfClient(target).getRemote(subscription);
             OrderQuery query = new OrderQuery();
             query.setId(404);

@@ -6,8 +6,8 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hprose.bootstrap;
-import java.nio.file.Files;
 import java.io.File;
+import java.nio.file.Files;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -38,7 +38,7 @@ public class AddressMaintenanceScenarioTest extends BootstrapTestSupport {
         configuration.setRefreshCacheTime(20);
         try (MetContext client = configuration.buildContext()) {
             MetBindInfo<Echo> service = client.publisher().rsfService(Echo.class).register();
-            InterAddress address = new InterAddress("rsf://127.0.0.1:2111/default");
+            InterAddress address = new InterAddress("rsf://127.0.0.1:2111");
             MetUpdater updater = client.getUpdater();
             updater.appendAddress(service.getBindID(), Collections.singletonList(address));
             String serviceId = service.getBindID();
@@ -105,7 +105,7 @@ public class AddressMaintenanceScenarioTest extends BootstrapTestSupport {
         try (MetContext runtime = configuration.buildContext()) {
             MetBindInfo<Echo> service = runtime.publisher().rsfService(Echo.class).register();
             serviceId = service.getBindID();
-            InterAddress address = new InterAddress("rsf://127.0.0.1:2211/default");
+            InterAddress address = new InterAddress("rsf://127.0.0.1:2211");
             runtime.getUpdater().appendAddress(serviceId, Collections.singletonList(address));
             AddressPool seed = (AddressPool) runtime.getUpdater();
             try (DiskCache cache = new DiskCache(seed, home, 60000, 3600000)) {

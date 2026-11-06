@@ -6,32 +6,32 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.matrix.types;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.contract.types.TypeEchoService;
 import net.hasor.example.contract.types.TypeEchoServiceImpl;
 import net.hasor.example.contract.types.TypeValue;
 import net.hasor.example.contract.types.TypeValueVectors;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
-import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.golang.TypePeerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Go 原生宽度和 Protobuf/Connect 两种正式 SDK 的逐类型双向互通。 */
 @ParameterizedClass(autoCloseArguments = false, name = "types/Go/{0}/direct/{1}/{2}", quoteTextArguments = false)
@@ -49,6 +49,7 @@ public class GoProtoTypeMatrixTest {
         this.type = type;
         this.vector = vector;
     }
+
     public static Collection<Object[]> configurations() throws IOException {
         // 协议顺序固定为 gRPC、Connect；每一份边界向量独占一条 JUnit 结果。
         List<String> protocols = new ArrayList<>();
@@ -100,7 +101,7 @@ public class GoProtoTypeMatrixTest {
             MetBindInfo<TypeEchoService> subscription = consumer.publisher().rsfService(TypeEchoService.class) //
                     .aliasName(this.protocol, SERVICE).protocol(this.protocol).serialize("Protobuf") //
                     .bindResource(this.protocol, this.resource()).register();
-            InterAddress address = new InterAddress(this.protocol, endpoint.getHost(), endpoint.getPort(), "default");
+            InterAddress address = new InterAddress(this.protocol, endpoint.getHost(), endpoint.getPort());
             TypeEchoService remote = consumer.getRsfClient(address).getRemote(subscription);
 
             // 返回值必须保留当前向量的确切类型值，并带有 Go 提供者新生成的业务回执。

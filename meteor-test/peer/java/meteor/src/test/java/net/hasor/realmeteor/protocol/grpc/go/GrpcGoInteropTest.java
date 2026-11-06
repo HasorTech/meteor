@@ -6,29 +6,29 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc.go;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.lang.reflect.UndeclaredThrowableException;
+import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.OrderQuery;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
 import net.hasor.meteor.protocol.grpc.GrpcStatusException;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.golang.GoPeerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** grpc-go 与 Meteor 双向直连，通过普通订单接口验证三种传输安全模式。 */
 @ParameterizedClass(autoCloseArguments = false, name = "tls={0}", quoteTextArguments = false)
@@ -41,6 +41,7 @@ public class GrpcGoInteropTest {
     public GrpcGoInteropTest(String tlsMode) {
         this.tlsMode = tlsMode;
     }
+
     public static Object[][] tlsModes() {
         return new Object[][] { { "plain" }, { "tls" }, { "mtls" } };
     }
@@ -162,7 +163,7 @@ public class GrpcGoInteropTest {
                     .serialize("Protobuf").bindResource("grpc", this.resource()).register();
 
             // 通过公开代理保存并查询中文、补充平面字符和二进制字段。
-            InterAddress address = new InterAddress(this.scheme() + "://" + target + "/default");
+            InterAddress address = new InterAddress(this.scheme() + "://" + target);
             OrderDemoService remote = client.getRsfClient(address).getRemote(subscription);
             Order request = this.order(101, "订单-你好-🌍-café", new byte[] { 0, 1, 127, (byte) 128, (byte) 255 });
             Order saved = remote.save(request);
@@ -192,7 +193,7 @@ public class GrpcGoInteropTest {
                     .serialize("Protobuf").bindResource("grpc", this.resource()).register();
 
             // 通过公开代理保存并查询 int32 最大值及二进制字节边界。
-            InterAddress address = new InterAddress(this.scheme() + "://" + target + "/default");
+            InterAddress address = new InterAddress(this.scheme() + "://" + target);
             OrderDemoService remote = client.getRsfClient(address).getRemote(subscription);
             Order request = this.order(Integer.MAX_VALUE, "boundary", new byte[] { 0, 1, 127, (byte) 128, (byte) 255 });
             Order saved = remote.save(request);
@@ -222,7 +223,7 @@ public class GrpcGoInteropTest {
                     .serialize("Protobuf").bindResource("grpc", this.resource()).register();
 
             // 通过公开代理保存并查询 int32 最小值及二进制字节边界。
-            InterAddress address = new InterAddress(this.scheme() + "://" + target + "/default");
+            InterAddress address = new InterAddress(this.scheme() + "://" + target);
             OrderDemoService remote = client.getRsfClient(address).getRemote(subscription);
             byte[] attachment = new byte[] { 0, 1, 127, (byte) 128, (byte) 255 };
             Order request = this.order(Integer.MIN_VALUE, "negative-boundary", attachment);
@@ -253,7 +254,7 @@ public class GrpcGoInteropTest {
                     .serialize("Protobuf").bindResource("grpc", this.resource()).register();
 
             // 通过公开代理保存并查询 proto3 默认值和空字段。
-            InterAddress address = new InterAddress(this.scheme() + "://" + target + "/default");
+            InterAddress address = new InterAddress(this.scheme() + "://" + target);
             OrderDemoService remote = client.getRsfClient(address).getRemote(subscription);
             Order request = this.order(0, "", new byte[0]);
             Order saved = remote.save(request);
@@ -281,7 +282,7 @@ public class GrpcGoInteropTest {
             MetBindInfo<OrderDemoService> subscription = client.publisher().rsfService(OrderDemoService.class) //
                     .name(SERVICE).protocol("grpc").aliasName("grpc", SERVICE) //
                     .serialize("Protobuf").bindResource("grpc", this.resource()).register();
-            InterAddress address = new InterAddress(this.scheme() + "://" + target + "/default");
+            InterAddress address = new InterAddress(this.scheme() + "://" + target);
             OrderDemoService remote = client.getRsfClient(address).getRemote(subscription);
 
             // 同步代理保留 Go 返回的 NOT_FOUND 状态和业务消息。

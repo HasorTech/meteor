@@ -6,12 +6,12 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.dubbo;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropService;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetFuture;
@@ -21,8 +21,8 @@ import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.domain.MetTimeoutException;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** Dubbo 二进制帧通过公开启动入口组合 TCP、TLS 身份校验与独立端口。 */
 @NxnRpc(name = "dubbo")
@@ -251,7 +251,7 @@ public class DubboTlsScenarioTest {
 
             // 故意用安全地址访问明文端口，连接失败且不得自动降级。
             InterAddress bound = server.getListenAddress("dubbo");
-            InterAddress target = new InterAddress("dubbos", bound.getHost(), bound.getPort(), bound.getFormUnit());
+            InterAddress target = new InterAddress("dubbos", bound.getHost(), bound.getPort(), bound.getPath());
             MetFuture call = client.getRsfClient(target) //
                     .asyncInvoke(service, "notice", new Class<?>[] { String.class }, new Object[] { "rejected" });
             ExecutionException failure = assertThrows(ExecutionException.class, () -> call.get(8, TimeUnit.SECONDS));
@@ -282,7 +282,7 @@ public class DubboTlsScenarioTest {
 
             // 相同 Dubbo 帧不能跨过安全边界，TLS 监听不得执行明文请求。
             InterAddress bound = server.getListenAddress("dubbo", "dubbos");
-            InterAddress target = new InterAddress("dubbo", bound.getHost(), bound.getPort(), bound.getFormUnit());
+            InterAddress target = new InterAddress("dubbo", bound.getHost(), bound.getPort(), bound.getPath());
             MetFuture call = client.getRsfClient(target) //
                     .asyncInvoke(service, "notice", new Class<?>[] { String.class }, new Object[] { "rejected" });
             ExecutionException failure = assertThrows(ExecutionException.class, () -> call.get(8, TimeUnit.SECONDS));

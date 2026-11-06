@@ -6,8 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.oncrpc;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -18,15 +16,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 import net.hasor.example.protocol.oncrpc.OncRpcDemoCodecs;
 import net.hasor.example.protocol.oncrpc.OncRpcDemoService;
 import net.hasor.example.protocol.oncrpc.OncRpcDemoServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetFuture;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.domain.MetTimeoutException;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 公开 bootstrap 链路上的 UDP 丢包、重传和重复应答缓存。 */
 @NxnRpc(name = "oncrpc", version = "2")
@@ -215,7 +215,7 @@ public class OncRpcUdpReliabilityScenarioTest {
             ExecutionException failure = assertThrows(ExecutionException.class, () -> {
                 pending.getData(3, TimeUnit.SECONDS);
             });
-            assertTrue(failure.getCause() instanceof MetTimeoutException);
+            assertInstanceOf(MetTimeoutException.class, failure.getCause());
             assertEquals(1, relay.clientRequests());
             assertEquals(0, implementation.count());
         }
@@ -252,7 +252,7 @@ public class OncRpcUdpReliabilityScenarioTest {
 
     private InterAddress relayAddress(MetContext client, OncRpcDatagramRelay relay) {
         String unit = client.getSettings().getUnitName();
-        return new InterAddress("oncrpc-udp", "127.0.0.1", relay.port(), unit);
+        return new InterAddress("oncrpc-udp", "127.0.0.1", relay.port());
     }
 
     public static class BlockingIncrementService extends OncRpcDemoServiceImpl {

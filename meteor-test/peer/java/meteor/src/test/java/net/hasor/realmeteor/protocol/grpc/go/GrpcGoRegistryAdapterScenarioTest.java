@@ -6,12 +6,8 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc.go;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import java.nio.file.Files;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -23,6 +19,7 @@ import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.OrderQuery;
+import net.hasor.example.discovery.AddressSelectionAwaiter;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
@@ -31,17 +28,18 @@ import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
 import net.hasor.meteor.registry.RegistryConfiguration;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
+import net.hasor.meteor.test.nxn.NxnRpc;
+import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.discovery.ForeignServiceRegistrar;
 import net.hasor.realmeteor.environment.discovery.RegistryAddressResolver;
 import net.hasor.realmeteor.environment.discovery.RegistryDiscoveryEnvironment;
-import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.golang.GoPeerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** grpc-go 的显式注册适配：Java 只处理发现控制数据，业务 RPC 由实际调用方直接发送。 */
 @ParameterizedClass(autoCloseArguments = false, name = "adapter={0},tls={1}", quoteTextArguments = false)
@@ -60,6 +58,7 @@ public class GrpcGoRegistryAdapterScenarioTest {
         this.backend = backend;
         this.tlsMode = tlsMode;
     }
+
     public static Object[][] registryModes() {
         return new Object[][] { //
                 { "jdbc", "plain" }, //
@@ -123,7 +122,7 @@ public class GrpcGoRegistryAdapterScenarioTest {
                      ForeignServiceRegistrar registrar = new ForeignServiceRegistrar(registry)) {
                     URI bound = URI.create(this.scheme() + "://" + peer.awaitReady());
                     String unit = consumer.getSettings().getUnitName();
-                    InterAddress address = new InterAddress(this.scheme(), bound.getHost(), bound.getPort(), unit);
+                    InterAddress address = new InterAddress(this.scheme(), bound.getHost(), bound.getPort());
                     registrar.register(service, peer.processId(), "go", "grpc", "http", address, "/");
                     this.awaitDiscovery(consumer, service, address);
 

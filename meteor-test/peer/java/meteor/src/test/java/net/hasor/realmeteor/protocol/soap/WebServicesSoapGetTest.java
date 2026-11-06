@@ -6,27 +6,27 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 import com.sun.net.httpserver.HttpServer;
 import net.hasor.example.protocol.soap.SoapStatusService;
 import net.hasor.example.protocol.soap.SoapStatusServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
-import net.hasor.realmeteor.protocol.soap.support.AttachmentHttpProxy;
 import net.hasor.meteor.test.nxn.NxnRpc;
+import net.hasor.realmeteor.protocol.soap.support.AttachmentHttpProxy;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 @NxnRpc(name = "soap", version = "1.2")
 public class WebServicesSoapGetTest {
@@ -59,7 +59,7 @@ public class WebServicesSoapGetTest {
                 proxy.createContext("/services/Status", observed);
                 proxy.start();
                 int proxyPort = proxy.getAddress().getPort();
-                InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort, "default");
+                InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort);
                 SoapStatusService remote = client.getRsfClient(address).getRemote(service);
                 assertEquals("ready", remote.status());
                 assertEquals("GET", observed.getRequestMethod());
@@ -91,8 +91,7 @@ public class WebServicesSoapGetTest {
             assertEquals(1, implementation.getInvocations());
             String contentType = response.headers().firstValue("content-type").orElse("");
             assertTrue(contentType.startsWith("application/soap+xml"), contentType);
-            assertTrue(response.body().contains("http://www.w3.org/2003/05/soap-envelope")
-, response.body());
+            assertTrue(response.body().contains("http://www.w3.org/2003/05/soap-envelope"), response.body());
             assertTrue(response.body().contains("ready"), response.body());
             assertEquals("no-store", response.headers().firstValue("cache-control").orElse(""));
         }

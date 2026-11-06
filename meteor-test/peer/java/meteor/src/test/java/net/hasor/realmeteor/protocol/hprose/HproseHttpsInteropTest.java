@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hprose;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -16,6 +15,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.hprose.Sample;
 import net.hasor.example.protocol.hprose.SampleImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
@@ -23,9 +23,9 @@ import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.Timeout;
 
 @NxnRpc(name = "hprose")
 public class HproseHttpsInteropTest {
@@ -190,7 +190,7 @@ public class HproseHttpsInteropTest {
                         .rsfService(Sample.class) //
                         .aliasName("Hprose", "sample") //
                         .register();
-                InterAddress address = new InterAddress("https", ContainerProcess.host(peer), port, "default");
+                InterAddress address = new InterAddress("https", ContainerProcess.host(peer), port);
                 Sample remote = client.getRsfClient(address).getRemote(service);
 
                 // 由公开代理调用独立的官方实现，验证 HTTPS 下双向协议互通。

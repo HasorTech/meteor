@@ -6,23 +6,19 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.dubbo;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropService;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropServiceImpl;
-import net.hasor.meteor.MetBindInfo;
-import net.hasor.meteor.MetClient;
-import net.hasor.meteor.MetContext;
-import net.hasor.meteor.MetFuture;
-import net.hasor.meteor.MetResponse;
+import net.hasor.example.support.TestConfigurationUtils;
+import net.hasor.meteor.*;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 官方二进制 oneway 只确认本地写出，业务完成由测试独立观察。 */
 @NxnRpc(name = "dubbo", version = "3")
@@ -83,7 +79,7 @@ public class DubboOfficialMessageTest {
                         .rsfService(DubboInteropService.class).name("observer") //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").register();
-                InterAddress address = new InterAddress("dubbo", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbo", peer.host(), port);
                 MetClient caller = client.getRsfClient(address);
 
                 // 消息 Future 仅在完整写出后完成，不等待远端返回 Dubbo 响应帧。
@@ -164,7 +160,7 @@ public class DubboOfficialMessageTest {
                         .rsfService(DubboInteropService.class).name("observer") //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").register();
-                InterAddress address = new InterAddress("dubbo", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbo", peer.host(), port);
                 MetClient caller = client.getRsfClient(address);
 
                 // 消息 Future 仅在完整写出后完成，不等待远端返回 Dubbo 响应帧。

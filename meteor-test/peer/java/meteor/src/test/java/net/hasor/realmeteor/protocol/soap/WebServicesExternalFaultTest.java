@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
@@ -14,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import net.hasor.example.protocol.soap.EchoService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
@@ -24,8 +24,8 @@ import net.hasor.meteor.domain.MetException;
 import net.hasor.meteor.domain.ProtocolStatus;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 @NxnRpc(name = "soap", version = "1.1")
 public class WebServicesExternalFaultTest {
@@ -55,14 +55,14 @@ public class WebServicesExternalFaultTest {
 
                 // 即使 Fault detail 声明成功，调用方仍必须收到失败。
                 int port = server.getAddress().getPort();
-                InterAddress address = new InterAddress("soap", "127.0.0.1", port, "default");
+                InterAddress address = new InterAddress("soap", "127.0.0.1", port);
                 MetClient client = context.getRsfClient(address);
                 Class<?>[] parameterTypes = { String.class };
                 Object[] arguments = { "failure" };
                 MetFuture invocation = client.asyncInvoke(service, "echo", parameterTypes, arguments);
                 ExecutionException failure = assertThrows(ExecutionException.class, //
                         () -> invocation.getData(5, TimeUnit.SECONDS));
-                assertTrue(failure.getCause() instanceof MetException);
+                assertInstanceOf(MetException.class, failure.getCause());
                 MetException fault = (MetException) failure.getCause();
                 assertEquals(ProtocolStatus.InvokeError, fault.getStatus());
                 assertTrue(fault.getMessage().contains("external failure"), fault.getMessage());
@@ -98,14 +98,14 @@ public class WebServicesExternalFaultTest {
 
                 // Fault 不能被解释为 one-way 的成功确认。
                 int port = server.getAddress().getPort();
-                InterAddress address = new InterAddress("soap", "127.0.0.1", port, "default");
+                InterAddress address = new InterAddress("soap", "127.0.0.1", port);
                 MetClient client = context.getRsfClient(address);
                 Class<?>[] parameterTypes = { String.class };
                 Object[] arguments = { "failure" };
                 MetFuture invocation = client.asyncInvoke(service, "echo", parameterTypes, arguments);
                 ExecutionException failure = assertThrows(ExecutionException.class, //
                         () -> invocation.getData(5, TimeUnit.SECONDS));
-                assertTrue(failure.getCause() instanceof MetException);
+                assertInstanceOf(MetException.class, failure.getCause());
                 MetException fault = (MetException) failure.getCause();
                 assertEquals(ProtocolStatus.InvokeError, fault.getStatus());
                 assertTrue(fault.getMessage().contains("external failure"), fault.getMessage());
@@ -142,14 +142,14 @@ public class WebServicesExternalFaultTest {
 
                 // 无命名空间的扩展字段不能覆盖默认失败状态或标准 faultstring。
                 int port = server.getAddress().getPort();
-                InterAddress address = new InterAddress("soap", "127.0.0.1", port, "default");
+                InterAddress address = new InterAddress("soap", "127.0.0.1", port);
                 MetClient client = context.getRsfClient(address);
                 Class<?>[] parameterTypes = { String.class };
                 Object[] arguments = { "failure" };
                 MetFuture invocation = client.asyncInvoke(service, "echo", parameterTypes, arguments);
                 ExecutionException failure = assertThrows(ExecutionException.class, //
                         () -> invocation.getData(5, TimeUnit.SECONDS));
-                assertTrue(failure.getCause() instanceof MetException);
+                assertInstanceOf(MetException.class, failure.getCause());
                 MetException fault = (MetException) failure.getCause();
                 assertEquals(ProtocolStatus.InvokeError, fault.getStatus());
                 assertTrue(fault.getMessage().contains("external failure"), fault.getMessage());
@@ -186,14 +186,14 @@ public class WebServicesExternalFaultTest {
 
                 // 畸形扩展状态回退到调用失败，并保留标准错误消息。
                 int port = server.getAddress().getPort();
-                InterAddress address = new InterAddress("soap", "127.0.0.1", port, "default");
+                InterAddress address = new InterAddress("soap", "127.0.0.1", port);
                 MetClient client = context.getRsfClient(address);
                 Class<?>[] parameterTypes = { String.class };
                 Object[] arguments = { "failure" };
                 MetFuture invocation = client.asyncInvoke(service, "echo", parameterTypes, arguments);
                 ExecutionException failure = assertThrows(ExecutionException.class, //
                         () -> invocation.getData(5, TimeUnit.SECONDS));
-                assertTrue(failure.getCause() instanceof MetException);
+                assertInstanceOf(MetException.class, failure.getCause());
                 MetException fault = (MetException) failure.getCause();
                 assertEquals(ProtocolStatus.InvokeError, fault.getStatus());
                 assertTrue(fault.getMessage().contains("external failure"), fault.getMessage());
@@ -230,14 +230,14 @@ public class WebServicesExternalFaultTest {
 
                 // 调用方保留明确的失败状态，并优先使用同命名空间的详细消息。
                 int port = server.getAddress().getPort();
-                InterAddress address = new InterAddress("soap", "127.0.0.1", port, "default");
+                InterAddress address = new InterAddress("soap", "127.0.0.1", port);
                 MetClient client = context.getRsfClient(address);
                 Class<?>[] parameterTypes = { String.class };
                 Object[] arguments = { "failure" };
                 MetFuture invocation = client.asyncInvoke(service, "echo", parameterTypes, arguments);
                 ExecutionException failure = assertThrows(ExecutionException.class, //
                         () -> invocation.getData(5, TimeUnit.SECONDS));
-                assertTrue(failure.getCause() instanceof MetException);
+                assertInstanceOf(MetException.class, failure.getCause());
                 MetException fault = (MetException) failure.getCause();
                 assertEquals(ProtocolStatus.Forbidden, fault.getStatus());
                 assertTrue(fault.getMessage().contains("service forbidden"), fault.getMessage());

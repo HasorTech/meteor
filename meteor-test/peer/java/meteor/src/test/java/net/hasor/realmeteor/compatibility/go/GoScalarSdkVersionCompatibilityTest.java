@@ -4,8 +4,6 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.compatibility.go;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -16,17 +14,19 @@ import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.echo.TextEchoService;
 import net.hasor.example.protocol.golang.GoEchoService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
-import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.golang.GoPeerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 固定真实 Go SDK 发布版本，分别验证 Unicode 回声和业务异常的双向线格式。 */
 @ParameterizedClass(autoCloseArguments = false, name = "sdk/go/{0}/{1}@{2}/{3}/{4}", quoteTextArguments = false)
@@ -40,12 +40,12 @@ public class GoScalarSdkVersionCompatibilityTest {
     private final String direction;
     private final String executable;
 
-    public GoScalarSdkVersionCompatibilityTest(String protocol, String sdk, String version, String profile,
-            String direction, String executable) {
+    public GoScalarSdkVersionCompatibilityTest(String protocol, String sdk, String version, String profile, String direction, String executable) {
         this.protocol = protocol;
         this.direction = direction;
         this.executable = executable;
     }
+
     public static Collection<Object[]> versions() {
         // 顺序按协议与 SDK 大版本排列；每个方向形成独立 JUnit 实例。
         List<Object[]> versions = new ArrayList<>();
@@ -60,8 +60,7 @@ public class GoScalarSdkVersionCompatibilityTest {
         return versions;
     }
 
-    private static void add(List<Object[]> rows, String protocol, String sdk, String version, String profile,
-            String binary) {
+    private static void add(List<Object[]> rows, String protocol, String sdk, String version, String profile, String binary) {
         String executable = "/opt/meteor-peer/go/compatibility/" + binary;
         rows.add(new Object[] { protocol, sdk, version, profile, "SDK-to-Meteor", executable });
         rows.add(new Object[] { protocol, sdk, version, profile, "Meteor-to-SDK", executable });
@@ -87,7 +86,7 @@ public class GoScalarSdkVersionCompatibilityTest {
                 } else {
                     URI endpoint = URI.create(peer.awaitReady());
                     String authority = endpoint.getAuthority();
-                    InterAddress address = new InterAddress(this.protocol + "://" + authority + "/default");
+                    InterAddress address = new InterAddress(this.protocol + "://" + authority);
                     String request = "Meteor → Go 中文🙂";
                     Object response = context.getRsfClient(address).asyncInvoke(binding, "echo", //
                             new Class<?>[] { String.class }, new Object[] { request }).getData(10, TimeUnit.SECONDS);
@@ -115,7 +114,7 @@ public class GoScalarSdkVersionCompatibilityTest {
                 } else {
                     URI endpoint = URI.create(peer.awaitReady());
                     String authority = endpoint.getAuthority();
-                    InterAddress address = new InterAddress(this.protocol + "://" + authority + "/default");
+                    InterAddress address = new InterAddress(this.protocol + "://" + authority);
                     var pending = context.getRsfClient(address).asyncInvoke(binding, "echo", //
                             new Class<?>[] { String.class }, new Object[] { "fail" });
                     ExecutionException failure = assertThrows(ExecutionException.class, //

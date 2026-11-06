@@ -6,25 +6,26 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.http.go;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.net.URI;
+import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.protocol.golang.GoEchoService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.golang.GoPeerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Hprose Go 和 Gorilla JSON-RPC2 SDK 的最小双向 HTTP 互通证据。 */
 @ParameterizedClass(autoCloseArguments = false, name = "compat/go/{0}/direct", quoteTextArguments = false)
@@ -37,6 +38,7 @@ public class GoHttpSdkInteropTest {
     public GoHttpSdkInteropTest(String protocol) {
         this.protocol = protocol;
     }
+
     public static Object[][] protocols() {
         return new Object[][] { { "hprose" }, { "jsonrpc" } };
     }
@@ -72,7 +74,7 @@ public class GoHttpSdkInteropTest {
             client.start();
             MetBindInfo<GoEchoService> subscription = client.publisher().rsfService(GoEchoService.class) //
                     .protocol(this.protocol).aliasName(this.aliasType(), "sample").register();
-            InterAddress address = new InterAddress(this.protocol, endpoint.getHost(), endpoint.getPort(), "default");
+            InterAddress address = new InterAddress(this.protocol, endpoint.getHost(), endpoint.getPort());
             GoEchoService remote = client.getRsfClient(address).getRemote(subscription);
 
             // Go 提供者产生协议专属后缀，避免把本地回声误记为网络互通。

@@ -6,26 +6,26 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.thrift;
-import net.hasor.example.support.TestConfigurationUtils;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.protocol.thrift.annotated.*;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
-import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.protocol.thrift.ThriftClient;
 import net.hasor.meteor.protocol.thrift.ThriftIdlResource;
 import net.hasor.meteor.test.nxn.NxnRpc;
+import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 普通 Java DTO 与官方生成契约双向互通，每个参数组合都是独立场景。 */
 @ParameterizedClass(autoCloseArguments = false, name = "{0}/{1}/multiplexed={2}", quoteTextArguments = false)
@@ -41,6 +41,7 @@ public class ThriftAnnotatedDtoScenarioTest {
         this.transport = transport;
         this.multiplexed = multiplexed;
     }
+
     public static Collection<Object[]> matrix() {
         List<Object[]> cases = new ArrayList<>();
         cases.add(new Object[] { "binary", "tcp", false });
@@ -99,7 +100,7 @@ public class ThriftAnnotatedDtoScenarioTest {
                     .rsfService(AnnotatedInteropService.class) //
                     .aliasName(this.protocol(), "ExtendedInteropService") //
                     .bindResource(this.protocol(), this.contract()).register();
-            InterAddress address = new InterAddress(this.scheme(), peer.host(), port, "default");
+            InterAddress address = new InterAddress(this.scheme(), peer.host(), port);
             AnnotatedInteropService remote = new ThriftClient(client.getRsfClient(address)).getRemote(service);
 
             // 返回值为普通 DTO，包含非 ordinal 枚举和非生成 union。

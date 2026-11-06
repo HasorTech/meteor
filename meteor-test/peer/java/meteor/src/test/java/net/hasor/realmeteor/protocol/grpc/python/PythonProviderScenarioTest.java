@@ -6,24 +6,24 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc.python;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.Order;
-import net.hasor.example.OrderQuery;
-import net.hasor.meteor.address.InterAddress;
-import net.hasor.meteor.protocol.grpc.GrpcStatusException;
 import net.hasor.example.OrderDemoService;
+import net.hasor.example.OrderQuery;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
+import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
+import net.hasor.meteor.protocol.grpc.GrpcStatusException;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** Meteor 消费者通过公开代理调用独立 Python 官方 gRPC 服务。 */
 @NxnRpc(name = "grpc")
@@ -42,7 +42,7 @@ public class PythonProviderScenarioTest {
                     .aliasName("grpc", "meteor.example.OrderDemoService") //
                     .bindResource("grpc", resource).register();
             String scheme = "grpc";
-            InterAddress address = new InterAddress(scheme, peer.host(), port, "default");
+            InterAddress address = new InterAddress(scheme, peer.host(), port);
 
             // 保存并读取同一订单，核对直接参数和返回值的 Protobuf 映射。
             Order expected = new Order();
@@ -77,7 +77,7 @@ public class PythonProviderScenarioTest {
                     .aliasName("grpc", "meteor.example.OrderDemoService") //
                     .bindResource("grpc", resource).register();
             String scheme = "grpc";
-            InterAddress address = new InterAddress(scheme, peer.host(), port, "default");
+            InterAddress address = new InterAddress(scheme, peer.host(), port);
 
             // 保存并读取同一订单，核对直接参数和返回值的 Protobuf 映射。
             Order expected = new Order();
@@ -112,7 +112,7 @@ public class PythonProviderScenarioTest {
                     .aliasName("grpc", "meteor.example.OrderDemoService") //
                     .bindResource("grpc", resource).register();
             String scheme = "grpc";
-            InterAddress address = new InterAddress(scheme, peer.host(), port, "default");
+            InterAddress address = new InterAddress(scheme, peer.host(), port);
 
             // 保存并读取同一订单，核对直接参数和返回值的 Protobuf 映射。
             Order expected = new Order();
@@ -147,7 +147,7 @@ public class PythonProviderScenarioTest {
                     .aliasName("grpc", "meteor.example.OrderDemoService") //
                     .bindResource("grpc", resource).register();
             String scheme = "grpc";
-            InterAddress address = new InterAddress(scheme, peer.host(), port, "default");
+            InterAddress address = new InterAddress(scheme, peer.host(), port);
 
             // 保存并读取同一订单，核对直接参数和返回值的 Protobuf 映射。
             Order expected = new Order();
@@ -182,7 +182,7 @@ public class PythonProviderScenarioTest {
                     .aliasName("grpc", "meteor.example.OrderDemoService") //
                     .bindResource("grpc", resource).register();
             String scheme = "grpc";
-            InterAddress address = new InterAddress(scheme, peer.host(), port, "default");
+            InterAddress address = new InterAddress(scheme, peer.host(), port);
 
             // 保存并读取同一订单，核对直接参数和返回值的 Protobuf 映射。
             Order expected = new Order();
@@ -217,7 +217,7 @@ public class PythonProviderScenarioTest {
                     .aliasName("grpc", "meteor.example.OrderDemoService") //
                     .bindResource("grpc", resource).register();
             String scheme = "grpc";
-            InterAddress address = new InterAddress(scheme, peer.host(), port, "default");
+            InterAddress address = new InterAddress(scheme, peer.host(), port);
 
             // 查询未保存的订单，错误必须来自远端业务而不是连接或等待失败。
             OrderQuery query = new OrderQuery();
@@ -250,7 +250,7 @@ public class PythonProviderScenarioTest {
                     .aliasName("grpc", "meteor.example.OrderDemoService") //
                     .bindResource("grpc", resource).register();
             String scheme = "https";
-            InterAddress address = new InterAddress(scheme, peer.host(), port, "default");
+            InterAddress address = new InterAddress(scheme, peer.host(), port);
 
             // 保存并读取同一订单，核对直接参数和返回值的 Protobuf 映射。
             Order expected = new Order();
@@ -285,7 +285,7 @@ public class PythonProviderScenarioTest {
                     .aliasName("grpc", "meteor.example.OrderDemoService") //
                     .bindResource("grpc", resource).register();
             String scheme = "https";
-            InterAddress address = new InterAddress(scheme, peer.host(), port, "default");
+            InterAddress address = new InterAddress(scheme, peer.host(), port);
 
             // 保存并读取同一订单，核对直接参数和返回值的 Protobuf 映射。
             Order expected = new Order();

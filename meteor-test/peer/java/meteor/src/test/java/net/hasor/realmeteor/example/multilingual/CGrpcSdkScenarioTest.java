@@ -4,26 +4,26 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.example.multilingual;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import net.hasor.example.echo.TextEchoService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
-import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 /** gRPC Core 的公开 C API 与 Meteor 直接进行单次 unary，不使用 C++ 包装或代理。 */
 @ParameterizedClass(autoCloseArguments = false, name = "sdk/c/grpc/gRPC-Core@{0}/{1}", quoteTextArguments = false)
@@ -35,6 +35,7 @@ public class CGrpcSdkScenarioTest {
     public CGrpcSdkScenarioTest(String version, String profile, String executable) {
         this.executable = executable;
     }
+
     public static List<Object[]> versions() {
         // 发行包基线与上游最新分别使用自己的二进制，不能共用已解析的运行库。
         List<Object[]> versions = new ArrayList<>();
@@ -97,7 +98,7 @@ public class CGrpcSdkScenarioTest {
                     .bindResource("grpc", new GrpcProtoResource(contract)).register();
 
             // 生成的 Protobuf-C codec 处理消息，Core 负责 HTTP/2 和 gRPC 状态。
-            InterAddress address = new InterAddress("grpc", target.getHost(), target.getPort(), "default");
+            InterAddress address = new InterAddress("grpc", target.getHost(), target.getPort());
             TextEchoService remote = consumer.getRsfClient(address).getRemote(service);
             String message = "Meteor → C gRPC Core 中文";
             assertEquals(message, remote.echo(message));

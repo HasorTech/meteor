@@ -6,22 +6,22 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.connect;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.hasor.example.echo.TextEchoService;
 import net.hasor.example.protocol.connect.ConnectDemoService;
 import net.hasor.example.protocol.connect.ConnectMessage;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** 官方 JVM 客户端与社区 Java 服务端分别通过真实网络和 Meteor 完成基础互通。 */
 @NxnRpc(name = "connect", version = "1")
@@ -47,7 +47,7 @@ public class ConnectJavaInteropTest {
                     .serialize("Json").register();
 
             // 消费者不发布本地实现；SDK 前缀与数值递增均必须来自真实 HTTP 服务。
-            InterAddress target = new InterAddress("connect", peer.host(), port, "default");
+            InterAddress target = new InterAddress("connect", peer.host(), port);
             ConnectDemoService remote = client.getRsfClient(target).getRemote(service);
             ConnectMessage result = remote.echo(ConnectMessage.of("Meteor 中文 🙂", 6));
             assertEquals("connect-sdk:Meteor 中文 🙂", result.getText());

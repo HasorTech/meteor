@@ -6,25 +6,25 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
 import com.sun.net.httpserver.HttpServer;
 import jakarta.mail.internet.ContentType;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.protocol.soap.MetroBinaryService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
-import net.hasor.realmeteor.protocol.soap.support.AttachmentHttpProxy;
 import net.hasor.meteor.test.nxn.NxnRpc;
+import net.hasor.realmeteor.protocol.soap.support.AttachmentHttpProxy;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 @NxnRpc(name = "soap", version = "1.1")
 public class WebServicesMtomInteropTest {
@@ -63,7 +63,7 @@ public class WebServicesMtomInteropTest {
 
                     // 公开客户端经代理调用 Metro，完整二进制内容必须往返保持一致。
                     int proxyPort = proxyServer.getAddress().getPort();
-                    InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort, "default");
+                    InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort);
                     MetroBinaryService remote = context.getRsfClient(address).getRemote(subscribed);
                     byte[] payload = this.binaryPayload();
                     byte[] result = remote.echo(payload);
@@ -121,7 +121,7 @@ public class WebServicesMtomInteropTest {
 
                     // 公开客户端经代理调用 Metro，完整二进制内容必须往返保持一致。
                     int proxyPort = proxyServer.getAddress().getPort();
-                    InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort, "default");
+                    InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort);
                     MetroBinaryService remote = context.getRsfClient(address).getRemote(subscribed);
                     byte[] payload = this.binaryPayload();
                     byte[] result = remote.echo(payload);

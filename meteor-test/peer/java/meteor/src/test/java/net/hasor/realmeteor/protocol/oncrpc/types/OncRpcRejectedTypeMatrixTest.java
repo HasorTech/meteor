@@ -6,30 +6,30 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.oncrpc.types;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.protocol.oncrpc.OncRpcDemoCodecs;
 import net.hasor.example.protocol.oncrpc.OncRpcDemoService;
 import net.hasor.example.protocol.oncrpc.OncRpcSample;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.protocol.oncrpc.OncRpcNativeProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** C 端没有超范围整数值；Meteor 在编码前明确拒绝，不能截断后当作成功互通。 */
 @ParameterizedClass(autoCloseArguments = false, name = "{0}/{1}", quoteTextArguments = false)
@@ -45,6 +45,7 @@ public class OncRpcRejectedTypeMatrixTest {
         this.vector = vector;
         this.error = error;
     }
+
     public static Collection<Object[]> parameters() {
         // 固定顺序对应当前 IDL 的范围和长度约束，不混入正常值场景。
         List<Object[]> parameters = new ArrayList<>();
@@ -85,7 +86,7 @@ public class OncRpcRejectedTypeMatrixTest {
             client.start();
             MetBindInfo<OncRpcDemoService> service = client.publisher().rsfService(OncRpcDemoService.class) //
                     .bindResource(protocol, OncRpcDemoCodecs.resource()).register();
-            InterAddress address = new InterAddress(protocol, peer.host(), port, client.getSettings().getUnitName());
+            InterAddress address = new InterAddress(protocol, peer.host(), port);
             MetClient caller = client.getRsfClient(address);
 
             // 每次只替换一个字段，精确核对 IllegalArgumentException，超时和网络失败不能通过。
@@ -98,7 +99,7 @@ public class OncRpcRejectedTypeMatrixTest {
             while (cause.getCause() != null) {
                 cause = cause.getCause();
             }
-            assertTrue(cause instanceof IllegalArgumentException);
+            assertInstanceOf(IllegalArgumentException.class, cause);
             assertEquals(this.error, cause.getMessage());
         }
     }

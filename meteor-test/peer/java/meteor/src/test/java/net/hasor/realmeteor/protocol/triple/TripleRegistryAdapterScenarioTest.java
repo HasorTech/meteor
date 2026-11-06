@@ -6,12 +6,8 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.triple;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import java.nio.file.Files;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -20,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.LockSupport;
 import com.fasterxml.jackson.databind.JsonNode;
+import net.hasor.example.discovery.AddressSelectionAwaiter;
 import net.hasor.example.protocol.triple.interop.TripleInteropWrappedService;
 import net.hasor.example.protocol.triple.interop.TripleInteropWrappedServiceImpl;
 import net.hasor.meteor.MetBindInfo;
@@ -29,16 +26,17 @@ import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.registry.RegistryConfiguration;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
 import net.hasor.realmeteor.environment.discovery.ForeignServiceRegistrar;
 import net.hasor.realmeteor.environment.discovery.RegistryAddressResolver;
 import net.hasor.realmeteor.environment.discovery.RegistryDiscoveryEnvironment;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 官方 Dubbo Triple wrapped profile 的显式注册适配，不等同于 classic Dubbo 原生注册桥。 */
 @ParameterizedClass(autoCloseArguments = false, name = "adapter={0},profile=wrapped-hessian2", quoteTextArguments = false)
@@ -56,6 +54,7 @@ public class TripleRegistryAdapterScenarioTest {
     public TripleRegistryAdapterScenarioTest(String backend) {
         this.backend = backend;
     }
+
     public static Collection<Object[]> backends() {
         // 三种注册后端分别执行相同的独立官方 SDK 适配场景。
         List<Object[]> result = new ArrayList<>();
@@ -124,7 +123,7 @@ public class TripleRegistryAdapterScenarioTest {
                      ForeignServiceRegistrar registrar = new ForeignServiceRegistrar(registry)) {
                     int port = peer.awaitPort();
                     String unit = consumer.getSettings().getUnitName();
-                    InterAddress address = new InterAddress("http", peer.host(), port, unit);
+                    InterAddress address = new InterAddress("http", peer.host(), port);
                     registrar.register(service, peer.processId(), "java", "triple", "http", address, "/");
                     awaitAddress(consumer, service, address);
                     AddressSelectionAwaiter.await(consumer, service, "echo");

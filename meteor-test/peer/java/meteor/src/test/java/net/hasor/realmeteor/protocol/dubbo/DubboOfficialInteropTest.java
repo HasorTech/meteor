@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.dubbo;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,18 +17,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropPerson;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropService;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropServiceImpl;
-import net.hasor.meteor.MetBindInfo;
-import net.hasor.meteor.MetClient;
-import net.hasor.meteor.MetContext;
-import net.hasor.meteor.MetFuture;
-import net.hasor.meteor.MetResponse;
+import net.hasor.example.support.TestConfigurationUtils;
+import net.hasor.meteor.*;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.domain.MetTimeoutException;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 原生 Dubbo 2/3 独立进程与 Meteor 正式入口的双向二进制协议互通。 */
 @NxnRpc(name = "dubbo", version = "3")
@@ -72,7 +68,7 @@ public class DubboOfficialInteropTest {
                 MetBindInfo<DubboInteropService> service = client.publisher().rsfService(DubboInteropService.class) //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").register();
-                InterAddress address = new InterAddress("dubbo", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbo", peer.host(), port);
                 DubboInteropService remote = client.getRsfClient(address).getRemote(service);
 
                 // 通过公开代理调用并验证本场景的结果。
@@ -117,7 +113,7 @@ public class DubboOfficialInteropTest {
                 MetBindInfo<DubboInteropService> service = client.publisher().rsfService(DubboInteropService.class) //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").register();
-                InterAddress address = new InterAddress("dubbo", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbo", peer.host(), port);
                 DubboInteropService remote = client.getRsfClient(address).getRemote(service);
 
                 // 通过公开代理调用并验证本场景的结果。
@@ -162,7 +158,7 @@ public class DubboOfficialInteropTest {
                 MetBindInfo<DubboInteropService> service = client.publisher().rsfService(DubboInteropService.class) //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").register();
-                InterAddress address = new InterAddress("dubbo", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbo", peer.host(), port);
                 DubboInteropService remote = client.getRsfClient(address).getRemote(service);
 
                 // 通过公开代理调用并验证本场景的结果。
@@ -207,7 +203,7 @@ public class DubboOfficialInteropTest {
                 MetBindInfo<DubboInteropService> service = client.publisher().rsfService(DubboInteropService.class) //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").register();
-                InterAddress address = new InterAddress("dubbo", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbo", peer.host(), port);
                 DubboInteropService remote = client.getRsfClient(address).getRemote(service);
 
                 // 通过公开代理调用并验证本场景的结果。
@@ -253,7 +249,7 @@ public class DubboOfficialInteropTest {
                 MetBindInfo<DubboInteropService> service = client.publisher().rsfService(DubboInteropService.class) //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").register();
-                InterAddress address = new InterAddress("dubbo", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbo", peer.host(), port);
                 DubboInteropService remote = client.getRsfClient(address).getRemote(service);
 
                 // 通过公开代理调用并验证本场景的结果。
@@ -300,7 +296,7 @@ public class DubboOfficialInteropTest {
                 MetBindInfo<DubboInteropService> service = client.publisher().rsfService(DubboInteropService.class) //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").register();
-                InterAddress address = new InterAddress("dubbo", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbo", peer.host(), port);
                 DubboInteropService remote = client.getRsfClient(address).getRemote(service);
 
                 // 通过公开代理调用并验证本场景的结果。
@@ -345,7 +341,7 @@ public class DubboOfficialInteropTest {
                 MetBindInfo<DubboInteropService> service = client.publisher().rsfService(DubboInteropService.class) //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").register();
-                InterAddress address = new InterAddress("dubbo", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbo", peer.host(), port);
                 DubboInteropService remote = client.getRsfClient(address).getRemote(service);
 
                 // 通过公开代理调用并验证本场景的结果。
@@ -390,7 +386,7 @@ public class DubboOfficialInteropTest {
                 MetBindInfo<DubboInteropService> service = client.publisher().rsfService(DubboInteropService.class) //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").register();
-                InterAddress address = new InterAddress("dubbo", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbo", peer.host(), port);
                 DubboInteropService remote = client.getRsfClient(address).getRemote(service);
 
                 // 通过公开代理调用并验证本场景的结果。
@@ -434,7 +430,7 @@ public class DubboOfficialInteropTest {
                 MetBindInfo<DubboInteropService> service = client.publisher().rsfService(DubboInteropService.class) //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").register();
-                InterAddress address = new InterAddress("dubbo", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbo", peer.host(), port);
                 MetClient remote = client.getRsfClient(address);
 
                 // 通过异步入口读取 RPC 失败，验证原始业务异常类型和信息。
@@ -489,7 +485,7 @@ public class DubboOfficialInteropTest {
                 MetBindInfo<DubboInteropService> service = client.publisher().rsfService(DubboInteropService.class) //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").register();
-                InterAddress address = new InterAddress("dubbo", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbo", peer.host(), port);
                 MetClient remote = client.getRsfClient(address);
 
                 // 一次提交全部请求后再等待，确保不是逐个同步调用。
@@ -546,7 +542,7 @@ public class DubboOfficialInteropTest {
                 MetBindInfo<DubboInteropService> service = client.publisher().rsfService(DubboInteropService.class) //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").timeout(150).register();
-                InterAddress address = new InterAddress("dubbo", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbo", peer.host(), port);
                 MetClient remote = client.getRsfClient(address);
 
                 // 外层等待比 RPC 期限更长，只接受真实 RPC 超时而非测试等待超时。
@@ -603,7 +599,7 @@ public class DubboOfficialInteropTest {
                 MetBindInfo<DubboInteropService> service = client.publisher().rsfService(DubboInteropService.class) //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").register();
-                InterAddress address = new InterAddress("dubbo", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbo", peer.host(), port);
                 MetClient remote = client.getRsfClient(address).withOptions(Map.of("x-dubbo-test", "metadata"));
 
                 // 异步入口保留完整响应，从公开选项读取回传附件。
@@ -655,7 +651,7 @@ public class DubboOfficialInteropTest {
                 MetBindInfo<DubboInteropService> service = client.publisher().rsfService(DubboInteropService.class) //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").register();
-                InterAddress address = new InterAddress("dubbo", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbo", peer.host(), port);
                 DubboInteropService remote = client.getRsfClient(address).getRemote(service);
 
                 // 通过公开代理调用并验证本场景的结果。
@@ -702,7 +698,7 @@ public class DubboOfficialInteropTest {
                 MetBindInfo<DubboInteropService> service = client.publisher().rsfService(DubboInteropService.class) //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").register();
-                InterAddress address = new InterAddress("dubbo", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbo", peer.host(), port);
                 DubboInteropService remote = client.getRsfClient(address).getRemote(service);
 
                 // 通过公开代理调用并验证本场景的结果。
@@ -749,7 +745,7 @@ public class DubboOfficialInteropTest {
                 MetBindInfo<DubboInteropService> service = client.publisher().rsfService(DubboInteropService.class) //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").register();
-                InterAddress address = new InterAddress("dubbo", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbo", peer.host(), port);
                 DubboInteropService remote = client.getRsfClient(address).getRemote(service);
 
                 // 通过公开代理调用并验证本场景的结果。
@@ -796,7 +792,7 @@ public class DubboOfficialInteropTest {
                 MetBindInfo<DubboInteropService> service = client.publisher().rsfService(DubboInteropService.class) //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").register();
-                InterAddress address = new InterAddress("dubbo", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbo", peer.host(), port);
                 DubboInteropService remote = client.getRsfClient(address).getRemote(service);
 
                 // 通过公开代理调用并验证本场景的结果。
@@ -844,7 +840,7 @@ public class DubboOfficialInteropTest {
                 MetBindInfo<DubboInteropService> service = client.publisher().rsfService(DubboInteropService.class) //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").register();
-                InterAddress address = new InterAddress("dubbo", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbo", peer.host(), port);
                 DubboInteropService remote = client.getRsfClient(address).getRemote(service);
 
                 // 通过公开代理调用并验证本场景的结果。
@@ -893,7 +889,7 @@ public class DubboOfficialInteropTest {
                 MetBindInfo<DubboInteropService> service = client.publisher().rsfService(DubboInteropService.class) //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").register();
-                InterAddress address = new InterAddress("dubbo", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbo", peer.host(), port);
                 DubboInteropService remote = client.getRsfClient(address).getRemote(service);
 
                 // 通过公开代理调用并验证本场景的结果。
@@ -940,7 +936,7 @@ public class DubboOfficialInteropTest {
                 MetBindInfo<DubboInteropService> service = client.publisher().rsfService(DubboInteropService.class) //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").register();
-                InterAddress address = new InterAddress("dubbo", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbo", peer.host(), port);
                 DubboInteropService remote = client.getRsfClient(address).getRemote(service);
 
                 // 通过公开代理调用并验证本场景的结果。
@@ -987,7 +983,7 @@ public class DubboOfficialInteropTest {
                 MetBindInfo<DubboInteropService> service = client.publisher().rsfService(DubboInteropService.class) //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").register();
-                InterAddress address = new InterAddress("dubbo", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbo", peer.host(), port);
                 DubboInteropService remote = client.getRsfClient(address).getRemote(service);
 
                 // 通过公开代理调用并验证本场景的结果。
@@ -1033,7 +1029,7 @@ public class DubboOfficialInteropTest {
                 MetBindInfo<DubboInteropService> service = client.publisher().rsfService(DubboInteropService.class) //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").register();
-                InterAddress address = new InterAddress("dubbo", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbo", peer.host(), port);
                 MetClient remote = client.getRsfClient(address);
 
                 // 通过异步入口读取 RPC 失败，验证原始业务异常类型和信息。
@@ -1090,7 +1086,7 @@ public class DubboOfficialInteropTest {
                 MetBindInfo<DubboInteropService> service = client.publisher().rsfService(DubboInteropService.class) //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").register();
-                InterAddress address = new InterAddress("dubbo", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbo", peer.host(), port);
                 MetClient remote = client.getRsfClient(address);
 
                 // 一次提交全部请求后再等待，确保不是逐个同步调用。
@@ -1149,7 +1145,7 @@ public class DubboOfficialInteropTest {
                 MetBindInfo<DubboInteropService> service = client.publisher().rsfService(DubboInteropService.class) //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").timeout(150).register();
-                InterAddress address = new InterAddress("dubbo", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbo", peer.host(), port);
                 MetClient remote = client.getRsfClient(address);
 
                 // 外层等待比 RPC 期限更长，只接受真实 RPC 超时而非测试等待超时。
@@ -1208,7 +1204,7 @@ public class DubboOfficialInteropTest {
                 MetBindInfo<DubboInteropService> service = client.publisher().rsfService(DubboInteropService.class) //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").register();
-                InterAddress address = new InterAddress("dubbo", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbo", peer.host(), port);
                 MetClient remote = client.getRsfClient(address).withOptions(Map.of("x-dubbo-test", "metadata"));
 
                 // 异步入口保留完整响应，从公开选项读取回传附件。
@@ -1265,7 +1261,7 @@ public class DubboOfficialInteropTest {
                 MetBindInfo<DubboInteropService> service = client.publisher().rsfService(DubboInteropService.class) //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").register();
-                InterAddress address = new InterAddress("dubbos", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbos", peer.host(), port);
                 DubboInteropService remote = client.getRsfClient(address).getRemote(service);
 
                 // 真实 TLS 连接完成后仍验证完整业务响应。
@@ -1318,7 +1314,7 @@ public class DubboOfficialInteropTest {
                 MetBindInfo<DubboInteropService> service = client.publisher().rsfService(DubboInteropService.class) //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").register();
-                InterAddress address = new InterAddress("dubbos", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbos", peer.host(), port);
                 DubboInteropService remote = client.getRsfClient(address).getRemote(service);
 
                 // 真实 TLS 连接完成后仍验证完整业务响应。
@@ -1372,7 +1368,7 @@ public class DubboOfficialInteropTest {
                 MetBindInfo<DubboInteropService> service = client.publisher().rsfService(DubboInteropService.class) //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").register();
-                InterAddress address = new InterAddress("dubbos", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbos", peer.host(), port);
                 DubboInteropService remote = client.getRsfClient(address).getRemote(service);
 
                 // 真实 TLS 连接完成后仍验证完整业务响应。
@@ -1427,7 +1423,7 @@ public class DubboOfficialInteropTest {
                 MetBindInfo<DubboInteropService> service = client.publisher().rsfService(DubboInteropService.class) //
                         .protocol("dubbo").aliasName("dubbo", SERVICE).group("interop").version("1.0.0") //
                         .serialize("Hessian2").register();
-                InterAddress address = new InterAddress("dubbos", peer.host(), port, "default");
+                InterAddress address = new InterAddress("dubbos", peer.host(), port);
                 DubboInteropService remote = client.getRsfClient(address).getRemote(service);
 
                 // 真实 TLS 连接完成后仍验证完整业务响应。

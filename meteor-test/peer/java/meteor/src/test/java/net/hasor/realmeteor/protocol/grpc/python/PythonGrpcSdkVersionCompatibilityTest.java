@@ -3,26 +3,26 @@
  * Licensed under the Apache License, Version 2.0. See LICENSE.txt.
  */
 package net.hasor.realmeteor.protocol.grpc.python;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
+import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.OrderQuery;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 /** gRPC Python 1.x 取最新补丁，生成器和运行时使用同一版本。 */
 @ParameterizedClass(autoCloseArguments = false, name = "sdk/python/grpc/grpcio@{0}/protobuf/{1}", quoteTextArguments = false)
@@ -36,6 +36,7 @@ public class PythonGrpcSdkVersionCompatibilityTest {
         this.version = version;
         this.direction = direction;
     }
+
     public static Object[][] versions() {
         return new Object[][] { { "1.85.0", "SDK-to-Meteor" }, { "1.85.0", "Meteor-to-SDK" } };
     }
@@ -83,7 +84,7 @@ public class PythonGrpcSdkVersionCompatibilityTest {
             var service = consumer.publisher().rsfService(OrderDemoService.class) //
                     .protocol("grpc").aliasName("grpc", "meteor.example.OrderDemoService") //
                     .serialize("Protobuf").bindResource("grpc", resource).register();
-            InterAddress address = new InterAddress("grpc", peer.host(), port, "default");
+            InterAddress address = new InterAddress("grpc", peer.host(), port);
             OrderDemoService remote = consumer.getRsfClient(address).getRemote(service);
 
             // 同一次订单往返包含 Unicode 和非文本附件，确认没有退化为字符串转换。

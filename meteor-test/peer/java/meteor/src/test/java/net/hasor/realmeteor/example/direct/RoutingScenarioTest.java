@@ -6,17 +6,17 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.example.direct;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.util.List;
-import net.hasor.example.direct.DirectRpcExample;
 import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.OrderQuery;
+import net.hasor.example.direct.DirectRpcExample;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetUpdater;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -33,7 +33,7 @@ public class RoutingScenarioTest {
                     <bind name="port" value="service.meta[env.applicationName]"/>
                 </if>
                 <filter name="selected" from="addresses" item="a"
-                        test="a.port == port and utils.equals(a.formUnit, env.unitName)"/>
+                        test="a.port == port and env.units[env.unitName] != null &amp;&amp; env.units[env.unitName].contains(a)"/>
                 <return value="selected"/>
             </route>
             """;
@@ -75,7 +75,7 @@ public class RoutingScenarioTest {
             service.setMetaData("west", westPort);
             MetUpdater updater = client.getUpdater();
             String serviceId = service.getBindID();
-            updater.appendAddress(serviceId, List.of(east.getListenAddress("rsf"), west.getListenAddress("rsf")));
+            updater.refreshAddress(serviceId, java.util.Map.of(east.getSettings().getUnitName(), List.of(east.getListenAddress("rsf"), west.getListenAddress("rsf"))));
             OrderDemoService remote = client.getRsfClient().getRemote(service);
 
             // 应用名称来自框架环境，规则选择对应的实例端口与单元。
@@ -107,7 +107,7 @@ public class RoutingScenarioTest {
             service.setMetaData("west", westPort);
             MetUpdater updater = client.getUpdater();
             String serviceId = service.getBindID();
-            updater.appendAddress(serviceId, List.of(east.getListenAddress("rsf"), west.getListenAddress("rsf")));
+            updater.refreshAddress(serviceId, java.util.Map.of(east.getSettings().getUnitName(), List.of(east.getListenAddress("rsf"), west.getListenAddress("rsf"))));
             OrderDemoService remote = client.getRsfClient().getRemote(service);
 
             // 无需重建订阅，更新元信息即可改变下一次调用的目标。
@@ -141,7 +141,7 @@ public class RoutingScenarioTest {
             service.setMetaData("west", westPort);
             MetUpdater updater = client.getUpdater();
             String serviceId = service.getBindID();
-            updater.appendAddress(serviceId, List.of(east.getListenAddress("rsf"), west.getListenAddress("rsf")));
+            updater.refreshAddress(serviceId, java.util.Map.of(east.getSettings().getUnitName(), List.of(east.getListenAddress("rsf"), west.getListenAddress("rsf"))));
             OrderDemoService remote = client.getRsfClient().getRemote(service);
 
             // 当前元信息指向 west，特定订单查询仍可选择应用默认的 east。
@@ -175,7 +175,7 @@ public class RoutingScenarioTest {
             service.setMetaData("west", westPort);
             MetUpdater updater = client.getUpdater();
             String serviceId = service.getBindID();
-            updater.appendAddress(serviceId, List.of(east.getListenAddress("rsf"), west.getListenAddress("rsf")));
+            updater.refreshAddress(serviceId, java.util.Map.of(east.getSettings().getUnitName(), List.of(east.getListenAddress("rsf"), west.getListenAddress("rsf"))));
             OrderDemoService remote = client.getRsfClient().getRemote(service);
 
             // 无效规则更新被拒绝，已生效的 west 选址规则继续工作。
@@ -209,7 +209,7 @@ public class RoutingScenarioTest {
             service.setMetaData("west", westPort);
             MetUpdater updater = client.getUpdater();
             String serviceId = service.getBindID();
-            updater.appendAddress(serviceId, List.of(east.getListenAddress("rsf"), west.getListenAddress("rsf")));
+            updater.refreshAddress(serviceId, java.util.Map.of(east.getSettings().getUnitName(), List.of(east.getListenAddress("rsf"), west.getListenAddress("rsf"))));
             OrderDemoService remote = client.getRsfClient().getRemote(service);
 
             // 规则可以编译但在调用时访问不存在的参数，由调用方感知失败。
@@ -242,7 +242,7 @@ public class RoutingScenarioTest {
             service.setMetaData("west", westPort);
             MetUpdater updater = client.getUpdater();
             String serviceId = service.getBindID();
-            updater.appendAddress(serviceId, List.of(east.getListenAddress("rsf"), west.getListenAddress("rsf")));
+            updater.refreshAddress(serviceId, java.util.Map.of(east.getSettings().getUnitName(), List.of(east.getListenAddress("rsf"), west.getListenAddress("rsf"))));
             OrderDemoService remote = client.getRsfClient().getRemote(service);
 
             // 服务和方法层依次放行，参数层根据订单内容挑选提供者。
@@ -278,7 +278,7 @@ public class RoutingScenarioTest {
             service.setMetaData("west", westPort);
             MetUpdater updater = client.getUpdater();
             String serviceId = service.getBindID();
-            updater.appendAddress(serviceId, List.of(east.getListenAddress("rsf"), west.getListenAddress("rsf")));
+            updater.refreshAddress(serviceId, java.util.Map.of(east.getSettings().getUnitName(), List.of(east.getListenAddress("rsf"), west.getListenAddress("rsf"))));
             OrderDemoService remote = client.getRsfClient().getRemote(service);
 
             // 方法规则仅允许 find，同一接口的 save 无可用目标。
@@ -312,7 +312,7 @@ public class RoutingScenarioTest {
             service.setMetaData("west", westPort);
             MetUpdater updater = client.getUpdater();
             String serviceId = service.getBindID();
-            updater.appendAddress(serviceId, List.of(east.getListenAddress("rsf"), west.getListenAddress("rsf")));
+            updater.refreshAddress(serviceId, java.util.Map.of(east.getSettings().getUnitName(), List.of(east.getListenAddress("rsf"), west.getListenAddress("rsf"))));
             OrderDemoService remote = client.getRsfClient().getRemote(service);
 
             // 原有规则拒绝 save；清空后同一个代理恢复该方法。

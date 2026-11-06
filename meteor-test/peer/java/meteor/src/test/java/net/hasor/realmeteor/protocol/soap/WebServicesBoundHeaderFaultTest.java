@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.io.ByteArrayInputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -25,6 +24,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import net.hasor.example.protocol.soap.EchoService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetFuture;
@@ -33,13 +33,13 @@ import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.soap.SoapFault;
 import net.hasor.meteor.protocol.soap.definition.SoapWsdlResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.protocol.soap.support.BoundHeaderHandler;
 import net.hasor.realmeteor.protocol.soap.support.SoapHeadersExtension;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.w3c.dom.Element;
 import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.Timeout;
 
 @NxnRpc(name = "soap", version = "1.2")
 public class WebServicesBoundHeaderFaultTest {
@@ -216,7 +216,7 @@ public class WebServicesBoundHeaderFaultTest {
 
                 // 客户端公开调用必须报告 Schema 错误，不能仅忽略未安装处理器的 Header。
                 int port = server.getAddress().getPort();
-                InterAddress address = new InterAddress("soap", "127.0.0.1", port, "default");
+                InterAddress address = new InterAddress("soap", "127.0.0.1", port);
                 MetFuture invocation = context.getRsfClient(address) //
                         .asyncInvoke(service, "echo", new Class<?>[] { String.class }, new Object[] { "hello" });
                 ExecutionException failure = assertThrows(ExecutionException.class, //
@@ -263,7 +263,7 @@ public class WebServicesBoundHeaderFaultTest {
                     .asyncInvoke(service, "echo", new Class<?>[] { String.class }, new Object[] { "bad" });
             ExecutionException failure = assertThrows(ExecutionException.class, //
                     () -> invocation.getData(5, TimeUnit.SECONDS));
-            assertTrue(failure.getCause() instanceof SoapFault);
+            assertInstanceOf(SoapFault.class, failure.getCause());
             SoapFault fault = (SoapFault) failure.getCause();
             assertEquals(new QName(SOAP_12, "Sender"), fault.getCode());
             assertEquals("declared problem", fault.getReasons().get(0).text());
@@ -295,7 +295,7 @@ public class WebServicesBoundHeaderFaultTest {
 
                 // 非法声明 Detail 必须作为协议解码失败，不能交付成有效的业务 Fault。
                 int port = server.getAddress().getPort();
-                InterAddress address = new InterAddress("soap", "127.0.0.1", port, "default");
+                InterAddress address = new InterAddress("soap", "127.0.0.1", port);
                 MetFuture invocation = context.getRsfClient(address) //
                         .asyncInvoke(service, "echo", new Class<?>[] { String.class }, new Object[] { "bad" });
                 ExecutionException failure = assertThrows(ExecutionException.class, //
@@ -332,7 +332,7 @@ public class WebServicesBoundHeaderFaultTest {
 
                 // Header Fault 的类型错误在处理标准 SOAP Fault 之前报告。
                 int port = server.getAddress().getPort();
-                InterAddress address = new InterAddress("soap", "127.0.0.1", port, "default");
+                InterAddress address = new InterAddress("soap", "127.0.0.1", port);
                 MetFuture invocation = context.getRsfClient(address) //
                         .asyncInvoke(service, "echo", new Class<?>[] { String.class }, new Object[] { "bad" });
                 ExecutionException failure = assertThrows(ExecutionException.class, //

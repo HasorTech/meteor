@@ -6,11 +6,10 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.thrift.python;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
@@ -23,10 +22,11 @@ import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 /** 官方 Python Thrift 不同版本通过同一订单契约与 Meteor 双向互通。 */
 @ParameterizedClass(autoCloseArguments = false, name = "sdk/python/thrift/Apache-Thrift@{0}/{1}-framed/{2}", quoteTextArguments = false)
@@ -42,6 +42,7 @@ public class PythonThriftSdkVersionCompatibilityTest {
         this.encoding = encoding;
         this.direction = direction;
     }
+
     public static Collection<Object[]> parameters() {
         // 选择三个发行阶段；每个版本、编码和调用方向分别生成独立测试结果。
         List<Object[]> parameters = new ArrayList<>();
@@ -89,7 +90,7 @@ public class PythonThriftSdkVersionCompatibilityTest {
                     .protocol("thrift").aliasName("thrift", "OrderThriftService").register();
 
             // 使用同一业务接口调用官方服务，地址来自当前独立进程的实际监听端口。
-            InterAddress address = new InterAddress("thrift", peer.host(), port, "default");
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             OrderDemoService remote = client.getRsfClient(address).getRemote(service);
             Order expected = new Order();
             expected.setId(104);

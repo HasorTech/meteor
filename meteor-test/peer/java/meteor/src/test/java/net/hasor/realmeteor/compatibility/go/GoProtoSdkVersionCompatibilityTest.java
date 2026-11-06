@@ -4,8 +4,6 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.compatibility.go;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,18 +16,20 @@ import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.OrderQuery;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
-import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.golang.GoPeerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** grpc-go 和 Connect-Go 的发布版本增量验证，复用同一份订单契约与实际网络入口。 */
 @ParameterizedClass(autoCloseArguments = false, name = "sdk/go/{0}/{1}@{2}/{3}/{4}", quoteTextArguments = false)
@@ -38,16 +38,16 @@ import org.junit.jupiter.api.Timeout;
 @NxnRpc(name = "connect", version = "1", cases = "sdk/go/connect/*")
 public class GoProtoSdkVersionCompatibilityTest {
     private static final String SERVICE = "meteor.example.OrderDemoService";
-    private final String protocol;
-    private final String direction;
-    private final String executable;
+    private final        String protocol;
+    private final        String direction;
+    private final        String executable;
 
-    public GoProtoSdkVersionCompatibilityTest(String protocol, String sdk, String version, String profile,
-            String direction, String executable) {
+    public GoProtoSdkVersionCompatibilityTest(String protocol, String sdk, String version, String profile, String direction, String executable) {
         this.protocol = protocol;
         this.direction = direction;
         this.executable = executable;
     }
+
     public static Collection<Object[]> versions() {
         // 基线与新增最新版本使用不同二进制；每个方向单独报告。
         List<Object[]> versions = new ArrayList<>();
@@ -60,8 +60,7 @@ public class GoProtoSdkVersionCompatibilityTest {
         return versions;
     }
 
-    private static void add(List<Object[]> rows, String protocol, String sdk, String version, String profile,
-            String executable) {
+    private static void add(List<Object[]> rows, String protocol, String sdk, String version, String profile, String executable) {
         rows.add(new Object[] { protocol, sdk, version, profile, "SDK-to-Meteor", executable });
         rows.add(new Object[] { protocol, sdk, version, profile, "Meteor-to-SDK", executable });
     }
@@ -161,7 +160,7 @@ public class GoProtoSdkVersionCompatibilityTest {
     private InterAddress address(GoPeerProcess peer) throws Exception {
         String target = peer.awaitReady();
         URI endpoint = URI.create(target.contains("://") ? target : "tcp://" + target);
-        return new InterAddress(this.protocol, endpoint.getHost(), endpoint.getPort(), "default");
+        return new InterAddress(this.protocol, endpoint.getHost(), endpoint.getPort());
     }
 
     private GoPeerProcess peer(String role, String scenario, String target) throws Exception {

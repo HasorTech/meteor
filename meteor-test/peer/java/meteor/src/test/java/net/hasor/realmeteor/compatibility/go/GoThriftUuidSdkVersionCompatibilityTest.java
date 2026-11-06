@@ -4,24 +4,25 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.compatibility.go;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.net.URI;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.echo.UuidEchoService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
-import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.golang.GoPeerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Thrift 0.18 新增 UUID 线类型，只在具备该能力的 SDK 发布线上验证。 */
 @ParameterizedClass(autoCloseArguments = false, name = "sdk/go/thrift/Apache-Thrift@{0}/uuid-binary-framed/{1}", quoteTextArguments = false)
@@ -35,13 +36,9 @@ public class GoThriftUuidSdkVersionCompatibilityTest {
         this.version = version;
         this.direction = direction;
     }
+
     public static Object[][] versions() {
-        return new Object[][] {
-                { "0.18.1", "SDK-to-Meteor" },
-                { "0.18.1", "Meteor-to-SDK" },
-                { "0.25.0", "SDK-to-Meteor" },
-                { "0.25.0", "Meteor-to-SDK" }
-        };
+        return new Object[][] { { "0.18.1", "SDK-to-Meteor" }, { "0.18.1", "Meteor-to-SDK" }, { "0.25.0", "SDK-to-Meteor" }, { "0.25.0", "Meteor-to-SDK" } };
     }
 
     @Test
@@ -76,7 +73,7 @@ public class GoThriftUuidSdkVersionCompatibilityTest {
                     assertTrue(outcome.path("ok").asBoolean(), outcome.toString());
                 } else {
                     URI endpoint = URI.create(peer.awaitReady());
-                    InterAddress address = new InterAddress("thrift://" + endpoint.getAuthority() + "/default");
+                    InterAddress address = new InterAddress("thrift://" + endpoint.getAuthority());
                     UuidEchoService remote = context.getRsfClient(address).getRemote(binding);
                     UUID value = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
                     assertEquals(value, remote.echoUuid(value));

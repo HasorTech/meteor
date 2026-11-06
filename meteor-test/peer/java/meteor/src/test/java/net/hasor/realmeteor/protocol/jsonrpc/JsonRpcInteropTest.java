@@ -6,23 +6,23 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.jsonrpc;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import net.hasor.cobble.StringUtils;
 import net.hasor.example.protocol.jsonrpc.JsonRpcInteropService;
 import net.hasor.example.protocol.jsonrpc.JsonRpcInteropServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.jsonrpc.JsonRpcException;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
-import net.hasor.cobble.StringUtils;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 @NxnRpc(name = "jsonrpc", version = "2.0")
 public class JsonRpcInteropTest {
@@ -333,7 +333,7 @@ public class JsonRpcInteropTest {
                     .protocol("jsonrpc") //
                     .serialize("Json") //
                     .register();
-            InterAddress address = new InterAddress("jsonrpc", peer.host(), port, "default");
+            InterAddress address = new InterAddress("jsonrpc", peer.host(), port);
 
             // Meteor 代理发起 RPC，独立 Jayson 服务端负责解析和响应。
             JsonRpcInteropService remote = client.getRsfClient(address).getRemote(service);
@@ -362,7 +362,7 @@ public class JsonRpcInteropTest {
                     .protocol("jsonrpc") //
                     .serialize("Json") //
                     .register();
-            InterAddress address = new InterAddress("jsonrpc", peer.host(), port, "default");
+            InterAddress address = new InterAddress("jsonrpc", peer.host(), port);
 
             // 消息方法完整写出后返回，通过远端查询确认通知最终执行。
             JsonRpcInteropService remote = client.getRsfClient(address).getRemote(service);
@@ -398,7 +398,7 @@ public class JsonRpcInteropTest {
                     .protocol("jsonrpc") //
                     .serialize("Json") //
                     .register();
-            InterAddress address = new InterAddress("jsonrpc", peer.host(), port, "default");
+            InterAddress address = new InterAddress("jsonrpc", peer.host(), port);
 
             // 对端返回应用错误，调用方保留 JSON-RPC 错误码与消息。
             MetClient remote = client.getRsfClient(address);
@@ -406,7 +406,7 @@ public class JsonRpcInteropTest {
             Object[] arguments = new Object[0];
             ExecutionException failure = assertThrows(ExecutionException.class, //
                     () -> remote.syncInvoke(service, "fail", parameters, arguments));
-            assertTrue(failure.getCause() instanceof JsonRpcException);
+            assertInstanceOf(JsonRpcException.class, failure.getCause());
             JsonRpcException error = (JsonRpcException) failure.getCause();
             assertEquals(-32042, error.getCode());
             assertEquals("Independent peer rejected request", error.getMessage());
@@ -435,7 +435,7 @@ public class JsonRpcInteropTest {
                     .protocol("jsonrpc") //
                     .serialize("Json") //
                     .register();
-            InterAddress address = new InterAddress("jsonrpc", peer.host(), port, "default");
+            InterAddress address = new InterAddress("jsonrpc", peer.host(), port);
 
             // Meteor 代理发起 RPC，独立 Jayson 服务端负责解析和响应。
             JsonRpcInteropService remote = client.getRsfClient(address).getRemote(service);
@@ -465,7 +465,7 @@ public class JsonRpcInteropTest {
                     .protocol("jsonrpc") //
                     .serialize("Json") //
                     .register();
-            InterAddress address = new InterAddress("jsonrpc", peer.host(), port, "default");
+            InterAddress address = new InterAddress("jsonrpc", peer.host(), port);
 
             // 消息方法完整写出后返回，通过远端查询确认通知最终执行。
             JsonRpcInteropService remote = client.getRsfClient(address).getRemote(service);
@@ -502,7 +502,7 @@ public class JsonRpcInteropTest {
                     .protocol("jsonrpc") //
                     .serialize("Json") //
                     .register();
-            InterAddress address = new InterAddress("jsonrpc", peer.host(), port, "default");
+            InterAddress address = new InterAddress("jsonrpc", peer.host(), port);
 
             // 对端返回应用错误，调用方保留 JSON-RPC 错误码与消息。
             MetClient remote = client.getRsfClient(address);
@@ -510,7 +510,7 @@ public class JsonRpcInteropTest {
             Object[] arguments = new Object[0];
             ExecutionException failure = assertThrows(ExecutionException.class, //
                     () -> remote.syncInvoke(service, "fail", parameters, arguments));
-            assertTrue(failure.getCause() instanceof JsonRpcException);
+            assertInstanceOf(JsonRpcException.class, failure.getCause());
             JsonRpcException error = (JsonRpcException) failure.getCause();
             assertEquals(-32042, error.getCode());
             assertEquals("Independent peer rejected request", error.getMessage());

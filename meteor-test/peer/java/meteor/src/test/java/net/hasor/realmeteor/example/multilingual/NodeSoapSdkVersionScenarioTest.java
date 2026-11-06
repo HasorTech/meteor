@@ -4,27 +4,27 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.example.multilingual;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.protocol.soap.EchoService;
 import net.hasor.example.protocol.soap.EchoServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
-import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.soap.definition.SoapWsdlResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.node.NodeRpcPeer;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** node-soap 0.x 和 1.x 通过同一 WSDL 验证双向 document/literal 调用。 */
 @NxnRpc(name = "soap", version = "1.1")
@@ -38,6 +38,7 @@ public class NodeSoapSdkVersionScenarioTest {
         this.profile = profile;
         this.direction = direction;
     }
+
     public static List<Object[]> versions() throws Exception {
         return NodeRpcPeer.compatibilityCases("soap");
     }
@@ -96,7 +97,7 @@ public class NodeSoapSdkVersionScenarioTest {
                     .bindResource("soap", new SoapWsdlResource(contract)).register();
 
             // 普通 Meteor 代理在另一进程的 SDK 服务上验证实际业务响应。
-            InterAddress target = new InterAddress("soap", peer.host(), port, "default");
+            InterAddress target = new InterAddress("soap", peer.host(), port);
             EchoService remote = consumer.getRsfClient(target).getRemote(service);
             String message = "Meteor → node-soap 中文🙂 <&>";
             assertEquals(message, remote.echo(message));

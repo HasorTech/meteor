@@ -6,12 +6,12 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.thrift;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.thrift.ThriftDemoService;
 import net.hasor.example.protocol.thrift.ThriftDemoServiceImpl;
 import net.hasor.example.protocol.thrift.generated.ExtendedInteropService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetFuture;
@@ -23,8 +23,8 @@ import net.hasor.meteor.protocol.thrift.ThriftClient;
 import net.hasor.meteor.protocol.thrift.ThriftServiceResource;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** Thrift 的 TCP TLS、HTTPS 版本、双向认证和明文边界均通过公开启动入口验证。 */
 @NxnRpc(name = "thrift")
@@ -876,7 +876,7 @@ public class ThriftSecureScenarioTest {
             // 将明文端口表达成安全目标，握手失败不能触发自动降级调用。
             InterAddress bound = server.getListenAddress("thrift", "thrift");
             String host = bound.getHost();
-            InterAddress address = new InterAddress("thrift-tls", host, bound.getPort(), bound.getFormUnit());
+            InterAddress address = new InterAddress("thrift-tls", host, bound.getPort(), bound.getPath());
             MetFuture pending = client.getRsfClient(address) //
                     .asyncInvoke(service, "echo", new Class<?>[] { String.class }, new Object[] { "rejected" });
             ExecutionException failure = assertThrows(ExecutionException.class, () -> pending.get(8, TimeUnit.SECONDS));
@@ -908,7 +908,7 @@ public class ThriftSecureScenarioTest {
 
             // TLS 监听收到普通 framed Thrift 字节后必须拒绝连接。
             InterAddress bound = server.getListenAddress("thrift", "thrift-tls");
-            InterAddress address = new InterAddress("thrift", bound.getHost(), bound.getPort(), bound.getFormUnit());
+            InterAddress address = new InterAddress("thrift", bound.getHost(), bound.getPort(), bound.getPath());
             MetFuture pending = client.getRsfClient(address) //
                     .asyncInvoke(service, "echo", new Class<?>[] { String.class }, new Object[] { "rejected" });
             ExecutionException failure = assertThrows(ExecutionException.class, () -> pending.get(8, TimeUnit.SECONDS));

@@ -4,12 +4,11 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.example.multilingual;
-import net.hasor.meteor.test.nxn.NxnRpc;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.junit.jupiter.api.io.TempDir;
-import java.net.URI;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
@@ -21,11 +20,12 @@ import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** Triple 的 Protobuf/gRPC 兼容面；使用标准 C/C++ gRPC SDK，不代表 Dubbo POJO 或 Hessian 能力。 */
 @NxnRpc(name = "triple")
@@ -73,7 +73,7 @@ public class TripleGrpcNativeInteropTest {
                     .protocol("triple").serialize("Protobuf") //
                     .aliasName("triple", "meteor.java.sdk.TextEchoService") //
                     .bindResource("triple", new GrpcProtoResource(contract)).register();
-            InterAddress address = new InterAddress("triple", target.getHost(), target.getPort(), "default");
+            InterAddress address = new InterAddress("triple", target.getHost(), target.getPort());
             TextEchoService remote = consumer.getRsfClient(address).getRemote(service);
 
             // 返回值由 C Core 和生成的 Protobuf-C codec 处理，不经过 Meteor gRPC provider。
@@ -121,7 +121,7 @@ public class TripleGrpcNativeInteropTest {
                     .protocol("triple").serialize("Protobuf") //
                     .aliasName("triple", "meteor.example.OrderDemoService") //
                     .bindResource("triple", new GrpcProtoResource(contract)).register();
-            InterAddress address = new InterAddress("triple", target.getHost(), target.getPort(), "default");
+            InterAddress address = new InterAddress("triple", target.getHost(), target.getPort());
             OrderDemoService orders = consumer.getRsfClient(address).getRemote(service);
 
             // SDK 保存的对象必须完整返回，证明真实双向契约及 Protobuf 编解码互通。

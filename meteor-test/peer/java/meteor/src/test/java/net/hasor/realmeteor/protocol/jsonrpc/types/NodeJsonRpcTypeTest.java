@@ -6,17 +6,14 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.jsonrpc.types;
-import net.hasor.meteor.test.nxn.NxnRpc;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.contract.types.TypeEchoService;
 import net.hasor.example.contract.types.TypeEchoServiceImpl;
@@ -28,15 +25,16 @@ import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.jsonrpc.JsonRpcException;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.matrix.types.ForeignTypePeer;
 import net.hasor.realmeteor.matrix.types.TypeValueAssertions;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** Jayson 使用原生 Number；不安全整数和负零按真实限制验证，不使用文本伪装原生支持。 */
 @ParameterizedClass(autoCloseArguments = false, name = "types/node/jsonrpc/direct/{1}/{0}", quoteTextArguments = false)
@@ -44,12 +42,13 @@ import org.junit.jupiter.api.Timeout;
 @NxnRpc(name = "jsonrpc", version = "2.0")
 public class NodeJsonRpcTypeTest {
     @TempDir
-    public Path data;
-    private final String          vector;
+    public        Path   data;
+    private final String vector;
 
     public NodeJsonRpcTypeTest(String vector, String type) {
         this.vector = vector;
     }
+
     public static Collection<Object[]> vectors() throws Exception {
         // 顺序沿用共享向量；每种边界和调用方向都有自己的 JUnit 身份。
         List<Object[]> cases = new ArrayList<>();
@@ -106,7 +105,7 @@ public class NodeJsonRpcTypeTest {
                 consumer.start();
                 MetBindInfo<TypeEchoService> info = consumer.publisher().rsfService(TypeEchoService.class) //
                         .aliasName("jsonrpc", "types").protocol("jsonrpc").register();
-                InterAddress address = new InterAddress("jsonrpc", peer.host(), port, "default");
+                InterAddress address = new InterAddress("jsonrpc", peer.host(), port);
                 MetClient client = consumer.getRsfClient(address);
                 TypeValue expected = TypeValueVectors.value(this.vector);
 
@@ -116,7 +115,7 @@ public class NodeJsonRpcTypeTest {
                     Object[] arguments = { expected };
                     ExecutionException failure = assertThrows(ExecutionException.class, //
                             () -> client.syncInvoke(info, "echo", types, arguments));
-                    assertTrue(failure.getCause() instanceof JsonRpcException);
+                    assertInstanceOf(JsonRpcException.class, failure.getCause());
                     JsonRpcException error = (JsonRpcException) failure.getCause();
                     assertEquals(-32064, error.getCode());
                     String message = "JavaScript Number cannot preserve integer precision: " + this.vector;

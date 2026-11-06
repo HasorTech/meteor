@@ -4,23 +4,23 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.protocol.soap.node;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.soap.EchoService;
 import net.hasor.example.protocol.soap.EchoServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.soap.definition.SoapWsdlResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.node.NodeRpcPeer;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** SOAP 1.1 document/literal 的最小双向互通，不推断类型或传输的完整支持。 */
 @NxnRpc(name = "soap", version = "1.1")
@@ -73,7 +73,7 @@ public class SoapNodeInteropTest {
                     .bindResource("soap", new SoapWsdlResource(contract)).register();
 
             // 普通 Meteor 代理经网络调用独立 Node 提供者并验证真实业务响应。
-            InterAddress address = new InterAddress("soap", provider.host(), port, "default");
+            InterAddress address = new InterAddress("soap", provider.host(), port);
             EchoService remote = consumer.getRsfClient(address).getRemote(service);
             String message = "Meteor → node-soap 中文 <&>";
             assertEquals(message, remote.echo(message));

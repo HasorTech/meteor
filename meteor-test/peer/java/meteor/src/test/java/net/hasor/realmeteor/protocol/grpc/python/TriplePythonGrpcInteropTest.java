@@ -4,22 +4,23 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.protocol.grpc.python;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
+import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.OrderQuery;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** 仅验证 Triple 的 Protobuf/gRPC 兼容面；对端为 grpcio，不是 Python Triple SDK。 */
 @NxnRpc(name = "triple")
@@ -76,7 +77,7 @@ public class TriplePythonGrpcInteropTest {
             var service = consumer.publisher().rsfService(OrderDemoService.class) //
                     .protocol("triple").aliasName("triple", "meteor.example.OrderDemoService") //
                     .serialize("Protobuf").bindResource("triple", resource).register();
-            var address = new InterAddress("triple", peer.host(), port, "default");
+            var address = new InterAddress("triple", peer.host(), port);
             OrderDemoService remote = consumer.getRsfClient(address).getRemote(service);
 
             // 保存与查询使用同一订单，验证真实 Python 业务状态及两个 RPC 返回值。

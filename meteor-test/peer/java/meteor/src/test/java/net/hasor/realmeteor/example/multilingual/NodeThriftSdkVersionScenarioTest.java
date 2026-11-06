@@ -4,24 +4,24 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.example.multilingual;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import net.hasor.cobble.StringUtils;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.annotation.MetParam;
-import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.node.NodeRpcPeer;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** 独立 Node SDK 版本分别验证三种 Thrift 编码及精确 64 位整数的双向兼容。 */
 @NxnRpc(name = "thrift")
@@ -33,13 +33,13 @@ public class NodeThriftSdkVersionScenarioTest {
     private final String encoding;
     private final String kind;
 
-    public NodeThriftSdkVersionScenarioTest(String sdk, String version, String profile, String direction,
-            String encoding, String kind) {
+    public NodeThriftSdkVersionScenarioTest(String sdk, String version, String profile, String direction, String encoding, String kind) {
         this.profile = profile;
         this.direction = direction;
         this.encoding = encoding;
         this.kind = kind;
     }
+
     public static List<Object[]> versions() throws Exception {
         // SDK 身份来自实际安装清单；每个方向、编码、类型及整数边界都是独立 testcase。
         List<Object[]> cases = new ArrayList<>();
@@ -112,7 +112,7 @@ public class NodeThriftSdkVersionScenarioTest {
             consumer.start();
             MetBindInfo<VersionEcho> service = consumer.publisher().rsfService(VersionEcho.class) //
                     .aliasName("thrift", "VersionEcho").protocol("thrift").register();
-            InterAddress target = new InterAddress("thrift", peer.host(), port, "default");
+            InterAddress target = new InterAddress("thrift", peer.host(), port);
             VersionEcho remote = consumer.getRsfClient(target).getRemote(service);
 
             // 每个参数实例只验证一种返回值，不将 i64 先转成 double 或 JavaScript Number。

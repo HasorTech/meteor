@@ -6,17 +6,17 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.xmlrpc;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.xmlrpc.XmlRpcDemoService;
 import net.hasor.example.protocol.xmlrpc.XmlRpcDemoServiceImpl;
 import net.hasor.example.protocol.xmlrpc.XmlRpcPerson;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
@@ -24,11 +24,11 @@ import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.protocol.xmlrpc.XmlRpcException;
-import org.junit.jupiter.api.Test;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** Python 标准库与 Meteor 的独立双向互通；每种线协议类型独立验证。 */
 @NxnRpc(name = "xmlrpc")
@@ -352,7 +352,7 @@ public class XmlRpcInteropTest {
                     .aliasName("xmlrpc", "demo") //
                     .protocol("xmlrpc") //
                     .register();
-            InterAddress address = new InterAddress("xmlrpc", peer.host(), port, "default");
+            InterAddress address = new InterAddress("xmlrpc", peer.host(), port);
 
             // 通过公开客户端验证Unicode 字符和 XML 转义，对端完成真正的 XML 编解码。
             XmlRpcDemoService remote = client.getRsfClient(address).getRemote(service);
@@ -381,7 +381,7 @@ public class XmlRpcInteropTest {
                     .aliasName("xmlrpc", "demo") //
                     .protocol("xmlrpc") //
                     .register();
-            InterAddress address = new InterAddress("xmlrpc", peer.host(), port, "default");
+            InterAddress address = new InterAddress("xmlrpc", peer.host(), port);
 
             // 通过公开客户端验证有序整数参数与整数结果，对端完成真正的 XML 编解码。
             XmlRpcDemoService remote = client.getRsfClient(address).getRemote(service);
@@ -409,7 +409,7 @@ public class XmlRpcInteropTest {
                     .aliasName("xmlrpc", "demo") //
                     .protocol("xmlrpc") //
                     .register();
-            InterAddress address = new InterAddress("xmlrpc", peer.host(), port, "default");
+            InterAddress address = new InterAddress("xmlrpc", peer.host(), port);
 
             // 通过公开客户端验证布尔值，对端完成真正的 XML 编解码。
             XmlRpcDemoService remote = client.getRsfClient(address).getRemote(service);
@@ -437,7 +437,7 @@ public class XmlRpcInteropTest {
                     .aliasName("xmlrpc", "demo") //
                     .protocol("xmlrpc") //
                     .register();
-            InterAddress address = new InterAddress("xmlrpc", peer.host(), port, "default");
+            InterAddress address = new InterAddress("xmlrpc", peer.host(), port);
 
             // 通过公开客户端验证浮点数，对端完成真正的 XML 编解码。
             XmlRpcDemoService remote = client.getRsfClient(address).getRemote(service);
@@ -465,7 +465,7 @@ public class XmlRpcInteropTest {
                     .aliasName("xmlrpc", "demo") //
                     .protocol("xmlrpc") //
                     .register();
-            InterAddress address = new InterAddress("xmlrpc", peer.host(), port, "default");
+            InterAddress address = new InterAddress("xmlrpc", peer.host(), port);
 
             // 通过公开客户端验证base64 二进制，对端完成真正的 XML 编解码。
             XmlRpcDemoService remote = client.getRsfClient(address).getRemote(service);
@@ -494,7 +494,7 @@ public class XmlRpcInteropTest {
                     .aliasName("xmlrpc", "demo") //
                     .protocol("xmlrpc") //
                     .register();
-            InterAddress address = new InterAddress("xmlrpc", peer.host(), port, "default");
+            InterAddress address = new InterAddress("xmlrpc", peer.host(), port);
 
             // 通过公开客户端验证无时区日期按 UTC 解释，对端完成真正的 XML 编解码。
             XmlRpcDemoService remote = client.getRsfClient(address).getRemote(service);
@@ -523,7 +523,7 @@ public class XmlRpcInteropTest {
                     .aliasName("xmlrpc", "demo") //
                     .protocol("xmlrpc") //
                     .register();
-            InterAddress address = new InterAddress("xmlrpc", peer.host(), port, "default");
+            InterAddress address = new InterAddress("xmlrpc", peer.host(), port);
 
             // 通过公开客户端验证结构体数组，对端完成真正的 XML 编解码。
             XmlRpcDemoService remote = client.getRsfClient(address).getRemote(service);
@@ -562,7 +562,7 @@ public class XmlRpcInteropTest {
                     .aliasName("xmlrpc", "demo") //
                     .protocol("xmlrpc") //
                     .register();
-            InterAddress address = new InterAddress("xmlrpc", peer.host(), port, "default");
+            InterAddress address = new InterAddress("xmlrpc", peer.host(), port);
 
             // 通过公开客户端验证嵌套结构体，对端完成真正的 XML 编解码。
             XmlRpcDemoService remote = client.getRsfClient(address).getRemote(service);
@@ -592,7 +592,7 @@ public class XmlRpcInteropTest {
                     .aliasName("xmlrpc", "demo") //
                     .protocol("xmlrpc") //
                     .register();
-            InterAddress address = new InterAddress("xmlrpc", peer.host(), port, "default");
+            InterAddress address = new InterAddress("xmlrpc", peer.host(), port);
 
             // 通过公开客户端验证应用故障码与消息，对端完成真正的 XML 编解码。
             MetClient remote = client.getRsfClient(address);
@@ -600,7 +600,7 @@ public class XmlRpcInteropTest {
             Object[] arguments = new Object[] { "独立调用失败 <&>" };
             ExecutionException failure = assertThrows(ExecutionException.class, //
                     () -> remote.syncInvoke(service, "fail", types, arguments));
-            assertTrue(failure.getCause() instanceof XmlRpcException);
+            assertInstanceOf(XmlRpcException.class, failure.getCause());
             XmlRpcException fault = (XmlRpcException) failure.getCause();
             assertEquals(42, fault.getCode());
             assertEquals("独立调用失败 <&>", fault.getMessage());
@@ -627,7 +627,7 @@ public class XmlRpcInteropTest {
                     .aliasName("xmlrpc", "demo") //
                     .protocol("xmlrpc") //
                     .register();
-            InterAddress address = new InterAddress("xmlrpc", peer.host(), port, "default");
+            InterAddress address = new InterAddress("xmlrpc", peer.host(), port);
 
             // 通过公开客户端验证无参调用，对端完成真正的 XML 编解码。
             XmlRpcDemoService remote = client.getRsfClient(address).getRemote(service);
@@ -656,7 +656,7 @@ public class XmlRpcInteropTest {
                     .aliasName("xmlrpc", "demo") //
                     .protocol("xmlrpc") //
                     .register();
-            InterAddress address = new InterAddress("xmlrpc", peer.host(), port, "default");
+            InterAddress address = new InterAddress("xmlrpc", peer.host(), port);
 
             // 通过公开客户端验证显式开启的 nil 扩展，对端完成真正的 XML 编解码。
             XmlRpcDemoService remote = client.getRsfClient(address).getRemote(service);
@@ -719,7 +719,7 @@ public class XmlRpcInteropTest {
                     .aliasName("xmlrpc", "demo") //
                     .protocol("xmlrpc") //
                     .register();
-            InterAddress address = new InterAddress("https", peer.host(), port, "default");
+            InterAddress address = new InterAddress("https", peer.host(), port);
 
             // 动态代理通过加密连接调用独立 Python 服务端。
             XmlRpcDemoService remote = client.getRsfClient(address).getRemote(service);

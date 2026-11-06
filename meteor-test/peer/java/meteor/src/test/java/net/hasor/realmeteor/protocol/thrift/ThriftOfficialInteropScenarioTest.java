@@ -6,35 +6,25 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.thrift;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.thrift.ThriftDemoService;
 import net.hasor.example.protocol.thrift.ThriftDemoServiceImpl;
-import net.hasor.example.protocol.thrift.generated.Choice;
-import net.hasor.example.protocol.thrift.generated.DeclaredFailure;
-import net.hasor.example.protocol.thrift.generated.ExtendedInteropService;
-import net.hasor.example.protocol.thrift.generated.Sample;
-import net.hasor.example.protocol.thrift.generated.Shade;
+import net.hasor.example.protocol.thrift.generated.*;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
-import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.meteor.protocol.thrift.ThriftClient;
 import net.hasor.meteor.protocol.thrift.ThriftServiceResource;
 import net.hasor.meteor.test.nxn.NxnRpc;
+import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.apache.thrift.TApplicationException;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 官方 Client、Processor 在隔离 JVM 中经真实网络与 Meteor 双向互通。 */
 @NxnRpc(name = "thrift")
@@ -80,7 +70,7 @@ public class ThriftOfficialInteropScenarioTest {
                     .bindResource("thrift", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, unitName);
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
 
@@ -131,7 +121,7 @@ public class ThriftOfficialInteropScenarioTest {
                     .bindResource("thrift", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, unitName);
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
 
@@ -182,7 +172,7 @@ public class ThriftOfficialInteropScenarioTest {
                     .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift-http", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift-http", peer.host(), port, unitName);
+            InterAddress address = new InterAddress("thrift-http", peer.host(), port);
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
 
@@ -233,7 +223,7 @@ public class ThriftOfficialInteropScenarioTest {
                     .bindResource("thrift", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, unitName);
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
 
@@ -284,7 +274,7 @@ public class ThriftOfficialInteropScenarioTest {
                     .bindResource("thrift", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, unitName);
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
 
@@ -335,7 +325,7 @@ public class ThriftOfficialInteropScenarioTest {
                     .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift-http", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift-http", peer.host(), port, unitName);
+            InterAddress address = new InterAddress("thrift-http", peer.host(), port);
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
 
@@ -386,7 +376,7 @@ public class ThriftOfficialInteropScenarioTest {
                     .bindResource("thrift", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, unitName);
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
 
@@ -437,7 +427,7 @@ public class ThriftOfficialInteropScenarioTest {
                     .bindResource("thrift", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, unitName);
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
 
@@ -488,7 +478,7 @@ public class ThriftOfficialInteropScenarioTest {
                     .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift-http", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift-http", peer.host(), port, unitName);
+            InterAddress address = new InterAddress("thrift-http", peer.host(), port);
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
 
@@ -539,7 +529,7 @@ public class ThriftOfficialInteropScenarioTest {
                     .bindResource("thrift", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, unitName);
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
 
@@ -589,7 +579,7 @@ public class ThriftOfficialInteropScenarioTest {
                     .bindResource("thrift", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, unitName);
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
 
@@ -640,7 +630,7 @@ public class ThriftOfficialInteropScenarioTest {
                     .bindResource("thrift", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, unitName);
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
 
@@ -694,7 +684,7 @@ public class ThriftOfficialInteropScenarioTest {
                     .bindResource("thrift", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, unitName);
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
 
@@ -746,7 +736,7 @@ public class ThriftOfficialInteropScenarioTest {
                     .bindResource("thrift", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, unitName);
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
 
@@ -797,7 +787,7 @@ public class ThriftOfficialInteropScenarioTest {
                     .bindResource("thrift", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, unitName);
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
 
@@ -850,7 +840,7 @@ public class ThriftOfficialInteropScenarioTest {
                     .bindResource("thrift", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, unitName);
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
 
@@ -901,7 +891,7 @@ public class ThriftOfficialInteropScenarioTest {
                     .bindResource("thrift", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, unitName);
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
 
@@ -952,7 +942,7 @@ public class ThriftOfficialInteropScenarioTest {
                     .bindResource("thrift", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, unitName);
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
 
@@ -1002,7 +992,7 @@ public class ThriftOfficialInteropScenarioTest {
                     .bindResource("thrift", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, unitName);
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
 
@@ -1053,7 +1043,7 @@ public class ThriftOfficialInteropScenarioTest {
                     .bindResource("thrift", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, unitName);
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
 
@@ -1104,7 +1094,7 @@ public class ThriftOfficialInteropScenarioTest {
                     .bindResource("thrift", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, unitName);
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
 
@@ -1154,7 +1144,7 @@ public class ThriftOfficialInteropScenarioTest {
                     .bindResource("thrift", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, unitName);
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
 
@@ -1212,7 +1202,7 @@ public class ThriftOfficialInteropScenarioTest {
                     .bindResource("thrift", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, unitName);
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
 
@@ -1264,7 +1254,7 @@ public class ThriftOfficialInteropScenarioTest {
                     .bindResource("thrift", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, unitName);
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
 
@@ -1316,7 +1306,7 @@ public class ThriftOfficialInteropScenarioTest {
                     .bindResource("thrift", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, unitName);
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
 
@@ -1366,7 +1356,7 @@ public class ThriftOfficialInteropScenarioTest {
                     .bindResource("thrift", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, unitName);
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
 
@@ -1417,7 +1407,7 @@ public class ThriftOfficialInteropScenarioTest {
                     .bindResource("thrift", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, unitName);
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
 
@@ -1468,7 +1458,7 @@ public class ThriftOfficialInteropScenarioTest {
                     .bindResource("thrift", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
-            InterAddress address = new InterAddress("thrift", peer.host(), port, unitName);
+            InterAddress address = new InterAddress("thrift", peer.host(), port);
             ThriftClient caller = new ThriftClient(client.getRsfClient(address));
             ThriftDemoService remote = caller.getRemote(service);
 

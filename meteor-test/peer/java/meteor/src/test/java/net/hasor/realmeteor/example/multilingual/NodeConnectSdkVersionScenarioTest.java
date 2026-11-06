@@ -4,29 +4,25 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.example.multilingual;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.cobble.StringUtils;
-import net.hasor.example.Order;
-import net.hasor.example.OrderDemoService;
-import net.hasor.example.OrderDemoServiceImpl;
-import net.hasor.example.OrderExampleUtils;
-import net.hasor.example.OrderQuery;
+import net.hasor.example.*;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
-import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.node.NodeRpcPeer;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 /** Connect Node 的两个 SDK 世代分别使用自己的依赖和生成契约，通过真实 HTTP/1.1 双向调用订单。 */
 @NxnRpc(name = "connect", version = "1")
@@ -40,6 +36,7 @@ public class NodeConnectSdkVersionScenarioTest {
         this.profile = profile;
         this.direction = direction;
     }
+
     public static List<Object[]> versions() throws Exception {
         // 实际 SDK 版本由容器准备阶段核验，每个版本与调用方向形成独立用例。
         return NodeRpcPeer.compatibilityCases("connect");
@@ -100,7 +97,7 @@ public class NodeConnectSdkVersionScenarioTest {
             var service = consumer.publisher().rsfService(OrderDemoService.class) //
                     .protocol("connect").aliasName("connect", OrderExampleUtils.SERVICE_NAME) //
                     .serialize("Protobuf").bindResource("connect", resource).register();
-            var address = new InterAddress("connect", peer.host(), port, "default");
+            var address = new InterAddress("connect", peer.host(), port);
             OrderDemoService remote = consumer.getRsfClient(address).getRemote(service);
 
             // 保存响应和后续查询共同证明独立 SDK 的业务存储与 Protobuf 字段没有丢失。

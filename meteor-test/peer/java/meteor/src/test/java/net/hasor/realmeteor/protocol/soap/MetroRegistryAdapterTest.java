@@ -6,25 +6,19 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import java.util.UUID;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import java.nio.file.Files;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.net.URI;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import javax.xml.namespace.QName;
 import jakarta.xml.soap.MessageFactory;
 import jakarta.xml.soap.SOAPBodyElement;
 import jakarta.xml.soap.SOAPConstants;
 import jakarta.xml.soap.SOAPMessage;
 import net.hasor.cobble.StringUtils;
+import net.hasor.example.discovery.AddressSelectionAwaiter;
 import net.hasor.example.discovery.RegistryDiscoveryExample;
 import net.hasor.example.protocol.soap.EchoService;
 import net.hasor.example.protocol.soap.EchoServiceImpl;
@@ -35,18 +29,18 @@ import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.soap.definition.SoapWsdlResource;
 import net.hasor.meteor.registry.RegistryConfiguration;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
+import net.hasor.meteor.test.nxn.NxnRpc;
+import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.discovery.ForeignServiceRegistrar;
 import net.hasor.realmeteor.environment.discovery.RegistryAddressResolver;
 import net.hasor.realmeteor.environment.discovery.RegistryDiscoveryEnvironment;
-import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
-import org.w3c.dom.NodeList;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.w3c.dom.NodeList;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** Metro 官方 JVM 复用标准 SOAP 合同，注册发现由显式存储适配器完成。 */
 @ParameterizedClass(autoCloseArguments = false, name = "backend={0}, SOAP={1}", quoteTextArguments = false)
@@ -157,7 +151,7 @@ public class MetroRegistryAdapterTest {
                 try (SoapPeerProcess provider = SoapPeerProcess.metroServer("echo", this.version, false); //
                      ForeignServiceRegistrar registrar = new ForeignServiceRegistrar(registry)) {
                     String unit = consumer.getSettings().getUnitName();
-                    InterAddress address = new InterAddress("http", provider.host(), provider.getPort(), unit);
+                    InterAddress address = new InterAddress("http", provider.host(), provider.getPort());
                     registrar.register(service, provider.processId(), "java", "soap", "http", address, //
                             "/services/EchoService");
                     RegistryDiscoveryExample.awaitDiscovery(consumer, service);

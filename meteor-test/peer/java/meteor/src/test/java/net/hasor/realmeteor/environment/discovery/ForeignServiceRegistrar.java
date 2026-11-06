@@ -42,7 +42,7 @@ public final class ForeignServiceRegistrar implements AutoCloseable {
         instance.setApplicationName(language + "-order-provider");
         instance.setIpAddress(address.getHost());
         instance.setProcessId(processId);
-        instance.setUnitName(address.getFormUnit());
+        instance.setUnitName(address.getPath());
         instance.setRoles(new MetServiceType[] { MetServiceType.Provider });
         this.storage.registerInstance(instance);
 

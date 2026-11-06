@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
@@ -14,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import net.hasor.example.protocol.soap.EchoService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetFuture;
@@ -21,9 +21,8 @@ import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 @NxnRpc(name = "soap", version = "1.2")
 public class WebServicesFaultValidationTest {
@@ -59,12 +58,12 @@ public class WebServicesFaultValidationTest {
                         .register();
 
                 // 调用方获得明确的格式错误，不能把畸形结构解释成有效远端 Fault。
-                InterAddress address = new InterAddress("soap", "127.0.0.1", server.getAddress().getPort(), "default");
+                InterAddress address = new InterAddress("soap", "127.0.0.1", server.getAddress().getPort());
                 MetFuture invocation = context.getRsfClient(address) //
                         .asyncInvoke(service, "echo", new Class<?>[] { String.class }, new Object[] { "request" });
                 ExecutionException failure = assertThrows(ExecutionException.class, //
                         () -> invocation.getData(5, TimeUnit.SECONDS));
-                assertTrue(failure.getCause() instanceof IllegalArgumentException);
+                assertInstanceOf(IllegalArgumentException.class, failure.getCause());
                 String message = failure.getCause().getMessage();
                 assertTrue(message.contains("Invalid SOAP Fault QName"), message);
             }
@@ -103,12 +102,12 @@ public class WebServicesFaultValidationTest {
                         .register();
 
                 // 调用方获得明确的格式错误，不能把畸形结构解释成有效远端 Fault。
-                InterAddress address = new InterAddress("soap", "127.0.0.1", server.getAddress().getPort(), "default");
+                InterAddress address = new InterAddress("soap", "127.0.0.1", server.getAddress().getPort());
                 MetFuture invocation = context.getRsfClient(address) //
                         .asyncInvoke(service, "echo", new Class<?>[] { String.class }, new Object[] { "request" });
                 ExecutionException failure = assertThrows(ExecutionException.class, //
                         () -> invocation.getData(5, TimeUnit.SECONDS));
-                assertTrue(failure.getCause() instanceof IllegalArgumentException);
+                assertInstanceOf(IllegalArgumentException.class, failure.getCause());
                 String message = failure.getCause().getMessage();
                 assertTrue(message.contains("Invalid SOAP Fault QName"), message);
             }
@@ -147,12 +146,12 @@ public class WebServicesFaultValidationTest {
                         .register();
 
                 // 调用方获得明确的格式错误，不能把畸形结构解释成有效远端 Fault。
-                InterAddress address = new InterAddress("soap", "127.0.0.1", server.getAddress().getPort(), "default");
+                InterAddress address = new InterAddress("soap", "127.0.0.1", server.getAddress().getPort());
                 MetFuture invocation = context.getRsfClient(address) //
                         .asyncInvoke(service, "echo", new Class<?>[] { String.class }, new Object[] { "request" });
                 ExecutionException failure = assertThrows(ExecutionException.class, //
                         () -> invocation.getData(5, TimeUnit.SECONDS));
-                assertTrue(failure.getCause() instanceof IllegalArgumentException);
+                assertInstanceOf(IllegalArgumentException.class, failure.getCause());
                 String message = failure.getCause().getMessage();
                 assertTrue(message.contains("Invalid SOAP 1.2 Fault element order"), message);
             }
@@ -192,12 +191,12 @@ public class WebServicesFaultValidationTest {
                         .register();
 
                 // 调用方获得明确的格式错误，不能把畸形结构解释成有效远端 Fault。
-                InterAddress address = new InterAddress("soap", "127.0.0.1", server.getAddress().getPort(), "default");
+                InterAddress address = new InterAddress("soap", "127.0.0.1", server.getAddress().getPort());
                 MetFuture invocation = context.getRsfClient(address) //
                         .asyncInvoke(service, "echo", new Class<?>[] { String.class }, new Object[] { "request" });
                 ExecutionException failure = assertThrows(ExecutionException.class, //
                         () -> invocation.getData(5, TimeUnit.SECONDS));
-                assertTrue(failure.getCause() instanceof IllegalArgumentException);
+                assertInstanceOf(IllegalArgumentException.class, failure.getCause());
                 String message = failure.getCause().getMessage();
                 assertTrue(message.contains("Invalid SOAP 1.2 Fault element order"), message);
             }
@@ -236,12 +235,12 @@ public class WebServicesFaultValidationTest {
                         .register();
 
                 // 调用方获得明确的格式错误，不能把畸形结构解释成有效远端 Fault。
-                InterAddress address = new InterAddress("soap", "127.0.0.1", server.getAddress().getPort(), "default");
+                InterAddress address = new InterAddress("soap", "127.0.0.1", server.getAddress().getPort());
                 MetFuture invocation = context.getRsfClient(address) //
                         .asyncInvoke(service, "echo", new Class<?>[] { String.class }, new Object[] { "request" });
                 ExecutionException failure = assertThrows(ExecutionException.class, //
                         () -> invocation.getData(5, TimeUnit.SECONDS));
-                assertTrue(failure.getCause() instanceof IllegalArgumentException);
+                assertInstanceOf(IllegalArgumentException.class, failure.getCause());
                 String message = failure.getCause().getMessage();
                 assertTrue(message.contains("must contain text only"), message);
             }
@@ -282,12 +281,12 @@ public class WebServicesFaultValidationTest {
                         .register();
 
                 // 调用方获得明确的格式错误，不能把畸形结构解释成有效远端 Fault。
-                InterAddress address = new InterAddress("soap", "127.0.0.1", server.getAddress().getPort(), "default");
+                InterAddress address = new InterAddress("soap", "127.0.0.1", server.getAddress().getPort());
                 MetFuture invocation = context.getRsfClient(address) //
                         .asyncInvoke(service, "echo", new Class<?>[] { String.class }, new Object[] { "request" });
                 ExecutionException failure = assertThrows(ExecutionException.class, //
                         () -> invocation.getData(5, TimeUnit.SECONDS));
-                assertTrue(failure.getCause() instanceof IllegalArgumentException);
+                assertInstanceOf(IllegalArgumentException.class, failure.getCause());
                 String message = failure.getCause().getMessage();
                 assertTrue(message.contains("SOAP Fault Code must start with Value"), message);
             }

@@ -4,24 +4,24 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.example.multilingual;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.protocol.jsonrpc.JsonRpcInteropService;
 import net.hasor.example.protocol.jsonrpc.JsonRpcInteropServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
-import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.node.NodeRpcPeer;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** 各主要 Jayson 版本分别使用自己的 HTTP 客户端和服务端进行真实双向调用。 */
 @NxnRpc(name = "jsonrpc", version = "2.0")
@@ -35,6 +35,7 @@ public class NodeJsonRpcSdkVersionScenarioTest {
         this.profile = profile;
         this.direction = direction;
     }
+
     public static List<Object[]> versions() throws Exception {
         return NodeRpcPeer.compatibilityCases("jsonrpc");
     }
@@ -87,7 +88,7 @@ public class NodeJsonRpcSdkVersionScenarioTest {
                     .aliasName("jsonrpc", "peer").protocol("jsonrpc").serialize("Json").register();
 
             // 普通 Meteor 代理直接访问 SDK，协议与业务返回值均不能由测试器代转。
-            InterAddress target = new InterAddress("jsonrpc", peer.host(), port, "default");
+            InterAddress target = new InterAddress("jsonrpc", peer.host(), port);
             JsonRpcInteropService remote = consumer.getRsfClient(target).getRemote(service);
             String message = "Meteor → Jayson 中文🙂 <&>";
             assertEquals(message, remote.echo(message));

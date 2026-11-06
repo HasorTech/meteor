@@ -6,28 +6,28 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc.python;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import net.hasor.example.contract.types.TypeEchoService;
 import net.hasor.example.contract.types.TypeEchoServiceImpl;
 import net.hasor.example.contract.types.TypeValue;
 import net.hasor.example.contract.types.TypeValueVectors;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.python.PythonTypePeerProcess;
 import net.hasor.realmeteor.matrix.types.TypeValueAssertions;
 import org.junit.jupiter.api.Test;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /** 官方 Python gRPC SDK 与 Meteor 的逐类型双向互通，整数保留真实 64 位表示。 */
 @ParameterizedClass(autoCloseArguments = false, name = "types/python/grpc-protobuf/direct/{0}/{1}", quoteTextArguments = false)
@@ -40,6 +40,7 @@ public class PythonGrpcTypeInteropTest {
     public PythonGrpcTypeInteropTest(String type, String vector) {
         this.vector = vector;
     }
+
     public static Collection<Object[]> vectors() throws Exception {
         // 每个类型向量形成独立 JUnit 实例，提供者和消费者由两个测试方法分别执行。
         List<Object[]> parameters = new ArrayList<>();
@@ -83,7 +84,7 @@ public class PythonGrpcTypeInteropTest {
                     .serialize("Protobuf").bindResource("grpc", this.resource()).register();
 
             // 参数和响应直接使用声明类型 DTO，断言只对应当前向量，不经 JSON 字符串回显。
-            InterAddress address = new InterAddress("grpc", peer.host(), port, "default");
+            InterAddress address = new InterAddress("grpc", peer.host(), port);
             TypeEchoService remote = consumer.getRsfClient(address).getRemote(service);
             TypeValue expected = TypeValueVectors.value(this.vector);
             TypeValue actual = remote.echo(expected);

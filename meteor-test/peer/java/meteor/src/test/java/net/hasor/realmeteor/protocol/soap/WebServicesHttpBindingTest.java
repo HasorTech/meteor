@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -25,6 +24,7 @@ import com.sun.net.httpserver.HttpServer;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.protocol.soap.EchoService;
 import net.hasor.example.protocol.soap.SignalService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.*;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
@@ -32,8 +32,8 @@ import net.hasor.meteor.domain.MetException;
 import net.hasor.meteor.domain.ProtocolStatus;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 @NxnRpc(name = "soap", version = "1.1")
 public class WebServicesHttpBindingTest {
@@ -364,7 +364,7 @@ public class WebServicesHttpBindingTest {
                         () -> invocation.getData(5, TimeUnit.SECONDS));
 
                 Throwable cause = failure.getCause();
-                assertTrue(cause instanceof IllegalArgumentException);
+                assertInstanceOf(IllegalArgumentException.class, cause);
                 assertTrue(cause.getMessage().contains("must return an empty HTTP"), cause.getMessage());
             }
         } finally {
@@ -433,7 +433,7 @@ public class WebServicesHttpBindingTest {
                         () -> invocation.getData(5, TimeUnit.SECONDS));
 
                 Throwable cause = failure.getCause();
-                assertTrue(cause instanceof IllegalArgumentException);
+                assertInstanceOf(IllegalArgumentException.class, cause);
                 assertTrue(cause.getMessage().contains("SOAP header is not understood"), cause.getMessage());
             }
         } finally {
@@ -472,7 +472,7 @@ public class WebServicesHttpBindingTest {
                 ExecutionException failure = assertThrows(ExecutionException.class, //
                         () -> invocation.getData(5, TimeUnit.SECONDS));
                 Throwable cause = failure.getCause();
-                assertTrue(cause instanceof IllegalArgumentException);
+                assertInstanceOf(IllegalArgumentException.class, cause);
                 assertTrue(cause.getMessage().contains("HTTP 204 response has no envelope"), cause.getMessage());
             }
         } finally {
@@ -508,7 +508,7 @@ public class WebServicesHttpBindingTest {
                 MetFuture invocation = client.asyncInvoke(service, "echo", parameterTypes, arguments);
                 ExecutionException failure = assertThrows(ExecutionException.class, //
                         () -> invocation.getData(5, TimeUnit.SECONDS));
-                assertTrue(failure.getCause() instanceof MetException);
+                assertInstanceOf(MetException.class, failure.getCause());
                 MetException fault = (MetException) failure.getCause();
                 assertEquals(ProtocolStatus.InvokeError, fault.getStatus());
                 assertTrue(fault.getMessage().contains("HTTP status 202"), fault.getMessage());
@@ -547,7 +547,7 @@ public class WebServicesHttpBindingTest {
                 ExecutionException failure = assertThrows(ExecutionException.class, //
                         () -> invocation.getData(5, TimeUnit.SECONDS));
                 Throwable cause = failure.getCause();
-                assertTrue(cause instanceof IllegalArgumentException);
+                assertInstanceOf(IllegalArgumentException.class, cause);
                 assertTrue(cause.getMessage().contains("Content-Type must be text/xml"), cause.getMessage());
             }
         } finally {
@@ -659,7 +659,7 @@ public class WebServicesHttpBindingTest {
     }
 
     private InterAddress address(HttpServer server) {
-        return new InterAddress("soap", "127.0.0.1", server.getAddress().getPort(), "default");
+        return new InterAddress("soap", "127.0.0.1", server.getAddress().getPort());
     }
 
     private HttpClient http() {

@@ -6,8 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc.web;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -25,6 +23,7 @@ import io.grpc.stub.ServerCalls;
 import net.hasor.cobble.concurrent.future.BasicFuture;
 import net.hasor.example.protocol.grpc.Message;
 import net.hasor.example.protocol.grpc.web.GrpcWebService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
@@ -32,10 +31,11 @@ import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
 import net.hasor.meteor.protocol.grpc.GrpcStatusException;
 import net.hasor.meteor.rpc.MetCaller;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** Meteor 客户端通过真实 Envoy gRPC-Web 过滤器调用独立 gRPC Java 服务端。 */
 @NxnRpc(name = "grpc-web")
@@ -69,7 +69,7 @@ public class GrpcWebEnvoyInteropTest {
                     .register();
 
             // 调用实际 Envoy 端口，响应必须经过 gRPC-Web 二进制帧解码。
-            InterAddress address = new InterAddress("grpc-web", envoy.getHost(), envoy.getPort(), "default");
+            InterAddress address = new InterAddress("grpc-web", envoy.getHost(), envoy.getPort());
             GrpcWebService remote = client.getRsfClient(address).getRemote(service);
             Message result = remote.echo(Message.of("binary", 7));
             assertEquals("envoy:binary", result.getValue());
@@ -106,7 +106,7 @@ public class GrpcWebEnvoyInteropTest {
                     .register();
 
             // 文本响应由独立 Envoy 编码，Meteor 必须完整还原 Unicode 和字段值。
-            InterAddress address = new InterAddress("grpc-web", envoy.getHost(), envoy.getPort(), "default");
+            InterAddress address = new InterAddress("grpc-web", envoy.getHost(), envoy.getPort());
             GrpcWebService remote = client.getRsfClient(address).getRemote(service);
             Message result = remote.echo(Message.of("文本 🙂", 12));
             assertEquals("envoy:文本 🙂", result.getValue());
@@ -145,7 +145,7 @@ public class GrpcWebEnvoyInteropTest {
                     .register();
 
             // 等待流正常结束，并校验顺序，避免仅验证首条消息就提前通过。
-            InterAddress address = new InterAddress("grpc-web", envoy.getHost(), envoy.getPort(), "default");
+            InterAddress address = new InterAddress("grpc-web", envoy.getHost(), envoy.getPort());
             GrpcWebService remote = client.getRsfClient(address).getRemote(service);
             List<Message> values = new ArrayList<>();
             MetCaller.consume(remote.list(Message.of("stream", 0)), values::add).get(5, TimeUnit.SECONDS);
@@ -183,7 +183,7 @@ public class GrpcWebEnvoyInteropTest {
                     .register();
 
             // 错误必须保留原始状态和描述，不能把故障退化为连接超时。
-            InterAddress address = new InterAddress("grpc-web", envoy.getHost(), envoy.getPort(), "default");
+            InterAddress address = new InterAddress("grpc-web", envoy.getHost(), envoy.getPort());
             GrpcWebService remote = client.getRsfClient(address).getRemote(service);
             Exception failure = assertThrows(Exception.class, () -> remote.fail(Message.of("fail", 0)));
             GrpcStatusException status = GrpcStatusException.find(failure);
@@ -222,7 +222,7 @@ public class GrpcWebEnvoyInteropTest {
                     .serialize("Protobuf") //
                     .bindResource("grpc-web", this.resource()) //
                     .register();
-            InterAddress address = new InterAddress("grpc-web", envoy.getHost(), envoy.getPort(), "default");
+            InterAddress address = new InterAddress("grpc-web", envoy.getHost(), envoy.getPort());
             GrpcWebService remote = client.getRsfClient(address).getRemote(service);
 
             // 收到首条消息后取消订阅，确认取消穿过 Envoy 到达独立服务，而非依赖关闭客户端。

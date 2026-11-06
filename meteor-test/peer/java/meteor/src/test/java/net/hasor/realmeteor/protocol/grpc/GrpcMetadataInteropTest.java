@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -28,9 +27,10 @@ import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcMetadata;
 import net.hasor.meteor.rpc.MetCaller;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 @NxnRpc(name = "grpc")
 public class GrpcMetadataInteropTest extends GrpcMetadataPeer {
@@ -349,7 +349,7 @@ public class GrpcMetadataInteropTest extends GrpcMetadataPeer {
                     .aliasName("grpc", "example.Metadata") //
                     .serialize("Json") //
                     .register();
-            InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.getPort(), "default");
+            InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.getPort());
             var caller = client.getRsfClient(address);
             Object argument = Message.of("z".repeat(10000), 2);
             Class<?> parameter = Message.class;
@@ -400,7 +400,7 @@ public class GrpcMetadataInteropTest extends GrpcMetadataPeer {
                     .aliasName("grpc", "example.Metadata") //
                     .serialize("Json") //
                     .register();
-            InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.getPort(), "default");
+            InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.getPort());
             var caller = client.getRsfClient(address);
             Object argument = Message.of("z".repeat(10000), 2);
             Class<?> parameter = Message.class;
@@ -451,7 +451,7 @@ public class GrpcMetadataInteropTest extends GrpcMetadataPeer {
                     .aliasName("grpc", "example.Metadata") //
                     .serialize("Json") //
                     .register();
-            InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.getPort(), "default");
+            InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.getPort());
             var caller = client.getRsfClient(address);
             Object argument = Message.of("z".repeat(10000), 2);
             Class<?> parameter = Message.class;
@@ -505,7 +505,7 @@ public class GrpcMetadataInteropTest extends GrpcMetadataPeer {
                     .aliasName("grpc", "example.Metadata") //
                     .serialize("Json") //
                     .register();
-            InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.getPort(), "default");
+            InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.getPort());
             var caller = client.getRsfClient(address);
             Object argument = Message.of("z".repeat(10000), 2);
             Class<?> parameter = Message.class;

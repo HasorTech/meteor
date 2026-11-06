@@ -6,11 +6,8 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.dubbo;
-import java.nio.file.Files;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -19,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.LockSupport;
 import com.fasterxml.jackson.databind.JsonNode;
+import net.hasor.example.discovery.AddressSelectionAwaiter;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropService;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropServiceImpl;
 import net.hasor.meteor.MetBindInfo;
@@ -30,15 +28,15 @@ import net.hasor.meteor.registry.RegistryConfiguration;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
 import net.hasor.realmeteor.environment.discovery.ForeignServiceRegistrar;
 import net.hasor.realmeteor.environment.discovery.RegistryAddressResolver;
 import net.hasor.realmeteor.environment.discovery.RegistryDiscoveryEnvironment;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 官方 Dubbo 3 的 TCP/Hessian2 显式注册适配，与原生 ZooKeeper 注册桥分别记录。 */
 @ParameterizedClass(autoCloseArguments = false, name = "adapter={0},profile=dubbo3-tcp-hessian2", quoteTextArguments = false)
@@ -56,6 +54,7 @@ public class DubboRegistryAdapterScenarioTest {
     public DubboRegistryAdapterScenarioTest(String backend) {
         this.backend = backend;
     }
+
     public static Collection<Object[]> backends() {
         // 各注册存储独立验证同一代表 profile，不与旧版或 TLS 做无关组合。
         List<Object[]> result = new ArrayList<>();
@@ -126,7 +125,7 @@ public class DubboRegistryAdapterScenarioTest {
                      ForeignServiceRegistrar registrar = new ForeignServiceRegistrar(registry)) {
                     int port = peer.awaitPort();
                     String unit = consumer.getSettings().getUnitName();
-                    InterAddress address = new InterAddress("dubbo", peer.host(), port, unit);
+                    InterAddress address = new InterAddress("dubbo", peer.host(), port);
                     registrar.register(service, peer.processId(), "java", "dubbo", "tcp", address, "/");
                     awaitAddress(consumer, service, address);
                     AddressSelectionAwaiter.await(consumer, service, "echo");

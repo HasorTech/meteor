@@ -6,8 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -26,15 +24,17 @@ import net.hasor.cobble.concurrent.future.BasicFuture;
 import net.hasor.example.protocol.grpc.Message;
 import net.hasor.example.protocol.grpc.MessageService;
 import net.hasor.example.protocol.grpc.Messages;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
 import net.hasor.meteor.rpc.MetCaller;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 @NxnRpc(name = "grpc")
 public class GrpcFlowInteropTest {
@@ -223,7 +223,7 @@ public class GrpcFlowInteropTest {
                     .register();
 
             // 使用对端真实监听地址创建代理，并检查流的内容和结束信号。
-            InterAddress address = new InterAddress("grpc", "127.0.0.1", server.getPort(), "default");
+            InterAddress address = new InterAddress("grpc", "127.0.0.1", server.getPort());
             Messages remote = client.getRsfClient(address).getRemote(info);
             List<Message> values = new ArrayList<>();
             MetCaller.consume(remote.list(Message.of("official", 0)), values::add) //
@@ -268,7 +268,7 @@ public class GrpcFlowInteropTest {
                     .register();
 
             // 使用对端真实监听地址创建代理，并检查流的内容和结束信号。
-            InterAddress address = new InterAddress("grpc", "127.0.0.1", server.getPort(), "default");
+            InterAddress address = new InterAddress("grpc", "127.0.0.1", server.getPort());
             Messages remote = client.getRsfClient(address).getRemote(info);
             List<Message> values = List.of(Message.of("official", 2), Message.of("official", 5));
             Message sum = remote.collect(MetCaller.fromIterable(values));
@@ -311,7 +311,7 @@ public class GrpcFlowInteropTest {
                     .register();
 
             // 使用对端真实监听地址创建代理，并检查流的内容和结束信号。
-            InterAddress address = new InterAddress("grpc", "127.0.0.1", server.getPort(), "default");
+            InterAddress address = new InterAddress("grpc", "127.0.0.1", server.getPort());
             Messages remote = client.getRsfClient(address).getRemote(info);
             List<Message> values = List.of(Message.of("official", 2), Message.of("official", 5));
             List<Message> replies = new ArrayList<>();

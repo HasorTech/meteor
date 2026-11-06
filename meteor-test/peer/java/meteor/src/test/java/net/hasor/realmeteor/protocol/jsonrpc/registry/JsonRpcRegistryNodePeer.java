@@ -6,11 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.jsonrpc.registry;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -76,7 +72,7 @@ final class JsonRpcRegistryNodePeer implements AutoCloseable {
 
     InterAddress awaitAddress(String unit) throws Exception {
         int port = Integer.parseInt(this.awaitLine("READY:", 10));
-        return new InterAddress("http", ContainerProcess.host(this.process), port, unit);
+        return new InterAddress("http", ContainerProcess.host(this.process), port);
     }
 
     Order roundTrip(URI resolvedAddress, Order expected) throws Exception {

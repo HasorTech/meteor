@@ -6,26 +6,26 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc.web.go;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URI;
+import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.OrderQuery;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.golang.GoPeerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 官方 connect-go 使用 gRPC-Web 直接与 Meteor 双向互通，不经过协议代理。 */
 @NxnRpc(name = "grpc-web")
@@ -66,7 +66,7 @@ public class GrpcWebGoInteropTest {
             MetBindInfo<OrderDemoService> service = client.publisher().rsfService(OrderDemoService.class) //
                     .protocol("grpc-web").aliasName("grpc-web", SERVICE).serialize("Protobuf") //
                     .bindResource("grpc-web", resource).register();
-            InterAddress address = new InterAddress("http", endpoint.getHost(), endpoint.getPort(), "default");
+            InterAddress address = new InterAddress("http", endpoint.getHost(), endpoint.getPort());
             OrderDemoService remote = client.getRsfClient(address).getRemote(service);
 
             // 普通 Java 代理经真实网络保存和查询，核对编号、Unicode 和二进制附件。

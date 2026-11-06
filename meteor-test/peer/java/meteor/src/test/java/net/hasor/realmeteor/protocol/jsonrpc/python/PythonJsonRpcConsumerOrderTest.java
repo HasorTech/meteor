@@ -6,42 +6,38 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.jsonrpc.python;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.junit.jupiter.api.io.TempDir;
 import java.util.concurrent.ExecutionException;
-import net.hasor.example.matrix.OrderMatrixVectors;
+import java.util.concurrent.TimeUnit;
 import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderQuery;
+import net.hasor.example.matrix.OrderMatrixVectors;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.jsonrpc.JsonRpcException;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** Meteor 消费者直接调用独立 Python 标准库服务端，业务存储和 HTTP 均由 Python 持有。 */
 @NxnRpc(name = "jsonrpc", version = "2.0")
 public class PythonJsonRpcConsumerOrderTest {
     @TempDir
-    public Path data;
-    private      PythonJsonRpcOrderPeer        provider;
-    private      MetContext                    consumer;
-    private      MetClient                     client;
-    private      MetBindInfo<OrderDemoService> subscription;
-    private      OrderDemoService              remote;
+    public  Path                          data;
+    private PythonJsonRpcOrderPeer        provider;
+    private MetContext                    consumer;
+    private MetClient                     client;
+    private MetBindInfo<OrderDemoService> subscription;
+    private OrderDemoService              remote;
 
     @BeforeEach
     public void subscribeToPythonOrderService() throws Exception {
@@ -62,7 +58,7 @@ public class PythonJsonRpcConsumerOrderTest {
                 .aliasName("jsonrpc", "orders") //
                 .protocol("jsonrpc") //
                 .register();
-        InterAddress address = new InterAddress("jsonrpc", this.provider.host(), port, "default");
+        InterAddress address = new InterAddress("jsonrpc", this.provider.host(), port);
         this.client = this.consumer.getRsfClient(address);
         this.remote = this.client.getRemote(this.subscription);
     }
@@ -157,7 +153,7 @@ public class PythonJsonRpcConsumerOrderTest {
                 () -> this.client.syncInvoke(this.subscription, "find", parameters, arguments));
 
         // 标准库服务端声明的业务错误码与文本必须到达 Meteor 调用者。
-        assertTrue(failure.getCause() instanceof JsonRpcException);
+        assertInstanceOf(JsonRpcException.class, failure.getCause());
         JsonRpcException error = (JsonRpcException) failure.getCause();
         assertEquals(-32001, error.getCode());
         assertEquals("Order not found: 404", error.getMessage());

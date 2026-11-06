@@ -4,8 +4,6 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.protocol.triple.alpha;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,21 +11,19 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.hasor.example.Order;
-import net.hasor.example.OrderDemoService;
-import net.hasor.example.OrderDemoServiceImpl;
-import net.hasor.example.OrderExampleUtils;
-import net.hasor.example.OrderQuery;
+import net.hasor.example.*;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.node.NodeRpcPeer;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** Apache Dubbo JavaScript 3.0.0-alpha SDK 的最小 Triple 互通，不代表稳定版 SDK。 */
 @NxnRpc(name = "triple")
@@ -66,7 +62,7 @@ public class TripleAlphaSdkScenarioTest {
             MetBindInfo<OrderDemoService> binding = client.publisher().rsfService(OrderDemoService.class) //
                     .protocol("triple").aliasName("triple", OrderExampleUtils.SERVICE_NAME) //
                     .serialize("Protobuf").bindResource("triple", resource).register();
-            InterAddress address = new InterAddress("triple", provider.host(), port, "default");
+            InterAddress address = new InterAddress("triple", provider.host(), port);
             OrderDemoService orders = client.getRsfClient(address).getRemote(binding);
 
             // 使用普通 Java 接口读写 SDK 提供者的订单，校验真实跨容器返回值。

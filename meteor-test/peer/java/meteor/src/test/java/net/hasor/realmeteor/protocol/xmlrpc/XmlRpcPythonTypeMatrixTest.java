@@ -6,27 +6,27 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.xmlrpc;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import net.hasor.example.contract.types.TypeEchoService;
 import net.hasor.example.contract.types.TypeEchoServiceImpl;
 import net.hasor.example.contract.types.TypeValue;
 import net.hasor.example.contract.types.TypeValueVectors;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.matrix.types.TypeValueAssertions;
 import org.junit.jupiter.api.Test;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /** Python 标准库与 Meteor 的结构类型互通；每个向量和调用方向独立报告。 */
 @ParameterizedClass(autoCloseArguments = false, name = "types/python/xmlrpc/direct/{0}/{1}", quoteTextArguments = false)
@@ -38,6 +38,7 @@ public class XmlRpcPythonTypeMatrixTest {
     public XmlRpcPythonTypeMatrixTest(String type, String vector) {
         this.vector = vector;
     }
+
     public static Collection<Object[]> vectors() throws Exception {
         // 标准 XML-RPC 整数为有符号 32 位；仅排除确实超出线上整数范围的向量。
         List<Object[]> parameters = new ArrayList<>();
@@ -92,7 +93,7 @@ public class XmlRpcPythonTypeMatrixTest {
             client.start();
             MetBindInfo<TypeEchoService> service = client.publisher().rsfService(TypeEchoService.class) //
                     .aliasName("xmlrpc", "types").protocol("xmlrpc").register();
-            InterAddress address = new InterAddress("xmlrpc", peer.host(), port, "default");
+            InterAddress address = new InterAddress("xmlrpc", peer.host(), port);
             TypeEchoService remote = client.getRsfClient(address).getRemote(service);
 
             // 使用共享真实 Java 类型发起 RPC，校验当前向量及 Python 产生的业务收据。

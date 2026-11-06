@@ -6,22 +6,22 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.oncrpc.rpcbind;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 import net.hasor.cobble.StringUtils;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.oncrpc.rpcbind.PortMapperMapping;
 import net.hasor.meteor.protocol.oncrpc.rpcbind.RpcbindClient;
 import net.hasor.meteor.protocol.oncrpc.rpcbind.RpcbindMapping;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.protocol.oncrpc.OncRpcNativeProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 正式控制客户端经 bootstrap、Caller 和独立 libtirpc rpcbind 对端完成互通。 */
 @NxnRpc(name = "oncrpc", version = "2")
@@ -39,7 +39,7 @@ public class RpcbindScenarioTest {
              MetContext client = configuration.buildContext()) {
             client.start();
             int port = peer.awaitPort();
-            InterAddress target = new InterAddress("oncrpc", peer.host(), port, client.getSettings().getUnitName());
+            InterAddress target = new InterAddress("oncrpc", peer.host(), port);
             RpcbindClient rpcbind = new RpcbindClient(client, target);
 
             // v2 GETPORT 按显式 TCP 协议号查询。
@@ -60,7 +60,7 @@ public class RpcbindScenarioTest {
              MetContext client = configuration.buildContext()) {
             client.start();
             int port = peer.awaitPort();
-            InterAddress target = new InterAddress("oncrpc", peer.host(), port, client.getSettings().getUnitName());
+            InterAddress target = new InterAddress("oncrpc", peer.host(), port);
             RpcbindClient rpcbind = new RpcbindClient(client, target);
 
             // GETPORT 的映射协议独立于本次控制调用的 TCP 通道。
@@ -81,7 +81,7 @@ public class RpcbindScenarioTest {
              MetContext client = configuration.buildContext()) {
             client.start();
             int port = peer.awaitPort();
-            InterAddress target = new InterAddress("oncrpc-udp", peer.host(), port, client.getSettings().getUnitName());
+            InterAddress target = new InterAddress("oncrpc-udp", peer.host(), port);
             RpcbindClient rpcbind = new RpcbindClient(client, target);
 
             // UDP 控制调用也使用标准 v2 GETPORT。
@@ -102,7 +102,7 @@ public class RpcbindScenarioTest {
              MetContext client = configuration.buildContext()) {
             client.start();
             int port = peer.awaitPort();
-            InterAddress target = new InterAddress("oncrpc", peer.host(), port, client.getSettings().getUnitName());
+            InterAddress target = new InterAddress("oncrpc", peer.host(), port);
             RpcbindClient rpcbind = new RpcbindClient(client, target);
 
             // 未注册程序返回标准零端口，而不是伪造地址。
@@ -123,7 +123,7 @@ public class RpcbindScenarioTest {
              MetContext client = configuration.buildContext()) {
             client.start();
             int port = peer.awaitPort();
-            InterAddress target = new InterAddress("oncrpc", peer.host(), port, client.getSettings().getUnitName());
+            InterAddress target = new InterAddress("oncrpc", peer.host(), port);
             RpcbindClient rpcbind = new RpcbindClient(client, target);
 
             // DUMP 是 XDR 指针链表，两个传输映射都能还原。
@@ -147,7 +147,7 @@ public class RpcbindScenarioTest {
              MetContext client = configuration.buildContext()) {
             client.start();
             int port = peer.awaitPort();
-            InterAddress target = new InterAddress("oncrpc", peer.host(), port, client.getSettings().getUnitName());
+            InterAddress target = new InterAddress("oncrpc", peer.host(), port);
             RpcbindClient rpcbind = new RpcbindClient(client, target);
 
             // 调用方显式选择控制动作，不由普通业务服务发布自动注册。
@@ -170,7 +170,7 @@ public class RpcbindScenarioTest {
              MetContext client = configuration.buildContext()) {
             client.start();
             int port = peer.awaitPort();
-            InterAddress target = new InterAddress("oncrpc", peer.host(), port, client.getSettings().getUnitName());
+            InterAddress target = new InterAddress("oncrpc", peer.host(), port);
             RpcbindClient rpcbind = new RpcbindClient(client, target);
 
             // v2 UNSET 的标准作用范围是给定程序版本的全部传输。
@@ -197,7 +197,7 @@ public class RpcbindScenarioTest {
              MetContext client = configuration.buildContext()) {
             client.start();
             int port = peer.awaitPort();
-            InterAddress target = new InterAddress("oncrpc", peer.host(), port, client.getSettings().getUnitName());
+            InterAddress target = new InterAddress("oncrpc", peer.host(), port);
             RpcbindClient rpcbind = new RpcbindClient(client, target);
 
             // GETADDR 按真实 TCP 控制通道选择 netid。
@@ -218,7 +218,7 @@ public class RpcbindScenarioTest {
              MetContext client = configuration.buildContext()) {
             client.start();
             int port = peer.awaitPort();
-            InterAddress target = new InterAddress("oncrpc-udp", peer.host(), port, client.getSettings().getUnitName());
+            InterAddress target = new InterAddress("oncrpc-udp", peer.host(), port);
             RpcbindClient rpcbind = new RpcbindClient(client, target);
 
             // UDP 控制通道查询 UDP universal address。
@@ -239,7 +239,7 @@ public class RpcbindScenarioTest {
              MetContext client = configuration.buildContext()) {
             client.start();
             int port = peer.awaitPort();
-            InterAddress target = new InterAddress("oncrpc", peer.host(), port, client.getSettings().getUnitName());
+            InterAddress target = new InterAddress("oncrpc", peer.host(), port);
             RpcbindClient rpcbind = new RpcbindClient(client, target);
 
             // GETADDR 允许命中同程序的其它版本，精确版本查询须使用 v4 GETVERSADDR。
@@ -260,7 +260,7 @@ public class RpcbindScenarioTest {
              MetContext client = configuration.buildContext()) {
             client.start();
             int port = peer.awaitPort();
-            InterAddress target = new InterAddress("oncrpc", peer.host(), port, client.getSettings().getUnitName());
+            InterAddress target = new InterAddress("oncrpc", peer.host(), port);
             RpcbindClient rpcbind = new RpcbindClient(client, target);
 
             // daemon 的空结果在公开控制 API 中表现为 null。
@@ -281,7 +281,7 @@ public class RpcbindScenarioTest {
              MetContext client = configuration.buildContext()) {
             client.start();
             int port = peer.awaitPort();
-            InterAddress target = new InterAddress("oncrpc", peer.host(), port, client.getSettings().getUnitName());
+            InterAddress target = new InterAddress("oncrpc", peer.host(), port);
             RpcbindClient rpcbind = new RpcbindClient(client, target);
 
             // DUMP 还原每个 rpcb 节点，包含 transport、address 与 owner。
@@ -308,7 +308,7 @@ public class RpcbindScenarioTest {
              MetContext client = configuration.buildContext()) {
             client.start();
             int port = peer.awaitPort();
-            InterAddress target = new InterAddress("oncrpc", peer.host(), port, client.getSettings().getUnitName());
+            InterAddress target = new InterAddress("oncrpc", peer.host(), port);
             RpcbindClient rpcbind = new RpcbindClient(client, target);
 
             // SET 的注册决定由独立 rpcbind daemon 返回。
@@ -331,7 +331,7 @@ public class RpcbindScenarioTest {
              MetContext client = configuration.buildContext()) {
             client.start();
             int port = peer.awaitPort();
-            InterAddress target = new InterAddress("oncrpc", peer.host(), port, client.getSettings().getUnitName());
+            InterAddress target = new InterAddress("oncrpc", peer.host(), port);
             RpcbindClient rpcbind = new RpcbindClient(client, target);
 
             // 显式 netid 避免 UNSET 扩大到同程序的另一个传输。
@@ -365,7 +365,7 @@ public class RpcbindScenarioTest {
              MetContext client = configuration.buildContext()) {
             client.start();
             int port = peer.awaitPort();
-            InterAddress target = new InterAddress("oncrpc", peer.host(), port, client.getSettings().getUnitName());
+            InterAddress target = new InterAddress("oncrpc", peer.host(), port);
             RpcbindClient rpcbind = new RpcbindClient(client, target);
 
             // GETTIME 是 daemon 的 Unix 时间，不是 Meteor 本地直接返回的时间。
@@ -387,7 +387,7 @@ public class RpcbindScenarioTest {
              MetContext client = configuration.buildContext()) {
             client.start();
             int port = peer.awaitPort();
-            InterAddress target = new InterAddress("oncrpc", peer.host(), port, client.getSettings().getUnitName());
+            InterAddress target = new InterAddress("oncrpc", peer.host(), port);
             RpcbindClient rpcbind = new RpcbindClient(client, target);
 
             // 版本 4 GETADDR 仍保留标准版本回退行为。
@@ -408,7 +408,7 @@ public class RpcbindScenarioTest {
              MetContext client = configuration.buildContext()) {
             client.start();
             int port = peer.awaitPort();
-            InterAddress target = new InterAddress("oncrpc", peer.host(), port, client.getSettings().getUnitName());
+            InterAddress target = new InterAddress("oncrpc", peer.host(), port);
             RpcbindClient rpcbind = new RpcbindClient(client, target);
 
             // GETVERSADDR 的程序版本匹配必须精确。
@@ -429,7 +429,7 @@ public class RpcbindScenarioTest {
              MetContext client = configuration.buildContext()) {
             client.start();
             int port = peer.awaitPort();
-            InterAddress target = new InterAddress("oncrpc-udp", peer.host(), port, client.getSettings().getUnitName());
+            InterAddress target = new InterAddress("oncrpc-udp", peer.host(), port);
             RpcbindClient rpcbind = new RpcbindClient(client, target);
 
             // v4 的精确查询同样支持独立 UDP rpcbind 调用。
@@ -450,7 +450,7 @@ public class RpcbindScenarioTest {
              MetContext client = configuration.buildContext()) {
             client.start();
             int port = peer.awaitPort();
-            InterAddress target = new InterAddress("oncrpc", peer.host(), port, client.getSettings().getUnitName());
+            InterAddress target = new InterAddress("oncrpc", peer.host(), port);
             RpcbindClient rpcbind = new RpcbindClient(client, target);
 
             // 已有 v1 不意味着精确查询 v2 能得到地址。
@@ -471,7 +471,7 @@ public class RpcbindScenarioTest {
              MetContext client = configuration.buildContext()) {
             client.start();
             int port = peer.awaitPort();
-            InterAddress target = new InterAddress("oncrpc", peer.host(), port, client.getSettings().getUnitName());
+            InterAddress target = new InterAddress("oncrpc", peer.host(), port);
             RpcbindClient rpcbind = new RpcbindClient(client, target);
 
             // GETADDR 的 r_netid 不能改变 daemon 按调用链路选出的传输类型。
@@ -492,7 +492,7 @@ public class RpcbindScenarioTest {
              MetContext client = configuration.buildContext()) {
             client.start();
             int port = peer.awaitPort();
-            InterAddress target = new InterAddress("oncrpc", peer.host(), port, client.getSettings().getUnitName());
+            InterAddress target = new InterAddress("oncrpc", peer.host(), port);
             RpcbindClient rpcbind = new RpcbindClient(client, target);
 
             // 同一个上下文只注册三个版本的消费者契约，不随控制对象数量膨胀。
@@ -516,12 +516,12 @@ public class RpcbindScenarioTest {
              MetContext client = configuration.buildContext()) {
             client.start();
             int port = peer.awaitPort();
-            InterAddress target = new InterAddress("oncrpc", peer.host(), port, client.getSettings().getUnitName());
+            InterAddress target = new InterAddress("oncrpc", peer.host(), port);
             RpcbindClient rpcbind = new RpcbindClient(client, target);
 
             // rpcbind 只返回目标，业务连接仍由调用者通过普通 Meteor 地址调用。
             String universal = rpcbind.getVersionAddress(536870913L, 1, "tcp");
-            InterAddress business = RpcbindClient.toAddress("oncrpc", universal, client.getSettings().getUnitName());
+            InterAddress business = RpcbindClient.toAddress("oncrpc", universal);
             assertEquals("127.0.0.1", business.getHost());
             assertEquals(8123, business.getPort());
         }

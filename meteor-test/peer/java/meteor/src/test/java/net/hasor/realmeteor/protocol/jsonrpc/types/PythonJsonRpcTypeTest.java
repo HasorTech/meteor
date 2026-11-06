@@ -6,15 +6,12 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.jsonrpc.types;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.contract.types.TypeEchoService;
 import net.hasor.example.contract.types.TypeEchoServiceImpl;
@@ -24,13 +21,16 @@ import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.matrix.types.ForeignTypePeer;
 import net.hasor.realmeteor.matrix.types.TypeValueAssertions;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** Python 标准库 JSON-RPC 两方向逐类型验证，保留精确整数而不经 Number 或文本中转。 */
 @ParameterizedClass(autoCloseArguments = false, name = "types/python/jsonrpc/direct/{1}/{0}", quoteTextArguments = false)
@@ -38,12 +38,13 @@ import org.junit.jupiter.api.Timeout;
 @NxnRpc(name = "jsonrpc", version = "2.0")
 public class PythonJsonRpcTypeTest {
     @TempDir
-    public Path data;
-    private final String          vector;
+    public        Path   data;
+    private final String vector;
 
     public PythonJsonRpcTypeTest(String vector, String type) {
         this.vector = vector;
     }
+
     public static Collection<Object[]> vectors() throws Exception {
         // 每种边界值独立运行，不把多个类型的成功或失败折叠进一个 case。
         List<Object[]> cases = new ArrayList<>();
@@ -98,7 +99,7 @@ public class PythonJsonRpcTypeTest {
                 consumer.start();
                 MetBindInfo<TypeEchoService> info = consumer.publisher().rsfService(TypeEchoService.class) //
                         .aliasName("jsonrpc", "types").protocol("jsonrpc").register();
-                InterAddress address = new InterAddress("jsonrpc", peer.host(), port, "default");
+                InterAddress address = new InterAddress("jsonrpc", peer.host(), port);
                 TypeEchoService remote = consumer.getRsfClient(address).getRemote(info);
 
                 // 逐字段断言保留 long/BigInteger/字节/结构真实类型，负零规范化另行标识。

@@ -6,12 +6,8 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.connect.go;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import java.nio.file.Files;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -25,6 +21,7 @@ import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.OrderQuery;
+import net.hasor.example.discovery.AddressSelectionAwaiter;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
@@ -33,17 +30,18 @@ import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
 import net.hasor.meteor.registry.RegistryConfiguration;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
+import net.hasor.meteor.test.nxn.NxnRpc;
+import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.discovery.ForeignServiceRegistrar;
 import net.hasor.realmeteor.environment.discovery.RegistryAddressResolver;
 import net.hasor.realmeteor.environment.discovery.RegistryDiscoveryEnvironment;
-import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.golang.GoPeerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** Connect Go 显式注册发现适配；Go SDK 不原生解析 Meteor 注册数据，也不由 Java 代发业务 RPC。 */
 @ParameterizedClass(autoCloseArguments = false, name = "adapter={0},tls={1}", quoteTextArguments = false)
@@ -62,6 +60,7 @@ public class ConnectGoRegistryAdapterScenarioTest {
         this.backend = backend;
         this.tlsMode = tlsMode;
     }
+
     public static Collection<Object[]> backends() {
         // 顺序固定为三个明文注册后端，再以 Nacos 验证同一适配链路上的双向认证。
         List<Object[]> result = new ArrayList<>();
@@ -127,7 +126,7 @@ public class ConnectGoRegistryAdapterScenarioTest {
                     assertEquals(this.scheme(), endpoint.getScheme());
                     String host = endpoint.getHost();
                     String unit = consumer.getSettings().getUnitName();
-                    InterAddress address = new InterAddress(endpoint.getScheme(), host, endpoint.getPort(), unit);
+                    InterAddress address = new InterAddress(endpoint.getScheme(), host, endpoint.getPort());
                     registrar.register(service, peer.processId(), "go", "connect", "http", address, "/");
                     awaitAddress(consumer, service, address);
                     AddressSelectionAwaiter.await(consumer, service, "save");

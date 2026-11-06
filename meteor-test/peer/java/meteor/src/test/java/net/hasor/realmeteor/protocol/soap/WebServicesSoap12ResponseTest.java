@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
@@ -16,6 +15,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import net.hasor.example.protocol.soap.EchoService;
 import net.hasor.example.protocol.soap.SignalService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
@@ -26,8 +26,8 @@ import net.hasor.meteor.domain.MetException;
 import net.hasor.meteor.domain.ProtocolStatus;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 @NxnRpc(name = "soap", version = "1.2")
 public class WebServicesSoap12ResponseTest {
@@ -193,7 +193,7 @@ public class WebServicesSoap12ResponseTest {
                 MetFuture invocation = client.asyncInvoke(service, "echo", parameterTypes, arguments);
                 ExecutionException failure = assertThrows(ExecutionException.class, //
                         () -> invocation.getData(5, TimeUnit.SECONDS));
-                assertTrue(failure.getCause() instanceof MetException);
+                assertInstanceOf(MetException.class, failure.getCause());
                 String message = failure.getCause().getMessage();
                 assertTrue(message.contains("external failure"), message);
                 assertEquals(ProtocolStatus.InvokeError, ((MetException) failure.getCause()).getStatus());
@@ -232,7 +232,7 @@ public class WebServicesSoap12ResponseTest {
                 MetFuture invocation = client.asyncInvoke(service, "echo", parameterTypes, arguments);
                 ExecutionException failure = assertThrows(ExecutionException.class, //
                         () -> invocation.getData(5, TimeUnit.SECONDS));
-                assertTrue(failure.getCause() instanceof IllegalArgumentException);
+                assertInstanceOf(IllegalArgumentException.class, failure.getCause());
                 String message = failure.getCause().getMessage();
                 assertTrue(message.contains("requires Code/Value and Reason"), message);
             }
@@ -270,7 +270,7 @@ public class WebServicesSoap12ResponseTest {
                 MetFuture invocation = client.asyncInvoke(service, "echo", parameterTypes, arguments);
                 ExecutionException failure = assertThrows(ExecutionException.class, //
                         () -> invocation.getData(5, TimeUnit.SECONDS));
-                assertTrue(failure.getCause() instanceof IllegalArgumentException);
+                assertInstanceOf(IllegalArgumentException.class, failure.getCause());
                 String message = failure.getCause().getMessage();
                 assertTrue(message.contains("requires Code/Value and Reason"), message);
             }
@@ -309,7 +309,7 @@ public class WebServicesSoap12ResponseTest {
                 MetFuture invocation = client.asyncInvoke(service, "echo", parameterTypes, arguments);
                 ExecutionException failure = assertThrows(ExecutionException.class, //
                         () -> invocation.getData(5, TimeUnit.SECONDS));
-                assertTrue(failure.getCause() instanceof IllegalArgumentException);
+                assertInstanceOf(IllegalArgumentException.class, failure.getCause());
                 String message = failure.getCause().getMessage();
                 assertTrue(message.contains("requires xml:lang"), message);
             }
@@ -348,7 +348,7 @@ public class WebServicesSoap12ResponseTest {
                 MetFuture invocation = client.asyncInvoke(service, "echo", parameterTypes, arguments);
                 ExecutionException failure = assertThrows(ExecutionException.class, //
                         () -> invocation.getData(5, TimeUnit.SECONDS));
-                assertTrue(failure.getCause() instanceof IllegalArgumentException);
+                assertInstanceOf(IllegalArgumentException.class, failure.getCause());
                 String message = failure.getCause().getMessage();
                 assertTrue(message.contains("Invalid SOAP 1.2 Fault Code"), message);
             }
@@ -387,7 +387,7 @@ public class WebServicesSoap12ResponseTest {
                 MetFuture invocation = client.asyncInvoke(service, "echo", parameterTypes, arguments);
                 ExecutionException failure = assertThrows(ExecutionException.class, //
                         () -> invocation.getData(5, TimeUnit.SECONDS));
-                assertTrue(failure.getCause() instanceof IllegalArgumentException);
+                assertInstanceOf(IllegalArgumentException.class, failure.getCause());
                 String message = failure.getCause().getMessage();
                 assertTrue(message.contains("Invalid SOAP Fault QName"), message);
             }
@@ -407,7 +407,7 @@ public class WebServicesSoap12ResponseTest {
     }
 
     private InterAddress address(HttpServer server) {
-        return new InterAddress("soap", "127.0.0.1", server.getAddress().getPort(), "default");
+        return new InterAddress("soap", "127.0.0.1", server.getAddress().getPort());
     }
 
     private byte[] faultEnvelope(String fault) {

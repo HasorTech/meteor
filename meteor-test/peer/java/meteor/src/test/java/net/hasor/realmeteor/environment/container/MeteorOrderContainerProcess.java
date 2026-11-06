@@ -95,7 +95,7 @@ final class MeteorOrderContainerProcess implements AutoCloseable {
         // 直连使用提供者容器的 DNS 身份和实际端口，不依赖 runner 的 loopback 或端口映射。
         InterAddress bound = new InterAddress(ready.getProperty("address"));
         String host = ContainerProcess.host(this.process);
-        InterAddress address = new InterAddress(bound.getSchema(), host, bound.getPort(), bound.getFormUnit());
+        InterAddress address = new InterAddress(bound.getSchema(), host, bound.getPort(), bound.getPath());
         return address.toHostSchema();
     }
 

@@ -4,12 +4,10 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.matrix.types;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.hasor.cobble.StringUtils;
@@ -17,18 +15,20 @@ import net.hasor.example.contract.types.TypeEchoService;
 import net.hasor.example.contract.types.TypeEchoServiceImpl;
 import net.hasor.example.contract.types.TypeValue;
 import net.hasor.example.contract.types.TypeValueVectors;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
-import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 /** 每个实例只验证一种编码、方向和类型向量；官方 JSON SDK 的负零限制单独记录。 */
 @ParameterizedClass(autoCloseArguments = false, name = "types/node/connect-{1}/direct/{4}/{3}/meteor-{0}", quoteTextArguments = false)
@@ -48,6 +48,7 @@ public class NodeConnectTypeScenarioTest {
         this.format = format;
         this.vector = vector;
     }
+
     public static List<Object[]> scenarios() throws Exception {
         // 参数顺序固定为 Meteor 角色、RPC 编码、当前类型向量，逐项形成独立 JUnit 实例。
         List<Object[]> scenarios = new ArrayList<>();
@@ -103,7 +104,7 @@ public class NodeConnectTypeScenarioTest {
             MetBindInfo<TypeEchoService> info = client.publisher().rsfService(TypeEchoService.class) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
                     .bindResource("connect", resource).register();
-            InterAddress target = new InterAddress("connect", peer.host(), port, "default");
+            InterAddress target = new InterAddress("connect", peer.host(), port);
             TypeEchoService remote = client.getRsfClient(target).getRemote(info);
 
             // 每次只断言当前向量的字段和服务端收据，整数、浮点位模式不经过字符串 RPC 代替。

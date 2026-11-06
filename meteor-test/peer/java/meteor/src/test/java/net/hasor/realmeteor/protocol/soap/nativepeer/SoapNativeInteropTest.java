@@ -4,25 +4,25 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.protocol.soap.nativepeer;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.soap.EchoService;
 import net.hasor.example.protocol.soap.EchoServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.soap.definition.SoapWsdlResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** 以相同的 SOAP 1.1 document/literal Echo 契约确认 C/C++ 的最小双向范围。 */
 @ParameterizedClass(autoCloseArguments = false, name = "sdk/{0}/soap/gSOAP@{1}/{2}", quoteTextArguments = false)
@@ -36,6 +36,7 @@ public class SoapNativeInteropTest {
         this.language = language;
         this.executable = executable;
     }
+
     public static Collection<Object[]> languages() {
         // 同份 WSDL 分别由系统基线与最新工具生成，运行库保持同版。
         Collection<Object[]> languages = new ArrayList<>();
@@ -94,7 +95,7 @@ public class SoapNativeInteropTest {
                     .bindResource("soap", new SoapWsdlResource(contract)).register();
 
             // 公开代理向独立原生服务调用，返回内容由 gSOAP 的 XML 绑定产生。
-            InterAddress address = new InterAddress("soap", provider.host(), port, "default");
+            InterAddress address = new InterAddress("soap", provider.host(), port);
             EchoService remote = consumer.getRsfClient(address).getRemote(service);
             String message = "Meteor → gSOAP " + this.language + " 中文 <&>";
             assertEquals(message, remote.echo(message));

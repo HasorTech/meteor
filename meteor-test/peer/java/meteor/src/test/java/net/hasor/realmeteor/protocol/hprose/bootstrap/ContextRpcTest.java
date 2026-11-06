@@ -121,7 +121,7 @@ public class ContextRpcTest extends BootstrapTestSupport {
             // 调用失败方法，远端业务异常应以 MetException 反馈给调用方。
             MetClient remote = client.getRsfClient(server.getListenAddress("rsf"));
             MetFuture failed = remote.asyncInvoke(service, "fail", new Class<?>[0], new Object[0]);
-            assertTrue(assertFailure(failed) instanceof MetException);
+            assertInstanceOf(MetException.class, assertFailure(failed));
         }
     }
 
@@ -144,7 +144,7 @@ public class ContextRpcTest extends BootstrapTestSupport {
             Class<?>[] slowTypes = { int.class };
             Object[] slowArguments = { 1000 };
             MetFuture expired = remote.asyncInvoke(service, "slow", slowTypes, slowArguments);
-            assertTrue(assertFailure(expired) instanceof MetTimeoutException);
+            assertInstanceOf(MetTimeoutException.class, assertFailure(expired));
         }
     }
 
@@ -184,7 +184,7 @@ public class ContextRpcTest extends BootstrapTestSupport {
                 MetBindInfo<Echo> service = client.publisher().rsfService(Echo.class).timeout(150).register();
 
                 // 连接到受测试控制的对端，先发起请求但暂不回复握手。
-                InterAddress address = new InterAddress("rsf", "127.0.0.1", peer.getLocalPort(), "default");
+                InterAddress address = new InterAddress("127.0.0.1", peer.getLocalPort());
                 MetClient remote = client.getRsfClient(address);
                 Class<?>[] types = { String.class };
                 MetFuture call = remote.asyncInvoke(service, "echo", types, new Object[] { "expired" });
@@ -201,7 +201,7 @@ public class ContextRpcTest extends BootstrapTestSupport {
                     int length = highLength | middleLength | lowLength;
                     byte[] body = new byte[length];
                     input.readFully(body);
-                    assertTrue(assertFailure(call) instanceof MetTimeoutException);
+                    assertInstanceOf(MetTimeoutException.class, assertFailure(call));
 
                     // RPC 超时后才完成握手，随后观察套接字不得收到过期请求。
                     socket.getOutputStream().write(header);

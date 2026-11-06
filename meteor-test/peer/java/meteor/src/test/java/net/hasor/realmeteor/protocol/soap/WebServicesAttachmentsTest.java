@@ -6,10 +6,10 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.util.concurrent.TimeUnit;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import com.sun.net.httpserver.HttpServer;
@@ -21,18 +21,18 @@ import net.hasor.cobble.StringUtils;
 import net.hasor.example.protocol.soap.BinaryPayload;
 import net.hasor.example.protocol.soap.BinaryService;
 import net.hasor.example.protocol.soap.BinaryServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
-import net.hasor.realmeteor.protocol.soap.support.AttachmentHttpProxy;
 import net.hasor.meteor.test.nxn.NxnRpc;
+import net.hasor.realmeteor.protocol.soap.support.AttachmentHttpProxy;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 @NxnRpc(name = "soap", version = "1.1")
 public class WebServicesAttachmentsTest {
@@ -68,7 +68,7 @@ public class WebServicesAttachmentsTest {
                         .protocol("soap") //
                         .register();
                 int proxyPort = proxy.getAddress().getPort();
-                InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort, "default");
+                InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort);
                 BinaryService remote = client.getRsfClient(address).getRemote(subscription);
 
                 // 直接 byte[] 参数与返回值经过真实 HTTP 调用后保留全部二进制字节。
@@ -132,7 +132,7 @@ public class WebServicesAttachmentsTest {
                         .protocol("soap") //
                         .register();
                 int proxyPort = proxy.getAddress().getPort();
-                InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort, "default");
+                InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort);
                 BinaryService remote = client.getRsfClient(address).getRemote(subscription);
 
                 // DTO 同时包含真正的 byte[] 和外形相同的普通 base64 字符串。
@@ -209,7 +209,7 @@ public class WebServicesAttachmentsTest {
                         .protocol("soap") //
                         .register();
                 int proxyPort = proxy.getAddress().getPort();
-                InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort, "default");
+                InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort);
                 BinaryService remote = client.getRsfClient(address).getRemote(subscription);
 
                 // 直接 byte[] 参数与返回值经过真实 HTTP 调用后保留全部二进制字节。
@@ -274,7 +274,7 @@ public class WebServicesAttachmentsTest {
                         .protocol("soap") //
                         .register();
                 int proxyPort = proxy.getAddress().getPort();
-                InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort, "default");
+                InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort);
                 BinaryService remote = client.getRsfClient(address).getRemote(subscription);
 
                 // DTO 同时包含真正的 byte[] 和外形相同的普通 base64 字符串。
@@ -350,7 +350,7 @@ public class WebServicesAttachmentsTest {
                         .protocol("soap") //
                         .register();
                 int proxyPort = proxy.getAddress().getPort();
-                InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort, "default");
+                InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort);
                 BinaryService remote = client.getRsfClient(address).getRemote(subscription);
 
                 // 直接 byte[] 参数与返回值经过真实 HTTP 调用后保留全部二进制字节。
@@ -418,7 +418,7 @@ public class WebServicesAttachmentsTest {
                         .protocol("soap") //
                         .register();
                 int proxyPort = proxy.getAddress().getPort();
-                InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort, "default");
+                InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort);
                 BinaryService remote = client.getRsfClient(address).getRemote(subscription);
 
                 // DTO 同时包含真正的 byte[] 和外形相同的普通 base64 字符串。
@@ -499,7 +499,7 @@ public class WebServicesAttachmentsTest {
                         .protocol("soap") //
                         .register();
                 int proxyPort = proxy.getAddress().getPort();
-                InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort, "default");
+                InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort);
                 BinaryService remote = client.getRsfClient(address).getRemote(subscription);
 
                 // 直接 byte[] 参数与返回值经过真实 HTTP 调用后保留全部二进制字节。
@@ -568,7 +568,7 @@ public class WebServicesAttachmentsTest {
                         .protocol("soap") //
                         .register();
                 int proxyPort = proxy.getAddress().getPort();
-                InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort, "default");
+                InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort);
                 BinaryService remote = client.getRsfClient(address).getRemote(subscription);
 
                 // DTO 同时包含真正的 byte[] 和外形相同的普通 base64 字符串。

@@ -6,13 +6,9 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc.web;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import java.nio.file.Files;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
@@ -22,6 +18,7 @@ import io.grpc.Server;
 import io.grpc.ServerServiceDefinition;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import io.grpc.stub.ServerCalls;
+import net.hasor.example.discovery.AddressSelectionAwaiter;
 import net.hasor.example.protocol.grpc.Message;
 import net.hasor.example.protocol.grpc.web.GrpcWebService;
 import net.hasor.meteor.MetBindInfo;
@@ -30,15 +27,17 @@ import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
 import net.hasor.meteor.registry.RegistryConfiguration;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
 import net.hasor.realmeteor.environment.discovery.ForeignServiceRegistrar;
 import net.hasor.realmeteor.environment.discovery.RegistryDiscoveryEnvironment;
 import org.junit.jupiter.api.Test;
-
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.Timeout;
 
 /** Meteor 自动发现真实 Envoy gRPC-Web 端点，由产品自身过滤器转发至官方 gRPC 服务。 */
 @ParameterizedClass(autoCloseArguments = false, name = "grpc-web/java-envoy/adapter/{0}", quoteTextArguments = false)
@@ -95,7 +94,7 @@ public class GrpcWebEnvoyRegistryAdapterScenarioTest {
                     // 登记已就绪 Envoy 的实际进程和 HTTP 端点，发现适配不执行任何业务请求。
                     try (ForeignServiceRegistrar registrar = new ForeignServiceRegistrar(registry)) {
                         String unit = consumer.getSettings().getUnitName();
-                        InterAddress address = new InterAddress("http", envoy.getHost(), envoy.getPort(), unit);
+                        InterAddress address = new InterAddress("http", envoy.getHost(), envoy.getPort());
                         registrar.register(service, envoy.processId(), "cpp", "grpc-web", "http", address, "/web");
                         AddressSelectionAwaiter.await(consumer, service, "echo");
 

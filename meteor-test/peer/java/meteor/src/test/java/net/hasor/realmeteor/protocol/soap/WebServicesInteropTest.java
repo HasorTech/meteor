@@ -6,26 +6,29 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.net.URI;
 import java.net.URL;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import javax.xml.namespace.QName;
 import jakarta.xml.soap.*;
-import net.hasor.example.protocol.soap.*;
+import net.hasor.example.protocol.soap.EchoService;
+import net.hasor.example.protocol.soap.EchoServiceImpl;
+import net.hasor.example.protocol.soap.SignalService;
+import net.hasor.example.protocol.soap.SignalServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.soap.definition.SoapWsdlResource;
-import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.meteor.test.nxn.NxnRpc;
+import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.w3c.dom.NodeList;
 import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.Timeout;
 
 @NxnRpc(name = "soap", version = "1.1")
 public class WebServicesInteropTest {
@@ -116,7 +119,7 @@ public class WebServicesInteropTest {
 
                 // 公开 MetClient 代理向标准 SOAP Provider 发起真实 HTTP 调用。
                 int port = server.getPort();
-                InterAddress address = new InterAddress("soap", server.host(), port, "default");
+                InterAddress address = new InterAddress("soap", server.host(), port);
                 MetClient caller = context.getRsfClient(address);
                 EchoService remote = caller.getRemote(subscribed);
                 assertEquals("hello Meteor", remote.echo("hello Meteor"));

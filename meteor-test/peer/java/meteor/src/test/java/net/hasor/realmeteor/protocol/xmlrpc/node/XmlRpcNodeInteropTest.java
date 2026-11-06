@@ -4,19 +4,19 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.protocol.xmlrpc.node;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
+import java.util.concurrent.TimeUnit;
 import net.hasor.example.echo.TextEchoService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.node.NodeRpcPeer;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** node-xmlrpc 与 Meteor 的最小字符串调用矩阵，各方向独立验证。 */
 @NxnRpc(name = "xmlrpc")
@@ -64,7 +64,7 @@ public class XmlRpcNodeInteropTest {
                     .aliasName("xmlrpc", "demo").protocol("xmlrpc").register();
 
             // Meteor 的公开客户端直接调用 SDK 提供者，响应必须来自真实 HTTP 链路。
-            InterAddress address = new InterAddress("xmlrpc", provider.host(), port, "default");
+            InterAddress address = new InterAddress("xmlrpc", provider.host(), port);
             TextEchoService remote = consumer.getRsfClient(address).getRemote(service);
             String message = "Meteor → node-xmlrpc 中文 <&>";
             assertEquals(message, remote.echo(message));
