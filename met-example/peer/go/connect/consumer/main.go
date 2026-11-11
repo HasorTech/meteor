@@ -16,7 +16,7 @@ func run() error {
 	transport := &http.Transport{}
 	defer transport.CloseIdleConnections()
 	client := ordersconnect.NewOrderDemoServiceClient(
-		&http.Client{Transport: transport}, "http://127.0.0.1:8080/connect")
+		&http.Client{Transport: transport}, "http://127.0.0.1:8080/connect/default/1.0.0")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 

@@ -7,13 +7,13 @@
  */
 package net.hasor.meteor.registry.admin.support;
 import java.util.*;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.domain.MetServiceType;
 import net.hasor.meteor.registry.admin.*;
 import net.hasor.meteor.registry.admin.description.MetServiceDescription;
 import net.hasor.meteor.registry.shared.rpc.ValidationData;
 import net.hasor.meteor.registry.shared.storage.DirectoryFilter;
+import net.hasor.meteor.registry.shared.storage.ServiceMethodUtils;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
 import net.hasor.meteor.registry.shared.storage.domain.*;
 import net.hasor.meteor.registry.shared.utils.RegistryJson;
@@ -53,6 +53,27 @@ final class DefaultServiceAdmin implements MetServiceAdmin {
     }
 
     @Override
+    public MetServiceMethodPage methods(String methodName, MetDirectoryQuery query) {
+        this.governance.requireAccess();
+        if (this.instanceId != null) {
+            throw new IllegalArgumentException("持久方法目录只接受服务作用域");
+        }
+
+        return call(() -> {
+            ServiceMethodPage stored = this.governance.storage().serviceMethods(this.serviceId, methodName, DirectoryMapping.query(query));
+            MetServiceMethodPage result = new MetServiceMethodPage();
+            result.setListingSupported(stored.isListingSupported());
+            result.setNextCursor(stored.getNextCursor());
+            for (EntServiceMethodData entry : stored.getItems()) {
+                for (var definition : ServiceMethodUtils.merge(null, entry).getDefinitions()) {
+                    result.getDefinitions().add(DescriptionMapping.service(definition));
+                }
+            }
+            return result;
+        });
+    }
+
+    @Override
     public Map<String, MetServiceDescription> descriptions() {
         return call(() -> {
             Map<String, MetServiceDescription> descriptions = new LinkedHashMap<>();
@@ -72,7 +93,7 @@ final class DefaultServiceAdmin implements MetServiceAdmin {
                 do {
                     RecordPage<RefServiceRelationData> page = storage.members(this.serviceId, role, query);
                     for (RefServiceRelationData member : page.getItems()) {
-                        ObjectNode description = member.getService().getDescription();
+                        var description = member.getService().getDescription();
                         if (description != null) {
                             descriptions.put(member.getInstance().getInstanceId(), DescriptionMapping.service(description));
                         }

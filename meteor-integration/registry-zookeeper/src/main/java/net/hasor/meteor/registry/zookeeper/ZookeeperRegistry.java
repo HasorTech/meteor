@@ -20,6 +20,7 @@ import net.hasor.cobble.function.EConsumer;
 import net.hasor.cobble.function.EFunction;
 import net.hasor.meteor.domain.MetServiceType;
 import net.hasor.meteor.registry.shared.storage.DirectoryFilter;
+import net.hasor.meteor.registry.shared.storage.ServiceMethodUtils;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
 import net.hasor.meteor.registry.shared.storage.domain.*;
 import net.hasor.meteor.registry.shared.utils.RegistryJson;
@@ -535,6 +536,58 @@ final class ZookeeperRegistry implements StorageAccess {
     }
 
     @Override
+    public ServiceMethodPage serviceMethods(String serviceId, String methodName, DirectoryQuery query) throws Exception {
+        ServiceMethodUtils.validate(query);
+        String base = this.service(serviceId) + "/methods";
+        ServiceMethodPage result = new ServiceMethodPage();
+        if (StringUtils.isNotBlank(methodName)) {
+            EntServiceMethodData value = this.read(base + "/" + key(methodName), EntServiceMethodData.class);
+            if (value != null && query.getCursor() == null) {
+                result.getItems().add(value);
+            }
+            return result;
+        }
+
+        // 只枚举该服务的方法节点名称；正文按页读取，不查询实例。
+        List<String> names = new ArrayList<>(this.children(base));
+        Collections.sort(names);
+        for (String name : names) {
+            if (query.getCursor() != null && name.compareTo(query.getCursor()) <= 0) {
+                continue;
+            }
+            if (result.getItems().size() == query.getLimit()) {
+                result.setNextCursor(key(result.getItems().get(result.getItems().size() - 1).getName()));
+                break;
+            }
+            EntServiceMethodData value = this.read(base + "/" + name, EntServiceMethodData.class);
+            if (value != null) {
+                result.getItems().add(value);
+            }
+        }
+        return result;
+    }
+
+    private void appendMethods(List<CuratorOp> ops, EntServiceRuntimeData service) throws Exception {
+        for (EntServiceMethodData added : ServiceMethodUtils.extract(service).values()) {
+            String path = this.service(service.getServiceId()) + "/methods/" + key(added.getName());
+            this.parent(path.substring(0, path.lastIndexOf('/')));
+            Stat stat = new Stat();
+            try {
+                byte[] data = this.client.getData().storingStatIn(stat).forPath(path);
+                EntServiceMethodData previous = RegistryJson.read(new String(data, StandardCharsets.UTF_8), EntServiceMethodData.class);
+                EntServiceMethodData merged = ServiceMethodUtils.merge(previous, added);
+                if (!RegistryJson.sameData(previous, merged)) {
+                    byte[] body = RegistryJson.write(merged).getBytes(StandardCharsets.UTF_8);
+                    ops.add(this.client.transactionOp().setData().withVersion(stat.getVersion()).forPath(path, body));
+                }
+            } catch (KeeperException.NoNodeException absent) {
+                byte[] body = RegistryJson.write(added).getBytes(StandardCharsets.UTF_8);
+                ops.add(this.client.transactionOp().create().forPath(path, body));
+            }
+        }
+    }
+
+    @Override
     public synchronized void registerService(String instanceId, EntServiceRuntimeData service) throws Exception {
         int[] committedVersion = { this.ownerVersions.getOrDefault(instanceId, -1) };
         this.mutate(ops -> {
@@ -544,6 +597,7 @@ final class ZookeeperRegistry implements StorageAccess {
                 return;
             }
             this.declaration(ops, service);
+            this.appendMethods(ops, service);
             this.createGovernance(ops, instanceId, service.getServiceId(), false);
             String base = this.service(service.getServiceId());
             if (previous != null) {

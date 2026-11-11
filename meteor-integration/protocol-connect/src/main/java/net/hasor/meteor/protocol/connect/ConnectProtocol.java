@@ -8,6 +8,7 @@
 package net.hasor.meteor.protocol.connect;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.ObjLongConsumer;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -18,6 +19,7 @@ import net.hasor.meteor.connector.ProtocolSessionContext;
 import net.hasor.meteor.connector.RouteMountIndex;
 import net.hasor.meteor.connector.transport.NetworkChannel;
 import net.hasor.meteor.connector.transport.http.HttpProtocolProvider;
+import net.hasor.meteor.connector.transport.http.HttpServicePathUtils;
 import net.hasor.meteor.connector.transport.http.channel.HttpExchange;
 import net.hasor.meteor.domain.ProtocolBinding;
 import net.hasor.meteor.domain.ProtocolConfig;
@@ -31,6 +33,16 @@ import net.hasor.meteor.protocol.grpc.binding.GrpcServiceBinding;
 
 /** Connect 协议的 SPI 入口，按挂载点组装消息转换与调用会话。 */
 public final class ConnectProtocol implements HttpProtocolProvider {
+    @Override
+    public Set<Integer> httpVersions(ProtocolConfig config) {
+        return Set.of(1, 2);
+    }
+
+    @Override
+    public Set<String> endpointTypes() {
+        return Set.of("endpoint", "http");
+    }
+
     private final Map<ProtocolConfig, ConnectMountRuntime> runtimes = new ConcurrentHashMap<>();
 
     @Override
@@ -54,7 +66,7 @@ public final class ConnectProtocol implements HttpProtocolProvider {
         // 静态定义和契约描述使用同一次端点准备结果。
         ObjectNode description = meta.createServiceDescription(config, this.defaultSerialize());
         definition.describeContract(description);
-        return meta.build(config, definition, description);
+        return HttpServicePathUtils.bind(config, meta, definition, description);
     }
 
     @Override

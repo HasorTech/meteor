@@ -70,7 +70,7 @@ public class HproseSessionTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class).name("Echo").register();
+            context.publisher().rsfService(Echo.class).name("Echo").contextPathByPrefix("hprose", "/").register();
             MemoryNetwork network = new MemoryNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = session(context, network, received, false);
@@ -85,7 +85,7 @@ public class HproseSessionTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec codec = new HproseHttpCodec(config, this.routes(context, config), context);
             MemoryNetwork network = new MemoryNetwork();
@@ -107,7 +107,7 @@ public class HproseSessionTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec codec = new HproseHttpCodec(config, this.routes(context, config), context);
             MemoryNetwork network = new MemoryNetwork();
@@ -140,7 +140,7 @@ public class HproseSessionTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec codec = new HproseHttpCodec(config, this.routes(context, config), context);
             MemoryNetwork network = new MemoryNetwork();
@@ -171,7 +171,7 @@ public class HproseSessionTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec codec = new HproseHttpCodec(config, this.routes(context, config), context);
             MemoryNetwork network = new MemoryNetwork();
@@ -205,7 +205,7 @@ public class HproseSessionTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec codec = new HproseHttpCodec(config, this.routes(context, config), context);
             MemoryNetwork network = new MemoryNetwork();
@@ -236,7 +236,7 @@ public class HproseSessionTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec codec = new HproseHttpCodec(config, this.routes(context, config), context);
             MemoryNetwork network = new MemoryNetwork();
@@ -265,7 +265,7 @@ public class HproseSessionTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec codec = new HproseHttpCodec(config, this.routes(context, config), context);
             MemoryNetwork network = new MemoryNetwork();
@@ -292,7 +292,7 @@ public class HproseSessionTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             MemoryNetwork network = new MemoryNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = session(context, network, received, false);
@@ -328,7 +328,7 @@ public class HproseSessionTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -353,7 +353,7 @@ public class HproseSessionTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -387,7 +387,7 @@ public class HproseSessionTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -417,7 +417,7 @@ public class HproseSessionTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec codec = new HproseHttpCodec(config, this.routes(context, config), context);
             MemoryNetwork network = new MemoryNetwork();
@@ -451,7 +451,7 @@ public class HproseSessionTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -484,7 +484,7 @@ public class HproseSessionTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -511,7 +511,7 @@ public class HproseSessionTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
 
             MemoryNetwork network = new MemoryNetwork();
             List<Payload> received = new ArrayList<>();
@@ -542,7 +542,7 @@ public class HproseSessionTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
 
             MemoryNetwork network = new MemoryNetwork();
             List<Payload> received = new ArrayList<>();
@@ -565,7 +565,7 @@ public class HproseSessionTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class).name("Echo").register();
+            context.publisher().rsfService(Echo.class).name("Echo").contextPathByPrefix("hprose", "/").register();
             MemoryNetwork network = new MemoryNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = session(context, network, received, true);
@@ -580,7 +580,7 @@ public class HproseSessionTest {
             network.writes.get(0).respond(invalidReply);
             assertEquals(1, received.size());
             ThrowPayload failed = (ThrowPayload) received.get(0);
-            assertTrue(failed.getThrowable() instanceof IOException);
+            assertInstanceOf(IOException.class, failed.getThrowable());
             assertSame(failed.getThrowable(), request.completion().getCause());
             assertFalse(next.completion().isDone());
 
@@ -602,7 +602,7 @@ public class HproseSessionTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class).name("Echo").register();
+            context.publisher().rsfService(Echo.class).name("Echo").contextPathByPrefix("hprose", "/").register();
             MemoryNetwork network = new MemoryNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = session(context, network, received, true);
@@ -611,7 +611,7 @@ public class HproseSessionTest {
             RequestPayload expired = outgoing(60, "expired");
             expired.complete(new TimeoutException("deadline"));
             Future<Void> sent = session.send(expired);
-            assertTrue(sent.getCause() instanceof CancellationException);
+            assertInstanceOf(CancellationException.class, sent.getCause());
             assertTrue(network.writes.isEmpty());
             assertTrue(received.isEmpty());
         }
@@ -623,7 +623,7 @@ public class HproseSessionTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class).name("Echo").register();
+            context.publisher().rsfService(Echo.class).name("Echo").contextPathByPrefix("hprose", "/").register();
             MemoryNetwork network = new MemoryNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = session(context, network, received, true);
@@ -643,7 +643,7 @@ public class HproseSessionTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class).name("Echo").register();
+            context.publisher().rsfService(Echo.class).name("Echo").contextPathByPrefix("hprose", "/").register();
             MemoryNetwork network = new MemoryNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = session(context, network, received, true);
@@ -670,14 +670,14 @@ public class HproseSessionTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class).name("Echo").register();
+            context.publisher().rsfService(Echo.class).name("Echo").contextPathByPrefix("hprose", "/").register();
             MemoryNetwork network = new MemoryNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = session(context, network, received, true);
 
             // 主动连接的会话只允许发送请求，拒绝反向提交响应。
             Future<Void> sent = session.send(reply(60, "reply"));
-            assertTrue(sent.getCause() instanceof UnsupportedOperationException);
+            assertInstanceOf(UnsupportedOperationException.class, sent.getCause());
             assertTrue(network.writes.isEmpty());
             assertTrue(received.isEmpty());
         }
@@ -689,14 +689,14 @@ public class HproseSessionTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class).name("Echo").register();
+            context.publisher().rsfService(Echo.class).name("Echo").contextPathByPrefix("hprose", "/").register();
             MemoryNetwork network = new MemoryNetwork();
             List<Payload> received = new ArrayList<>();
 
             // 入站会话只允许回送响应，拒绝发起新请求。
             ProtocolSession<HttpExchange> inbound = session(context, network, received, false);
             Future<Void> sent = inbound.send(outgoing(61, "wrong-direction"));
-            assertTrue(sent.getCause() instanceof UnsupportedOperationException);
+            assertInstanceOf(UnsupportedOperationException.class, sent.getCause());
             assertTrue(network.writes.isEmpty());
             assertTrue(received.isEmpty());
         }

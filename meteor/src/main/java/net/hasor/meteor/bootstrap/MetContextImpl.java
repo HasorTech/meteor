@@ -555,6 +555,11 @@ public final class MetContextImpl implements MetContext {
         return this.connectors.getEndpointTypes(connectorName, protocol);
     }
 
+    /** 获取由本上下文管理生命周期的连接器管理器。 */
+    public ConnectorManager getConnectorManager() {
+        return this.connectors;
+    }
+
     @Override
     public InterAddress getListenAddress(String connectorName, String protocol, String addressScheme) {
         return this.connectors.getListenAddress(connectorName, protocol, addressScheme);

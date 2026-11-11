@@ -7,6 +7,7 @@
  */
 package net.hasor.example.rpc.websocket;
 import java.util.List;
+import java.util.Set;
 import java.util.function.ObjLongConsumer;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
@@ -22,6 +23,16 @@ import net.hasor.meteor.domain.payload.Payload;
 
 /** 用户可以自定义应用协议；WebSocket 适配器本身不规定 RPC 信封。 */
 public final class JsonWebSocketProtocol implements HttpProtocolProvider {
+    @Override
+    public Set<Integer> httpVersions(ProtocolConfig config) {
+        return Set.of(1, 2);
+    }
+
+    @Override
+    public Set<String> endpointTypes() {
+        return Set.of("endpoint", "http");
+    }
+
     @Override
     public String name() {
         return "jsonws";

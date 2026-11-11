@@ -12,10 +12,11 @@ def invoke(method, argument, request_id):
     # JSON-RPC 按位置传递参数，附件使用 Base64 字符串。
     payload = {"jsonrpc": "2.0", "id": request_id, "method": "orders." + method, "params": [argument]}
     request = urllib.request.Request(
-        "http://127.0.0.1:8080/jsonrpc",
+        "http://127.0.0.1:8080/jsonrpc/default/1.0.0",
         data=json.dumps(payload).encode("utf-8"),
         headers={"Content-Type": "application/json"},
     )
+
     with urllib.request.urlopen(request) as response:
         return json.load(response)["result"]
 

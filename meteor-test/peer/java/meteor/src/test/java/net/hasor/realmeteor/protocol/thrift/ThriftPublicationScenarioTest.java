@@ -6,26 +6,26 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.thrift;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.concurrent.Flow;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.hasor.example.protocol.thrift.ThriftDemoService;
 import net.hasor.example.protocol.thrift.ThriftDemoServiceImpl;
 import net.hasor.example.protocol.thrift.generated.ExtendedInteropService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.annotation.MetMessage;
-import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.protocol.thrift.ThriftClient;
 import net.hasor.meteor.protocol.thrift.ThriftServiceResource;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.apache.thrift.TApplicationException;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 发布契约与多服务选择均通过正式发布 API 验证。 */
 @NxnRpc(name = "thrift")
@@ -58,7 +58,7 @@ public class ThriftPublicationScenarioTest {
             UndeclaredThrowableException wrapped = assertThrows(UndeclaredThrowableException.class, //
                     () -> remote.echo("remote"));
             Throwable cause = wrapped.getUndeclaredThrowable();
-            assertTrue(cause instanceof TApplicationException);
+            assertInstanceOf(TApplicationException.class, cause);
             TApplicationException failure = (TApplicationException) cause;
             assertEquals(TApplicationException.UNKNOWN_METHOD, failure.getType());
         }
@@ -187,16 +187,19 @@ public class ThriftPublicationScenarioTest {
             client.start();
             server.publisher().rsfService(ThriftDemoService.class, new ThriftDemoServiceImpl()) //
                     .name("first").bindResource("thrift", resource).register();
-            server.publisher().rsfService(ThriftDemoService.class, new ThriftDemoServiceImpl()) //
-                    .name("second").bindResource("thrift", resource).register();
+            IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, () -> {
+                server.publisher().rsfService(ThriftDemoService.class, new ThriftDemoServiceImpl()) //
+                        .name("second").bindResource("thrift", resource).register();
+            });
+            assertTrue(failure.getMessage().contains("Conflicting service route"));
+            assertNull(server.getServiceInfo("default", "second", "1.0.0"));
             MetBindInfo<ThriftDemoService> service = client.publisher().rsfService(ThriftDemoService.class) //
                     .name("first").bindResource("thrift", resource).register();
             ThriftClient caller = new ThriftClient(client.getRsfClient(server.getListenAddress("thrift")));
             ThriftDemoService remote = caller.getRemote(service);
 
-            // 无服务前缀的消息必须返回标准 UNKNOWN_METHOD 错误。
-            TApplicationException failure = assertThrows(TApplicationException.class, () -> remote.echo("ambiguous"));
-            assertEquals(TApplicationException.UNKNOWN_METHOD, failure.getType());
+            // 重复发布未覆盖先前绑定，既有服务仍可正常通过网络访问。
+            assertEquals("still available", remote.echo("still available"));
         }
     }
 

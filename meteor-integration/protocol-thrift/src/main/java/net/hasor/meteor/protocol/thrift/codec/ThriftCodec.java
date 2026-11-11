@@ -7,6 +7,8 @@
  */
 package net.hasor.meteor.protocol.thrift.codec;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import net.hasor.cobble.BeanUtils;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetBindInfo;
@@ -286,7 +288,23 @@ public final class ThriftCodec {
 
     public static String alias(ProtocolConfig protocol, MetBindInfo<?> service, ThriftServiceSchema schema) {
         String alias = service.getAliasName(protocol.name());
-        return StringUtils.isBlank(alias) ? schema.getName() : alias;
+        String name = StringUtils.defaultIfBlank(alias, schema.getName());
+        if (StringUtils.equals(protocol.name(), "thrift") && booleanOption(protocol, "multiplexed", false)) {
+            return identitySegment(service.getBindGroup()) + "/" + identitySegment(service.getBindVersion()) //
+                    + "/" + identitySegment(name);
+        }
+        return name;
+    }
+
+    private static String identitySegment(String value) {
+        if (value == null || value.isEmpty()) {
+            return "~";
+        }
+        String encoded = URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20");
+        if (StringUtils.equals(encoded, ".") || StringUtils.equals(encoded, "..")) {
+            return encoded.replace(".", "%2E");
+        }
+        return encoded.replace("~", "%7E");
     }
 
     public static boolean selected(String selection, String alias, ThriftServiceSchema schema) {

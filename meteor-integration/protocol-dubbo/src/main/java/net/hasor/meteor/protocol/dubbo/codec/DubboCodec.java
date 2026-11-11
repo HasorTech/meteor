@@ -97,7 +97,7 @@ public final class DubboCodec {
         output.writeString(VERSION);
         output.writeString(this.alias(service));
         String requestedVersion = request.getOption("dubbo.version");
-        String selectedVersion = this.wireVersion(service);
+        String selectedVersion = wireVersion(service);
         if (requestedVersion != null) {
             selectedVersion = normalizeVersion(requestedVersion);
         }
@@ -114,7 +114,7 @@ public final class DubboCodec {
         attachments.put("interface", this.alias(service));
         attachments.put("dubbo", VERSION);
         String requestedGroup = request.getOption("dubbo.group");
-        String group = requestedGroup == null ? this.wireGroup(service) : requestedGroup;
+        String group = requestedGroup == null ? wireGroup(service) : requestedGroup;
         if (!group.isEmpty()) {
             attachments.put("group", group);
         } else {
@@ -507,10 +507,10 @@ public final class DubboCodec {
             if (!StringUtils.equals(path, this.alias(candidate))) {
                 continue;
             }
-            if (!StringUtils.equals(selectedGroup, this.wireGroup(candidate))) {
+            if (!StringUtils.equals(selectedGroup, wireGroup(candidate))) {
                 continue;
             }
-            if (!StringUtils.equals(selectedVersion, this.wireVersion(candidate))) {
+            if (!StringUtils.equals(selectedVersion, wireVersion(candidate))) {
                 continue;
             }
             if (selected != null) {
@@ -536,7 +536,7 @@ public final class DubboCodec {
             if (!StringUtils.equals(path, this.alias(candidate))) {
                 continue;
             }
-            if (!StringUtils.equals(selectedVersion, this.wireVersion(candidate))) {
+            if (!StringUtils.equals(selectedVersion, wireVersion(candidate))) {
                 continue;
             }
             Method method;
@@ -572,13 +572,23 @@ public final class DubboCodec {
         return StringUtils.isBlank(alias) ? service.getBindType().getName() : alias;
     }
 
-    private String wireGroup(MetBindInfo<?> service) {
+    /** 发布校验与实际 Dubbo 选路共用别名、注册适配分组和规范化版本。 */
+    public static List<String> serviceKey(MetBindInfo<?> service, String protocol) {
+        List<String> key = new ArrayList<>();
+        // 线上身份按接口名、分组、版本固定排列，不使用 Meteor 的本地服务名称。
+        key.add(serviceName(service, protocol));
+        key.add(wireGroup(service));
+        key.add(wireVersion(service));
+        return key;
+    }
+
+    private static String wireGroup(MetBindInfo<?> service) {
         Object override = service.getMetaData("dubbo.registry.group");
         String value = override == null ? service.getBindGroup() : String.valueOf(override);
         return value == null ? "" : value;
     }
 
-    private String wireVersion(MetBindInfo<?> service) {
+    private static String wireVersion(MetBindInfo<?> service) {
         Object override = service.getMetaData("dubbo.registry.version");
         String value = override == null ? service.getBindVersion() : String.valueOf(override);
         return normalizeVersion(value);

@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.hasor.cobble.reflect.resolvable.ResolvableType;
 import net.hasor.meteor.MetBindInfo;
+import net.hasor.meteor.connector.transport.http.HttpSchemaResource;
 import net.hasor.meteor.domain.MetRuntimeUtils;
 import net.hasor.meteor.domain.meta.MethodMeta;
 import net.hasor.meteor.domain.meta.ParameterMeta;
@@ -31,6 +32,8 @@ import org.apache.thrift.protocol.TType;
 public final class ThriftServiceSchema {
     private final String                           name;
     private       Map<String, String>              sources;
+    private       String                           entrySource;
+    private       HttpSchemaResource               schemaResource;
     private final Map<String, ThriftMethodBinding> javaMethods = new LinkedHashMap<>();
     private final Map<String, ThriftMethodBinding> wireMethods = new LinkedHashMap<>();
 
@@ -114,6 +117,24 @@ public final class ThriftServiceSchema {
         member.put("requirement", requirement);
     }
 
+    /** HTTP 提供者准备期创建文件集合；无法导出的原生绑定返回 null，后续会话借用已准备结果。 */
+    public synchronized HttpSchemaResource schemaResource() {
+        if (this.schemaResource == null) {
+            Map<String, String> files = this.sources;
+            if (files == null) {
+                try {
+                    files = this.getSources();
+                } catch (IllegalArgumentException unsupported) {
+                    // 线编码不依赖 IDL 符号名；无法导出的类型不应使原有 RPC 发布失败。
+                    return null;
+                }
+            }
+            String entry = this.entrySource == null ? this.name + ".thrift" : this.entrySource;
+            this.schemaResource = new HttpSchemaResource("thrift", entry, files);
+        }
+        return this.schemaResource;
+    }
+
     /** 返回导入的资源图，或由当前已编译定义生成的 IDL。 */
     public Map<String, String> getSources() {
         if (this.sources != null) {
@@ -126,6 +147,8 @@ public final class ThriftServiceSchema {
     public static ThriftServiceSchema idl(MetBindInfo<?> service, ThriftIdlType definition) {
         ThriftServiceSchema schema = new ThriftIdlBinding(definition).bind(service);
         schema.sources = definition.document.getSources();
+        String source = definition.document.source.getPath();
+        schema.entrySource = source.substring(source.lastIndexOf('/') + 1);
         return schema;
     }
 

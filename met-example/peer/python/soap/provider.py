@@ -57,13 +57,14 @@ def application():
     service = soap.Service(
         name="orders",
         targetNamespace=NAMESPACE,
-        location="http://127.0.0.1:8080/soap/orders",
+        location="http://127.0.0.1:8080/soap/default/1.0.0/orders",
         schemas=[schema],
         methods=[
             xsd.Method("save", NAMESPACE + "/save", "save", "saveResponse", save),
             xsd.Method("find", NAMESPACE + "/find", "find", "findResponse", find),
         ],
     )
+
     dispatcher = soap_dispatch.SOAPDispatcher(service)
     return soap_dispatch.WsgiSoapApplication(dispatcher)
 
@@ -71,7 +72,7 @@ def application():
 def main():
     # 发布固定地址，WSDL 位于服务地址后的 ?wsdl。
     with make_server("127.0.0.1", 8080, application()) as server:
-        print("Order provider is ready: http://127.0.0.1:8080/soap/orders?wsdl", flush=True)
+        print("Order provider is ready: http://127.0.0.1:8080/soap/default/1.0.0/orders?wsdl", flush=True)
         try:
             server.serve_forever()
         except KeyboardInterrupt:

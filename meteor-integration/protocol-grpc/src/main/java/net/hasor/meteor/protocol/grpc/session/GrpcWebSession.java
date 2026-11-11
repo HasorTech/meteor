@@ -14,6 +14,7 @@ import net.hasor.cobble.concurrent.future.Future;
 import net.hasor.meteor.connector.ProtocolSession;
 import net.hasor.meteor.connector.ProtocolSessionContext;
 import net.hasor.meteor.connector.transport.NetworkChannel;
+import net.hasor.meteor.connector.transport.http.HttpSchemaResource;
 import net.hasor.meteor.connector.transport.http.channel.HttpExchange;
 import net.hasor.meteor.connector.transport.http.channel.HttpResponse;
 import net.hasor.meteor.domain.ProtocolConfig;
@@ -21,12 +22,14 @@ import net.hasor.meteor.domain.payload.Payload;
 import net.hasor.meteor.domain.payload.RequestPayload;
 import net.hasor.meteor.protocol.grpc.GrpcStatusException;
 import net.hasor.meteor.protocol.grpc.binding.GrpcMethodShape;
+import net.hasor.meteor.protocol.grpc.binding.GrpcServiceBinding;
 import net.hasor.meteor.protocol.grpc.codec.GrpcHttpCodec;
 import net.hasor.meteor.protocol.grpc.codec.GrpcWebCodec;
 import net.hasor.meteor.protocol.grpc.codec.GrpcWebCors;
 
 /** Internal HTTP envelope adaptation; invocation and Flow lifecycles remain owned by GrpcSession. */
 public final class GrpcWebSession implements ProtocolSession<HttpExchange> {
+    private final ProtocolSessionContext       context;
     private final NetworkChannel<HttpExchange> network;
     private final GrpcWebChannel               channel;
     private final GrpcSession                  delegate;
@@ -35,6 +38,7 @@ public final class GrpcWebSession implements ProtocolSession<HttpExchange> {
 
     public GrpcWebSession(ProtocolConfig config, ProtocolSessionContext context, //
             NetworkChannel<HttpExchange> network, ObjLongConsumer<Payload> messages, GrpcMountRuntime runtime) {
+        this.context = context;
         this.network = network;
         this.codec = runtime.codec();
         this.cors = new GrpcWebCors(config);
@@ -54,8 +58,24 @@ public final class GrpcWebSession implements ProtocolSession<HttpExchange> {
 
     @Override
     public void receive(HttpExchange exchange) {
-        // 预检及 HTTP 媒体类型在浏览器协议边界处理，不进入 RPC 分派。
         HttpResponse immediate = this.cors.intercept(exchange.request());
+        if (immediate != null && immediate.status() == 403) {
+            this.reply(exchange, immediate);
+            return;
+        }
+        HttpResponse schema = HttpSchemaResource.receive(exchange.request(), this.context.metContext(), //
+                this.context.routes(), "proto", binding -> {
+                    if (binding.getDefinition() instanceof GrpcServiceBinding definition) {
+                        return definition.schemaResource();
+                    }
+                    return null;
+                });
+        if (schema != null) {
+            this.reply(exchange, this.cors.decorate(exchange.request(), schema));
+            return;
+        }
+
+        // 预检及 HTTP 媒体类型在浏览器协议边界处理，不进入 RPC 分派。
         if (immediate == null && !GrpcWebCodec.accepts(exchange.request().header("content-type"))) {
             HttpResponse unsupported = HttpResponse.newBuffered(415, Map.of(), new byte[0], Map.of());
             immediate = this.cors.decorate(exchange.request(), unsupported);

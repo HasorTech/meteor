@@ -6,10 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor.protocol.triple;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.ObjLongConsumer;
 import net.hasor.meteor.MetBindInfo;
@@ -32,6 +29,16 @@ import net.hasor.meteor.protocol.triple.session.TripleSession;
 
 /** Triple SPI 入口；按挂载点组装编码规则和调用会话。 */
 public final class TripleProtocol implements HttpProtocolProvider {
+    @Override
+    public Set<Integer> httpVersions(ProtocolConfig config) {
+        return Set.of(1, 2);
+    }
+
+    @Override
+    public Set<String> endpointTypes() {
+        return Set.of("endpoint", "http", "schema");
+    }
+
     private final Map<ProtocolConfig, TripleMountRuntime> runtimes = new ConcurrentHashMap<>();
 
     @Override
@@ -46,7 +53,17 @@ public final class TripleProtocol implements HttpProtocolProvider {
 
     @Override
     public ProtocolBinding prepareBinding(ProtocolConfig config, MetContext context, ProtocolMeta meta) {
-        return TripleHttpCodec.prepareBinding(config, meta);
+        ProtocolBinding binding = TripleHttpCodec.prepareBinding(config, meta);
+        if (binding != null && binding.getDefinition() instanceof GrpcServiceBinding definition) {
+            if (definition.schemaResource() != null) {
+                // 固定按分组、版本生成查询，保留 Triple 共用业务路径时的服务选择能力。
+                Map<String, String> selection = new LinkedHashMap<>();
+                selection.put("group", Objects.toString(meta.getService().getBindGroup(), ""));
+                selection.put("version", Objects.toString(meta.getService().getBindVersion(), ""));
+                definition.schemaResource().describe(binding, List.of(definition.serviceName()), selection);
+            }
+        }
+        return binding;
     }
 
     @Override

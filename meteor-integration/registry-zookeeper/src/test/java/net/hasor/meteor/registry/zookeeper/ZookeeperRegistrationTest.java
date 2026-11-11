@@ -35,21 +35,14 @@ public class ZookeeperRegistrationTest {
                  StorageAccess reader = configuration.openStorage()) {
                 EntInstanceRuntimeData registered = instance("one", "orders", "east");
                 EntInstanceEndpointData publicEndpoint = new EntInstanceEndpointData();
-                publicEndpoint.setConnectorName("public-http");
-                publicEndpoint.setTransport("http");
                 publicEndpoint.setProtocolName("jsonrpc");
-                publicEndpoint.setScheme("orders-rpc");
-                publicEndpoint.setContextPath("/orders");
-                publicEndpoint.setListenAddress("orders-rpc://127.0.0.1:8080/orders");
+                publicEndpoint.getEndpoints().put("endpoint", "orders-rpc://127.0.0.1:8080/orders");
                 EntInstanceEndpointData internalEndpoint = new EntInstanceEndpointData();
-                internalEndpoint.setConnectorName("internal-http");
-                internalEndpoint.setTransport("http");
                 internalEndpoint.setProtocolName("jsonrpc");
-                internalEndpoint.setScheme("jsonrpc");
-                internalEndpoint.setContextPath("/internal");
-                internalEndpoint.setListenAddress("jsonrpc://127.0.0.1:8081/internal");
-                internalEndpoint.setManagementAddress("jsonrpc://127.0.0.1:8081/internal/management");
+                internalEndpoint.getEndpoints().put("endpoint", "jsonrpc://127.0.0.1:8081/internal");
+                internalEndpoint.getEndpoints().put("management", "jsonrpc://127.0.0.1:8081/internal/management");
                 EntInstanceEndpointData[] expected = { publicEndpoint, internalEndpoint };
+                publicEndpoint.getEndpoints().put("schema", "");
                 registered.setEndpoints(expected);
                 writer.registerInstance(registered);
 
@@ -59,13 +52,8 @@ public class ZookeeperRegistrationTest {
                 assertEquals(2, actual.length);
                 // 按登记顺序逐字段核对，不能将同协议的两个连接器合并。
                 for (int index = 0; index < expected.length; index++) {
-                    assertEquals(expected[index].getConnectorName(), actual[index].getConnectorName());
-                    assertEquals(expected[index].getTransport(), actual[index].getTransport());
                     assertEquals(expected[index].getProtocolName(), actual[index].getProtocolName());
-                    assertEquals(expected[index].getScheme(), actual[index].getScheme());
-                    assertEquals(expected[index].getContextPath(), actual[index].getContextPath());
-                    assertEquals(expected[index].getListenAddress(), actual[index].getListenAddress());
-                    assertEquals(expected[index].getManagementAddress(), actual[index].getManagementAddress());
+                    assertEquals(expected[index].getEndpoints(), actual[index].getEndpoints());
                 }
             }
         }
@@ -82,12 +70,12 @@ public class ZookeeperRegistrationTest {
                 EntServiceRuntimeData service = service("contract", MetServiceType.Provider);
                 ObjectNode description = JsonNodeFactory.instance.objectNode();
                 description.put("contractServiceId", 0);
-                service.setDescription(description);
+                service.setDescription(RegistryJson.copy(description, RefServiceDescriptionData.class));
                 storage.registerService("one", service);
 
                 // 实例描述保留零值，不改写登记身份。
                 EntServiceRuntimeData registered = storage.getInstanceService("one", "contract");
-                ObjectNode actualDescription = registered.getDescription();
+                ObjectNode actualDescription = RegistryJson.copy(registered.getDescription(), ObjectNode.class);
                 assertEquals(0L, actualDescription.get("contractServiceId").longValue());
                 assertEquals("contract", registered.getServiceId());
             }
@@ -105,12 +93,12 @@ public class ZookeeperRegistrationTest {
                 EntServiceRuntimeData service = service("contract", MetServiceType.Provider);
                 ObjectNode description = JsonNodeFactory.instance.objectNode();
                 description.put("contractServiceId", -1);
-                service.setDescription(description);
+                service.setDescription(RegistryJson.copy(description, RefServiceDescriptionData.class));
                 storage.registerService("one", service);
 
                 // 负值在描述中原样读回，不与未声明编号混淆。
                 EntServiceRuntimeData registered = storage.getInstanceService("one", "contract");
-                ObjectNode actualDescription = registered.getDescription();
+                ObjectNode actualDescription = RegistryJson.copy(registered.getDescription(), ObjectNode.class);
                 assertEquals(-1L, actualDescription.get("contractServiceId").longValue());
             }
         }
@@ -127,12 +115,12 @@ public class ZookeeperRegistrationTest {
                 EntServiceRuntimeData service = service("contract", MetServiceType.Provider);
                 ObjectNode description = JsonNodeFactory.instance.objectNode();
                 description.put("contractServiceId", 0xffffffffL);
-                service.setDescription(description);
+                service.setDescription(RegistryJson.copy(description, RefServiceDescriptionData.class));
                 storage.registerService("one", service);
 
                 // 成员查询沿用本实例的描述，返回完整 long 数值。
                 RefServiceRelationData member = storage.getMember("contract", MetServiceType.Provider, "one");
-                ObjectNode actualDescription = member.getService().getDescription();
+                ObjectNode actualDescription = RegistryJson.copy(member.getService().getDescription(), ObjectNode.class);
                 assertEquals(0xffffffffL, actualDescription.get("contractServiceId").longValue());
             }
         }
@@ -149,13 +137,13 @@ public class ZookeeperRegistrationTest {
                 EntServiceRuntimeData service = service("contract", MetServiceType.Provider);
                 ObjectNode description = JsonNodeFactory.instance.objectNode();
                 description.putNull("contractServiceId");
-                service.setDescription(description);
+                service.setDescription(RegistryJson.copy(description, RefServiceDescriptionData.class));
                 storage.registerService("one", service);
 
                 // 实例查询和成员查询都保留 null 节点，不擅自补编号或移除字段。
-                ObjectNode registered = storage.getInstanceService("one", "contract").getDescription();
+                ObjectNode registered = RegistryJson.copy(storage.getInstanceService("one", "contract").getDescription(), ObjectNode.class);
                 RefServiceRelationData member = storage.getMember("contract", MetServiceType.Provider, "one");
-                ObjectNode memberDescription = member.getService().getDescription();
+                ObjectNode memberDescription = RegistryJson.copy(member.getService().getDescription(), ObjectNode.class);
                 assertTrue(registered.has("contractServiceId"));
                 assertTrue(registered.get("contractServiceId").isNull());
                 assertEquals(registered, memberDescription);
@@ -175,19 +163,19 @@ public class ZookeeperRegistrationTest {
                 EntServiceRuntimeData numbered = service("contract", MetServiceType.Provider);
                 ObjectNode numberedDescription = JsonNodeFactory.instance.objectNode();
                 numberedDescription.put("contractServiceId", 0xffffffffL);
-                numbered.setDescription(numberedDescription);
+                numbered.setDescription(RegistryJson.copy(numberedDescription, RefServiceDescriptionData.class));
                 storage.registerService("numbered", numbered);
                 EntServiceRuntimeData unnumbered = service("contract", MetServiceType.Provider);
                 ObjectNode unnumberedDescription = JsonNodeFactory.instance.objectNode();
                 unnumberedDescription.putNull("contractServiceId");
-                unnumbered.setDescription(unnumberedDescription);
+                unnumbered.setDescription(RegistryJson.copy(unnumberedDescription, RefServiceDescriptionData.class));
                 storage.registerService("unnumbered", unnumbered);
 
                 // 共享目录不能覆盖各实例自己的描述，空编号不会继承另一实例的值。
                 EntServiceRuntimeData first = storage.getInstanceService("numbered", "contract");
                 EntServiceRuntimeData second = storage.getInstanceService("unnumbered", "contract");
-                ObjectNode firstDescription = first.getDescription();
-                ObjectNode secondDescription = second.getDescription();
+                ObjectNode firstDescription = RegistryJson.copy(first.getDescription(), ObjectNode.class);
+                ObjectNode secondDescription = RegistryJson.copy(second.getDescription(), ObjectNode.class);
                 assertEquals(0xffffffffL, firstDescription.get("contractServiceId").longValue());
                 assertTrue(secondDescription.has("contractServiceId"));
                 assertTrue(secondDescription.get("contractServiceId").isNull());
@@ -209,23 +197,23 @@ public class ZookeeperRegistrationTest {
                 first.put("contractServiceId", 0);
                 first.putArray("methods").addObject().put("name", "Before");
                 first.putObject("types").putObject("Order").put("name", "Order");
-                service.setDescription(first);
+                service.setDescription(RegistryJson.copy(first, RefServiceDescriptionData.class));
                 writer.registerService("one", service);
-                ObjectNode captured = reader.getInstanceService("one", "description").getDescription();
-                assertEquals(first, captured);
+                ObjectNode captured = RegistryJson.copy(reader.getInstanceService("one", "description").getDescription(), ObjectNode.class);
+                assertEquals(RegistryJson.copy(RegistryJson.copy(first, RefServiceDescriptionData.class), ObjectNode.class), captured);
 
                 // 整体替换编号、方法和类型，不影响已读取的旧描述。
                 ObjectNode replacement = JsonNodeFactory.instance.objectNode();
                 replacement.put("contractServiceId", 0xffffffffL);
                 replacement.putArray("methods").addObject().put("name", "After");
                 replacement.putObject("types");
-                service.setDescription(replacement);
+                service.setDescription(RegistryJson.copy(replacement, RefServiceDescriptionData.class));
                 writer.registerService("one", service);
-                ObjectNode current = reader.getMember("description", MetServiceType.Provider, "one") //
-                        .getService().getDescription();
-                assertEquals(replacement, current);
+                ObjectNode current = RegistryJson.copy(reader.getMember("description", MetServiceType.Provider, "one") //
+                        .getService().getDescription(), ObjectNode.class);
+                assertEquals(RegistryJson.copy(RegistryJson.copy(replacement, RefServiceDescriptionData.class), ObjectNode.class), current);
                 assertEquals(0xffffffffL, current.get("contractServiceId").longValue());
-                assertEquals(first, captured);
+                assertEquals(RegistryJson.copy(RegistryJson.copy(first, RefServiceDescriptionData.class), ObjectNode.class), captured);
                 assertEquals(0L, captured.get("contractServiceId").longValue());
             }
         }
@@ -242,19 +230,19 @@ public class ZookeeperRegistrationTest {
                 EntServiceRuntimeData service = service("contract", MetServiceType.Provider);
                 ObjectNode first = JsonNodeFactory.instance.objectNode();
                 first.put("contractServiceId", 0xffffffffL);
-                service.setDescription(first);
+                service.setDescription(RegistryJson.copy(first, RefServiceDescriptionData.class));
                 storage.registerService("one", service);
 
                 // 缺少编号的新描述整体覆盖旧描述，不合并保留上一次编号。
                 ObjectNode replacement = JsonNodeFactory.instance.objectNode();
                 replacement.putArray("methods").addObject().put("name", "After");
-                service.setDescription(replacement);
+                service.setDescription(RegistryJson.copy(replacement, RefServiceDescriptionData.class));
                 storage.registerService("one", service);
-                ObjectNode registered = storage.getInstanceService("one", "contract").getDescription();
+                ObjectNode registered = RegistryJson.copy(storage.getInstanceService("one", "contract").getDescription(), ObjectNode.class);
                 RefServiceRelationData member = storage.getMember("contract", MetServiceType.Provider, "one");
-                assertEquals(replacement, registered);
-                assertFalse(registered.has("contractServiceId"));
-                assertEquals(replacement, member.getService().getDescription());
+                assertEquals(RegistryJson.copy(RegistryJson.copy(replacement, RefServiceDescriptionData.class), ObjectNode.class), registered);
+                assertFalse(registered.hasNonNull("contractServiceId"));
+                assertEquals(RegistryJson.copy(RegistryJson.copy(replacement, RefServiceDescriptionData.class), ObjectNode.class), RegistryJson.copy(member.getService().getDescription(), ObjectNode.class));
             }
         }
     }
@@ -270,7 +258,7 @@ public class ZookeeperRegistrationTest {
                 EntServiceRuntimeData service = service("contract", MetServiceType.Provider);
                 ObjectNode first = JsonNodeFactory.instance.objectNode();
                 first.put("contractServiceId", 0xffffffffL);
-                service.setDescription(first);
+                service.setDescription(RegistryJson.copy(first, RefServiceDescriptionData.class));
                 storage.registerService("one", service);
 
                 // 清空描述同时移除旧编号，实例与成员查询都不能保留旧描述。
@@ -278,8 +266,8 @@ public class ZookeeperRegistrationTest {
                 storage.registerService("one", service);
                 EntServiceRuntimeData registered = storage.getInstanceService("one", "contract");
                 RefServiceRelationData member = storage.getMember("contract", MetServiceType.Provider, "one");
-                assertNull(registered.getDescription());
-                assertNull(member.getService().getDescription());
+                assertNull(RegistryJson.copy(registered.getDescription(), ObjectNode.class));
+                assertNull(RegistryJson.copy(member.getService().getDescription(), ObjectNode.class));
             }
         }
     }
@@ -299,28 +287,28 @@ public class ZookeeperRegistrationTest {
                 EntServiceRuntimeData service = service("contract", MetServiceType.Provider);
                 ObjectNode description = JsonNodeFactory.instance.objectNode();
                 description.put("contractServiceId", 0xffffffffL);
-                service.setDescription(description);
+                service.setDescription(RegistryJson.copy(description, RefServiceDescriptionData.class));
                 storage.registerService("one", service);
 
                 // 直接读取目录、实例正文与反向引用，防止 DTO 查询隐藏多写的字段。
                 String serviceRoot = "/meteor/services/Y29udHJhY3Q";
                 ObjectNode catalog = readBody(client, serviceRoot + "/info");
-                assertFalse(catalog.has("contractServiceId"));
+                assertFalse(catalog.hasNonNull("contractServiceId"));
                 assertFalse(catalog.has("description"));
                 ObjectNode runtime = readBody(client, "/meteor/instances/b25l/services/Y29udHJhY3Q");
-                assertFalse(runtime.has("contractServiceId"));
-                assertEquals(description, runtime.get("description"));
+                assertFalse(runtime.hasNonNull("contractServiceId"));
+                assertEquals(RegistryJson.copy(RegistryJson.copy(description, RefServiceDescriptionData.class), ObjectNode.class), runtime.get("description"));
                 ObjectNode reference = readBody(client, serviceRoot + "/providers/b25l");
                 assertEquals(1, reference.size());
                 assertEquals("one", reference.get("instanceId").textValue());
-                assertFalse(reference.has("contractServiceId"));
+                assertFalse(reference.hasNonNull("contractServiceId"));
 
                 // 公开成员结果中的服务正文也只在 description 中暴露契约编号。
                 RefServiceRelationData member = storage.getMember("contract", MetServiceType.Provider, "one");
                 ObjectNode memberJson = RegistryJson.copy(member, ObjectNode.class);
-                assertFalse(memberJson.has("contractServiceId"));
-                assertFalse(memberJson.get("service").has("contractServiceId"));
-                assertEquals(description, memberJson.get("service").get("description"));
+                assertFalse(memberJson.hasNonNull("contractServiceId"));
+                assertFalse(memberJson.get("service").hasNonNull("contractServiceId"));
+                assertEquals(RegistryJson.copy(RegistryJson.copy(description, RefServiceDescriptionData.class), ObjectNode.class), memberJson.get("service").get("description"));
             }
         }
     }
@@ -341,13 +329,13 @@ public class ZookeeperRegistrationTest {
                         "rsf://127.0.0.1:8000", "rsf://127.0.0.1:9000");
                 ObjectNode description = JsonNodeFactory.instance.objectNode();
                 description.put("javaType", "sample.OrderService");
-                service.setDescription(description);
+                service.setDescription(RegistryJson.copy(description, RefServiceDescriptionData.class));
                 RefProtocolMountData primary = new RefProtocolMountData();
-                primary.setConnectorName("primary");
+                primary.setContextPath("/primary");
                 primary.setProtocolName("rsf");
                 primary.setPublishedAddress("rsf://127.0.0.1:8000");
                 RefProtocolMountData backup = new RefProtocolMountData();
-                backup.setConnectorName("backup");
+                backup.setContextPath("/backup");
                 backup.setProtocolName("rsf");
                 backup.setPublishedAddress("rsf://127.0.0.1:9000");
                 service.setEndpoints(new RefProtocolMountData[] { primary, backup });
@@ -356,23 +344,26 @@ public class ZookeeperRegistrationTest {
                 // 原始目录不写 Java 类型，运行角色仍保留在服务正文顶层。
                 ObjectNode catalog = readBody(client, "/meteor/services/Y29udHJhY3Q/info");
                 assertFalse(catalog.has("type"));
-                assertFalse(catalog.has("javaType"));
+                assertFalse(catalog.hasNonNull("javaType"));
                 assertFalse(catalog.has("description"));
                 ObjectNode runtime = readBody(client, "/meteor/instances/b25l/services/Y29udHJhY3Q");
                 assertFalse(runtime.has("type"));
-                assertFalse(runtime.has("javaType"));
+                assertFalse(runtime.hasNonNull("javaType"));
                 assertEquals("Provider", runtime.get("role").textValue());
-                assertEquals(description, runtime.get("description"));
+                assertEquals(RegistryJson.copy(RegistryJson.copy(description, RefServiceDescriptionData.class), ObjectNode.class), runtime.get("description"));
                 assertFalse(runtime.get("description").has("role"));
 
-                // 每个端点只保存 protocolName，连接器名称区分同协议的两个地址。
+                // 每个端点只保存 protocolName，实际发布地址区分同协议的两个挂载。
                 JsonNode endpoints = runtime.get("endpoints");
                 assertEquals(2, endpoints.size());
-                assertEquals("primary", endpoints.get(0).get("connectorName").textValue());
-                assertEquals("backup", endpoints.get(1).get("connectorName").textValue());
+                assertEquals("rsf://127.0.0.1:8000", endpoints.get(0).get("publishedAddress").textValue());
+                assertEquals("rsf://127.0.0.1:9000", endpoints.get(1).get("publishedAddress").textValue());
                 for (JsonNode endpoint : endpoints) {
                     assertEquals("rsf", endpoint.get("protocolName").textValue());
                     assertFalse(endpoint.has("protocol"));
+                    assertFalse(endpoint.has("connectorName"));
+                    assertFalse(endpoint.has("bindEnabled"));
+                    assertFalse(endpoint.has("configuredAddress"));
                 }
                 ServiceSummary summary = storage.serviceSummaries(List.of("contract")).get("contract");
                 assertArrayEquals(new String[] { "rsf" }, summary.getProtocols());
@@ -393,29 +384,29 @@ public class ZookeeperRegistrationTest {
                 EntServiceRuntimeData first = service("contract", MetServiceType.Provider);
                 ObjectNode firstDescription = JsonNodeFactory.instance.objectNode();
                 firstDescription.put("javaType", "sample.FirstOrderService");
-                first.setDescription(firstDescription);
+                first.setDescription(RegistryJson.copy(firstDescription, RefServiceDescriptionData.class));
                 storage.registerService("one", first);
                 EntServiceRuntimeData second = service("contract", MetServiceType.Provider);
                 ObjectNode secondDescription = JsonNodeFactory.instance.objectNode();
                 secondDescription.put("javaType", "sample.SecondOrderService");
-                second.setDescription(secondDescription);
+                second.setDescription(RegistryJson.copy(secondDescription, RefServiceDescriptionData.class));
                 storage.registerService("two", second);
                 EntServiceRuntimeData untyped = service("contract", MetServiceType.Provider);
                 ObjectNode untypedDescription = JsonNodeFactory.instance.objectNode();
                 untypedDescription.put("name", "orders");
-                untyped.setDescription(untypedDescription);
+                untyped.setDescription(RegistryJson.copy(untypedDescription, RefServiceDescriptionData.class));
                 storage.registerService("three", untyped);
 
                 // 实例与成员查询都只返回自己的完整描述，空缺类型不会从共享目录回填。
-                assertEquals(firstDescription, storage.getInstanceService("one", "contract").getDescription());
-                assertEquals(secondDescription, storage.getInstanceService("two", "contract").getDescription());
+                assertEquals(RegistryJson.copy(RegistryJson.copy(firstDescription, RefServiceDescriptionData.class), ObjectNode.class), RegistryJson.copy(storage.getInstanceService("one", "contract").getDescription(), ObjectNode.class));
+                assertEquals(RegistryJson.copy(RegistryJson.copy(secondDescription, RefServiceDescriptionData.class), ObjectNode.class), RegistryJson.copy(storage.getInstanceService("two", "contract").getDescription(), ObjectNode.class));
                 RefServiceRelationData firstMember = storage.getMember("contract", MetServiceType.Provider, "one");
                 RefServiceRelationData secondMember = storage.getMember("contract", MetServiceType.Provider, "two");
                 RefServiceRelationData untypedMember = storage.getMember("contract", MetServiceType.Provider, "three");
-                assertEquals(firstDescription, firstMember.getService().getDescription());
-                assertEquals(secondDescription, secondMember.getService().getDescription());
-                assertEquals(untypedDescription, untypedMember.getService().getDescription());
-                assertFalse(untypedMember.getService().getDescription().has("javaType"));
+                assertEquals(RegistryJson.copy(RegistryJson.copy(firstDescription, RefServiceDescriptionData.class), ObjectNode.class), RegistryJson.copy(firstMember.getService().getDescription(), ObjectNode.class));
+                assertEquals(RegistryJson.copy(RegistryJson.copy(secondDescription, RefServiceDescriptionData.class), ObjectNode.class), RegistryJson.copy(secondMember.getService().getDescription(), ObjectNode.class));
+                assertEquals(RegistryJson.copy(RegistryJson.copy(untypedDescription, RefServiceDescriptionData.class), ObjectNode.class), RegistryJson.copy(untypedMember.getService().getDescription(), ObjectNode.class));
+                assertFalse(RegistryJson.copy(untypedMember.getService().getDescription(), ObjectNode.class).hasNonNull("javaType"));
             }
         }
     }
@@ -436,9 +427,9 @@ public class ZookeeperRegistrationTest {
                 EntServiceRuntimeData first = service("contract", MetServiceType.Provider, "rsf://127.0.0.1:8000");
                 ObjectNode description = JsonNodeFactory.instance.objectNode();
                 description.put("javaType", "sample.OrderService");
-                first.setDescription(description);
+                first.setDescription(RegistryJson.copy(description, RefServiceDescriptionData.class));
                 RefProtocolMountData endpoint = new RefProtocolMountData();
-                endpoint.setConnectorName("tcp");
+                endpoint.setContextPath("/tcp");
                 endpoint.setProtocolName("rsf");
                 endpoint.setPublishedAddress("rsf://127.0.0.1:8000");
                 first.setEndpoints(new RefProtocolMountData[] { endpoint });
@@ -458,7 +449,7 @@ public class ZookeeperRegistrationTest {
                 ObjectNode catalog = readBody(client, "/meteor/services/Y29udHJhY3Q/info");
                 assertEquals("RenamedOrders", catalog.get("name").textValue());
                 assertFalse(catalog.has("type"));
-                assertFalse(catalog.has("javaType"));
+                assertFalse(catalog.hasNonNull("javaType"));
                 assertFalse(catalog.has("description"));
                 assertEquals(firstBefore, readBody(client, firstPath));
                 assertEquals(secondBefore, readBody(client, secondPath));

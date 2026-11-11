@@ -421,8 +421,8 @@ public class SoapProtocolTest {
         SoapProtocol protocol = new SoapProtocol();
         ProtocolBinding firstBinding = protocol.prepareBinding(first, null, declaration);
         ProtocolBinding secondBinding = protocol.prepareBinding(second, null, declaration);
-        assertEquals(new ContextPath(List.of("/services"), false), firstBinding.getContextPath());
-        assertEquals(new ContextPath(List.of("/secondary"), false), secondBinding.getContextPath());
+        assertEquals(new ContextPath(List.of("/services/~/~"), false), firstBinding.getContextPath());
+        assertEquals(new ContextPath(List.of("/secondary/~/~"), false), secondBinding.getContextPath());
         assertNull(declaration.getContextPath());
         assertEquals("1.1", firstBinding.getDescription().path("version").asText());
         assertEquals("1.2", secondBinding.getDescription().path("version").asText());

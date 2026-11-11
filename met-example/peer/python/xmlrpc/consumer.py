@@ -10,7 +10,7 @@ from xmlrpc.client import ServerProxy
 
 def main():
     # 标准库将 Python bytes 编码为 XML-RPC Base64。
-    with ServerProxy("http://127.0.0.1:8080/xmlrpc", use_builtin_types=True) as client:
+    with ServerProxy("http://127.0.0.1:8080/xmlrpc/default/1.0.0", use_builtin_types=True) as client:
         order = {"id": 1001, "description": "Order from Python", "attachment": b"Meteor"}
         client.orders.save(order)
         result = client.orders.find({"id": 1001})

@@ -63,7 +63,7 @@ public class HproseRequestTest {
     public void argumentsPreserveSharedTypedReferences() throws Exception {
         // 注册接口声明，供解码器选择方法并恢复参数类型。
         try (MetContext context = this.configuration().buildContext()) {
-            context.publisher().rsfService(Echo.class, new EchoImpl()).register();
+            context.publisher().rsfService(Echo.class, new EchoImpl()).contextPathByPrefix("hprose", "/").register();
             HproseHttpCodec codec = this.codec(context);
 
             // 两个参数共用一个列表，参数引用表与方法名的引用表分别重置。
@@ -81,7 +81,7 @@ public class HproseRequestTest {
     public void methodNameReferencesDoNotLeakIntoArguments() throws Exception {
         // 注册接口声明，供解码器选择方法并恢复参数类型。
         try (MetContext context = this.configuration().buildContext()) {
-            context.publisher().rsfService(Echo.class, new EchoImpl()).register();
+            context.publisher().rsfService(Echo.class, new EchoImpl()).contextPathByPrefix("hprose", "/").register();
             HproseHttpCodec codec = this.codec(context);
 
             // 方法名与实参文本相同，也不能误用方法名的引用编号。
@@ -95,7 +95,7 @@ public class HproseRequestTest {
     public void batchKeepsMissingMethodFailureAtItsPosition() throws Exception {
         // 注册接口声明，供解码器选择方法并恢复参数类型。
         try (MetContext context = this.configuration().buildContext()) {
-            context.publisher().rsfService(Echo.class, new EchoImpl()).register();
+            context.publisher().rsfService(Echo.class, new EchoImpl()).contextPathByPrefix("hprose", "/").register();
             HproseHttpCodec codec = this.codec(context);
 
             // 将三个调用拼成一个批次，只有批次末尾保留结束标记。
@@ -120,7 +120,7 @@ public class HproseRequestTest {
     public void methodLookupIgnoresCase() throws Exception {
         // 注册接口声明，供解码器选择方法并恢复参数类型。
         try (MetContext context = this.configuration().buildContext()) {
-            context.publisher().rsfService(Echo.class, new EchoImpl()).register();
+            context.publisher().rsfService(Echo.class, new EchoImpl()).contextPathByPrefix("hprose", "/").register();
             HproseHttpCodec codec = this.codec(context);
 
             // 线上方法名大小写不同，仍映射到 Java 声明的方法。
@@ -135,7 +135,7 @@ public class HproseRequestTest {
     public void decodedCallPreservesByReferenceFlag() throws Exception {
         // 注册接口声明，供解码器选择方法并恢复参数类型。
         try (MetContext context = this.configuration().buildContext()) {
-            context.publisher().rsfService(Echo.class, new EchoImpl()).register();
+            context.publisher().rsfService(Echo.class, new EchoImpl()).contextPathByPrefix("hprose", "/").register();
             HproseHttpCodec codec = this.codec(context);
 
             // 单次调用携带的引用回传标记直接保留在解码结果中。
@@ -149,7 +149,7 @@ public class HproseRequestTest {
     public void truncatedBatchIsRejected() throws Exception {
         // 注册接口声明，供解码器选择方法并恢复参数类型。
         try (MetContext context = this.configuration().buildContext()) {
-            context.publisher().rsfService(Echo.class, new EchoImpl()).register();
+            context.publisher().rsfService(Echo.class, new EchoImpl()).contextPathByPrefix("hprose", "/").register();
             HproseHttpCodec codec = this.codec(context);
             byte[] complete = this.call("echo_echo", new Object[] { "value" }, false);
 
@@ -163,7 +163,7 @@ public class HproseRequestTest {
     public void trailingBatchBytesAreRejected() throws Exception {
         // 注册接口声明，供解码器选择方法并恢复参数类型。
         try (MetContext context = this.configuration().buildContext()) {
-            context.publisher().rsfService(Echo.class, new EchoImpl()).register();
+            context.publisher().rsfService(Echo.class, new EchoImpl()).contextPathByPrefix("hprose", "/").register();
             HproseHttpCodec codec = this.codec(context);
             byte[] complete = this.call("echo_echo", new Object[] { "value" }, false);
 
@@ -180,7 +180,7 @@ public class HproseRequestTest {
             context.publisher() //
                     .rsfService(Echo.class, new EchoImpl()) //
                     .aliasName("Hprose", "test_echo") //
-                    .register();
+                    .contextPathByPrefix("hprose", "/").register();
             HproseHttpCodec codec = this.codec(context);
 
             // 别名与方法名均含下划线，仍须定位到完整声明。
@@ -213,7 +213,7 @@ public class HproseRequestTest {
     public void oneDecodedCallIsAcceptedAtTheBatchLimit() throws Exception {
         // 注册接口声明，供解码器选择方法并恢复参数类型。
         try (MetContext context = this.configuration().buildContext()) {
-            context.publisher().rsfService(Echo.class, new EchoImpl()).register();
+            context.publisher().rsfService(Echo.class, new EchoImpl()).contextPathByPrefix("hprose", "/").register();
             byte[] one = this.call("echo_echo", new Object[] { "one" }, false);
             Map<String, String> options = Map.of("contextPath", "/hprose", //
                     "maxBatchCalls", "1", "maxMessageSize", "1024");
@@ -230,7 +230,7 @@ public class HproseRequestTest {
     public void batchCountLimitRejectsAnExtraDecodedCall() throws Exception {
         // 注册接口声明，供解码器选择方法并恢复参数类型。
         try (MetContext context = this.configuration().buildContext()) {
-            context.publisher().rsfService(Echo.class, new EchoImpl()).register();
+            context.publisher().rsfService(Echo.class, new EchoImpl()).contextPathByPrefix("hprose", "/").register();
             byte[] one = this.call("echo_echo", new Object[] { "one" }, false);
             Map<String, String> options = Map.of("contextPath", "/hprose", //
                     "maxBatchCalls", "1", "maxMessageSize", "1024");
@@ -251,7 +251,7 @@ public class HproseRequestTest {
     public void requestBodyLimitRejectsOversize() throws Exception {
         // 注册接口声明，供解码器选择方法并恢复参数类型。
         try (MetContext context = this.configuration().buildContext()) {
-            context.publisher().rsfService(Echo.class, new EchoImpl()).register();
+            context.publisher().rsfService(Echo.class, new EchoImpl()).contextPathByPrefix("hprose", "/").register();
             Map<String, String> options = Map.of("contextPath", "/hprose", //
                     "maxBatchCalls", "1", "maxMessageSize", "1024");
             ProtocolConfig protocol = ProtocolConfig.newConfig("hprose", "hprose", options);
@@ -268,7 +268,7 @@ public class HproseRequestTest {
     public void responseBodyLimitRejectsOversize() throws Exception {
         // 注册接口声明，供解码器选择方法并恢复参数类型。
         try (MetContext context = this.configuration().buildContext()) {
-            context.publisher().rsfService(Echo.class, new EchoImpl()).register();
+            context.publisher().rsfService(Echo.class, new EchoImpl()).contextPathByPrefix("hprose", "/").register();
             Map<String, String> options = Map.of("contextPath", "/hprose", //
                     "maxBatchCalls", "1", "maxMessageSize", "1024");
             ProtocolConfig protocol = ProtocolConfig.newConfig("hprose", "hprose", options);

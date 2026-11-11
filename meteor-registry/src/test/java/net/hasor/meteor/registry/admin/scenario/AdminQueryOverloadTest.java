@@ -14,7 +14,6 @@ import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.domain.MetServiceType;
 import net.hasor.meteor.registry.RegistryAdmin;
-import net.hasor.meteor.registry.admin.*;
 import net.hasor.meteor.registry.memory.MemoryRegistryConfiguration;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
 import net.hasor.meteor.registry.shared.storage.domain.EntApplicationCatalogData;
@@ -215,7 +214,7 @@ public class AdminQueryOverloadTest {
             // 端点筛选在分页之前执行；未指定分页条件时返回默认大小的一页。
             MetServiceAdmin admin = context.getExtension(RegistryAdmin.class).getServiceAdmin("echo");
             MetEndpointFilter filter = new MetEndpointFilter();
-            filter.setConnectorName("public");
+            filter.setContextPath("/public");
             MetPage<MetServiceMember> first = admin.providers(filter, null);
             assertEquals(100, first.getItems().size());
             assertNotNull(first.getNextCursor());
@@ -230,7 +229,7 @@ public class AdminQueryOverloadTest {
             members.addAll(last.getItems());
             Set<String> found = new HashSet<>();
             for (MetServiceMember member : members) {
-                assertEquals("public", member.getEndpoints()[0].getConnectorName());
+                assertEquals("/public", member.getEndpoints()[0].getContextPath());
                 assertTrue(found.add(member.getInstance().getInstanceId()));
             }
             assertEquals(expected, found);
@@ -257,7 +256,7 @@ public class AdminQueryOverloadTest {
             // 消费者端点同样先筛选，再按默认页大小返回结果。
             MetServiceAdmin admin = context.getExtension(RegistryAdmin.class).getServiceAdmin("echo");
             MetEndpointFilter filter = new MetEndpointFilter();
-            filter.setConnectorName("public");
+            filter.setContextPath("/public");
             MetPage<MetServiceMember> first = admin.consumers(filter, null);
             assertEquals(100, first.getItems().size());
             assertNotNull(first.getNextCursor());
@@ -272,7 +271,7 @@ public class AdminQueryOverloadTest {
             members.addAll(last.getItems());
             Set<String> found = new HashSet<>();
             for (MetServiceMember member : members) {
-                assertEquals("public", member.getEndpoints()[0].getConnectorName());
+                assertEquals("/public", member.getEndpoints()[0].getContextPath());
                 assertTrue(found.add(member.getInstance().getInstanceId()));
             }
             assertEquals(expected, found);
@@ -367,7 +366,7 @@ public class AdminQueryOverloadTest {
             // 每页一个匹配成员；稀疏的端点匹配不能导致游标漏项或重复。
             MetServiceAdmin admin = context.getExtension(RegistryAdmin.class).getServiceAdmin("echo");
             MetEndpointFilter filter = new MetEndpointFilter();
-            filter.setConnectorName("public");
+            filter.setContextPath("/public");
             MetDirectoryQuery query = new MetDirectoryQuery();
             query.setProtocol("rsf");
             query.setUnitName("blue");
@@ -378,7 +377,7 @@ public class AdminQueryOverloadTest {
                 assertEquals(1, page.getItems().size());
                 MetServiceMember item = page.getItems().get(0);
                 assertEquals("blue", item.getInstance().getUnitName());
-                assertEquals("public", item.getEndpoints()[0].getConnectorName());
+                assertEquals("/public", item.getEndpoints()[0].getContextPath());
                 assertTrue(found.add(item.getInstance().getInstanceId()));
                 query.setCursor(page.getNextCursor());
             } while (query.getCursor() != null);
@@ -409,7 +408,7 @@ public class AdminQueryOverloadTest {
             // 协议条件使用消费者实际选择的协议，再与端点条件共同限制结果。
             MetServiceAdmin admin = context.getExtension(RegistryAdmin.class).getServiceAdmin("echo");
             MetEndpointFilter filter = new MetEndpointFilter();
-            filter.setConnectorName("public");
+            filter.setContextPath("/public");
             MetDirectoryQuery query = new MetDirectoryQuery();
             query.setProtocol("rsf");
             query.setUnitName("blue");
@@ -420,7 +419,7 @@ public class AdminQueryOverloadTest {
                 assertEquals(1, page.getItems().size());
                 MetServiceMember item = page.getItems().get(0);
                 assertEquals("blue", item.getInstance().getUnitName());
-                assertEquals("public", item.getEndpoints()[0].getConnectorName());
+                assertEquals("/public", item.getEndpoints()[0].getContextPath());
                 assertTrue(found.add(item.getInstance().getInstanceId()));
                 query.setCursor(page.getNextCursor());
             } while (query.getCursor() != null);
@@ -439,7 +438,7 @@ public class AdminQueryOverloadTest {
 
     private static EntServiceRuntimeData service(String id, MetServiceType role, String connector) {
         RefProtocolMountData endpoint = new RefProtocolMountData();
-        endpoint.setConnectorName(connector);
+        endpoint.setContextPath("/" + connector);
         endpoint.setTransport("tcp");
         endpoint.setProtocolName("rsf");
 

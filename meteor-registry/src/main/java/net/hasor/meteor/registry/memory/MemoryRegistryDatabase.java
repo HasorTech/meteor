@@ -23,6 +23,7 @@ final class MemoryRegistryDatabase {
     final Map<String, Map<MetServiceType, NavigableMap<String, RefServiceRelationData>>> members              = new HashMap<>();
     final Map<String, ServiceSummary>                                                    summaries            = new HashMap<>();
     final Map<String, EntityRecord<?>>                                                   configurations       = new HashMap<>();
+    final Map<String, NavigableMap<String, EntServiceMethodData>>                        methods              = new HashMap<>();
     final Map<String, Long>                                                              changes              = new HashMap<>();
 
     public void changed(String scope) {

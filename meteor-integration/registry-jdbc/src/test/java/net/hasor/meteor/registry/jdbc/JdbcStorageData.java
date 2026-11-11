@@ -5,7 +5,6 @@
  */
 package net.hasor.meteor.registry.jdbc;
 import net.hasor.meteor.domain.MetServiceType;
-import net.hasor.meteor.registry.shared.storage.domain.*;
 
 /** 存储契约所用业务正文；不创建会话，不执行登记或断言。 */
 final class JdbcStorageData {
@@ -48,7 +47,7 @@ final class JdbcStorageData {
 
     static RefProtocolMountData rsfEndpoint() {
         RefProtocolMountData endpoint = new RefProtocolMountData();
-        endpoint.setConnectorName("primary");
+        endpoint.setContextPath("/primary");
         endpoint.setProtocolName("rsf");
         endpoint.setPublishedAddress("rsf://127.0.0.1:8000");
         return endpoint;

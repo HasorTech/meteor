@@ -15,7 +15,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.hasor.dbvisitor.jdbc.core.JdbcTemplate;
 import net.hasor.meteor.domain.MetServiceType;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
-import net.hasor.meteor.registry.shared.storage.domain.*;
 import net.hasor.meteor.registry.shared.utils.RegistryJson;
 import org.junit.jupiter.api.Test;
 import static net.hasor.example.registry.jdbc.JdbcTestSupport.configuration;
@@ -33,21 +32,14 @@ public class JdbcStorageTest {
              StorageAccess reader = configuration.openStorage()) {
             EntInstanceRuntimeData registered = instance("one", "orders", "east");
             EntInstanceEndpointData publicEndpoint = new EntInstanceEndpointData();
-            publicEndpoint.setConnectorName("public-http");
-            publicEndpoint.setTransport("http");
             publicEndpoint.setProtocolName("jsonrpc");
-            publicEndpoint.setScheme("orders-rpc");
-            publicEndpoint.setContextPath("/orders");
-            publicEndpoint.setListenAddress("orders-rpc://127.0.0.1:8080/orders");
+            publicEndpoint.getEndpoints().put("endpoint", "orders-rpc://127.0.0.1:8080/orders");
             EntInstanceEndpointData internalEndpoint = new EntInstanceEndpointData();
-            internalEndpoint.setConnectorName("internal-http");
-            internalEndpoint.setTransport("http");
             internalEndpoint.setProtocolName("jsonrpc");
-            internalEndpoint.setScheme("jsonrpc");
-            internalEndpoint.setContextPath("/internal");
-            internalEndpoint.setListenAddress("jsonrpc://127.0.0.1:8081/internal");
-            internalEndpoint.setManagementAddress("jsonrpc://127.0.0.1:8081/internal/management");
+            internalEndpoint.getEndpoints().put("endpoint", "jsonrpc://127.0.0.1:8081/internal");
+            internalEndpoint.getEndpoints().put("management", "jsonrpc://127.0.0.1:8081/internal/management");
             EntInstanceEndpointData[] expected = { publicEndpoint, internalEndpoint };
+            publicEndpoint.getEndpoints().put("schema", "");
             registered.setEndpoints(expected);
             writer.registerInstance(registered);
 
@@ -57,13 +49,8 @@ public class JdbcStorageTest {
             assertEquals(2, actual.length);
             // 按登记顺序逐字段核对，不能将同协议的两个连接器合并。
             for (int index = 0; index < expected.length; index++) {
-                assertEquals(expected[index].getConnectorName(), actual[index].getConnectorName());
-                assertEquals(expected[index].getTransport(), actual[index].getTransport());
                 assertEquals(expected[index].getProtocolName(), actual[index].getProtocolName());
-                assertEquals(expected[index].getScheme(), actual[index].getScheme());
-                assertEquals(expected[index].getContextPath(), actual[index].getContextPath());
-                assertEquals(expected[index].getListenAddress(), actual[index].getListenAddress());
-                assertEquals(expected[index].getManagementAddress(), actual[index].getManagementAddress());
+                assertEquals(expected[index].getEndpoints(), actual[index].getEndpoints());
             }
         }
     }
@@ -79,7 +66,7 @@ public class JdbcStorageTest {
             EntServiceRuntimeData published = service();
             ObjectNode description = JsonNodeFactory.instance.objectNode();
             description.put("javaType", "example.EchoService");
-            published.setDescription(description);
+            published.setDescription(RegistryJson.copy(description, RefServiceDescriptionData.class));
             published.setEndpoints(new RefProtocolMountData[] { rsfEndpoint() });
             storage.registerService("one", published);
 
@@ -92,20 +79,23 @@ public class JdbcStorageTest {
             ObjectNode storedDescription = (ObjectNode) runtime.get("description");
             ObjectNode endpoint = (ObjectNode) runtime.get("endpoints").get(0);
             assertFalse(catalog.has("type"));
-            assertFalse(catalog.has("javaType"));
+            assertFalse(catalog.hasNonNull("javaType"));
             assertFalse(catalog.has("description"));
             assertFalse(runtime.has("type"));
-            assertFalse(runtime.has("javaType"));
+            assertFalse(runtime.hasNonNull("javaType"));
             assertEquals("Provider", runtime.get("role").textValue());
-            assertEquals(description, storedDescription);
+            assertEquals(RegistryJson.copy(RegistryJson.copy(description, RefServiceDescriptionData.class), ObjectNode.class), storedDescription);
             assertFalse(storedDescription.has("role"));
             assertEquals("rsf", endpoint.get("protocolName").textValue());
             assertFalse(endpoint.has("protocol"));
+            assertFalse(endpoint.has("connectorName"));
+            assertFalse(endpoint.has("bindEnabled"));
+            assertFalse(endpoint.has("configuredAddress"));
             assertEquals("rsf://127.0.0.1:8000", runtime.get("addresses").get(0).textValue());
 
             // 成员发现仍返回同一份实例声明和实际端点。
             EntServiceRuntimeData member = storage.getMember("echo", MetServiceType.Provider, "one").getService();
-            assertEquals(description, member.getDescription());
+            assertEquals(RegistryJson.copy(RegistryJson.copy(description, RefServiceDescriptionData.class), ObjectNode.class), RegistryJson.copy(member.getDescription(), ObjectNode.class));
             assertEquals("rsf", member.getEndpoints()[0].getProtocolName());
             assertArrayEquals(published.getAddresses(), member.getAddresses());
         }
@@ -122,26 +112,26 @@ public class JdbcStorageTest {
             EntServiceRuntimeData first = service();
             ObjectNode firstDescription = JsonNodeFactory.instance.objectNode();
             firstDescription.put("javaType", "example.FirstEcho");
-            first.setDescription(firstDescription);
+            first.setDescription(RegistryJson.copy(firstDescription, RefServiceDescriptionData.class));
             storage.registerService("first", first);
             EntServiceRuntimeData second = service();
             ObjectNode secondDescription = JsonNodeFactory.instance.objectNode();
             secondDescription.put("javaType", "example.SecondEcho");
-            second.setDescription(secondDescription);
+            second.setDescription(RegistryJson.copy(secondDescription, RefServiceDescriptionData.class));
             storage.registerService("second", second);
             storage.registerService("untyped", service());
 
             // 两个查询方向都使用实例自己的描述，不从共享目录回填 Java 类型。
-            assertEquals(firstDescription, storage.getInstanceService("first", "echo").getDescription());
-            assertEquals(secondDescription, storage.getInstanceService("second", "echo").getDescription());
-            assertNull(storage.getInstanceService("untyped", "echo").getDescription());
+            assertEquals(RegistryJson.copy(RegistryJson.copy(firstDescription, RefServiceDescriptionData.class), ObjectNode.class), RegistryJson.copy(storage.getInstanceService("first", "echo").getDescription(), ObjectNode.class));
+            assertEquals(RegistryJson.copy(RegistryJson.copy(secondDescription, RefServiceDescriptionData.class), ObjectNode.class), RegistryJson.copy(storage.getInstanceService("second", "echo").getDescription(), ObjectNode.class));
+            assertNull(RegistryJson.copy(storage.getInstanceService("untyped", "echo").getDescription(), ObjectNode.class));
             RefServiceRelationData firstMember = storage.getMember("echo", MetServiceType.Provider, "first");
             RefServiceRelationData secondMember = storage.getMember("echo", MetServiceType.Provider, "second");
             RefServiceRelationData untypedMember = storage.getMember("echo", MetServiceType.Provider, "untyped");
-            assertEquals(firstDescription, firstMember.getService().getDescription());
-            assertEquals(secondDescription, secondMember.getService().getDescription());
-            assertNull(untypedMember.getService().getDescription());
-            assertFalse(RegistryJson.copy(storage.getService("echo"), ObjectNode.class).has("javaType"));
+            assertEquals(RegistryJson.copy(RegistryJson.copy(firstDescription, RefServiceDescriptionData.class), ObjectNode.class), RegistryJson.copy(firstMember.getService().getDescription(), ObjectNode.class));
+            assertEquals(RegistryJson.copy(RegistryJson.copy(secondDescription, RefServiceDescriptionData.class), ObjectNode.class), RegistryJson.copy(secondMember.getService().getDescription(), ObjectNode.class));
+            assertNull(RegistryJson.copy(untypedMember.getService().getDescription(), ObjectNode.class));
+            assertFalse(RegistryJson.copy(storage.getService("echo"), ObjectNode.class).hasNonNull("javaType"));
         }
     }
 
@@ -157,7 +147,7 @@ public class JdbcStorageTest {
             published.setVersion("1.0");
             ObjectNode description = JsonNodeFactory.instance.objectNode();
             description.put("javaType", "example.EchoService");
-            published.setDescription(description);
+            published.setDescription(RegistryJson.copy(description, RefServiceDescriptionData.class));
             published.setEndpoints(new RefProtocolMountData[] { rsfEndpoint() });
             storage.registerService("one", published);
 
@@ -172,8 +162,8 @@ public class JdbcStorageTest {
             assertEquals("2.0", catalog.getVersion());
             EntServiceRuntimeData runtime = storage.getInstanceService("one", "echo");
             assertEquals("1.0", runtime.getVersion());
-            assertEquals(description, runtime.getDescription());
-            assertEquals("primary", runtime.getEndpoints()[0].getConnectorName());
+            assertEquals(RegistryJson.copy(RegistryJson.copy(description, RefServiceDescriptionData.class), ObjectNode.class), RegistryJson.copy(runtime.getDescription(), ObjectNode.class));
+            assertEquals("/primary", runtime.getEndpoints()[0].getContextPath());
             assertEquals("rsf", runtime.getEndpoints()[0].getProtocolName());
             assertArrayEquals(published.getAddresses(), runtime.getAddresses());
         }
@@ -208,21 +198,21 @@ public class JdbcStorageTest {
             EntServiceRuntimeData service = service("contract", MetServiceType.Provider);
             ObjectNode description = JsonNodeFactory.instance.objectNode();
             description.put("contractServiceId", 0);
-            service.setDescription(description);
+            service.setDescription(RegistryJson.copy(description, RefServiceDescriptionData.class));
             storage.registerService("one", service);
 
             // 两个查询方向从描述读回零编号，目录与运行正文顶层不承载编号。
             EntServiceCatalogData catalog = storage.getService("contract");
             EntServiceRuntimeData registered = storage.getInstanceService("one", "contract");
             EntServiceRuntimeData member = storage.getMember("contract", MetServiceType.Provider, "one").getService();
-            assertEquals(0L, registered.getDescription().get("contractServiceId").longValue());
-            assertEquals(description, member.getDescription());
+            assertEquals(0L, RegistryJson.copy(registered.getDescription(), ObjectNode.class).get("contractServiceId").longValue());
+            assertEquals(RegistryJson.copy(RegistryJson.copy(description, RefServiceDescriptionData.class), ObjectNode.class), RegistryJson.copy(member.getDescription(), ObjectNode.class));
             assertEquals("contract", registered.getServiceId());
             ObjectNode catalogJson = RegistryJson.copy(catalog, ObjectNode.class);
-            assertFalse(catalogJson.has("contractServiceId"));
+            assertFalse(catalogJson.hasNonNull("contractServiceId"));
             assertFalse(catalogJson.has("description"));
-            assertFalse(RegistryJson.copy(registered, ObjectNode.class).has("contractServiceId"));
-            assertFalse(RegistryJson.copy(member, ObjectNode.class).has("contractServiceId"));
+            assertFalse(RegistryJson.copy(registered, ObjectNode.class).hasNonNull("contractServiceId"));
+            assertFalse(RegistryJson.copy(member, ObjectNode.class).hasNonNull("contractServiceId"));
 
             // 直接核对 H2 持久正文，避免读取时忽略未知字段掩盖错误的存储形状。
             JdbcTemplate jdbc = new JdbcTemplate(connection);
@@ -230,10 +220,10 @@ public class JdbcStorageTest {
             String runtimeBody = jdbc.queryForList("SELECT body FROM meteor_instance_services", String.class).get(0);
             ObjectNode storedCatalog = RegistryJson.read(catalogBody, ObjectNode.class);
             ObjectNode storedRuntime = RegistryJson.read(runtimeBody, ObjectNode.class);
-            assertFalse(storedCatalog.has("contractServiceId"));
+            assertFalse(storedCatalog.hasNonNull("contractServiceId"));
             assertFalse(storedCatalog.has("description"));
-            assertFalse(storedRuntime.has("contractServiceId"));
-            assertEquals(description, storedRuntime.get("description"));
+            assertFalse(storedRuntime.hasNonNull("contractServiceId"));
+            assertTrue(RegistryJson.sameData(RegistryJson.copy(description, RefServiceDescriptionData.class), RegistryJson.copy(storedRuntime.get("description"), RefServiceDescriptionData.class)));
         }
     }
 
@@ -246,12 +236,12 @@ public class JdbcStorageTest {
             EntServiceRuntimeData service = service("contract", MetServiceType.Provider);
             ObjectNode description = JsonNodeFactory.instance.objectNode();
             description.put("contractServiceId", -1L);
-            service.setDescription(description);
+            service.setDescription(RegistryJson.copy(description, RefServiceDescriptionData.class));
             storage.registerService("one", service);
 
             // 负值在实例描述中原样读回，不与缺省编号或字符串 serviceId 混淆。
             EntServiceRuntimeData registered = storage.getInstanceService("one", "contract");
-            assertEquals(-1L, registered.getDescription().get("contractServiceId").longValue());
+            assertEquals(-1L, RegistryJson.copy(registered.getDescription(), ObjectNode.class).get("contractServiceId").longValue());
         }
     }
 
@@ -264,12 +254,12 @@ public class JdbcStorageTest {
             EntServiceRuntimeData service = service("contract", MetServiceType.Provider);
             ObjectNode description = JsonNodeFactory.instance.objectNode();
             description.put("contractServiceId", 0xffffffffL);
-            service.setDescription(description);
+            service.setDescription(RegistryJson.copy(description, RefServiceDescriptionData.class));
             storage.registerService("one", service);
 
             // 成员描述保留完整 long 数值，不将其提取成目录属性。
             RefServiceRelationData member = storage.getMember("contract", MetServiceType.Provider, "one");
-            ObjectNode registered = member.getService().getDescription();
+            ObjectNode registered = RegistryJson.copy(member.getService().getDescription(), ObjectNode.class);
             assertEquals(0xffffffffL, registered.get("contractServiceId").longValue());
         }
     }
@@ -283,16 +273,16 @@ public class JdbcStorageTest {
             EntServiceRuntimeData service = service("contract", MetServiceType.Provider);
             ObjectNode description = JsonNodeFactory.instance.objectNode();
             description.putNull("contractServiceId");
-            service.setDescription(description);
+            service.setDescription(RegistryJson.copy(description, RefServiceDescriptionData.class));
             storage.registerService("one", service);
 
             // 实例查询与成员查询都保留显式 null 的 JSON 节点。
-            ObjectNode registered = storage.getInstanceService("one", "contract").getDescription();
+            ObjectNode registered = RegistryJson.copy(storage.getInstanceService("one", "contract").getDescription(), ObjectNode.class);
             RefServiceRelationData member = storage.getMember("contract", MetServiceType.Provider, "one");
-            assertEquals(description, registered);
+            assertEquals(RegistryJson.copy(RegistryJson.copy(description, RefServiceDescriptionData.class), ObjectNode.class), registered);
             assertTrue(registered.has("contractServiceId"));
             assertTrue(registered.get("contractServiceId").isNull());
-            assertEquals(description, member.getService().getDescription());
+            assertEquals(RegistryJson.copy(RegistryJson.copy(description, RefServiceDescriptionData.class), ObjectNode.class), RegistryJson.copy(member.getService().getDescription(), ObjectNode.class));
         }
     }
 
@@ -306,20 +296,20 @@ public class JdbcStorageTest {
             EntServiceRuntimeData numbered = service("contract", MetServiceType.Provider);
             ObjectNode numberedDescription = JsonNodeFactory.instance.objectNode();
             numberedDescription.put("contractServiceId", 0xffffffffL);
-            numbered.setDescription(numberedDescription);
+            numbered.setDescription(RegistryJson.copy(numberedDescription, RefServiceDescriptionData.class));
             storage.registerService("numbered", numbered);
             EntServiceRuntimeData unnumbered = service("contract", MetServiceType.Provider);
             ObjectNode unnumberedDescription = JsonNodeFactory.instance.objectNode();
             unnumberedDescription.putNull("contractServiceId");
-            unnumbered.setDescription(unnumberedDescription);
+            unnumbered.setDescription(RegistryJson.copy(unnumberedDescription, RefServiceDescriptionData.class));
             storage.registerService("unnumbered", unnumbered);
 
             // 共享目录不能覆盖各实例自己的描述，未指定编号仍返回 null 节点。
             EntServiceRuntimeData first = storage.getInstanceService("numbered", "contract");
             EntServiceRuntimeData second = storage.getInstanceService("unnumbered", "contract");
-            assertEquals(0xffffffffL, first.getDescription().get("contractServiceId").longValue());
-            assertEquals(unnumberedDescription, second.getDescription());
-            assertTrue(second.getDescription().get("contractServiceId").isNull());
+            assertEquals(0xffffffffL, RegistryJson.copy(first.getDescription(), ObjectNode.class).get("contractServiceId").longValue());
+            assertEquals(RegistryJson.copy(RegistryJson.copy(unnumberedDescription, RefServiceDescriptionData.class), ObjectNode.class), RegistryJson.copy(second.getDescription(), ObjectNode.class));
+            assertTrue(RegistryJson.copy(second.getDescription(), ObjectNode.class).get("contractServiceId").isNull());
         }
     }
 
@@ -335,23 +325,23 @@ public class JdbcStorageTest {
             first.put("contractServiceId", 0);
             first.putArray("methods").addObject().put("name", "Before");
             first.putObject("types").putObject("Order").put("name", "Order");
-            service.setDescription(first);
+            service.setDescription(RegistryJson.copy(first, RefServiceDescriptionData.class));
             writer.registerService("one", service);
-            ObjectNode captured = reader.getInstanceService("one", "description").getDescription();
-            assertEquals(first, captured);
+            ObjectNode captured = RegistryJson.copy(reader.getInstanceService("one", "description").getDescription(), ObjectNode.class);
+            assertEquals(RegistryJson.copy(RegistryJson.copy(first, RefServiceDescriptionData.class), ObjectNode.class), captured);
 
             // 替换为完整的新描述，编号、方法与类型一起更新，不影响已读取的旧值。
             ObjectNode replacement = JsonNodeFactory.instance.objectNode();
             replacement.put("contractServiceId", 0xffffffffL);
             replacement.putArray("methods").addObject().put("name", "After");
             replacement.putObject("types");
-            service.setDescription(replacement);
+            service.setDescription(RegistryJson.copy(replacement, RefServiceDescriptionData.class));
             writer.registerService("one", service);
-            ObjectNode current = reader.getMember("description", MetServiceType.Provider, "one") //
-                    .getService().getDescription();
-            assertEquals(replacement, current);
+            ObjectNode current = RegistryJson.copy(reader.getMember("description", MetServiceType.Provider, "one") //
+                    .getService().getDescription(), ObjectNode.class);
+            assertEquals(RegistryJson.copy(RegistryJson.copy(replacement, RefServiceDescriptionData.class), ObjectNode.class), current);
             assertEquals(0xffffffffL, current.get("contractServiceId").longValue());
-            assertEquals(first, captured);
+            assertEquals(RegistryJson.copy(RegistryJson.copy(first, RefServiceDescriptionData.class), ObjectNode.class), captured);
             assertFalse(RegistryJson.copy(reader.getService("description"), ObjectNode.class).has("description"));
         }
     }
@@ -367,19 +357,19 @@ public class JdbcStorageTest {
             ObjectNode first = JsonNodeFactory.instance.objectNode();
             first.put("contractServiceId", 0xffffffffL);
             first.putArray("methods").addObject().put("name", "Before");
-            service.setDescription(first);
+            service.setDescription(RegistryJson.copy(first, RefServiceDescriptionData.class));
             writer.registerService("one", service);
 
             // 整体替换后不合并旧编号，两个查询方向只返回新描述。
             ObjectNode replacement = JsonNodeFactory.instance.objectNode();
             replacement.putArray("methods").addObject().put("name", "After");
-            service.setDescription(replacement);
+            service.setDescription(RegistryJson.copy(replacement, RefServiceDescriptionData.class));
             writer.registerService("one", service);
-            ObjectNode registered = reader.getInstanceService("one", "description").getDescription();
+            ObjectNode registered = RegistryJson.copy(reader.getInstanceService("one", "description").getDescription(), ObjectNode.class);
             RefServiceRelationData member = reader.getMember("description", MetServiceType.Provider, "one");
-            assertEquals(replacement, registered);
-            assertFalse(registered.has("contractServiceId"));
-            assertEquals(replacement, member.getService().getDescription());
+            assertEquals(RegistryJson.copy(RegistryJson.copy(replacement, RefServiceDescriptionData.class), ObjectNode.class), registered);
+            assertFalse(registered.hasNonNull("contractServiceId"));
+            assertEquals(RegistryJson.copy(RegistryJson.copy(replacement, RefServiceDescriptionData.class), ObjectNode.class), RegistryJson.copy(member.getService().getDescription(), ObjectNode.class));
         }
     }
 
@@ -393,7 +383,7 @@ public class JdbcStorageTest {
             EntServiceRuntimeData service = service("description", MetServiceType.Provider);
             ObjectNode description = JsonNodeFactory.instance.objectNode();
             description.put("contractServiceId", 0xffffffffL);
-            service.setDescription(description);
+            service.setDescription(RegistryJson.copy(description, RefServiceDescriptionData.class));
             writer.registerService("one", service);
 
             // 清空整份描述后，查询不能从目录恢复旧描述或编号。
@@ -401,8 +391,8 @@ public class JdbcStorageTest {
             writer.registerService("one", service);
             EntServiceRuntimeData registered = reader.getInstanceService("one", "description");
             RefServiceRelationData member = reader.getMember("description", MetServiceType.Provider, "one");
-            assertNull(registered.getDescription());
-            assertNull(member.getService().getDescription());
+            assertNull(RegistryJson.copy(registered.getDescription(), ObjectNode.class));
+            assertNull(RegistryJson.copy(member.getService().getDescription(), ObjectNode.class));
             assertEquals("description", reader.getService("description").getServiceId());
         }
     }
@@ -689,14 +679,18 @@ public class JdbcStorageTest {
         JdbcRegistryConfiguration configuration = configuration(createDatabase());
         try (StorageAccess storage = configuration.openStorage()) {
             storage.registerInstance(instance("one", "orders", "east"));
-            storage.registerService("one", service("A", MetServiceType.Provider, "rsf://127.0.0.1:8000"));
+            EntServiceRuntimeData provider = service("A", MetServiceType.Provider, "rsf://127.0.0.1:8000");
+            provider.setEndpoints(new RefProtocolMountData[] { rsfEndpoint() });
+            storage.registerService("one", provider);
             ServiceSummary before = storage.serviceSummaries(List.of("A")).get("A");
             assertEquals(1, before.getProviderCount());
+            assertArrayEquals(new String[] { "rsf" }, before.getProtocols());
 
             // 撤销后服务档案仍在，但当前提供者数归零。
             storage.unregisterService("one", "A");
             ServiceSummary after = storage.serviceSummaries(List.of("A")).get("A");
             assertEquals(0, after.getProviderCount());
+            assertArrayEquals(new String[0], after.getProtocols());
         }
     }
 
@@ -717,11 +711,34 @@ public class JdbcStorageTest {
             consumer.setUsedProtocols(new String[] { "rsf", "http" });
             storage.registerService("consumer", consumer);
 
-            // 协议索引的行数不影响成员汇总，协议集合也不重复。
+            // 多个成员的协议投影合并去重，不影响提供者和消费者计数。
             ServiceSummary summary = storage.serviceSummaries(List.of("A")).get("A");
             assertEquals(1, summary.getProviderCount());
             assertEquals(1, summary.getConsumerCount());
             assertArrayEquals(new String[] { "http", "rsf" }, summary.getProtocols());
+        }
+    }
+
+    @Test
+    public void summaryUsesLatestProtocolsAfterServiceReplacement() throws Exception {
+        // 两个服务拥有独立的成员协议投影。
+        JdbcRegistryConfiguration configuration = configuration(createDatabase());
+        try (StorageAccess storage = configuration.openStorage()) {
+            storage.registerInstance(instance("one", "orders", "east"));
+            EntServiceRuntimeData first = service("A", MetServiceType.Consumer);
+            first.setUsedProtocols(new String[] { "rsf", "http" });
+            storage.registerService("one", first);
+            EntServiceRuntimeData other = service("B", MetServiceType.Consumer);
+            other.setUsedProtocols(new String[] { "rsf" });
+            storage.registerService("one", other);
+
+            // 替换 A 后不残留旧协议，也不改变 B；空协议成员仍计入消费者数。
+            first.setUsedProtocols(new String[0]);
+            storage.registerService("one", first);
+            Map<String, ServiceSummary> summaries = storage.serviceSummaries(List.of("A", "B"));
+            assertArrayEquals(new String[0], summaries.get("A").getProtocols());
+            assertEquals(1, summaries.get("A").getConsumerCount());
+            assertArrayEquals(new String[] { "rsf" }, summaries.get("B").getProtocols());
         }
     }
 
@@ -762,7 +779,7 @@ public class JdbcStorageTest {
             storage.registerInstance(instance("two", "orders", "west"));
             EntServiceRuntimeData provider = service("A", MetServiceType.Provider);
             RefProtocolMountData secondary = rsfEndpoint();
-            secondary.setConnectorName("backup");
+            secondary.setContextPath("/backup");
             secondary.setPublishedAddress("rsf://127.0.0.1:9000");
             provider.setEndpoints(new RefProtocolMountData[] { rsfEndpoint(), secondary });
             storage.registerService("one", provider);

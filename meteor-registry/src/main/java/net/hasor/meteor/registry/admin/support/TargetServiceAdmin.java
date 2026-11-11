@@ -64,6 +64,11 @@ final class TargetServiceAdmin implements MetServiceAdmin {
     }
 
     @Override
+    public MetServiceMethodPage methods(String methodName, MetDirectoryQuery query) {
+        throw new UnsupportedOperationException("实例方法请读取实例服务描述");
+    }
+
+    @Override
     public Map<String, MetServiceDescription> descriptions() {
         ServiceMemberData service = this.rpc.get().service(this.tokens.getToken(), this.serviceId);
         ObjectNode description = service.getDescription();
@@ -76,6 +81,7 @@ final class TargetServiceAdmin implements MetServiceAdmin {
     private List<MetServiceMember> members(MetServiceType role, MetEndpointFilter filter) {
         ServiceMemberData service = this.rpc.get().service(this.tokens.getToken(), this.serviceId);
         MetServiceMember member = RegistryJson.copy(service, MetServiceMember.class);
+        member.setEndpoints(DescriptionMapping.endpoints(service.getEndpoints()));
         member.getInstance().setOnline(true);
         boolean matchedRole = role == member.getService().getRole();
         if (!matchedRole || !MemberMatcherUtils.matches(member, filter)) {

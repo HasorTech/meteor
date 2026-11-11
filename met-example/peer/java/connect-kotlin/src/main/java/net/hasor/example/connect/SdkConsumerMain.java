@@ -8,11 +8,7 @@
 package net.hasor.example.connect;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
-import com.connectrpc.Idempotency;
-import com.connectrpc.MethodSpec;
-import com.connectrpc.ProtocolClientConfig;
-import com.connectrpc.ResponseMessage;
-import com.connectrpc.StreamType;
+import com.connectrpc.*;
 import com.connectrpc.extensions.GoogleJavaProtobufStrategy;
 import com.connectrpc.impl.ProtocolClient;
 import com.connectrpc.okhttp.ConnectOkHttpClient;
@@ -32,7 +28,7 @@ public final class SdkConsumerMain {
         // 官方 SDK 负责 Connect 请求、Protobuf 编码及 HTTP 通信。
         OkHttpClient http = new OkHttpClient.Builder().callTimeout(10, TimeUnit.SECONDS).build();
         try {
-            String address = "http://127.0.0.1:8080/connect";
+            String address = "http://127.0.0.1:8080/connect/default/1.0.0";
             var config = new ProtocolClientConfig(address, new GoogleJavaProtobufStrategy(), NetworkProtocol.CONNECT);
             var client = new ProtocolClient(new ConnectOkHttpClient(http), config);
             var orderType = JvmClassMappingKt.getKotlinClass(OrderContract.Order.class);

@@ -70,7 +70,7 @@ public class ThriftJavaSdkBasicTest {
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(ThriftDemoService.class, new ThriftDemoServiceImpl()) //
-                    .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)).register();
+                    .contextPathByPrefix("thrift-http", "/").bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)).register();
 
             // 官方 THttpClient 负责真实 HTTP，请求结果直接在当前测试断言。
             int port = server.getListenAddress("thrift-http").getPort();
@@ -127,7 +127,7 @@ public class ThriftJavaSdkBasicTest {
              MetContext client = configuration.buildContext()) {
             client.start();
             MetBindInfo<ThriftDemoService> service = client.publisher().rsfService(ThriftDemoService.class) //
-                    .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)).register();
+                    .contextPathByPrefix("thrift-http", "/").bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)).register();
 
             // 正式消费者代理访问 SDK 实际端口，不手写 Thrift 报文。
             String unit = client.getSettings().getUnitName();

@@ -23,7 +23,7 @@ server.server.on("error", (error) => {
     process.exitCode = 1;
 });
 server.server.once("listening", () => {
-    console.log("Order provider is ready: http://127.0.0.1:8080/hprose");
+    console.log("Order provider is ready: http://127.0.0.1:8080/hprose/default/1.0.0");
 });
 server.start();
 const close = () => {

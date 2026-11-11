@@ -23,6 +23,7 @@ public final class HttpBodyStream extends InputStream {
     private       Chunk                     reading;
     private       int                       offset;
     private       boolean                   ended;
+    private       boolean                   discarding;
     private       IOException               failure;
     private       Map<String, List<String>> trailers   = Map.of();
     private       Runnable                  readable   = () -> {
@@ -53,6 +54,9 @@ public final class HttpBodyStream extends InputStream {
 
             this.ended = true;
             this.trailers = HttpMessageUtils.copy(trailers);
+            if (this.discarding) {
+                this.completion.completed(null);
+            }
             this.notifyAll();
             notify = this.readable;
         }
@@ -107,6 +111,11 @@ public final class HttpBodyStream extends InputStream {
         Runnable notify;
         synchronized (this) {
             this.checkFailure();
+            if (this.discarding && !this.ended) {
+                release.run();
+                return;
+            }
+
             if (this.ended || this.buffered + bytes.length > this.capacity) {
                 throw new IOException("HTTP body input exceeds its receive window");
             }
@@ -174,6 +183,23 @@ public final class HttpBodyStream extends InputStream {
         if (this.failure != null) {
             throw this.failure;
         }
+    }
+
+    /** 放弃读取剩余输入，异步归还接收额度直到 EOF；不会像 close 一样中断整个交换。 */
+    public synchronized void discard() {
+        this.discarding = true;
+        if (this.reading != null) {
+            this.consumed(this.reading);
+            this.reading = null;
+        }
+        Chunk chunk;
+        while ((chunk = this.chunks.poll()) != null) {
+            this.consumed(chunk);
+        }
+        if (this.ended && this.failure == null) {
+            this.completion.completed(null);
+        }
+        this.notifyAll();
     }
 
     @Override

@@ -208,7 +208,7 @@ public class GrpcHttpCodecTest {
         // 注册没有绑定 proto 资源的 Protobuf 订阅声明。
         try (MetContext context = this.configuration().buildContext()) {
             var publication = context.publisher().rsfService(Echo.class);
-            MetBindInfo<Echo> service = publication.aliasName("grpc", "example.Echo").serialize("Protobuf").register();
+            MetBindInfo<Echo> service = publication.aliasName("grpc", "example.Echo").serialize("Protobuf").contextPathByPrefix("grpc", "/").register();
             RequestPayload request = new RequestPayload();
             request.setServiceGroup(service.getBindGroup());
             request.setServiceName(service.getBindName());
@@ -405,7 +405,7 @@ public class GrpcHttpCodecTest {
 
     private void publish(MetContext context) {
         var publication = context.publisher().rsfService(Echo.class, new EchoImpl());
-        publication.aliasName("grpc", "example.Echo").serialize("Json").register();
+        publication.aliasName("grpc", "example.Echo").serialize("Json").contextPathByPrefix("grpc", "/").register();
     }
 
     private MetConfiguration configuration() {

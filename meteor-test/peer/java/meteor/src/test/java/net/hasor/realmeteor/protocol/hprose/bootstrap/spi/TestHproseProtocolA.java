@@ -7,6 +7,7 @@
  */
 package net.hasor.realmeteor.protocol.hprose.bootstrap.spi;
 import java.util.List;
+import java.util.Set;
 import java.util.function.ObjLongConsumer;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
@@ -23,6 +24,16 @@ import net.hasor.meteor.protocol.hprose.HproseProtocol;
 
 /** 使用独立 SPI 名称验证共享 HTTP 挂载，编解码仍委托真实 Hprose 实现。 */
 public class TestHproseProtocolA implements HttpProtocolProvider {
+    @Override
+    public Set<Integer> httpVersions(ProtocolConfig config) {
+        return Set.of(1, 2);
+    }
+
+    @Override
+    public Set<String> endpointTypes() {
+        return Set.of("endpoint", "http");
+    }
+
     public String name() {
         return "hprosea";
     }

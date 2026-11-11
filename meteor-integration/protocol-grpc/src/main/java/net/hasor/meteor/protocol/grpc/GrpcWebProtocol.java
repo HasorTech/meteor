@@ -9,6 +9,7 @@ package net.hasor.meteor.protocol.grpc;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.ObjLongConsumer;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -19,6 +20,7 @@ import net.hasor.meteor.connector.ProtocolSessionContext;
 import net.hasor.meteor.connector.RouteMountIndex;
 import net.hasor.meteor.connector.transport.NetworkChannel;
 import net.hasor.meteor.connector.transport.http.HttpProtocolProvider;
+import net.hasor.meteor.connector.transport.http.HttpServicePathUtils;
 import net.hasor.meteor.connector.transport.http.channel.HttpExchange;
 import net.hasor.meteor.domain.ProtocolBinding;
 import net.hasor.meteor.domain.ProtocolConfig;
@@ -31,6 +33,16 @@ import net.hasor.meteor.protocol.grpc.session.GrpcWebSession;
 
 /** gRPC-Web 的 HTTP 挂载入口，复用 gRPC 服务映射与调用生命周期。 */
 public final class GrpcWebProtocol implements HttpProtocolProvider {
+    @Override
+    public Set<Integer> httpVersions(ProtocolConfig config) {
+        return Set.of(1, 2);
+    }
+
+    @Override
+    public Set<String> endpointTypes() {
+        return Set.of("endpoint", "http", "schema");
+    }
+
     private final Map<ProtocolConfig, GrpcMountRuntime> runtimes = new ConcurrentHashMap<>();
 
     @Override
@@ -64,7 +76,11 @@ public final class GrpcWebProtocol implements HttpProtocolProvider {
         // 从同一份端点定义导出契约，一次创建完整发布绑定。
         ObjectNode description = meta.createServiceDescription(config, this.defaultSerialize());
         definition.describeContract(description);
-        return meta.build(config, definition, description);
+        ProtocolBinding binding = HttpServicePathUtils.bind(config, meta, definition, description);
+        if (definition.schemaResource() != null) {
+            definition.schemaResource().describe(binding, List.of(definition.serviceName()));
+        }
+        return binding;
     }
 
     @Override

@@ -19,6 +19,7 @@ import net.hasor.cobble.StringUtils;
 import net.hasor.cobble.concurrent.future.Cancellable;
 import net.hasor.meteor.domain.MetServiceType;
 import net.hasor.meteor.registry.shared.storage.DirectoryFilter;
+import net.hasor.meteor.registry.shared.storage.ServiceMethodUtils;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
 import net.hasor.meteor.registry.shared.storage.domain.*;
 import net.hasor.meteor.registry.shared.utils.RegistryJson;
@@ -214,10 +215,33 @@ final class NacosRegistry implements StorageAccess {
     }
 
     @Override
+    public ServiceMethodPage serviceMethods(String serviceId, String methodName, DirectoryQuery query) throws Exception {
+        this.requireOpen();
+        ServiceMethodUtils.validate(query);
+        ServiceMethodPage page = new ServiceMethodPage();
+        page.setListingSupported(false);
+        if (StringUtils.isNotBlank(methodName) && query.getCursor() == null) {
+            EntServiceMethodData value = this.configStore.get(methodKey(serviceId, methodName), EntServiceMethodData.class);
+            if (value != null) {
+                page.getItems().add(value);
+            }
+        }
+        return page;
+    }
+
+    private static String methodKey(String serviceId, String methodName) {
+        // 独立散列服务与方法，避免 dataId 的 256 字符上限。
+        return "methods." + ServiceMethodUtils.path(serviceId, methodName).replace('/', '.');
+    }
+
+    @Override
     public synchronized void registerService(String instanceId, EntServiceRuntimeData value) throws Exception {
         EntInstanceRuntimeData instance = this.ownInstance(instanceId);
         String id = value.getServiceId();
         this.saveService(value);
+        for (EntServiceMethodData added : ServiceMethodUtils.extract(value).values()) {
+            this.configStore.update(methodKey(id, added.getName()), EntServiceMethodData.class, previous -> ServiceMethodUtils.merge(previous, added));
+        }
         this.ensureGovernance(instance, id);
 
         // 关系只保留自身的运行属性；服务声明、实例资料按各自的独立键查询。

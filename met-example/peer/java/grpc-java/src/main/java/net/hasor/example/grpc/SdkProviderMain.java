@@ -41,8 +41,9 @@ public final class SdkProviderMain {
                 .addService(service) //
                 .build().start();
         Runtime.getRuntime().addShutdownHook(new Thread(server::shutdownNow, "grpc-sdk-provider-shutdown"));
+
         try {
-            System.out.println("SDK order provider is ready: http://127.0.0.1:8080/grpc");
+            System.out.println("SDK order provider is ready: http://127.0.0.1:8080/grpc/default/1.0.0");
             server.awaitTermination();
         } finally {
             server.shutdownNow();

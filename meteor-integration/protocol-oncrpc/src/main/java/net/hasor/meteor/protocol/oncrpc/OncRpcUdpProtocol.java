@@ -7,8 +7,10 @@
  */
 package net.hasor.meteor.protocol.oncrpc;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.function.ObjLongConsumer;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.connector.ProtocolSession;
 import net.hasor.meteor.connector.ProtocolSessionContext;
@@ -45,7 +47,9 @@ public final class OncRpcUdpProtocol implements UdpProtocolProvider {
         // 从本端点已准备的契约导出描述，再一次创建完整绑定。
         ObjectNode description = meta.createServiceDescription(config, this.defaultSerialize());
         definition.describeContract(description);
-        return meta.build(config, definition, description);
+        return meta.build(config, definition, description) //
+                .claimRoute(List.of("service-name", StringUtils.defaultIfBlank(meta.getService().getBindName(), description.path("name").asText()))) //
+                .claimRoute(List.of("program", Long.toString(definition.getProgram()), Long.toString(definition.getVersion())));
     }
 
     @Override

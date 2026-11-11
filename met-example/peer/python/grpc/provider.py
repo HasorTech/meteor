@@ -27,7 +27,7 @@ class OrderService(order_pb2_grpc.OrderDemoServiceServicer):
 
 
 def main():
-    # 在固定 context 下发布两个订单方法。
+    # 在协议挂载点后按默认分组和版本发布两个订单方法。
     service = OrderService()
     methods = {
         "save": grpc.unary_unary_rpc_method_handler(
@@ -41,13 +41,14 @@ def main():
             response_serializer=order_pb2.Order.SerializeToString,
         ),
     }
+
     with ThreadPoolExecutor(max_workers=2) as executor:
         server = grpc.server(executor)
-        handler = grpc.method_handlers_generic_handler("grpc/meteor.example.OrderDemoService", methods)
+        handler = grpc.method_handlers_generic_handler("grpc/default/1.0.0/meteor.example.OrderDemoService", methods)
         server.add_generic_rpc_handlers((handler,))
         server.add_insecure_port("127.0.0.1:8080")
         server.start()
-        print("Order provider is ready: 127.0.0.1:8080/grpc", flush=True)
+        print("Order provider is ready: 127.0.0.1:8080/grpc/default/1.0.0", flush=True)
         try:
             server.wait_for_termination()
         finally:

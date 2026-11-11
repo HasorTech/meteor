@@ -6,9 +6,11 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor.registry.admin;
+import java.io.InputStream;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import net.hasor.cobble.StringUtils;
@@ -23,8 +25,8 @@ import net.hasor.meteor.registry.shared.rpc.ServiceData;
 import net.hasor.meteor.registry.shared.rpc.ServiceEndpointData;
 import net.hasor.meteor.registry.shared.rpc.ServiceMemberData;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
-import net.hasor.meteor.registry.shared.storage.domain.EntApplicationCatalogData;
-import net.hasor.meteor.registry.shared.storage.domain.EntConfigurationData;
+import net.hasor.meteor.registry.shared.storage.domain.*;
+import net.hasor.meteor.registry.shared.utils.RegistryJson;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static net.hasor.meteor.registry.shared.RegistryTestUtils.createConfiguration;
@@ -222,6 +224,53 @@ public class AdminQueryTest {
             assertTrue(scoped.fetchMeta().isEmpty());
             assertEquals(Map.of("owner", "service", "weight", 20), service.fetchMeta());
             assertEquals("global", cluster.fetchMeta().get("owner"));
+        }
+    }
+
+    @Test
+    public void persistentMethodsNeverReadInstancesOrMembers() throws Exception {
+        // 正式存储保存一次报告，再禁止管理端访问任何实例和成员读取入口。
+        try (StorageAccess storage = this.configuration.openStorage()) {
+            EntInstanceRuntimeData instance = new EntInstanceRuntimeData();
+            instance.setInstanceId("method-provider");
+            instance.setApplicationName("orders");
+            instance.setIpAddress("127.0.0.1");
+            instance.setProcessId(1L);
+            storage.registerInstance(instance);
+            EntServiceRuntimeData registration = new EntServiceRuntimeData();
+            registration.setServiceId("orders");
+            registration.setRole(MetServiceType.Provider);
+            try (InputStream input = getClass().getResourceAsStream("/method-catalog.json")) {
+                String json = new String(input.readAllBytes(), StandardCharsets.UTF_8);
+                registration.setDescription(RegistryJson.read(json, RefServiceDescriptionData.class));
+            }
+            storage.registerService(instance.getInstanceId(), registration);
+            storage.unregisterService(instance.getInstanceId(), registration.getServiceId());
+            DecoratedRegistryConfiguration observed = new DecoratedRegistryConfiguration(this.configuration, delegate -> {
+                InvocationHandler check = (proxy, method, arguments) -> {
+                    if (List.of("members", "getMember", "instances", "getInstance", "getInstanceService", "instanceServices").contains(method.getName())) {
+                        throw new AssertionError("Method catalogue must not enumerate providers: " + method.getName());
+                    }
+                    try {
+                        return method.invoke(delegate, arguments);
+                    } catch (InvocationTargetException failure) {
+                        throw failure.getCause();
+                    }
+                };
+                Class<?>[] contracts = { StorageAccess.class };
+                return (StorageAccess) Proxy.newProxyInstance(StorageAccess.class.getClassLoader(), contracts, check);
+            });
+            observed.setManagementToken("secret");
+            MetConfiguration config = createConfiguration().addExtension(observed);
+            try (MetContext context = config.buildContext()) {
+                MetServiceAdmin service = context.getExtension(RegistryAdmin.class).getServiceAdmin("orders");
+                MetServiceMethodPage result = service.methods("find", null);
+                assertTrue(result.isListingSupported());
+                assertEquals(2, result.getDefinitions().size());
+                assertEquals(1, result.getDefinitions().get(0).getMethods().size());
+                assertEquals(2, result.getDefinitions().get(0).getTypes().get("example.Node").getProperties().size());
+                assertEquals(3, service.methods(null, null).getDefinitions().size());
+            }
         }
     }
 

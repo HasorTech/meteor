@@ -21,7 +21,7 @@ public final class SdkConsumerMain {
         HessianProxyFactory factory = new HessianProxyFactory();
         factory.setHessian2Request(true);
         factory.setHessian2Reply(true);
-        String endpoint = "http://127.0.0.1:8080/hessian/orders";
+        String endpoint = "http://127.0.0.1:8080/hessian/default/1.0.0/orders";
         OrderDemoService orders = (OrderDemoService) factory.create(OrderDemoService.class, endpoint);
 
         // 业务仍复用普通接口和 DTO，SDK 完成参数与返回值的二进制转换。

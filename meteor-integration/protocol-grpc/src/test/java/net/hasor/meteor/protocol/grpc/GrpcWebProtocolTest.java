@@ -15,7 +15,6 @@ import net.hasor.example.protocol.grpc.Echo;
 import net.hasor.meteor.annotation.MetMessage;
 import net.hasor.meteor.connector.transport.http.HttpProtocolProvider;
 import net.hasor.meteor.connector.transport.http.channel.HttpExchange;
-import net.hasor.meteor.domain.*;
 import net.hasor.meteor.domain.meta.ProtocolMeta;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -54,7 +53,7 @@ public class GrpcWebProtocolTest {
         ProtocolMeta meta = new ProtocolMeta(service, null, null, Map.of());
 
         // Web 协议使用当前配置的默认路径，服务原始声明仍保持未指定。
-        ContextPath effective = new ContextPath(Set.of("/web"), false);
+        ContextPath effective = new ContextPath(Set.of("/web/~/~"), false);
         ProtocolBinding binding = new GrpcWebProtocol().prepareBinding(config, null, meta);
         assertNotNull(binding);
         assertNotNull(binding.getDefinition());

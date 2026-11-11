@@ -20,7 +20,6 @@ import net.hasor.meteor.registry.shared.storage.StorageAccess;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static net.hasor.meteor.registry.shared.RegistryTestUtils.createConfiguration;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class EndpointFilterTest {
@@ -43,8 +42,8 @@ public class EndpointFilterTest {
             RegistryAdmin admin = adminContext.getExtension(RegistryAdmin.class);
 
             // 同一个成员发布 TCP、HTTP 两个挂载。
-            ServiceEndpointData tcp = endpoint("tcp-0", "tcp", "rsf", null);
-            ServiceEndpointData http = endpoint("http-1", "http", "hprose", "/api");
+            ServiceEndpointData tcp = endpoint("tcp", "rsf", null);
+            ServiceEndpointData http = endpoint("http", "hprose", "/api");
             http.setListenAddress("hprose://0.0.0.0:8080");
             http.setPublishedAddress("hprose://example.com:8080");
             store(backend, MetServiceType.Provider, new ServiceEndpointData[] { tcp, http });
@@ -59,28 +58,28 @@ public class EndpointFilterTest {
             assertEquals(1, api.providers(filter, null).getItems().size());
             assertEquals(2, api.providers(filter, null).getItems().get(0).getEndpoints().length);
 
-            // 叠加连接器和路径条件，路径匹配区分大小写。
-            filter.setConnectorName("tcp-0");
+            // 叠加地址和路径条件，路径匹配区分大小写。
+            filter.setAddress(tcp.getListenAddress());
             assertEquals(0, api.providers(filter, null).getItems().size());
-            filter.setConnectorName("http-1");
+            filter.setAddress(http.getListenAddress());
             filter.setContextPath("/API");
             assertEquals(0, api.providers(filter, null).getItems().size());
             filter.setContextPath("/api");
             filter.setScheme("hprose");
 
-            // 配置地址、监听地址、发布地址均可用于匹配。
-            String[] addresses = { http.getConfiguredAddress(), http.getListenAddress(), http.getPublishedAddress() };
+            // 监听地址与发布地址均可用于匹配。
+            String[] addresses = { http.getListenAddress(), http.getPublishedAddress() };
             for (String address : addresses) {
                 filter.setAddress(address);
                 assertEquals(1, api.providers(filter, null).getItems().size());
             }
-            filter.setAddress(tcp.getConfiguredAddress());
+            filter.setAddress(tcp.getListenAddress());
             assertEquals(0, api.providers(filter, null).getItems().size());
             assertEquals(0, api.consumers(null, null).getItems().size());
 
             // 订阅者使用相同筛选规则，返回的端点信息与存储隔离。
             store(backend, MetServiceType.Consumer, new ServiceEndpointData[] { tcp, http });
-            filter.setAddress(http.getConfiguredAddress());
+            filter.setAddress(http.getListenAddress());
             assertEquals(1, api.consumers(filter, null).getItems().size());
             MetServiceMember detached = api.consumers(filter, null).getItems().get(0);
             detached.getEndpoints()[0].setProtocolName("changed");
@@ -117,14 +116,14 @@ public class EndpointFilterTest {
         }
     }
 
-    private static ServiceEndpointData endpoint(String connector, String transport, String protocol, String path) {
+    private static ServiceEndpointData endpoint(String transport, String protocol, String path) {
         ServiceEndpointData result = new ServiceEndpointData();
-        result.setConnectorName(connector);
         result.setTransport(transport);
         result.setProtocolName(protocol);
         result.setScheme(protocol);
         result.setContextPath(path);
-        result.setConfiguredAddress(transport + "://0.0.0.0:0/default");
+        result.setListenAddress(protocol + "://127.0.0.1:9000" + (path == null ? "" : path));
+
         return result;
     }
 

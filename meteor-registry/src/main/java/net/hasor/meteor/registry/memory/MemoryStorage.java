@@ -13,6 +13,7 @@ import net.hasor.cobble.StringUtils;
 import net.hasor.cobble.concurrent.future.Cancellable;
 import net.hasor.meteor.domain.MetServiceType;
 import net.hasor.meteor.registry.shared.storage.DirectoryFilter;
+import net.hasor.meteor.registry.shared.storage.ServiceMethodUtils;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
 import net.hasor.meteor.registry.shared.storage.domain.*;
 import net.hasor.meteor.registry.shared.utils.RegistryJson;
@@ -312,6 +313,39 @@ final class MemoryStorage implements StorageAccess {
     }
 
     @Override
+    public ServiceMethodPage serviceMethods(String serviceId, String methodName, DirectoryQuery query) {
+        ServiceMethodUtils.validate(query);
+        synchronized (this.database) {
+            this.requireOpen();
+            ServiceMethodPage page = new ServiceMethodPage();
+            NavigableMap<String, EntServiceMethodData> entries = this.database.methods.get(serviceId);
+            if (entries == null) {
+                return page;
+            }
+            if (StringUtils.isNotBlank(methodName)) {
+                EntServiceMethodData entry = entries.get(methodName);
+                boolean afterCursor = query.getCursor() == null || methodName.compareTo(query.getCursor()) > 0;
+                if (entry != null && afterCursor) {
+                    page.getItems().add(copy(entry, EntServiceMethodData.class));
+                }
+                return page;
+            }
+            for (Map.Entry<String, EntServiceMethodData> entry : entries.entrySet()) {
+                String name = entry.getKey();
+                if (query.getCursor() != null && name.compareTo(query.getCursor()) <= 0) {
+                    continue;
+                }
+                if (page.getItems().size() == query.getLimit()) {
+                    page.setNextCursor(page.getItems().get(page.getItems().size() - 1).getName());
+                    break;
+                }
+                page.getItems().add(copy(entry.getValue(), EntServiceMethodData.class));
+            }
+            return page;
+        }
+    }
+
+    @Override
     public void registerService(String instanceId, EntServiceRuntimeData service) {
         String serviceId = required(service.getServiceId());
         Objects.requireNonNull(service.getRole(), "Service role is required");
@@ -319,6 +353,10 @@ final class MemoryStorage implements StorageAccess {
             this.requireOpen();
             EntInstanceRuntimeData instance = this.requireOwner(instanceId);
             this.saveService(service);
+            ServiceMethodUtils.extract(service).forEach((name, added) -> {
+                NavigableMap<String, EntServiceMethodData> methods = this.database.methods.computeIfAbsent(serviceId, key -> new TreeMap<>());
+                methods.put(name, ServiceMethodUtils.merge(methods.get(name), added));
+            });
 
             NavigableMap<String, EntServiceRuntimeData> entries = this.database.instanceServices.computeIfAbsent(instanceId, key -> new TreeMap<>());
             EntServiceRuntimeData previous = entries.get(serviceId);

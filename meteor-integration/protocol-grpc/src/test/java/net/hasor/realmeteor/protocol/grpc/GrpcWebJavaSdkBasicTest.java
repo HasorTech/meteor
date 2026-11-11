@@ -33,9 +33,9 @@ import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
 import net.hasor.peer.protocol.grpc.GrpcSdkContract;
 import okhttp3.OkHttpClient;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.Timeout;
 
 /** 同进程直接调用官方 JVM 客户端与 Armeria 服务端，分别和 Meteor 的 gRPC-Web 端点互通。 */
 public class GrpcWebJavaSdkBasicTest {
@@ -54,7 +54,7 @@ public class GrpcWebJavaSdkBasicTest {
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(Echo.class, implementation) //
-                    .aliasName("grpc-web", "example.Echo").serialize("Json").register();
+                    .aliasName("grpc-web", "example.Echo").serialize("Json").contextPathByPrefix("grpc-web", "/").register();
 
             // 帧编码、传输和 JSON 映射使用官方 Connect JVM SDK 的 GRPC_WEB 模式。
             OkHttpClient http = new OkHttpClient.Builder().callTimeout(10, TimeUnit.SECONDS).build();
@@ -109,7 +109,7 @@ public class GrpcWebJavaSdkBasicTest {
                 client.start();
                 MetBindInfo<Echo> service = client.publisher().rsfService(Echo.class) //
                         .aliasName("grpc-web", "example.Echo").serialize("Protobuf") //
-                        .bindResource("grpc-web", resource).register();
+                        .bindResource("grpc-web", resource).contextPathByPrefix("grpc-web", "/").register();
 
                 // SDK 前缀与数值变化证明请求确实经过该服务；消费者无本地实现。
                 InterAddress address = new InterAddress("grpc-web", "127.0.0.1", server.activeLocalPort());

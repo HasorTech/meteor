@@ -14,7 +14,6 @@ import java.util.Map;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import net.hasor.meteor.registry.admin.description.*;
 import net.hasor.meteor.registry.shared.utils.RegistryJson;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -117,7 +116,7 @@ public class DescriptionMappingTest {
         MetTypeDescription array = description.getTypes().get("example.Query[]");
         assertEquals("array", array.getKind());
         assertEquals("example.Query", array.getElementType());
-        MetProtocolDescription protocol = description.getProtocols().get("rsf").get("tcp-main");
+        MetProtocolDescription protocol = DescriptionMapping.protocol((ObjectNode) source.path("protocols").path("rsf").path("tcp-main"));
         assertEquals("lookup", protocol.getName());
         assertEquals("Hessian2", protocol.getSerializeType());
     }
@@ -170,7 +169,7 @@ public class DescriptionMappingTest {
         assertEquals("type", object(type.getExtensions().get("extensions")).get("marker"));
         assertEquals(Boolean.FALSE, type.getExtensions().get("futureType"));
         assertJdkTree(type.getExtensions());
-        MetProtocolDescription protocol = description.getProtocols().get("custom").get("first");
+        MetProtocolDescription protocol = DescriptionMapping.protocol((ObjectNode) source.path("protocols").path("custom").path("first"));
         assertEquals("protocol", object(protocol.getExtensions().get("extensions")).get("marker"));
         assertJdkTree(protocol.getExtensions());
     }
@@ -230,7 +229,7 @@ public class DescriptionMappingTest {
         type.getProperties().get(0).setName("changed");
         List<Object> nested = array(object(returned.getExtensions().get("future")).get("nested"));
         object(nested.get(0)).put("value", "changed");
-        MetProtocolDescription protocol = returned.getProtocols().get("custom").get("first");
+        MetProtocolDescription protocol = DescriptionMapping.protocol((ObjectNode) source.path("protocols").path("custom").path("first"));
         protocol.getMethods().get(0).put("name", "changed");
         object(array(protocol.getMethods().get(0).get("returns")).get(0)).put("type", "changed");
         Map<String, Object> wireType = object(protocol.getTypes().get("wire.Result"));
@@ -246,7 +245,7 @@ public class DescriptionMappingTest {
         assertEquals("text", fresh.getTypes().get("example.Query").getProperties().get(0).getName());
         List<Object> freshNested = array(object(fresh.getExtensions().get("future")).get("nested"));
         assertEquals("original", object(freshNested.get(0)).get("value"));
-        MetProtocolDescription freshProtocol = fresh.getProtocols().get("custom").get("first");
+        MetProtocolDescription freshProtocol = DescriptionMapping.protocol((ObjectNode) source.path("protocols").path("custom").path("first"));
         assertEquals("wireLookup", freshProtocol.getMethods().get(0).get("name"));
         Object freshReturn = array(freshProtocol.getMethods().get(0).get("returns")).get(0);
         assertEquals("wire.Result", object(freshReturn).get("type"));
@@ -273,7 +272,7 @@ public class DescriptionMappingTest {
                 """);
 
         // 协议专属结构原样转为 JDK 树，不借用公共返回 DTO 或猜测 QName 类型。
-        MetProtocolDescription soap = DescriptionMapping.service(source).getProtocols().get("soap").get("http-main");
+        MetProtocolDescription soap = DescriptionMapping.protocol((ObjectNode) source.path("protocols").path("soap").path("http-main"));
         assertEquals("Lookup", soap.getName());
         assertEquals("Xml", soap.getSerializeType());
         assertEquals("1.2", soap.getExtensions().get("version"));
@@ -305,11 +304,11 @@ public class DescriptionMappingTest {
                 """);
 
         // 大整数仍然是 Number，过程参数位置和 union 分支数组都不重排。
-        MetProtocolDescription onc = DescriptionMapping.service(source).getProtocols().get("oncrpc").get("tcp-main");
+        MetProtocolDescription onc = DescriptionMapping.protocol((ObjectNode) source.path("protocols").path("oncrpc").path("tcp-main"));
         Object program = onc.getExtensions().get("program");
         Object version = onc.getExtensions().get("version");
-        assertTrue(program instanceof Number);
-        assertTrue(version instanceof Number);
+        assertInstanceOf(Number.class, program);
+        assertInstanceOf(Number.class, version);
         assertEquals(0xffff_ffffL, ((Number) program).longValue());
         assertEquals(0xffff_fffeL, ((Number) version).longValue());
         Map<String, Object> method = onc.getMethods().get(0);
@@ -340,7 +339,7 @@ public class DescriptionMappingTest {
         Map<String, Object> future = object(description.getExtensions().get("future"));
         assertEquals(amount, future.get("amount"));
         assertEquals(serial, future.get("serial"));
-        MetProtocolDescription protocol = description.getProtocols().get("custom").get("main");
+        MetProtocolDescription protocol = DescriptionMapping.protocol((ObjectNode) source.path("protocols").path("custom").path("main"));
         assertEquals(amount, protocol.getMethods().get(0).get("amount"));
         assertEquals(serial, protocol.getMethods().get(0).get("serial"));
         Map<String, Object> type = object(protocol.getTypes().get("Value"));
@@ -357,7 +356,6 @@ public class DescriptionMappingTest {
         assertNull(first.getContractServiceId());
         assertTrue(first.getMethods().isEmpty());
         assertTrue(first.getTypes().isEmpty());
-        assertTrue(first.getProtocols().isEmpty());
         assertTrue(first.getExtensions().isEmpty());
 
         // 返回集合可以供调用方修改，但不能成为下一次查询的默认共享实例。
@@ -389,7 +387,7 @@ public class DescriptionMappingTest {
     @Test
     public void serializesServiceIdentityBeforeItsBodyAndExtensions() {
         // 服务编号和接口类型先于方法、类型图及端点，消息标记与扩展随后输出。
-        String[] expected = { "contractServiceId", "javaType", "methods", "types", "protocols", //
+        String[] expected = { "contractServiceId", "javaType", "methods", "types", //
                 "message", "extensions" };
         assertArrayEquals(expected, serializedFields(new MetServiceDescription()));
     }
@@ -419,13 +417,13 @@ public class DescriptionMappingTest {
 
     @SuppressWarnings("unchecked")
     private static Map<String, Object> object(Object value) {
-        assertTrue(value instanceof Map<?, ?>, "描述中的对象必须是 JDK Map");
+        assertInstanceOf(Map.class, value, "描述中的对象必须是 JDK Map");
         return (Map<String, Object>) value;
     }
 
     @SuppressWarnings("unchecked")
     private static List<Object> array(Object value) {
-        assertTrue(value instanceof List<?>, "描述中的数组必须是 JDK List");
+        assertInstanceOf(List.class, value, "描述中的数组必须是 JDK List");
         return (List<Object>) value;
     }
 
@@ -433,7 +431,7 @@ public class DescriptionMappingTest {
         assertFalse(value instanceof JsonNode, "公开描述不能残留 Jackson 节点");
         if (value instanceof Map<?, ?> map) {
             for (Map.Entry<?, ?> entry : map.entrySet()) {
-                assertTrue(entry.getKey() instanceof String);
+                assertInstanceOf(String.class, entry.getKey());
                 assertJdkTree(entry.getValue());
             }
         } else if (value instanceof List<?> list) {

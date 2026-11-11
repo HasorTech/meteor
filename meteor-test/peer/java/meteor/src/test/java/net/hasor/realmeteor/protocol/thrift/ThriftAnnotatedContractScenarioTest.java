@@ -414,6 +414,7 @@ public class ThriftAnnotatedContractScenarioTest {
             server.start();
             server.publisher().rsfService(AnnotatedInteropService.class, new AnnotatedInteropServiceImpl()) //
                     .aliasName("thrift-http", "ExtendedInteropService") //
+                    .contextPathByPrefix("thrift-http", "/thrift") //
                     .bindResource("thrift-http", this.contract()).register();
 
             // 官方 THttpClient 直接访问协议挂载路径。
@@ -439,6 +440,7 @@ public class ThriftAnnotatedContractScenarioTest {
             MetBindInfo<AnnotatedInteropService> service = client.publisher() //
                     .rsfService(AnnotatedInteropService.class) //
                     .aliasName("thrift-http", "ExtendedInteropService") //
+                    .contextPathByPrefix("thrift-http", "/thrift") //
                     .bindResource("thrift-http", this.contract()).register();
             InterAddress address = new InterAddress("thrift-http", peer.host(), port);
             AnnotatedInteropService remote = new ThriftClient(client.getRsfClient(address)).getRemote(service);

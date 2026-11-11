@@ -56,12 +56,12 @@ try (MetContext context = configuration.buildContext()) {
 
 `EchoService` 为应用定义的业务接口。消费者安装同一扩展，通过 `publisher().rsfService(EchoService.class).register()` 订阅服务，再用 Meteor RPC 客户端调用。独立管理程序可通过 `registry.buildAdmin()` 获取管理入口，并在结束时关闭。
 
-| 配置                                | 默认值       | 说明                               |
-|-------------------------------------|--------------|------------------------------------|
-| `dataSource`                        | 必填         | 已配置数据库地址和认证信息的数据源 |
-| `leaseMillis`                       | `15000`      | 实例租期，单位毫秒，最小 `300`     |
-| `refreshMillis`                     | `1000`       | 应用注册信息核对间隔，单位毫秒     |
-| `publishHost`                       | 实际监听地址 | 对外发布的主机地址                 |
+| 配置            | 默认值       | 说明                               |
+|-----------------|--------------|------------------------------------|
+| `dataSource`    | 必填         | 已配置数据库地址和认证信息的数据源 |
+| `leaseMillis`   | `15000`      | 实例租期，单位毫秒，最小 `300`     |
+| `refreshMillis` | `1000`       | 应用注册信息核对间隔，单位毫秒     |
+| `publishHost`   | 实际监听地址 | 对外发布的主机地址                 |
 
 访问同一注册库的应用节点需保持系统时钟同步。实例治理使用 `admin.getServiceAdmin(serviceId, instanceId)`，目标实例及服务须已登记；服务级和全局治理可以提前配置。
 
@@ -69,14 +69,14 @@ try (MetContext context = configuration.buildContext()) {
 
 ### 业务表
 
-| 表                         | 主键                                     | 内容与生命周期                                                     |
-|----------------------------|------------------------------------------|--------------------------------------------------------------------|
-| `meteor_applications`      | `application_id`                         | 应用档案，持久                                                     |
-| `meteor_instances`         | `instance_id`                            | 实例档案、所属应用及单元、登记归属、到期时间、运行详情及规则开关 |
-| `meteor_services`          | `service_id`                             | 服务定义及服务规则开关，持久                                       |
-| `meteor_instance_services` | `instance_id, service_id`                | 实例发布或订阅的服务详情、成员角色及交叉范围规则开关，租约内可见   |
-| `meteor_member_protocols`  | `service_id, instance_id, protocol_name` | 成员协议名称，供服务协议汇总，租约内可见                           |
-| `meteor_governance`        | `instance_id, service_id, item_name`     | 各范围的状态、元信息和规则正文                                     |
+| 表                         | 主键                                 | 内容与生命周期                                                   |
+|----------------------------|--------------------------------------|------------------------------------------------------------------|
+| `meteor_applications`      | `application_id`                     | 应用档案，持久                                                   |
+| `meteor_instances`         | `instance_id`                        | 实例档案、所属应用及单元、登记归属、到期时间、运行详情及规则开关 |
+| `meteor_services`          | `service_id`                         | 服务定义及服务规则开关，持久                                     |
+| `meteor_instance_services` | `instance_id, service_id`            | 实例发布或订阅的服务详情、成员角色及交叉范围规则开关，租约内可见 |
+| `meteor_service_methods`   | `id`；`method_path` 普通索引         | 服务方法定义数组，按服务和方法名追加去重，持久                   |
+| `meteor_governance`        | `instance_id, service_id, item_name` | 各范围的状态、元信息和规则正文                                   |
 
 以上六张均为普通数据库表。ID 主键列使用业务 ID 的 SHA-256 十六进制值；原始 ID、应用名和服务定义保存在 JSON 正文中，搜索列保留可读原值。
 
@@ -86,11 +86,13 @@ try (MetContext context = configuration.buildContext()) {
 | 实例档案         | `meteor_instances.body` / `revision`                                |
 | 实例运行详情     | `meteor_instances.runtime_body` / `runtime_revision`                |
 | 最近实例登记会话 | `meteor_instances.session_id`，离线后保留                           |
-| 实例到期时间     | `meteor_instances.expires_at`，UTC 毫秒；未登记或正常离线为 `NULL` |
+| 实例到期时间     | `meteor_instances.expires_at`，UTC 毫秒；未登记或正常离线为 `NULL`  |
 | 服务定义         | `meteor_services.body` / `revision`                                 |
 | 实例服务详情     | `meteor_instance_services.body` / `revision`                        |
 | 成员角色         | `meteor_instance_services.member_role`，取 `Provider` 或 `Consumer` |
-| 协议名称         | `meteor_member_protocols.protocol_name`                             |
+| 协议名称         | `meteor_instance_services.search_protocol`                          |
+
+协议名称随实例服务记录保存，不再创建独立协议表。服务协议汇总只读取在线成员的 `search_protocol`，不反序列化完整服务描述。已有库无需搬迁数据；停止旧版写入进程后，可执行 `DROP TABLE meteor_member_protocols;` 移除废弃表及其索引，新代码不会自动删表。
 
 实例服务关系通过 `instance_id` 关联实例，通过 `service_id` 关联服务定义。关系与实例属于同一登记会话、实例运行详情非空且 `expires_at` 晚于当前时间时，成员处于在线状态。
 
@@ -153,3 +155,7 @@ try (MetContext context = configuration.buildContext()) {
 `ruleEnabled` 按规则类型保存布尔值，禁用时保留正文。`ruleCleared` 记录显式清空的规则类型：`rule=null` 表示恢复继承，`rule=""` 表示显式清空。删除规则时清除其正文、开关和清空标记。
 
 全局状态行可仅保存规则开关，此时 `body` 为 SQL `NULL`。全局与服务治理持久保留，实例及实例服务治理随应用登记失效。
+
+### 方法目录
+
+提供者上报时按服务和方法名保存定义数组，重载和不同类型结构追加去重；实例下线后保留。方法列表按服务键前缀分页，不枚举提供者。存储结构变更后重建注册库，执行对应数据库的完整建表脚本，再让应用重新上报。

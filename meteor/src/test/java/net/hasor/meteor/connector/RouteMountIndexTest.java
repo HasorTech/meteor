@@ -131,7 +131,7 @@ public class RouteMountIndexTest {
         ProtocolConfig protocol = ProtocolConfig.newConfig("grpc", "http", options);
         RouteMountIndex routes = new RouteMountIndex("unit", protocol);
         ServiceDomain<Runnable> service = new ServiceDomain<>(Runnable.class);
-        service.setBindContextPaths("grpc", new ContextPath(List.of("/other", "/default"), false));
+        service.setBindContextPaths("grpc", new ContextPath(List.of("/other", "/"), false));
 
         // 默认目录仍负责生成出站地址，不因服务声明顺序而改变。
         assertEquals("/default/example.Echo/echo", routes.requestPath(service, "example.Echo/echo"));
@@ -147,7 +147,7 @@ public class RouteMountIndexTest {
         service.setBindContextPaths("grpc", new ContextPath(List.of("/orders"), false));
 
         // 生成地址必须使用服务已经选择的目录。
-        assertEquals("/orders/example.Echo/echo", routes.requestPath(service, "example.Echo/echo"));
+        assertEquals("/default/orders/example.Echo/echo", routes.requestPath(service, "example.Echo/echo"));
     }
 
     @Test
@@ -156,10 +156,10 @@ public class RouteMountIndexTest {
         ProtocolConfig protocol = ProtocolConfig.newConfig("grpc", "http", Map.of("contextPath", "/echo"));
         RouteMountIndex routes = new RouteMountIndex("unit", protocol);
         ServiceDomain<Runnable> service = new ServiceDomain<>(Runnable.class);
-        service.setBindContextPaths("grpc", new ContextPath(List.of("/echo"), true));
+        service.setBindContextPaths("grpc", new ContextPath(List.of("/"), true));
 
         // 只有精确匹配入口能接受该服务，普通目录入口不能调用它。
-        assertTrue(routes.accepts(service, RouteMount.exact("/echo")));
+        assertTrue(routes.accepts(service, RouteMount.exact("/echo/")));
         assertFalse(routes.accepts(service, routes.match("/echo")));
     }
 

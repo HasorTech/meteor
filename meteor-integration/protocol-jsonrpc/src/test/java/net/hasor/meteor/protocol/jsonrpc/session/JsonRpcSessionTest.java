@@ -16,12 +16,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.hasor.example.protocol.jsonrpc.TestConfigurationUtils;
 import net.hasor.cobble.concurrent.future.BasicFuture;
 import net.hasor.cobble.concurrent.future.Cancellable;
 import net.hasor.cobble.concurrent.future.Future;
 import net.hasor.example.protocol.jsonrpc.JsonRpcDemoService;
 import net.hasor.example.protocol.jsonrpc.JsonRpcDemoServiceImpl;
+import net.hasor.example.protocol.jsonrpc.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
@@ -111,7 +111,7 @@ public class JsonRpcSessionTest {
             network.writeResult.failed(failure);
             assertSame(failure, sent.getCause());
             for (Payload payload : received) {
-                assertTrue(payload instanceof ThrowPayload);
+                assertInstanceOf(ThrowPayload.class, payload);
             }
         }
     }
@@ -190,7 +190,7 @@ public class JsonRpcSessionTest {
             network.writes.get(0).respond(response("{malformed"));
             network.writes.get(1).respond(response("{\"jsonrpc\":\"2.0\",\"result\":\"ok\",\"id\":23}"));
             assertEquals(2, received.size());
-            assertTrue(received.get(0) instanceof ThrowPayload);
+            assertInstanceOf(ThrowPayload.class, received.get(0));
             ResponsePayload success = (ResponsePayload) received.get(1);
             assertEquals(23, success.getRequestID());
             assertEquals("ok", success.getReturnData());
@@ -358,7 +358,7 @@ public class JsonRpcSessionTest {
         context.publisher().rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                 .name("Echo") //
                 .aliasName("jsonrpc", "demo") //
-                .register();
+                .contextPathByPrefix("jsonrpc", "/").register();
     }
 
     private static MetConfiguration applicationConfiguration() {

@@ -58,7 +58,7 @@ public class ThriftCodecTest {
                 .setDefaultProtocol("thrift") //
                 .setDefaultGroup("wire");
         configuration.connector("tcp") //
-                .protocol("thrift");
+                .protocol("thrift").option("multiplexed", true);
         this.context = configuration.buildContext();
         this.service = this.context.publisher() //
                 .rsfService(ThriftDemoService.class, new ThriftDemoServiceImpl()) //
@@ -194,7 +194,7 @@ public class ThriftCodecTest {
         // 参数恢复为方法需要的原生缓冲区，不能把 byte[] 直接交给 Dispatcher。
         assertEquals(List.of(ByteBuffer.class.getName()), request.getParameterTypes());
         Object parameter = request.getParameterValues().get(0);
-        assertTrue(parameter instanceof ByteBuffer);
+        assertInstanceOf(ByteBuffer.class, parameter);
         assertEquals(value, parameter);
     }
 
@@ -439,7 +439,7 @@ public class ThriftCodecTest {
         ProtocolConfig protocol = ProtocolConfig.newConfig("thrift", "thrift", Map.of("multiplexed", "true"));
         RouteMountIndex routes = new RouteMountIndex("tcp-0", protocol);
         ThriftCodec codec = new ThriftCodec(protocol, routes, this.context);
-        ThriftMessage original = this.message("interop:echo", TMessageType.CALL, new InteropService.echo_args("mux"));
+        ThriftMessage original = this.message("wire/1.0.0/interop:echo", TMessageType.CALL, new InteropService.echo_args("mux"));
         RequestPayload request = codec.decodeRequest(original);
         ResponsePayload response = new ResponsePayload();
         response.setStatus(ProtocolStatus.OK);
@@ -455,7 +455,7 @@ public class ThriftCodecTest {
     @Test
     public void multiplexedErrorsAlsoUseBareMethodName() throws Exception {
         // 请求已经带有服务前缀，错误响应同样遵守标准裸方法名规则。
-        ThriftMessage original = this.message("interop:echo", TMessageType.CALL, new InteropService.echo_args("mux"));
+        ThriftMessage original = this.message("wire/1.0.0/interop:echo", TMessageType.CALL, new InteropService.echo_args("mux"));
         TApplicationException failure = new TApplicationException(TApplicationException.UNKNOWN_METHOD, "missing");
         byte[] bytes = this.codec.encodeError(original, failure);
 
@@ -481,16 +481,14 @@ public class ThriftCodecTest {
 
     @Test
     public void nonMultiplexedEndpointRejectsAmbiguousServices() throws Exception {
-        // 同一非复用端点挂载两个服务，裸方法头不能选择其中一个。
-        this.context.publisher().rsfService(ThriftDemoService.class, new ThriftDemoServiceImpl()) //
-                .name("Other").aliasName("thrift", "other").register();
-        ThriftMessage message = this.message("echo", TMessageType.CALL, new InteropService.echo_args("value"));
-
-        // 在参数解析前拒绝歧义，不能依赖服务遍历顺序。
-        TApplicationException failure = assertThrows(TApplicationException.class, //
-                () -> this.codec.decodeRequest(message));
-        assertEquals(TApplicationException.UNKNOWN_METHOD, failure.getType());
-        assertTrue(failure.getMessage().contains("Ambiguous"));
+        // 重复发布在登记阶段拒绝，原来的唯一服务继续可用。
+        MetConfiguration configuration = TestConfigurationUtils.create().setDefaultProtocol("thrift");
+        configuration.connector("tcp").protocol("thrift");
+        try (MetContext isolated = configuration.buildContext()) {
+            isolated.publisher().rsfService(ThriftDemoService.class, new ThriftDemoServiceImpl()).register();
+            assertThrows(IllegalArgumentException.class, () -> isolated.publisher().rsfService(ThriftDemoService.class, new ThriftDemoServiceImpl()).name("Other").register());
+            assertNotNull(isolated.getServiceInfo(ThriftDemoService.class));
+        }
     }
 
     @Test
@@ -555,9 +553,12 @@ public class ThriftCodecTest {
             ThriftMessage message = this.message("echo", TMessageType.CALL, new InteropService.echo_args("visible"));
 
             // 选中的挂载可解码该服务，客户端请求路径也采用同一选择。
-            RequestPayload request = codec.decodeRequest(message, routes.match("/private"));
+            ProtocolConfig childProtocol = ProtocolConfig.newConfig("thrift-http", "thrift-http", //
+                    Map.of("contextPath", "/rpc/private"));
+            RouteMountIndex childRoutes = new RouteMountIndex("http-0", childProtocol);
+            RequestPayload request = codec.decodeRequest(message, childRoutes.match("/rpc/private"));
             assertEquals("Private", request.getServiceName());
-            assertEquals("/private", codec.requestPath(request));
+            assertEquals("/rpc/private", codec.requestPath(request));
         }
     }
 

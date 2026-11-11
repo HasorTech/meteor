@@ -209,7 +209,7 @@ final class DirectoryMapping {
         member.setService(service(record.getService()));
         member.setEnabled(record.getService().isEnabled());
         member.setUsedProtocols(record.getService().getUsedProtocols());
-        member.setEndpoints(RegistryJson.copy(record.getService().getEndpoints(), MetServiceEndpoint[].class));
+        member.setEndpoints(DescriptionMapping.endpoints(record.getService().getEndpoints()));
         return member;
     }
 }

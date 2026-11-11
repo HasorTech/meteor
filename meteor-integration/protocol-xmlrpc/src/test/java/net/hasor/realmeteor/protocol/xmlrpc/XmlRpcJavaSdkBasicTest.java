@@ -7,6 +7,7 @@
  */
 package net.hasor.realmeteor.protocol.xmlrpc;
 import java.net.URI;
+import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.xmlrpc.TestConfigurationUtils;
 import net.hasor.example.protocol.xmlrpc.XmlRpcDemoService;
 import net.hasor.example.protocol.xmlrpc.XmlRpcDemoServiceImpl;
@@ -18,9 +19,8 @@ import net.hasor.peer.protocol.xmlrpc.XmlRpcJavaSdkServer;
 import org.apache.xmlrpc.client.XmlRpcClient;
 import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** 当前插件与原生 Java SDK 的同 JVM 双向基础网络调用。 */
 public class XmlRpcJavaSdkBasicTest {
@@ -39,7 +39,7 @@ public class XmlRpcJavaSdkBasicTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo").protocol("xmlrpc") //
-                    .register();
+                    .contextPathByPrefix("xmlrpc", "/").register();
 
             // 直接使用 SDK 的公开 Java 客户端，仍通过随机监听端口完成真实 HTTP 往返。
             int port = server.getListenAddress("xmlrpc").getPort();
@@ -72,7 +72,7 @@ public class XmlRpcJavaSdkBasicTest {
             MetBindInfo<XmlRpcDemoService> service = client.publisher() //
                     .rsfService(XmlRpcDemoService.class) //
                     .aliasName("xmlrpc", "demo").protocol("xmlrpc") //
-                    .register();
+                    .contextPathByPrefix("xmlrpc", "/").register();
 
             // 前缀只能由 SDK 服务端添加，确保不是同 JVM 的本地调用捷径或普通回显。
             InterAddress address = new InterAddress("xmlrpc", "127.0.0.1", server.getPort());

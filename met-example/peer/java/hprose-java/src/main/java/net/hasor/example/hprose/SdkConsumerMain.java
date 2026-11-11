@@ -19,7 +19,7 @@ public final class SdkConsumerMain {
 
     public static void main(String[] arguments) throws Exception {
         // 官方 SDK 创建 HTTP 代理，使用与 Meteor 发布配置一致的函数前缀。
-        HproseHttpClient client = new HproseHttpClient("http://127.0.0.1:8080/hprose");
+        HproseHttpClient client = new HproseHttpClient("http://127.0.0.1:8080/hprose/default/1.0.0");
         try {
             OrderDemoService orders = client.useService(OrderDemoService.class, "orders");
 

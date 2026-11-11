@@ -46,13 +46,13 @@ public class HproseContextPathTest {
             context.publisher() //
                     .rsfService(Echo.class, value -> value) //
                     .name("default") //
-                    .aliasName("Hprose", "default") //
+                    .aliasName("Hprose", "default").contextPathByPrefix("hprose", "/") //
                     .register();
             context.publisher() //
                     .rsfService(Echo.class, value -> value) //
                     .name("private") //
                     .aliasName("Hprose", "private") //
-                    .contextPathByPrefix("hprose", "/rpc/private") //
+                    .contextPathByPrefix("hprose", "/private") //
                     .register();
 
             // 默认入口的发现请求只返回默认挂载点上的方法。
@@ -77,13 +77,13 @@ public class HproseContextPathTest {
             context.publisher() //
                     .rsfService(Echo.class, value -> value) //
                     .name("default") //
-                    .aliasName("Hprose", "default") //
+                    .aliasName("Hprose", "default").contextPathByPrefix("hprose", "/") //
                     .register();
             context.publisher() //
                     .rsfService(Echo.class, value -> value) //
                     .name("private") //
                     .aliasName("Hprose", "private") //
-                    .contextPathByPrefix("hprose", "/rpc/private") //
+                    .contextPathByPrefix("hprose", "/private") //
                     .register();
             ProtocolConfig protocol = this.protocol(context);
             HproseHttpCodec codec = new HproseHttpCodec(protocol, this.routes(context, protocol), context);
@@ -114,7 +114,7 @@ public class HproseContextPathTest {
                     .rsfService(Echo.class, value -> value) //
                     .name("private") //
                     .aliasName("Hprose", "shared") //
-                    .contextPathByPrefix("hprose", "/rpc/private") //
+                    .contextPathByPrefix("hprose", "/private") //
                     .register();
             ProtocolConfig protocol = this.protocol(context);
             HproseHttpCodec codec = new HproseHttpCodec(protocol, this.routes(context, protocol), context);
@@ -136,13 +136,13 @@ public class HproseContextPathTest {
             context.publisher() //
                     .rsfService(Echo.class, value -> value) //
                     .name("default") //
-                    .aliasName("Hprose", "default") //
+                    .aliasName("Hprose", "default").contextPathByPrefix("hprose", "/") //
                     .register();
             context.publisher() //
                     .rsfService(Echo.class, value -> value) //
                     .name("private") //
                     .aliasName("Hprose", "private") //
-                    .contextPathByPrefix("hprose", "/rpc/private") //
+                    .contextPathByPrefix("hprose", "/private") //
                     .register();
             ProtocolConfig protocol = this.protocol(context);
             HproseHttpCodec codec = new HproseHttpCodec(protocol, this.routes(context, protocol), context);
@@ -173,7 +173,7 @@ public class HproseContextPathTest {
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<Echo> service = context.publisher() //
                     .rsfService(Echo.class) //
-                    .contextPathByPrefix("hprose", "/rpc/private", "/rpc") //
+                    .contextPathByPrefix("hprose", "/private", "/") //
                     .register();
             ProtocolConfig protocol = this.protocol(context);
             HproseHttpCodec codec = new HproseHttpCodec(protocol, this.routes(context, protocol), context);
@@ -191,14 +191,14 @@ public class HproseContextPathTest {
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<Echo> service = context.publisher() //
                     .rsfService(Echo.class) //
-                    .contextPathByPrefix("hprose", "/alternate", "/rpc/private") //
+                    .contextPathByPrefix("hprose", "/alternate", "/private") //
                     .register();
             ProtocolConfig protocol = this.protocol(context);
             HproseHttpCodec codec = new HproseHttpCodec(protocol, this.routes(context, protocol), context);
 
             // 协议配置中附加入口的声明顺序不能覆盖服务自己的选择。
             HttpRequest request = codec.encodeRequest(this.request(service));
-            assertEquals("/alternate", request.uri());
+            assertEquals("/rpc/alternate", request.uri());
         }
     }
 
@@ -245,7 +245,7 @@ public class HproseContextPathTest {
                     this.call("stream_watch"), 1, Map.of());
             HproseDecodedCall call = codec.decodeRequest(request).calls().get(0);
             assertNull(call.request());
-            assertTrue(call.failure() instanceof MetException);
+            assertInstanceOf(MetException.class, call.failure());
             MetException failure = (MetException) call.failure();
             assertEquals(ProtocolStatus.NotFound, failure.getStatus());
         }

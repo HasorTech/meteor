@@ -68,7 +68,7 @@ public class ServiceContextPublicationTest {
             // 快照与路径筛选都以服务实际选择为准。
             MetServiceAdmin service = context.getExtension(RegistryAdmin.class).getServiceAdmin(id);
             MetServiceMember member = service.providers(null, null).getItems().get(0);
-            assertEquals(List.of("/one"), contextPaths(member));
+            assertEquals(List.of("/default/one"), contextPaths(member));
             MetEndpointFilter filter = new MetEndpointFilter();
             filter.setContextPath("/default");
             assertTrue(service.providers(filter, null).getItems().isEmpty());
@@ -86,26 +86,25 @@ public class ServiceContextPublicationTest {
             context.start();
             context.getExtension(RegistryClient.class).pushSync().get(5, TimeUnit.SECONDS);
 
-            // 每个挂载路径对应独立的完整发现地址。
+            // 多个服务子路径共享协议挂载点的 SDK 发现地址。
             EntServiceRuntimeData stored = storage.getInstanceService(context.getInstanceID(), id);
             List<String> storedPaths = Arrays.stream(stored.getEndpoints()) //
                     .map(RefProtocolMountData::getContextPath).toList();
-            assertEquals(List.of("/one", "/two"), storedPaths);
-            assertEquals(2, stored.getAddresses().length);
+            assertEquals(List.of("/default/one", "/default/two"), storedPaths);
+            assertEquals(1, stored.getAddresses().length);
             assertEquals(stored.getAddresses()[0], stored.getEndpoints()[0].getPublishedAddress());
-            assertEquals(stored.getAddresses()[1], stored.getEndpoints()[1].getPublishedAddress());
-            assertNotEquals(stored.getAddresses()[0], stored.getAddresses()[1]);
+            assertEquals(stored.getAddresses()[0], stored.getEndpoints()[1].getPublishedAddress());
 
             // 按其中任一路径筛选仍返回完整成员，不截断其他已发布上下文。
             MetServiceAdmin service = context.getExtension(RegistryAdmin.class).getServiceAdmin(id);
             MetEndpointFilter filter = new MetEndpointFilter();
             filter.setProtocol("registry-http");
-            filter.setContextPath("/one");
+            filter.setContextPath("/default/one");
             MetServiceMember first = service.providers(filter, null).getItems().get(0);
-            assertEquals(List.of("/one", "/two"), contextPaths(first));
-            filter.setContextPath("/two");
+            assertEquals(List.of("/default/one", "/default/two"), contextPaths(first));
+            filter.setContextPath("/default/two");
             MetServiceMember second = service.providers(filter, null).getItems().get(0);
-            assertEquals(List.of("/one", "/two"), contextPaths(second));
+            assertEquals(List.of("/default/one", "/default/two"), contextPaths(second));
             filter.setContextPath("/default");
             assertTrue(service.providers(filter, null).getItems().isEmpty());
         }
@@ -130,7 +129,7 @@ public class ServiceContextPublicationTest {
             TargetAdmin targets = caller.getExtension(TargetAdmin.class);
             MetServiceAdmin service = targets.getServiceAdminByAddress(context.getListenAddress("rsf"), id);
             MetServiceMember member = service.providers(null, null).getItems().get(0);
-            assertEquals(List.of("/one", "/two"), contextPaths(member));
+            assertEquals(List.of("/default/one", "/default/two"), contextPaths(member));
             assertNull(member.getEndpoints()[0].getPublishedAddress());
             assertNull(member.getEndpoints()[1].getPublishedAddress());
         }
@@ -150,7 +149,7 @@ public class ServiceContextPublicationTest {
             MetServiceAdmin service = context.getExtension(RegistryAdmin.class).getServiceAdmin(id);
             MetServiceMember member = service.consumers(null, null).getItems().get(0);
             assertEquals(List.of("/default"), contextPaths(member));
-            assertFalse(member.getEndpoints()[0].isBindEnabled());
+
             assertNull(member.getEndpoints()[0].getListenAddress());
             assertEquals(0, member.getAddresses().length);
         }
@@ -171,14 +170,14 @@ public class ServiceContextPublicationTest {
             EntServiceRuntimeData stored = storage.getInstanceService(context.getInstanceID(), id);
             List<String> storedPaths = Arrays.stream(stored.getEndpoints()) //
                     .map(RefProtocolMountData::getContextPath).toList();
-            assertEquals(List.of("/one", "/two"), storedPaths);
+            assertEquals(List.of("/default/one", "/default/two"), storedPaths);
             MetServiceAdmin service = context.getExtension(RegistryAdmin.class).getServiceAdmin(id);
             MetEndpointFilter filter = new MetEndpointFilter();
-            filter.setContextPath("/two");
+            filter.setContextPath("/default/two");
             MetServiceMember member = service.consumers(filter, null).getItems().get(0);
-            assertEquals(List.of("/one", "/two"), contextPaths(member));
+            assertEquals(List.of("/default/one", "/default/two"), contextPaths(member));
             for (MetServiceEndpoint endpoint : member.getEndpoints()) {
-                assertFalse(endpoint.isBindEnabled());
+
                 assertNull(endpoint.getListenAddress());
                 assertNull(endpoint.getPublishedAddress());
             }
@@ -215,9 +214,7 @@ public class ServiceContextPublicationTest {
         application.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("registry-http") //
-                .contextPath("/default") //
-                .addContextPath("/one") //
-                .addContextPath("/two");
+                .contextPath("/default");
         return application;
     }
 
@@ -228,9 +225,7 @@ public class ServiceContextPublicationTest {
                 .protocol("rsf");
         application.connector("http") //
                 .protocol("registry-http") //
-                .contextPath("/default") //
-                .addContextPath("/one") //
-                .addContextPath("/two");
+                .contextPath("/default");
         return application;
     }
 

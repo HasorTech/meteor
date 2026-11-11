@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hprose;
+import java.util.concurrent.TimeUnit;
 import hprose.client.HproseHttpClient;
 import net.hasor.example.protocol.hprose.Echo;
 import net.hasor.example.protocol.hprose.EchoService;
@@ -16,9 +17,8 @@ import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.peer.protocol.hprose.HproseJavaSdkServer;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** 当前插件与原生 Java SDK 的同 JVM 双向基础网络调用。 */
 public class HproseJavaSdkBasicTest {
@@ -38,7 +38,7 @@ public class HproseJavaSdkBasicTest {
                     .rsfService(Echo.class, new EchoService()) //
                     .aliasName("Hprose", "demo").protocol("hprose") //
                     .serialize("Hprose") //
-                    .register();
+                    .contextPathByPrefix("hprose", "/").register();
 
             // 直接使用 SDK 的公开 Java 客户端，仍通过随机监听端口完成真实 HTTP 往返。
             int port = server.getListenAddress("hprose").getPort();
@@ -72,7 +72,7 @@ public class HproseJavaSdkBasicTest {
                     .rsfService(Echo.class) //
                     .aliasName("Hprose", "demo").protocol("hprose") //
                     .serialize("Hprose") //
-                    .register();
+                    .contextPathByPrefix("hprose", "/").register();
 
             // 前缀只能由 SDK 服务端添加，确保不是同 JVM 的本地调用捷径或普通回显。
             InterAddress address = new InterAddress("hprose", "127.0.0.1", server.getPort());

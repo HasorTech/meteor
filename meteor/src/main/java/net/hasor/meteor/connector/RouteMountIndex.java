@@ -9,6 +9,7 @@ package net.hasor.meteor.connector;
 import java.util.*;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetBindInfo;
+import net.hasor.meteor.connector.transport.http.HttpServicePathUtils;
 import net.hasor.meteor.domain.ContextPath;
 import net.hasor.meteor.domain.MetServiceType;
 import net.hasor.meteor.domain.ProtocolBinding;
@@ -155,7 +156,17 @@ public final class RouteMountIndex {
             return binding == null ? null : binding.getContextPath();
         } else {
             ProtocolMeta meta = MetBindInfoWrap.unwrap(service).getProtocolMeta(this.name);
-            return meta == null ? null : meta.getContextPath();
+            if (meta == null || meta.getContextPath() != null) {
+                return meta == null ? null : meta.getContextPath().resolve(this.contextPath());
+            }
+
+            ProtocolBinding binding = this.binding(service);
+            if (binding != null && binding.getDescription() != null //
+                    && binding.getDescription().path("serviceScoped").asBoolean() && this.contextPath() != null) {
+                String path = HttpServicePathUtils.target(this.contextPath(), service, binding.getDescription());
+                return new ContextPath(List.of(path), false);
+            }
+            return null;
         }
     }
 
@@ -195,7 +206,11 @@ public final class RouteMountIndex {
 
     /** Find a declared mount by its normalized path. */
     private RouteMount get(String path) {
-        return this.mounts.get(path);
+        RouteMount configured = this.mounts.get(path);
+        if (configured == null && path != null && this.match(path) != null) {
+            return new RouteMount(path, false);
+        }
+        return configured;
     }
 
     /** Match the longest directory prefix; query parameters do not participate. */

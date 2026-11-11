@@ -234,7 +234,7 @@ public class ServiceContextPublicationTest {
             MetBindInfo<Runnable> service = context.publisher() //
                     .rsfService(Runnable.class, () -> {
                     }) //
-                    .contextPathByPrefix("httpa", "/missing").contextPathByPrefix("httpb", "/shared") //
+                    .contextPathByPrefix("httpa", "/../missing").contextPathByPrefix("httpb", "/shared") //
                     .contextPathByPrefix("HTTPA", "/inventory").register();
 
             // 被覆盖的未声明路径不再导致登记失败，原有服务协议范围保持不变。
@@ -268,8 +268,8 @@ public class ServiceContextPublicationTest {
     }
 
     @Test
-    public void undeclaredContextIsRejectedAndTheSameServiceCanBeCorrected() throws Exception {
-        // 选择协议未声明的路径会导致发布失败，已有别名也随该次登记一起撤销。
+    public void invalidContextIsRejectedAndTheSameServiceCanBeCorrected() throws Exception {
+        // 包含父目录跳转的路径会导致发布失败，已有别名也随该次登记一起撤销。
         MetConfiguration configuration = TestConfigurationUtils.create();
         configuration.connector("http") //
                 .protocol("httpa") //
@@ -280,11 +280,11 @@ public class ServiceContextPublicationTest {
             MetPublisher.ConfigurationBuilder<Runnable> service = context.publisher() //
                     .rsfService(Runnable.class, () -> {
                     });
-            service.aliasName("task", "orders").contextPathByPrefix("httpa", "/missing");
+            service.aliasName("task", "orders").contextPathByPrefix("httpa", "/../missing");
 
-            // 发布失败清除服务和别名，错误中包含未声明路径。
+            // 发布失败清除服务和别名，错误中包含非法路径。
             IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, service::register);
-            assertTrue(failure.getMessage().contains("/missing"));
+            assertTrue(failure.getMessage().contains("/../missing"));
             assertNull(context.getServiceInfo(Runnable.class));
             assertNull(context.getServiceInfo("task", "orders"));
 

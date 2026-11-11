@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.hasor.meteor.domain.MetServiceType;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
 import net.hasor.meteor.registry.shared.storage.domain.*;
+import net.hasor.meteor.registry.shared.utils.RegistryJson;
 import org.junit.jupiter.api.Test;
 import static net.hasor.meteor.registry.nacos.NacosTestData.instance;
 import static net.hasor.meteor.registry.nacos.NacosTestData.service;
@@ -48,9 +49,9 @@ public class NacosRuntimeGovernanceTest {
             EntServiceRuntimeData registration = service("echo");
             ObjectNode description = JsonNodeFactory.instance.objectNode();
             description.put("javaType", "net.hasor.example.EchoService");
-            registration.setDescription(description);
+            registration.setDescription(RegistryJson.copy(description, RefServiceDescriptionData.class));
             RefProtocolMountData endpoint = new RefProtocolMountData();
-            endpoint.setConnectorName("primary");
+            endpoint.setContextPath("/primary");
             endpoint.setProtocolName("rsf");
             endpoint.setPublishedAddress("rsf://127.0.0.1:8000");
             registration.setEndpoints(new RefProtocolMountData[] { endpoint });
@@ -59,15 +60,16 @@ public class NacosRuntimeGovernanceTest {
 
             // 应用更新服务地址和描述，不能把已有治理字段恢复为空。
             description.put("javaType", "net.hasor.example.UpdatedEchoService");
+            registration.setDescription(RegistryJson.copy(description, RefServiceDescriptionData.class));
             endpoint.setPublishedAddress("rsf://127.0.0.1:9000");
             registration.setAddresses(new String[] { "rsf://127.0.0.1:9000" });
             application.registerInstance(instance("one"));
             application.registerService("one", registration);
             assertEquals("blue", admin.getMetadata("one", "echo").getData().getMetadata().get("team"));
             EntServiceRuntimeData refreshed = admin.getInstanceService("one", "echo");
-            assertEquals(description, refreshed.getDescription());
+            assertEquals(RegistryJson.copy(RegistryJson.copy(description, RefServiceDescriptionData.class), ObjectNode.class), RegistryJson.copy(refreshed.getDescription(), ObjectNode.class));
             assertEquals("rsf", refreshed.getEndpoints()[0].getProtocolName());
-            assertEquals("primary", refreshed.getEndpoints()[0].getConnectorName());
+            assertEquals("/primary", refreshed.getEndpoints()[0].getContextPath());
             assertEquals("rsf://127.0.0.1:9000", refreshed.getEndpoints()[0].getPublishedAddress());
         }
     }

@@ -53,7 +53,7 @@ public final class RouteTable<M> {
     /** Select an HTTP-style route from its request URI. */
     public RouteSelection select(String uri) {
         RouteSelection exact = this.exactResolver == null ? null : this.exactResolver.apply(uri);
-        if (exact != null) {
+        if (exact != null && exact.mount().exact()) {
             return exact;
         }
 
@@ -61,10 +61,13 @@ public final class RouteTable<M> {
         int end = query < 0 ? uri.length() : query;
         for (RouteSelection route : this.prefixes) {
             if (route.matches(uri, end)) {
-                return route;
+                if (exact == null || route.mount().path().length() > exact.mount().path().length()) {
+                    return route;
+                }
+                break;
             }
         }
-        return null;
+        return exact;
     }
 
     /** Validate a protocol name or select the only configured protocol. */

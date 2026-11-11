@@ -18,13 +18,15 @@ import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetSettings;
 import net.hasor.meteor.MetUpdater;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.bootstrap.MetContextImpl;
 import net.hasor.meteor.domain.warp.MetBindInfoWrap;
 import net.hasor.meteor.registry.RegistryAdmin;
 import net.hasor.meteor.registry.admin.MetServiceInfo;
+import net.hasor.meteor.registry.client.support.DefaultRegistryClient;
 import net.hasor.meteor.registry.memory.MemoryRegistryConfiguration;
 import net.hasor.meteor.registry.shared.RegistryTestUtils.Echo;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
-import net.hasor.meteor.registry.shared.storage.domain.*;
+import net.hasor.meteor.registry.shared.utils.RegistryJson;
 import org.junit.jupiter.api.Test;
 import static net.hasor.meteor.registry.shared.RegistryTestUtils.createConfiguration;
 import static net.hasor.meteor.registry.shared.RegistryTestUtils.createDataHome;
@@ -67,7 +69,7 @@ public class RegistrationBoundaryTest {
                     RefServiceRelationData member = storage.getMember(service.getServiceId(), service.getRole(), instanceId);
                     assertEquals(data.getIpAddress(), member.getInstance().getIpAddress());
                     assertTrue(StringUtils.equals(service.getServiceId(), member.getService().getServiceId()));
-                    assertEquals(service.getDescription(), member.getService().getDescription());
+                    assertTrue(RegistryJson.sameData(service.getDescription(), member.getService().getDescription()));
                 }
             }
 
@@ -97,13 +99,13 @@ public class RegistrationBoundaryTest {
 
     @Test
     public void registrationNeverCollectsRuntimeConfigurationOrAddressDiagnostics() throws Exception {
-        // 在正式扩展入口装饰公开接口，诊断读取一旦发生就立即失败。
+        // 装饰注册客户端使用的公开接口，诊断读取一旦发生就立即失败。
         MemoryRegistryConfiguration registry = new MemoryRegistryConfiguration();
         registry.setManagementToken("secret");
         MetConfiguration configuration = createConfiguration();
         configuration.connector("tcp") //
                 .protocol("rsf");
-        configuration.addExtension(context -> {
+        try (MetContext context = configuration.buildContext()) {
             String[] addressMethods = { "queryAvailableAddresses", "queryInvalidAddresses", "queryLocalUnitAddresses" };
             Set<String> addressReads = Set.of(addressMethods);
             Set<String> settingReads = Set.of("getDefaultTimeout", "getRequestTimeout", "getRequestOptions");
@@ -129,19 +131,20 @@ public class RegistrationBoundaryTest {
             Class<?>[] interfaces = { MetContext.class };
             Object proxy = Proxy.newProxyInstance(context.getClassLoader(), interfaces, handler);
             MetContext observed = (MetContext) proxy;
-            return registry.create(observed);
-        });
-
-        try (MetContext context = configuration.buildContext()) {
-            // 启动、全量推送和单服务推拉均只使用登记和治理所需的 API。
-            String id = context.publisher().rsfService(Echo.class).register().getBindID();
-            context.start();
-            RegistryClient client = context.getExtension(RegistryClient.class);
-            client.pushSync().get(5, TimeUnit.SECONDS);
-            client.pushSync(id).get(5, TimeUnit.SECONDS);
-            client.pullSync(id).get(5, TimeUnit.SECONDS);
-            RegistryAdmin admin = context.getExtension(RegistryAdmin.class);
-            assertEquals(1, admin.getServiceAdmin(id).consumers(null, null).getItems().size());
+            try (DefaultRegistryClient client = new DefaultRegistryClient(observed, //
+                    ((MetContextImpl) context).getConnectorManager(), registry::openStorage, 1000, //
+                    null, () -> "secret", registry.getManagementProtocols()); //
+                 RegistryAdmin admin = registry.buildAdmin()) {
+                // 启动、全量推送和单服务推拉均只使用登记和治理所需的 API。
+                String id = context.publisher().rsfService(Echo.class).register().getBindID();
+                client.beforeStart();
+                context.start();
+                client.afterStart();
+                client.pushSync().get(5, TimeUnit.SECONDS);
+                client.pushSync(id).get(5, TimeUnit.SECONDS);
+                client.pullSync(id).get(5, TimeUnit.SECONDS);
+                assertEquals(1, admin.getServiceAdmin(id).consumers(null, null).getItems().size());
+            }
         }
     }
 

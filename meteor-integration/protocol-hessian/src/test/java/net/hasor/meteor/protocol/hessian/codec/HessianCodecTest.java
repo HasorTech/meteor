@@ -308,7 +308,7 @@ public class HessianCodecTest {
     @Test
     public void consumerOnlyServiceIsNotExposed() throws Exception {
         // 订阅类型不是服务端实现。
-        this.fixture.context.publisher().rsfService(Methods.class).name("Consumer").register();
+        this.fixture.context.publisher().rsfService(Methods.class).name("Consumer").contextPathByPrefix("hessian", "/").register();
         byte[] body = HessianCodecTestFixture.call(2, "ping");
 
         // 通过消费者名称访问时返回方法不可用。

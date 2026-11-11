@@ -9,13 +9,12 @@ package net.hasor.meteor.registry.admin;
 
 /** 非空条件共同匹配同一个端点；null 或空白字段不参与筛选。 */
 public final class MetEndpointFilter {
-    private String instanceId    = null; // 精确匹配实例 ID
-    private String connectorName = null; // 实例内的连接器名称
-    private String transport     = null; // 传输 SPI 名称，如 tcp、http
-    private String protocol      = null; // 协议 SPI 名称，如 rsf、hprose
-    private String scheme        = null; // 协议地址 scheme
-    private String contextPath   = null; // 协议上下文路径；未配置时为空
-    private String address       = null; // 精确匹配配置、监听或发布地址之一
+    private String instanceId  = null; // 精确匹配实例 ID
+    private String transport   = null; // 传输 SPI 名称，如 tcp、http
+    private String protocol    = null; // 协议 SPI 名称，如 rsf、hprose
+    private String scheme      = null; // 协议地址 scheme
+    private String contextPath = null; // 协议上下文路径；未配置时为空
+    private String address     = null; // 精确匹配监听、发布或接入点地址
 
     public String getInstanceId() {
         return this.instanceId;
@@ -23,14 +22,6 @@ public final class MetEndpointFilter {
 
     public void setInstanceId(String instanceId) {
         this.instanceId = instanceId;
-    }
-
-    public String getConnectorName() {
-        return this.connectorName;
-    }
-
-    public void setConnectorName(String connectorName) {
-        this.connectorName = connectorName;
     }
 
     public String getTransport() {

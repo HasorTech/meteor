@@ -5,11 +5,10 @@
  */
 package net.hasor.meteor.registry.admin.support;
 import java.util.List;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.hasor.meteor.domain.MetServiceType;
-import net.hasor.meteor.registry.admin.*;
 import net.hasor.meteor.registry.shared.storage.domain.EntServiceRuntimeData;
 import net.hasor.meteor.registry.shared.storage.domain.RefProtocolMountData;
+import net.hasor.meteor.registry.shared.storage.domain.RefServiceDescriptionData;
 import net.hasor.meteor.registry.shared.storage.domain.ServiceSummary;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -37,7 +36,7 @@ public class DirectoryMappingTest {
         // 完整描述可能包含很大的契约图，摘要查询不需要读取它。
         EntServiceRuntimeData registration = new EntServiceRuntimeData() {
             @Override
-            public ObjectNode getDescription() {
+            public RefServiceDescriptionData getDescription() {
                 throw new AssertionError("A summary must not read the full service description");
             }
         };

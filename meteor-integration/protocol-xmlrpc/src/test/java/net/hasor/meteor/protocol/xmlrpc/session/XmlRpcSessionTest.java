@@ -14,10 +14,10 @@ import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
-import net.hasor.example.protocol.xmlrpc.TestConfigurationUtils;
 import net.hasor.cobble.concurrent.future.BasicFuture;
 import net.hasor.cobble.concurrent.future.Cancellable;
 import net.hasor.cobble.concurrent.future.Future;
+import net.hasor.example.protocol.xmlrpc.TestConfigurationUtils;
 import net.hasor.example.protocol.xmlrpc.XmlRpcDemoService;
 import net.hasor.example.protocol.xmlrpc.XmlRpcDemoServiceImpl;
 import net.hasor.meteor.MetContext;
@@ -90,7 +90,7 @@ public class XmlRpcSessionTest {
             request.setMessage(true);
 
             Future<Void> sent = session.send(request);
-            assertTrue(sent.getCause() instanceof IllegalArgumentException);
+            assertInstanceOf(IllegalArgumentException.class, sent.getCause());
             assertTrue(network.writes.isEmpty());
             assertTrue(received.isEmpty());
         }
@@ -105,7 +105,7 @@ public class XmlRpcSessionTest {
             RequestPayload request = outgoing(12);
             request.complete(new CancellationException("caller cancelled"));
 
-            assertTrue(session.send(request).getCause() instanceof CancellationException);
+            assertInstanceOf(CancellationException.class, session.send(request).getCause());
             assertTrue(network.writes.isEmpty());
         }
     }
@@ -150,7 +150,7 @@ public class XmlRpcSessionTest {
             network.writeResult.failed(failure);
             assertSame(failure, sent.getCause());
             assertEquals(1, received.size());
-            assertTrue(received.get(0) instanceof ResponsePayload);
+            assertInstanceOf(ResponsePayload.class, received.get(0));
         }
     }
 
@@ -222,7 +222,7 @@ public class XmlRpcSessionTest {
             network.writes.get(0).respond(xmlResponse(200, "<invalid/>"));
             network.writes.get(1).respond(response("valid"));
             assertEquals(2, received.size());
-            assertTrue(received.get(0) instanceof ThrowPayload);
+            assertInstanceOf(ThrowPayload.class, received.get(0));
             ResponsePayload valid = (ResponsePayload) received.get(1);
             assertEquals(22, valid.getRequestID());
             assertEquals("valid", valid.getReturnData());
@@ -532,7 +532,7 @@ public class XmlRpcSessionTest {
         context.publisher().rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                 .name("Echo") //
                 .aliasName("xmlrpc", "demo") //
-                .register();
+                .contextPathByPrefix("xmlrpc", "/").register();
         return context;
     }
 

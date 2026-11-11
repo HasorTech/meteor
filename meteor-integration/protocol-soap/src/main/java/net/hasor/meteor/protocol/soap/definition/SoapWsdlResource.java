@@ -307,12 +307,13 @@ public final class SoapWsdlResource extends SoapDefinitionResource {
             Element address = (Element) addresses.item(index);
             address.setAttribute("location", endpointUri.toASCIIString());
         }
-        this.rewriteLocations(document, resource.name(), endpointUri, SoapWsdlParser.WSDL_NAMESPACE, //
-                "import", "location", "wsdl");
-        this.rewriteLocations(document, resource.name(), endpointUri, SoapWsdlParser.XSD_NAMESPACE, //
-                "import", "schemaLocation", "xsd");
-        this.rewriteLocations(document, resource.name(), endpointUri, SoapWsdlParser.XSD_NAMESPACE, //
-                "include", "schemaLocation", "xsd");
+        this.rewriteLocations(document, resource.name(), endpointUri, SoapWsdlParser.WSDL_NAMESPACE, "import", "location", "wsdl");
+        if (SoapWsdlParser.WSDL_NAMESPACE.equals(document.getDocumentElement().getNamespaceURI())) {
+            SoapWsdlSchemas.embed(document, resource.name(), (current, location) -> this.resources.get(this.resolveName(current, location)));
+        } else {
+            this.rewriteLocations(document, resource.name(), endpointUri, SoapWsdlParser.XSD_NAMESPACE, "import", "schemaLocation", "xsd");
+            this.rewriteLocations(document, resource.name(), endpointUri, SoapWsdlParser.XSD_NAMESPACE, "include", "schemaLocation", "xsd");
+        }
 
         return this.serialize(document);
     }

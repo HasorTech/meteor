@@ -17,6 +17,8 @@ import net.hasor.meteor.MetPublisher;
 import net.hasor.meteor.MetUpdater;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.connector.ConnectorConfig;
+import net.hasor.meteor.connector.ConnectorManager;
+import net.hasor.meteor.connector.transport.http.HttpServicePathUtils;
 import net.hasor.meteor.domain.MetServiceType;
 import net.hasor.meteor.domain.ProtocolBinding;
 import net.hasor.meteor.domain.ProtocolConfig;
@@ -24,11 +26,9 @@ import net.hasor.meteor.domain.ServiceDomain;
 import net.hasor.meteor.domain.meta.ProtocolMeta;
 import net.hasor.meteor.domain.warp.MetBindInfoWrap;
 import net.hasor.meteor.registry.RegistryTokenProvider;
+import net.hasor.meteor.registry.admin.MetEndpointType;
 import net.hasor.meteor.registry.shared.rpc.*;
-import net.hasor.meteor.registry.shared.storage.domain.EntConfigurationData;
-import net.hasor.meteor.registry.shared.storage.domain.EntInstanceRuntimeData;
-import net.hasor.meteor.registry.shared.storage.domain.EntServiceRuntimeData;
-import net.hasor.meteor.registry.shared.storage.domain.RefProtocolMountData;
+import net.hasor.meteor.registry.shared.storage.domain.*;
 import net.hasor.meteor.registry.shared.utils.RegistryGovernanceUtils;
 import net.hasor.meteor.registry.shared.utils.RegistryJson;
 import net.hasor.meteor.utils.ContextPathUtils;
@@ -36,6 +36,7 @@ import net.hasor.meteor.utils.ContextPathUtils;
 /** 管理本地 Meteor 的运行状态、治理、快照和管理 RPC；并发控制由实际状态的持有者负责。 */
 public final class ManagementRPCImpl implements ManagementRPC {
     private final MetContext                 context;
+    private final ConnectorManager           connectors;
     private final String                     publishHost;
     private final MetBindInfo<ManagementRPC> managementService;
     private final GovernanceFilter           governance = new GovernanceFilter();
@@ -44,9 +45,10 @@ public final class ManagementRPCImpl implements ManagementRPC {
     // 本地运行服务与管理 RPC 生命周期
 
     /** 安装扩展时发布管理 RPC 和过滤器，生命周期与上下文一致。 */
-    public ManagementRPCImpl(MetContext context, String publishHost, //
+    public ManagementRPCImpl(MetContext context, ConnectorManager connectors, String publishHost, //
             RegistryTokenProvider tokenProvider, List<String> managementProtocols) {
         this.context = context;
+        this.connectors = connectors;
         this.publishHost = publishHost;
         if (this.context.getServiceInfo(ManagementRPC.class) != null) {
             throw new IllegalStateException("Management RPC is already registered on this Meteor context");
@@ -132,7 +134,7 @@ public final class ManagementRPCImpl implements ManagementRPC {
             ServiceEndpointData[] selected = this.endpoints(service, publications);
             RefProtocolMountData[] endpoints = RegistryJson.copy(selected, RefProtocolMountData[].class);
             registration.setEndpoints(endpoints);
-            registration.setDescription(this.description(service, publications, selected));
+            registration.setDescription(RegistryJson.copy(this.description(service), RefServiceDescriptionData.class));
             registration.setUsedProtocols(this.usedProtocols(service));
             boolean provider = service.getServiceType() == MetServiceType.Provider;
 
@@ -145,6 +147,10 @@ public final class ManagementRPCImpl implements ManagementRPC {
                         InterAddress listen = new InterAddress(endpoint.getListenAddress());
                         String address = this.toPublishAddress(listen).toString();
                         endpoint.setPublishedAddress(address);
+                        Map<String, String> addresses = endpoint.getEndpoints().get(listen.getSchema());
+                        if (addresses != null && addresses.containsKey(MetEndpointType.ENDPOINT.getKey())) {
+                            addresses.put(MetEndpointType.ENDPOINT.getKey(), address);
+                        }
                         published.add(address);
                     }
                 }
@@ -231,21 +237,32 @@ public final class ManagementRPCImpl implements ManagementRPC {
                 }
                 for (String path : paths) {
                     InstanceEndpointData endpoint = new InstanceEndpointData();
-                    endpoint.setConnectorName(connector.name());
-                    endpoint.setTransport(connector.transportType());
                     endpoint.setProtocolName(protocol.name());
-                    endpoint.setScheme(protocol.scheme());
-                    endpoint.setContextPath(path);
-                    endpoint.setListenAddress(new InterAddress(address.getSchema(), address.getHost(), address.getPort(), path).toString());
-                    if (StringUtils.equals(connector.transportType(), "http")) {
-                        endpoint.setHttpEndpoints(this.httpEndpoints(connector, protocol, address, path));
+                    endpoint.setProtocolFamilies(this.connectors.getProtocolFamilies(connector.name(), protocol.name()));
+                    endpoint.setDefaultProtocol(StringUtils.equalsIgnoreCase(protocol.name(), this.context.getDefaultProtocol()));
+                    Map<String, String> addresses = new LinkedHashMap<>();
+                    Set<String> types = this.context.getEndpointTypes(connector.name(), protocol.name());
+                    for (String type : types) {
+                        if (StringUtils.equals(type, MetEndpointType.MANAGEMENT.getKey())) {
+                            throw new IllegalStateException("Management endpoint is defined by the registry");
+                        }
+                        addresses.put(type, "");
                     }
+                    if (types.contains(MetEndpointType.ENDPOINT.getKey())) {
+                        InterAddress mounted = new InterAddress(address.getSchema(), address.getHost(), address.getPort(), path);
+                        addresses.put(MetEndpointType.ENDPOINT.getKey(), mounted.toString());
+                    }
+                    if (types.contains(MetEndpointType.HTTP.getKey()) && StringUtils.equals(connector.transportType(), "http")) {
+                        URI httpMount = this.httpBase(connector, protocol, address).resolve(StringUtils.defaultIfBlank(path, "/"));
+                        addresses.put(MetEndpointType.HTTP.getKey(), httpMount.toASCIIString());
+                    }
+                    endpoint.setEndpoints(addresses);
 
                     // 同一监听器的各上下文独立上报，管理地址只属于管理服务实际接受的挂载。
                     if (binding != null) {
                         var managementContexts = binding.getContextPath();
                         if (managementContexts == null || managementContexts.getPaths().contains(path)) {
-                            endpoint.setManagementAddress(new InterAddress(managementAddress.getSchema(), managementAddress.getHost(), managementAddress.getPort(), path).toString());
+                            addresses.put(MetEndpointType.MANAGEMENT.getKey(), new InterAddress(managementAddress.getSchema(), managementAddress.getHost(), managementAddress.getPort(), path).toString());
                         }
                     }
                     endpoints.add(endpoint);
@@ -256,53 +273,54 @@ public final class ManagementRPCImpl implements ManagementRPC {
         return result;
     }
 
-    private Map<String, List<String>> httpEndpoints(ConnectorConfig connector, ProtocolConfig protocol, InterAddress address, String path) {
+    private URI httpBase(ConnectorConfig connector, ProtocolConfig protocol, InterAddress address) {
         String scheme = protocol.option("httpScheme", connector.options().getOrDefault("httpScheme", "http"));
         if (Boolean.parseBoolean(connector.options().getOrDefault("tlsEnabled", "false"))) {
             scheme = "https";
         }
-        URI base;
         try {
-            base = new URI(scheme, null, address.getHost(), address.getPort(), "/", null, null);
+            return new URI(scheme, null, address.getHost(), address.getPort(), "/", null, null);
         } catch (java.net.URISyntaxException failure) {
             throw new IllegalStateException("Invalid HTTP endpoint", failure);
         }
-        Map<String, List<String>> result = new LinkedHashMap<>();
-        for (MetBindInfo<?> service : this.bindings()) {
-            if (service.getServiceType() != MetServiceType.Provider) {
-                continue;
-            }
-            ProtocolMeta meta = MetBindInfoWrap.unwrap(service).getProtocolMetas().get(protocol.name());
-            ProtocolBinding binding = meta == null ? null : meta.getEndpoint(connector.name());
-            if (binding == null || binding.getContextPath() == null) {
-                continue;
-            }
+    }
+
+    /** 只读取当前服务、当前挂载已准备的接入点，不推导未知契约地址。 */
+    private Map<String, Map<String, String>> serviceEndpoints(ConnectorConfig connector, ProtocolConfig protocol, InterAddress address, String path, ProtocolBinding binding) {
+        Map<String, String> addresses = new LinkedHashMap<>();
+        Set<String> types = this.context.getEndpointTypes(connector.name(), protocol.name());
+        if (types.contains(MetEndpointType.ENDPOINT.getKey())) {
+            String clientPath = HttpServicePathUtils.clientPath(binding, path);
+            InterAddress mounted = new InterAddress(address.getSchema(), address.getHost(), address.getPort(), clientPath);
+            addresses.put(MetEndpointType.ENDPOINT.getKey(), mounted.toString());
+        }
+        if (StringUtils.equals(connector.transportType(), "http")) {
+            URI base = this.httpBase(connector, protocol, address);
             JsonNode description = binding.getDescription();
-            JsonNode definitions = description == null ? null : description.get("httpEndpoints");
-            if (definitions == null || !definitions.isObject()) {
-                continue;
-            }
-            List<String> mounts = ContextPathUtils.contextPaths(protocol.options());
-            definitions.fields().forEachRemaining(route -> {
-                // 自定义服务路径归入此连接器的第一个挂载，避免多个实例挂载重复列出它。
-                boolean selected = StringUtils.equals(route.getKey(), path);
-                if (!mounts.contains(route.getKey()) && !mounts.isEmpty() && StringUtils.equals(mounts.get(0), path)) {
-                    selected = true;
-                }
-                if (!selected) {
-                    return;
-                }
-                route.getValue().fields().forEachRemaining(entry -> {
-                    // 仅使用协议发布时确认的路径；不按协议名猜测 WSDL 或 schema URL。
-                    List<String> documents = new ArrayList<>();
-                    entry.getValue().forEach(document -> documents.add(base.resolve(document.asText()).toASCIIString()));
-                    result.put(base.resolve(entry.getKey()).toASCIIString(), documents);
+            JsonNode definitions = description == null ? null : description.get("endpoints");
+            JsonNode routes = definitions == null || path == null ? null : definitions.get(path);
+            if (routes != null && routes.isObject()) {
+                routes.fields().forEachRemaining(entry -> {
+                    String type = entry.getKey();
+                    if (StringUtils.equals(type, MetEndpointType.ENDPOINT.getKey()) || StringUtils.equals(type, MetEndpointType.MANAGEMENT.getKey())) {
+                        throw new IllegalStateException("Reserved service endpoint type: " + type);
+                    }
+                    if (!types.contains(type)) {
+                        throw new IllegalStateException("Undeclared service endpoint type: " + type);
+                    }
+                    if (!entry.getValue().isTextual() || StringUtils.isBlank(entry.getValue().asText())) {
+                        throw new IllegalStateException("Missing service endpoint address: " + type);
+                    }
+                    addresses.put(type, base.resolve(entry.getValue().asText()).toASCIIString());
                 });
-            });
+            }
+            if (types.contains(MetEndpointType.HTTP.getKey())) {
+                URI mounted = base.resolve(StringUtils.defaultIfBlank(path, "/"));
+                addresses.putIfAbsent(MetEndpointType.HTTP.getKey(), mounted.toASCIIString());
+            }
         }
-        if (result.isEmpty()) {
-            result.put(base.resolve(StringUtils.defaultIfBlank(path, "/")).toASCIIString(), List.of());
-        }
+        Map<String, Map<String, String>> result = new LinkedHashMap<>();
+        result.put(address.getSchema(), addresses);
         return result;
     }
 
@@ -331,7 +349,7 @@ public final class ManagementRPCImpl implements ManagementRPC {
         member.setService(this.serviceSnapshot(service, endpoints, usedProtocols));
         member.setEndpoints(endpoints);
         member.setUsedProtocols(usedProtocols);
-        member.setDescription(this.description(service, publications, endpoints));
+        member.setDescription(this.description(service));
         member.setEnabled(this.governance.isServiceEnabled(serviceId));
         return member;
     }
@@ -711,14 +729,17 @@ public final class ManagementRPCImpl implements ManagementRPC {
                         connector.name(), protocol.name(), protocol.scheme()) : null;
                 for (String path : paths) {
                     ServiceEndpointData endpoint = new ServiceEndpointData();
-                    endpoint.setConnectorName(connector.name());
                     endpoint.setTransport(connector.transportType());
+                    endpoint.setDescription(this.protocolDescription(connector, protocol, binding));
                     endpoint.setProtocolName(protocol.name());
+                    endpoint.setDefaultProtocol(StringUtils.equalsIgnoreCase(protocol.name(), this.context.getDefaultProtocol()));
                     endpoint.setScheme(protocol.scheme());
                     endpoint.setContextPath(path);
-                    endpoint.setBindEnabled(connector.bindEnabled());
-                    endpoint.setConfiguredAddress(connector.address().toString());
-                    endpoint.setListenAddress(listen == null ? null : new InterAddress(listen.getSchema(), listen.getHost(), listen.getPort(), path).toString());
+                    if (provider && listen != null) {
+                        endpoint.setEndpoints(this.serviceEndpoints(connector, protocol, listen, path, binding));
+                    }
+                    String clientPath = HttpServicePathUtils.clientPath(binding, path);
+                    endpoint.setListenAddress(listen == null ? null : new InterAddress(listen.getSchema(), listen.getHost(), listen.getPort(), clientPath).toString());
                     result.add(endpoint);
                 }
             }
@@ -727,51 +748,36 @@ public final class ManagementRPCImpl implements ManagementRPC {
         return result.toArray(ServiceEndpointData[]::new);
     }
 
-    private ObjectNode description(MetBindInfo<?> service, Map<String, ProtocolMeta> publications, //
-            ServiceEndpointData[] endpoints) {
+    private ObjectNode description(MetBindInfo<?> service) {
         ObjectNode description = MetBindInfoWrap.unwrap(service).getServiceMeta().createServiceDescription();
         description.put("message", service.isMessage());
         if (service.isMessage()) {
             description.withArray("methods").forEach(method -> ((ObjectNode) method).put("message", true));
         }
-
-        // 多个 context 共用同一绑定描述；只复制本次实际上报的端点。
-        ObjectNode protocols = description.putObject("protocols");
-        Map<String, ConnectorConfig> connectors = new HashMap<>();
-        for (ConnectorConfig connector : this.context.getSettings().getConnectorConfigs()) {
-            connectors.put(connector.name(), connector);
-        }
-        for (ServiceEndpointData endpoint : endpoints) {
-            String protocol = endpoint.getProtocolName();
-            String connector = endpoint.getConnectorName();
-            ObjectNode bindings = (ObjectNode) protocols.get(protocol);
-            if (bindings == null) {
-                bindings = protocols.putObject(protocol);
-            }
-            if (!bindings.has(connector)) {
-                ProtocolBinding binding = publications.get(protocol).getEndpoint(connector);
-                ObjectNode contract = binding.getDescription();
-                if (contract != null) {
-                    ObjectNode snapshot = contract.deepCopy();
-                    ConnectorConfig configuration = connectors.get(connector);
-                    ProtocolConfig mount = configuration.protocol(protocol);
-                    // 只上报公开连接事实，不把证书、密钥路径和密码复制进服务描述。
-                    ObjectNode connection = snapshot.putObject("connection");
-                    boolean tls = Boolean.parseBoolean(configuration.options().getOrDefault("tlsEnabled", "false"));
-                    connection.put("tlsEnabled", tls);
-                    if (StringUtils.equals(configuration.transportType(), "http")) {
-                        String transportScheme = configuration.options().getOrDefault("httpScheme", "http");
-                        connection.put("httpScheme", mount.option("httpScheme", transportScheme));
-                        String upgrade = mount.option("upgrade", null);
-                        if (StringUtils.isNotBlank(upgrade)) {
-                            connection.put("upgrade", upgrade);
-                        }
-                    }
-                    bindings.set(connector, snapshot);
-                }
-            }
-        }
         return description;
+    }
+
+    private ObjectNode protocolDescription(ConnectorConfig connector, ProtocolConfig protocol, ProtocolBinding binding) {
+        ObjectNode contract = binding.getDescription();
+        if (contract == null) {
+            return null;
+        }
+        ObjectNode snapshot = contract.deepCopy();
+        // 默认路径推导只参与本地路由，管理侧只接收已经计算完成的真实地址。
+        snapshot.remove(List.of("serviceScoped", "serviceBasePath", "servicePathName"));
+        // 只上报客户端互通所需的公开连接事实，不携带容器名称、密钥或本地监听配置。
+        ObjectNode connection = snapshot.putObject("connection");
+        boolean tls = Boolean.parseBoolean(connector.options().getOrDefault("tlsEnabled", "false"));
+        connection.put("tlsEnabled", tls);
+        if (StringUtils.equals(connector.transportType(), "http")) {
+            String scheme = connector.options().getOrDefault("httpScheme", "http");
+            connection.put("httpScheme", protocol.option("httpScheme", scheme));
+            String upgrade = protocol.option("upgrade", null);
+            if (StringUtils.isNotBlank(upgrade)) {
+                connection.put("upgrade", upgrade);
+            }
+        }
+        return snapshot;
     }
 
     private InterAddress toPublishAddress(InterAddress address) throws Exception {

@@ -15,7 +15,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import net.hasor.dbvisitor.jdbc.core.JdbcTemplate;
 import net.hasor.meteor.domain.MetServiceType;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
-import net.hasor.meteor.registry.shared.storage.domain.*;
 import org.junit.jupiter.api.Test;
 import static net.hasor.example.registry.jdbc.JdbcTestSupport.configuration;
 import static net.hasor.example.registry.jdbc.JdbcTestSupport.createDatabase;
@@ -225,8 +224,8 @@ public class JdbcDatabaseIntegrationTest {
     }
 
     @Test
-    public void protocolRegistrationFailureRollsBackRelationAndServiceArchive() throws Exception {
-        // 在真实 H2 写入协议索引前注入 SQL 权限错误。
+    public void serviceRegistrationFailureRollsBackRelationAndServiceArchive() throws Exception {
+        // 在真实 H2 写入实例服务记录时注入 SQL 权限错误。
         try (JdbcDriverProbe probe = new JdbcDriverProbe(createDatabase())) {
             JdbcRegistryConfiguration configuration = configuration(probe.url());
             try (StorageAccess writer = configuration.openStorage(); //
@@ -237,12 +236,12 @@ public class JdbcDatabaseIntegrationTest {
                 published.setEndpoints(new RefProtocolMountData[] { rsfEndpoint() });
                 SQLException expected = new SQLException("write denied", "42000");
                 probe.beforeExecute(sql -> {
-                    if (sql.startsWith("INSERT INTO meteor_member_protocols")) {
+                    if (sql.startsWith("INSERT INTO meteor_instance_services")) {
                         throw expected;
                     }
                 });
 
-                // 前半段已执行的关系与服务档案必须回滚，两个查询方向都不能留下服务。
+                // 前半段已执行的服务档案必须回滚，两个查询方向都不能留下服务。
                 SQLException failure = assertThrows(SQLException.class, () -> writer.registerService("one", published));
                 // dbVisitor 包装 SQL 异常，原始原因仍由存储调用方获取。
                 assertSame(expected, failure.getCause());
@@ -255,7 +254,6 @@ public class JdbcDatabaseIntegrationTest {
                 JdbcTemplate jdbc = new JdbcTemplate(connection);
                 String relationSql = "SELECT service_id FROM meteor_instance_services";
                 assertTrue(jdbc.queryForList(relationSql, String.class).isEmpty());
-                assertTrue(jdbc.queryForList("SELECT service_id FROM meteor_member_protocols", String.class).isEmpty());
             }
         }
     }
@@ -279,9 +277,9 @@ public class JdbcDatabaseIntegrationTest {
             writer.registerService("two", published);
             JdbcTemplate jdbc = new JdbcTemplate(connection);
             String owner = jdbc.queryForList("SELECT DISTINCT session_id FROM meteor_instances", String.class).get(0);
-            String protocolSql = "SELECT protocol_name FROM meteor_member_protocols";
+            String protocolSql = "SELECT search_protocol FROM meteor_instance_services";
             List<String> protocols = jdbc.queryForList(protocolSql, String.class);
-            assertEquals(List.of("rsf", "rsf"), protocols);
+            assertEquals(List.of(" rsf ", " rsf "), protocols);
             jdbc.executeUpdate("UPDATE meteor_instances SET expires_at=0");
 
             // 重报仅清理 one 的旧服务；two 仍然到期，其旧内容不被本次操作改动。
@@ -302,8 +300,7 @@ public class JdbcDatabaseIntegrationTest {
                     + " JOIN meteor_instances i ON i.instance_id=r.instance_id WHERE i.expires_at=0";
             List<String> retainedRelations = jdbc.queryForList(relationSql, String.class);
             assertEquals(1, retainedRelations.size());
-            String retainedProtocolSql = "SELECT instance_id FROM meteor_member_protocols";
-            assertEquals(retainedRelations, jdbc.queryForList(retainedProtocolSql, String.class));
+            assertEquals(List.of(" rsf "), jdbc.queryForList(protocolSql, String.class));
 
             // 只有显式重新发布的 one 服务恢复发现，two 不会随同一会话复活。
             writer.registerService("one", service());

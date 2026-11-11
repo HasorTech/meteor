@@ -6,19 +6,19 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hessian;
+import java.util.concurrent.TimeUnit;
 import com.caucho.hessian.client.HessianProxyFactory;
-import net.hasor.example.protocol.hessian.TestConfigurationUtils;
 import net.hasor.example.protocol.hessian.HessianDemoService;
 import net.hasor.example.protocol.hessian.HessianDemoServiceImpl;
+import net.hasor.example.protocol.hessian.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.peer.protocol.hessian.HessianJavaSdkServer;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** 当前插件与原生 Java SDK 的同 JVM 双向基础网络调用。 */
 public class HessianJavaSdkBasicTest {
@@ -39,7 +39,7 @@ public class HessianJavaSdkBasicTest {
                     .rsfService(HessianDemoService.class, new HessianDemoServiceImpl()) //
                     .aliasName("hessian", "demo").protocol("hessian") //
                     .serialize("Hessian") //
-                    .register();
+                    .contextPathByPrefix("hessian", "/").register();
 
             // 直接使用 SDK 的公开 Java 客户端，仍通过随机监听端口完成真实 HTTP 往返。
             int port = server.getListenAddress("hessian").getPort();
@@ -72,7 +72,7 @@ public class HessianJavaSdkBasicTest {
                     .rsfService(HessianDemoService.class) //
                     .aliasName("hessian", "demo").protocol("hessian") //
                     .serialize("Hessian") //
-                    .register();
+                    .contextPathByPrefix("hessian", "/").register();
 
             // 前缀只能由 SDK 服务端添加，确保不是同 JVM 的本地调用捷径或普通回显。
             InterAddress address = new InterAddress("hessian", "127.0.0.1", server.getPort());

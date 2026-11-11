@@ -46,7 +46,7 @@ public class TripleProtocolTest {
                 .filter(TripleProtocol.class::isInstance) //
                 .findFirst().orElseThrow();
         assertEquals("triple", provider.name());
-        assertTrue(provider instanceof HttpProtocolProvider);
+        assertInstanceOf(HttpProtocolProvider.class, provider);
     }
 
     @Test
@@ -179,7 +179,7 @@ public class TripleProtocolTest {
         ProtocolMeta meta = new ProtocolMeta(service, effective, bindResource, Map.of());
         ProtocolBinding binding = new TripleProtocol().prepareBinding(config, null, meta);
         assertNotNull(binding);
-        assertSame(effective, binding.getContextPath());
+        assertEquals(effective.resolve("/triple"), binding.getContextPath());
         String serviceName = "meteor.triple.demo.TripleFlowService";
         assertEquals(serviceName, binding.getDescription().path("name").asText());
         assertEquals(9, binding.getDescription().path("methods").size());

@@ -26,9 +26,9 @@ import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
 import net.hasor.peer.protocol.grpc.GrpcSdkContract;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.Timeout;
 
 /** 同一 JUnit 进程内，官方 grpc-java 与 Meteor 通过真实网络完成双向基础调用。 */
 public class GrpcJavaSdkBasicTest {
@@ -48,7 +48,7 @@ public class GrpcJavaSdkBasicTest {
             server.start();
             server.publisher().rsfService(Echo.class, implementation) //
                     .aliasName("grpc", "example.Echo") //
-                    .bindResource("grpc", resource).register();
+                    .bindResource("grpc", resource).contextPathByPrefix("grpc", "/").register();
 
             // SDK 的 Netty 通道和 ClientCalls 发起真正的 gRPC 请求，不使用 Meteor 消费者。
             int port = server.getListenAddress("grpc").getPort();
@@ -87,7 +87,7 @@ public class GrpcJavaSdkBasicTest {
                 client.start();
                 MetBindInfo<Echo> service = client.publisher().rsfService(Echo.class) //
                         .aliasName("grpc", "example.Echo").serialize("Protobuf") //
-                        .bindResource("grpc", resource).register();
+                        .bindResource("grpc", resource).contextPathByPrefix("grpc", "/").register();
 
                 // SDK 前缀与数值变化来自网络服务，当前 Meteor 容器不发布任何本地实现。
                 InterAddress address = new InterAddress("grpc", "127.0.0.1", server.getPort());

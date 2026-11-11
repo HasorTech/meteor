@@ -11,7 +11,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
-import net.hasor.meteor.annotation.*;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.domain.MetServiceType;
 import net.hasor.meteor.registry.RegistryAdmin;
@@ -95,8 +94,8 @@ public class ServiceDescriptionScenarioTest {
 
             // 主动上报只读取公共描述与已提交端点，不要求发起业务调用。
             context.getExtension(RegistryClient.class).pushSync(service.getBindID()).get(10, TimeUnit.SECONDS);
-            ObjectNode description = storage.getInstanceService(context.getInstanceID(), service.getBindID()) //
-                    .getDescription();
+            ObjectNode description = RegistryJson.copy(storage.getInstanceService(context.getInstanceID(), service.getBindID()) //
+                    .getDescription(), ObjectNode.class);
             JsonNode method = description.path("methods").get(0);
             assertEquals("Lookup", method.path("name").asText());
             assertEquals(0xffff_ffffL, description.path("contractServiceId").asLong());
@@ -108,8 +107,9 @@ public class ServiceDescriptionScenarioTest {
             JsonNode dto = description.path("types").path(Query.class.getName());
             assertEquals("message", dto.path("properties").get(0).path("name").asText());
             assertEquals(7, dto.path("properties").get(0).path("fieldId").asInt());
-            String connector = context.getSettings().getConnectorConfigs().iterator().next().name();
-            JsonNode rsf = description.path("protocols").path("rsf").path(connector);
+            JsonNode rsf = RegistryJson.copy(storage.getInstanceService(context.getInstanceID(), service.getBindID()) //
+                    .getEndpoints()[0].getDescription(), ObjectNode.class);
+            assertFalse(description.has("protocols"));
             assertEquals("lookup", rsf.path("methods").get(0).path("name").asText());
             assertEquals(service.getBindName(), rsf.path("name").asText());
             assertFalse(description.has("contractId"));
@@ -138,6 +138,9 @@ public class ServiceDescriptionScenarioTest {
             JsonNode endpoint = storedRuntime.path("endpoints").get(0);
             assertTrue(StringUtils.equals("rsf", endpoint.path("protocolName").asText()));
             assertFalse(endpoint.has("protocol"));
+            assertFalse(endpoint.has("connectorName"));
+            assertFalse(endpoint.has("bindEnabled"));
+            assertFalse(endpoint.has("configuredAddress"));
             assertEquals(0xffff_ffffL, storedRuntime.path("description").path("contractServiceId").asLong());
             assertEquals("release-1.0", runtime.getVersion());
             RegistryAdmin admin = context.getExtension(RegistryAdmin.class);
@@ -164,7 +167,8 @@ public class ServiceDescriptionScenarioTest {
             JsonNode returnedMethod = serialized.path("methods").get(0);
             assertEquals(method.path("methodId"), returnedMethod.path("methodId"));
             assertEquals(10, returnedMethod.path("parameters").get(0).path("fieldId").asInt());
-            JsonNode returnedProtocol = serialized.path("protocols").path("rsf").path(connector);
+            JsonNode returnedProtocol = RegistryJson.copy(serviceAdmin.providers(null, null).getItems().get(0) //
+                    .getEndpoints()[0].getDescription(), ObjectNode.class);
             assertEquals(rsf.path("name"), returnedProtocol.path("name"));
             assertFalse(serialized.has("contractId"));
             assertFalse(serialized.has("id"));
@@ -248,7 +252,7 @@ public class ServiceDescriptionScenarioTest {
 
             // 消费角色归实例正文，完整声明只保留自己的 Java 定位和方法描述。
             EntServiceRuntimeData runtime = storage.getInstanceService(context.getInstanceID(), service.getBindID());
-            ObjectNode description = runtime.getDescription();
+            ObjectNode description = RegistryJson.copy(runtime.getDescription(), ObjectNode.class);
             assertEquals(MetServiceType.Consumer, runtime.getRole());
             assertFalse(description.has("role"));
             assertTrue(StringUtils.equals(Contract.class.getName(), description.path("javaType").asText()));
@@ -316,8 +320,8 @@ public class ServiceDescriptionScenarioTest {
             // 不从服务坐标、方法顺序或字符串版本猜测契约编号。
             String serviceId = service.getBindID();
             EntServiceRuntimeData runtime = storage.getInstanceService(context.getInstanceID(), serviceId);
-            assertTrue(runtime.getDescription().path("contractServiceId").isNull());
-            assertTrue(runtime.getDescription().path("methods").get(0).path("methodId").isNull());
+            assertNull(runtime.getDescription().getContractServiceId());
+            assertNull(runtime.getDescription().getMethods().get(0).getMethodId());
             RegistryAdmin admin = context.getExtension(RegistryAdmin.class);
             MetServiceDescription description = admin.getServiceAdmin(serviceId).descriptions() //
                     .get(context.getInstanceID());
@@ -340,7 +344,7 @@ public class ServiceDescriptionScenarioTest {
             // RSF 服务没有 ONC 程序范围约束，显式负数按原值上报而不被改成 null。
             String serviceId = service.getBindID();
             EntServiceRuntimeData runtime = storage.getInstanceService(context.getInstanceID(), serviceId);
-            assertEquals(-2L, runtime.getDescription().path("contractServiceId").asLong());
+            assertEquals(-2L, runtime.getDescription().getContractServiceId().longValue());
             RegistryAdmin admin = context.getExtension(RegistryAdmin.class);
             MetServiceDescription description = admin.getServiceAdmin(serviceId).descriptions() //
                     .get(context.getInstanceID());
@@ -367,12 +371,12 @@ public class ServiceDescriptionScenarioTest {
             String instanceId = context.getInstanceID();
             String serviceId = selected.getBindID();
             EntServiceRuntimeData runtime = storage.getInstanceService(instanceId, serviceId);
-            assertEquals(0L, runtime.getDescription().path("contractServiceId").asLong());
+            assertEquals(0L, runtime.getDescription().getContractServiceId().longValue());
             RegistryAdmin admin = context.getExtension(RegistryAdmin.class);
             MetServiceDescription description = admin.getServiceAdmin(serviceId).descriptions().get(instanceId);
             assertEquals(Long.valueOf(0), description.getContractServiceId());
             EntServiceRuntimeData otherRuntime = storage.getInstanceService(instanceId, other.getBindID());
-            assertEquals(0xffff_ffffL, otherRuntime.getDescription().path("contractServiceId").asLong());
+            assertEquals(0xffff_ffffL, otherRuntime.getDescription().getContractServiceId().longValue());
         }
     }
 

@@ -20,7 +20,7 @@ CREATE TABLE meteor_instances
     body             NVARCHAR(MAX) NOT NULL,
     -- Keep the latest registration session after runtime departure.
     session_id       VARCHAR(36) NOT NULL,
-    expires_at       BIGINT      NULL,
+    expires_at       BIGINT NULL,
     runtime_revision VARCHAR(36) NULL,
     runtime_body     NVARCHAR(MAX) NULL,
     rule_controls    NVARCHAR(MAX) NULL,
@@ -53,14 +53,15 @@ CREATE TABLE meteor_instance_services
     PRIMARY KEY (instance_id, service_id)
 );
 
-CREATE TABLE meteor_member_protocols
+CREATE TABLE meteor_service_methods
 (
-    service_id    VARCHAR(64)  NOT NULL,
-    instance_id   VARCHAR(64)  NOT NULL,
-    protocol_name VARCHAR(256) NOT NULL,
-    session_id    VARCHAR(36)  NOT NULL,
-    PRIMARY KEY (service_id, instance_id, protocol_name)
+    id          VARCHAR(36)  NOT NULL PRIMARY KEY,
+    method_path VARCHAR(129) NOT NULL,
+    revision    VARCHAR(36)  NOT NULL,
+    body        NVARCHAR(MAX) NOT NULL
 );
+
+CREATE INDEX met_methods_path ON meteor_service_methods (method_path);
 
 CREATE TABLE meteor_governance
 (
@@ -89,7 +90,3 @@ CREATE INDEX met_instances_session ON meteor_instances (session_id, expires_at);
 CREATE INDEX met_iservices_session ON meteor_instance_services (session_id);
 
 CREATE INDEX met_iservices_members ON meteor_instance_services (service_id, member_role, instance_id);
-
-CREATE INDEX met_protocols_session ON meteor_member_protocols (session_id);
-
-CREATE INDEX met_protocols_instance ON meteor_member_protocols (instance_id, session_id);

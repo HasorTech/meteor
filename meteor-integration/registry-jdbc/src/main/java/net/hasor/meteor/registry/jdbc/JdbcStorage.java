@@ -25,6 +25,7 @@ import net.hasor.dbvisitor.jdbc.PreparedStatementSetter;
 import net.hasor.dbvisitor.jdbc.core.JdbcTemplate;
 import net.hasor.meteor.domain.MetServiceType;
 import net.hasor.meteor.registry.shared.storage.DirectoryFilter;
+import net.hasor.meteor.registry.shared.storage.ServiceMethodUtils;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
 import net.hasor.meteor.registry.shared.storage.domain.*;
 import net.hasor.meteor.registry.shared.utils.RegistryJson;
@@ -403,12 +404,12 @@ final class JdbcStorage implements StorageAccess {
                 return summary;
             });
             Map<String, Set<String>> protocols = new HashMap<>();
-            String protocolSql = "SELECT DISTINCT r.service_id,p.protocol_name" + memberFrom() //
-                    + " JOIN meteor_member_protocols p ON p.instance_id=r.instance_id" //
-                    + " AND p.service_id=r.service_id AND p.session_id=r.session_id" //
+            // 只读取成员协议投影，不加载包含方法及类型图的完整服务正文。
+            String protocolSql = "SELECT r.service_id,r.search_protocol" + memberFrom() //
                     + " WHERE r.service_id IN (" + placeholders + ") AND " + liveMember();
             jdbc.queryForList(protocolSql, args.toArray(), (rs, row) -> {
-                protocols.computeIfAbsent(ids.get(rs.getString(1)), id -> new TreeSet<>()).add(rs.getString(2));
+                Set<String> names = protocols.computeIfAbsent(ids.get(rs.getString(1)), id -> new TreeSet<>());
+                Collections.addAll(names, StringUtils.split(StringUtils.defaultString(rs.getString(2)), ' '));
                 return null;
             });
             for (Map.Entry<String, Set<String>> entry : protocols.entrySet()) {
@@ -496,30 +497,78 @@ final class JdbcStorage implements StorageAccess {
     }
 
     @Override
+    public ServiceMethodPage serviceMethods(String serviceId, String methodName, DirectoryQuery query) throws Exception {
+        ServiceMethodUtils.validate(query);
+        return this.transaction(jdbc -> {
+            List<Object> args = new ArrayList<>();
+            String sql = "SELECT method_path,body FROM meteor_service_methods WHERE method_path LIKE ?";
+            args.add(ServiceMethodUtils.prefix(serviceId) + "%");
+            if (StringUtils.isNotBlank(methodName)) {
+                sql += " AND method_path=?";
+                args.add(ServiceMethodUtils.path(serviceId, methodName));
+            }
+            if (query.getCursor() != null) {
+                sql += " AND method_path>?";
+                args.add(query.getCursor());
+            }
+            List<String> keys = new ArrayList<>();
+            List<EntServiceMethodData> entries = jdbc.queryForList(sql + " ORDER BY method_path", limited(args, query.getLimit()), (rs, row) -> {
+                keys.add(rs.getString(1));
+                return methodData(rs, 2);
+            });
+            RecordPage<EntServiceMethodData> records = resultPage(entries, keys, query.getLimit());
+            ServiceMethodPage page = new ServiceMethodPage();
+            page.setItems(records.getItems());
+            page.setNextCursor(records.getNextCursor());
+            return page;
+        });
+    }
+
+    private static EntServiceMethodData methodData(ResultSet rs, int column) throws SQLException {
+        try {
+            return RegistryJson.read(rs.getString(column), EntServiceMethodData.class);
+        } catch (Exception failure) {
+            throw new SQLException("Invalid service method body", failure);
+        }
+    }
+
+    private void appendMethods(JdbcTemplate jdbc, EntServiceRuntimeData service) throws Exception {
+        // 调用方已锁定服务声明行；同一服务的首次插入和追加均在此锁内完成。
+        for (EntServiceMethodData added : ServiceMethodUtils.extract(service).values()) {
+            String path = ServiceMethodUtils.path(service.getServiceId(), added.getName());
+            List<EntServiceMethodData> previous = jdbc.queryForList("SELECT body FROM meteor_service_methods WHERE method_path=?", //
+                    new Object[] { path }, (rs, row) -> methodData(rs, 1));
+            EntServiceMethodData merged = ServiceMethodUtils.merge(previous.isEmpty() ? null : previous.get(0), added);
+            if (!previous.isEmpty() && RegistryJson.sameData(previous.get(0), merged)) {
+                continue;
+            }
+            String body = RegistryJson.write(merged);
+            String revision = UUID.randomUUID().toString();
+            if (previous.isEmpty()) {
+                jdbc.executeUpdate("INSERT INTO meteor_service_methods(id,method_path,revision,body) VALUES (?,?,?,?)", //
+                        new Object[] { UUID.randomUUID().toString(), path, revision, body });
+            } else {
+                jdbc.executeUpdate("UPDATE meteor_service_methods SET body=?,revision=? WHERE method_path=?", //
+                        new Object[] { body, revision, path });
+            }
+        }
+    }
+
+    @Override
     public void registerService(String instanceId, EntServiceRuntimeData service) throws Exception {
         Objects.requireNonNull(service.getRole(), "Service role is required");
         this.transaction(jdbc -> {
             this.lockInstance(jdbc, instanceId);
             this.saveDeclaration(jdbc, service);
+            this.appendMethods(jdbc, service);
             String columns = "session_id,member_role,search_text,search_role,search_protocol,search_address";
             Object[] keys = { key(instanceId), key(service.getServiceId()) };
             Object[] values = { this.sessionId, service.getRole().name(), service.getServiceId(), //
                     DirectoryFilter.text(service, "role", ""), " " + DirectoryFilter.protocols(service) + " ", //
                     DirectoryFilter.addresses(service) };
             this.put(jdbc, "meteor_instance_services", "instance_id,service_id", keys, columns, values, service);
-            this.saveProtocols(jdbc, keys, service);
             return null;
         });
-    }
-
-    private void saveProtocols(JdbcTemplate jdbc, Object[] keys, EntServiceRuntimeData service) throws Exception {
-        jdbc.executeUpdate("DELETE FROM meteor_member_protocols WHERE instance_id=? AND service_id=?", keys);
-        Set<String> protocols = DirectoryFilter.protocolNames(service);
-        for (String protocol : protocols) {
-            String sql = "INSERT INTO meteor_member_protocols" //
-                    + "(instance_id,service_id,protocol_name,session_id) VALUES (?,?,?,?)";
-            jdbc.executeUpdate(sql, new Object[] { keys[0], keys[1], protocol, this.sessionId });
-        }
     }
 
     @Override
@@ -527,7 +576,7 @@ final class JdbcStorage implements StorageAccess {
         this.transaction(jdbc -> {
             this.lockInstance(jdbc, instanceId);
             Object[] ids = { key(instanceId), key(serviceId), this.sessionId };
-            for (String table : List.of("meteor_member_protocols", "meteor_instance_services", "meteor_governance")) {
+            for (String table : List.of("meteor_instance_services", "meteor_governance")) {
                 String sql = "DELETE FROM " + table + " WHERE instance_id=? AND service_id=? AND session_id=?";
                 jdbc.executeUpdate(sql, ids);
             }
@@ -541,7 +590,7 @@ final class JdbcStorage implements StorageAccess {
                 + " WHERE instance_id=? AND session_id=?";
         Object[] args = { instanceId, owner };
         jdbc.executeUpdate(sql, args);
-        for (String table : List.of("meteor_member_protocols", "meteor_instance_services", "meteor_governance")) {
+        for (String table : List.of("meteor_instance_services", "meteor_governance")) {
             jdbc.executeUpdate("DELETE FROM " + table + " WHERE instance_id=? AND session_id=?", args);
         }
     }
@@ -552,7 +601,7 @@ final class JdbcStorage implements StorageAccess {
                 + " SET runtime_body=NULL,runtime_revision=NULL,rule_controls=NULL,expires_at=NULL" //
                 + " WHERE session_id=?";
         jdbc.executeUpdate(sql, new Object[] { this.sessionId });
-        for (String table : List.of("meteor_member_protocols", "meteor_instance_services", "meteor_governance")) {
+        for (String table : List.of("meteor_instance_services", "meteor_governance")) {
             jdbc.executeUpdate("DELETE FROM " + table + " WHERE session_id=?", new Object[] { this.sessionId });
         }
     }

@@ -19,7 +19,6 @@ import net.hasor.example.protocol.soap.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
-import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.soap.definition.SoapWsdlResource;
 import org.junit.jupiter.api.Test;
@@ -63,7 +62,7 @@ public class WebServicesBootstrapTest {
 
             // WSDL 路由和客户端使用相同默认名，不向服务别名表写入推导结果。
             String name = EchoService.class.getCanonicalName();
-            URI endpoint = URI.create("http://" + server.getListenAddress("soap").getHostPort() + "/services/" + name);
+            URI endpoint = URI.create("http://" + server.getListenAddress("soap").getHostPort() + "/services/default/1.0.0/" + name);
             Document wsdl = this.wsdl(URI.create(endpoint + "?wsdl"));
             Element service = this.wsdlElement(wsdl, "service");
             Element address = (Element) wsdl.getElementsByTagNameNS( //
@@ -101,7 +100,7 @@ public class WebServicesBootstrapTest {
             DeclaredEcho remote = client.getRsfClient(server.getListenAddress("soap")).getRemote(subscription);
             assertEquals("declared:hello", remote.echo("hello"));
             String base = "http://" + server.getListenAddress("soap").getHostPort();
-            URI endpoint = URI.create(base + "/services/PublicEcho");
+            URI endpoint = URI.create(base + "/services/default/1.0.0/PublicEcho");
             Document wsdl = this.wsdl(URI.create(endpoint + "?wsdl"));
             Element service = this.wsdlElement(wsdl, "service");
             assertEquals("PublicEcho", service.getAttribute("name"));
@@ -134,7 +133,7 @@ public class WebServicesBootstrapTest {
             // 调用和 WSDL 使用别名，内部登记名不会产生额外 HTTP 端点。
             EchoService remote = client.getRsfClient(server.getListenAddress("soap")).getRemote(subscription);
             assertEquals("aliased", remote.echo("aliased"));
-            String base = "http://" + server.getListenAddress("soap").getHostPort() + "/services/";
+            String base = "http://" + server.getListenAddress("soap").getHostPort() + "/services/default/1.0.0/";
             Document wsdl = this.wsdl(URI.create(base + "ExternalEcho?wsdl"));
             Element service = this.wsdlElement(wsdl, "service");
             assertEquals("ExternalEcho", service.getAttribute("name"));
@@ -172,7 +171,7 @@ public class WebServicesBootstrapTest {
             // 在默认路径完成调用，同时保留外部 namespace、service 和 port 名。
             EchoService remote = client.getRsfClient(server.getListenAddress("soap")).getRemote(subscription);
             assertEquals("external", remote.echo("external"));
-            String base = "http://" + server.getListenAddress("soap").getHostPort() + "/services/";
+            String base = "http://" + server.getListenAddress("soap").getHostPort() + "/services/default/1.0.0/";
             URI endpoint = URI.create(base + EchoService.class.getCanonicalName());
             Document wsdl = this.wsdl(URI.create(endpoint + "?wsdl"));
             Element service = this.wsdlElement(wsdl, "service");
@@ -213,7 +212,7 @@ public class WebServicesBootstrapTest {
                     .rsfService(EchoService.class, value -> "duplicate:" + value).name("OtherEcho") //
                     .aliasName("soap", "SharedEcho").protocol("soap").register());
             String base = "http://" + server.getListenAddress("soap").getHostPort();
-            URI endpoint = URI.create(base + "/services/SharedEcho");
+            URI endpoint = URI.create(base + "/services/default/1.0.0/SharedEcho");
             Document wsdl = this.wsdl(URI.create(endpoint + "?wsdl"));
             assertEquals("SharedEcho", this.wsdlElement(wsdl, "service").getAttribute("name"));
             assertEquals(existing.getBindID(), server.getServiceInfo(existing.getBindID()).getBindID());
@@ -228,21 +227,19 @@ public class WebServicesBootstrapTest {
     }
 
     @Test
-    public void identicalDefaultNamesRemainIndependentOnDifferentMounts() throws Exception {
-        // 同一物理 HTTP 端点上的两个挂载允许独立发布相同有效服务名。
+    public void identicalDefaultNamesRemainIndependentOnDifferentServiceSubpaths() throws Exception {
+        // 同一协议挂载点下，两个服务子路径允许独立发布相同有效服务名。
         MetConfiguration incoming = TestConfigurationUtils.create() //
                 .setDefaultProtocol("soap");
         incoming.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("soap") //
-                .contextPath("/first") //
-                .addContextPath("/second");
+                .contextPath("/services");
         MetConfiguration outgoing = TestConfigurationUtils.create() //
                 .setDefaultProtocol("soap");
         outgoing.connector("http") //
                 .protocol("soap") //
-                .contextPath("/first") //
-                .addContextPath("/second");
+                .contextPath("/services");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();
@@ -263,9 +260,7 @@ public class WebServicesBootstrapTest {
             // 两次真实调用分别命中自己的路径，不能被同名服务覆盖。
             MetClient caller = client.getRsfClient(server.getListenAddress("soap"));
             assertEquals("first:hello", caller.getRemote(first).echo("hello"));
-            var listener = server.getListenAddress("soap");
-            InterAddress secondAddress = new InterAddress("soap", listener.getHost(), listener.getPort(), "/second");
-            assertEquals("second:hello", client.getRsfClient(secondAddress).getRemote(second).echo("hello"));
+            assertEquals("second:hello", caller.getRemote(second).echo("hello"));
         }
     }
 

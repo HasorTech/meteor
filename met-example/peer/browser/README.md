@@ -10,7 +10,7 @@
 
 ## gRPC-Web
 
-使用 grpc-web SDK、Protobuf 和 [order.proto](../../resource/order.proto) 调用订单服务。RPC 地址为 `http://127.0.0.1:8080/grpc-web`，页面地址为 `http://127.0.0.1:8090`。
+使用 grpc-web SDK、Protobuf 和 [order.proto](../../resource/order.proto) 调用订单服务。RPC 地址为 `http://127.0.0.1:8080/grpc-web/default/1.0.0`，页面地址为 `http://127.0.0.1:8090`。
 
 ### grpc-web → Meteor（直连）
 

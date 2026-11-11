@@ -141,6 +141,7 @@ public class ThriftOfficialInteropScenarioTest {
             server.start();
             server.publisher().rsfService(ThriftDemoService.class, new ThriftDemoServiceImpl()) //
                     .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)) //
+                    .contextPathByPrefix("thrift-http", "/thrift") //
                     .aliasName("thrift-http", "ExtendedInteropService").register();
 
             // 隔离进程中的官方 Client 使用实际监听端口，只执行当前场景。
@@ -170,6 +171,7 @@ public class ThriftOfficialInteropScenarioTest {
             client.start();
             MetBindInfo<ThriftDemoService> service = client.publisher().rsfService(ThriftDemoService.class) //
                     .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)) //
+                    .contextPathByPrefix("thrift-http", "/thrift") //
                     .aliasName("thrift-http", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
             InterAddress address = new InterAddress("thrift-http", peer.host(), port);
@@ -294,6 +296,7 @@ public class ThriftOfficialInteropScenarioTest {
             server.start();
             server.publisher().rsfService(ThriftDemoService.class, new ThriftDemoServiceImpl()) //
                     .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)) //
+                    .contextPathByPrefix("thrift-http", "/thrift") //
                     .aliasName("thrift-http", "ExtendedInteropService").register();
 
             // 隔离进程中的官方 Client 使用实际监听端口，只执行当前场景。
@@ -323,6 +326,7 @@ public class ThriftOfficialInteropScenarioTest {
             client.start();
             MetBindInfo<ThriftDemoService> service = client.publisher().rsfService(ThriftDemoService.class) //
                     .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)) //
+                    .contextPathByPrefix("thrift-http", "/thrift") //
                     .aliasName("thrift-http", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
             InterAddress address = new InterAddress("thrift-http", peer.host(), port);
@@ -447,6 +451,7 @@ public class ThriftOfficialInteropScenarioTest {
             server.start();
             server.publisher().rsfService(ThriftDemoService.class, new ThriftDemoServiceImpl()) //
                     .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)) //
+                    .contextPathByPrefix("thrift-http", "/thrift") //
                     .aliasName("thrift-http", "ExtendedInteropService").register();
 
             // 隔离进程中的官方 Client 使用实际监听端口，只执行当前场景。
@@ -476,6 +481,7 @@ public class ThriftOfficialInteropScenarioTest {
             client.start();
             MetBindInfo<ThriftDemoService> service = client.publisher().rsfService(ThriftDemoService.class) //
                     .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)) //
+                    .contextPathByPrefix("thrift-http", "/thrift") //
                     .aliasName("thrift-http", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
             InterAddress address = new InterAddress("thrift-http", peer.host(), port);
@@ -1331,7 +1337,7 @@ public class ThriftOfficialInteropScenarioTest {
             int port = server.getListenAddress("thrift").getPort();
             try (ThriftPeerProcess peer = ThriftPeerProcess.start("--command=client", //
                     "--transport=tcp", "--protocol=binary", "--framed=true", //
-                    "--multiplexed=true", "--service-name=ExtendedInteropService", //
+                    "--multiplexed=true", "--service-name=default/1.0.0/ExtendedInteropService", //
                     "--port=" + port, "--path=/thrift", "--scenario=echo", "--value=official → Meteor 中文🙂")) {
                 peer.requireResult("official → Meteor 中文🙂");
             }
@@ -1345,7 +1351,7 @@ public class ThriftOfficialInteropScenarioTest {
         MetConfiguration configuration = this.outgoing("binary", true, true);
         try (ThriftPeerProcess peer = ThriftPeerProcess.start("--command=server", //
                 "--transport=tcp", "--protocol=binary", "--framed=true", //
-                "--multiplexed=true", "--service-name=ExtendedInteropService", //
+                "--multiplexed=true", "--service-name=default/1.0.0/ExtendedInteropService", //
                 "--port=0", "--path=/thrift"); //
              MetContext client = configuration.buildContext()) {
             int port = peer.awaitPort();
@@ -1382,7 +1388,7 @@ public class ThriftOfficialInteropScenarioTest {
             int port = server.getListenAddress("thrift").getPort();
             try (ThriftPeerProcess peer = ThriftPeerProcess.start("--command=client", //
                     "--transport=tcp", "--protocol=compact", "--framed=true", //
-                    "--multiplexed=true", "--service-name=ExtendedInteropService", //
+                    "--multiplexed=true", "--service-name=default/1.0.0/ExtendedInteropService", //
                     "--port=" + port, "--path=/thrift", "--scenario=echo", "--value=official → Meteor 中文🙂")) {
                 peer.requireResult("official → Meteor 中文🙂");
             }
@@ -1396,7 +1402,7 @@ public class ThriftOfficialInteropScenarioTest {
         MetConfiguration configuration = this.outgoing("compact", true, true);
         try (ThriftPeerProcess peer = ThriftPeerProcess.start("--command=server", //
                 "--transport=tcp", "--protocol=compact", "--framed=true", //
-                "--multiplexed=true", "--service-name=ExtendedInteropService", //
+                "--multiplexed=true", "--service-name=default/1.0.0/ExtendedInteropService", //
                 "--port=0", "--path=/thrift"); //
              MetContext client = configuration.buildContext()) {
             int port = peer.awaitPort();
@@ -1433,7 +1439,7 @@ public class ThriftOfficialInteropScenarioTest {
             int port = server.getListenAddress("thrift").getPort();
             try (ThriftPeerProcess peer = ThriftPeerProcess.start("--command=client", //
                     "--transport=tcp", "--protocol=json", "--framed=true", //
-                    "--multiplexed=true", "--service-name=ExtendedInteropService", //
+                    "--multiplexed=true", "--service-name=default/1.0.0/ExtendedInteropService", //
                     "--port=" + port, "--path=/thrift", "--scenario=echo", "--value=official → Meteor 中文🙂")) {
                 peer.requireResult("official → Meteor 中文🙂");
             }
@@ -1447,7 +1453,7 @@ public class ThriftOfficialInteropScenarioTest {
         MetConfiguration configuration = this.outgoing("json", true, true);
         try (ThriftPeerProcess peer = ThriftPeerProcess.start("--command=server", //
                 "--transport=tcp", "--protocol=json", "--framed=true", //
-                "--multiplexed=true", "--service-name=ExtendedInteropService", //
+                "--multiplexed=true", "--service-name=default/1.0.0/ExtendedInteropService", //
                 "--port=0", "--path=/thrift"); //
              MetContext client = configuration.buildContext()) {
             int port = peer.awaitPort();
@@ -1507,9 +1513,88 @@ public class ThriftOfficialInteropScenarioTest {
             int port = server.getListenAddress("thrift").getPort();
             try (ThriftPeerProcess peer = ThriftPeerProcess.start("--command=client", //
                     "--transport=tcp", "--protocol=binary", "--framed=true", //
-                    "--multiplexed=true", "--service-name=ExtendedInteropService", //
+                    "--multiplexed=true", "--service-name=default/1.0.0/ExtendedInteropService", //
                     "--port=" + port, "--path=/thrift", "--scenario=bad-mux", "--value=missing")) {
                 peer.requireResult("rejected:TApplicationException");
+            }
+        }
+    }
+
+    @Test
+    @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
+    public void officialMultiplexedClientSeparatesGroupsAndVersions() throws Exception {
+        MetConfiguration configuration = this.incoming("binary", true, true);
+        try (MetContext server = configuration.buildContext()) {
+            server.start();
+            // 同一个 TCP 监听端口发布三个身份，业务结果携带身份，避免错路后仍返回相同结果。
+            for (int index = 0; index < 3; index++) {
+                String group = index == 2 ? "other" : "orders";
+                String version = index == 1 ? "2.0" : "1.0";
+                String identity = group + "/" + version;
+                ThriftDemoServiceImpl implementation = new ThriftDemoServiceImpl() {
+                    @Override
+                    public String echo(String value) {
+                        return identity + ":" + value;
+                    }
+                };
+                server.publisher().rsfService(ThriftDemoService.class, implementation) //
+                        .group(group).version(version) //
+                        .bindResource("thrift", new ThriftServiceResource(ExtendedInteropService.class)) //
+                        .aliasName("thrift", "ExtendedInteropService").register();
+            }
+
+            // 原厂多路复用客户端只配置完整服务名，不改写其报文或生成的 IDL 绑定。
+            int port = server.getListenAddress("thrift").getPort();
+            for (int index = 0; index < 3; index++) {
+                String group = index == 2 ? "other" : "orders";
+                String version = index == 1 ? "2.0" : "1.0";
+                String identity = group + "/" + version;
+                try (ThriftPeerProcess peer = ThriftPeerProcess.start("--command=client", //
+                        "--transport=tcp", "--protocol=binary", "--framed=true", //
+                        "--multiplexed=true", "--service-name=" + identity + "/ExtendedInteropService", //
+                        "--port=" + port, "--scenario=echo", "--value=identity")) {
+                    peer.requireResult(identity + ":identity");
+                }
+            }
+        }
+    }
+
+    @Test
+    @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
+    public void officialHttpClientSeparatesGroupsAndVersions() throws Exception {
+        MetConfiguration configuration = this.incomingHttp("binary", false);
+        try (MetContext server = configuration.buildContext()) {
+            server.start();
+            // HTTP 不使用多路复用，由默认挂载路径承载分组、版本及 IDL 服务名。
+            for (int index = 0; index < 3; index++) {
+                String group = index == 2 ? "other" : "orders";
+                String version = index == 1 ? "2.0" : "1.0";
+                String identity = group + "/" + version;
+                ThriftDemoServiceImpl implementation = new ThriftDemoServiceImpl() {
+                    @Override
+                    public String echo(String value) {
+                        return identity + ":" + value;
+                    }
+                };
+                server.publisher().rsfService(ThriftDemoService.class, implementation) //
+                        .group(group).version(version) //
+                        .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)) //
+                        .aliasName("thrift-http", "ExtendedInteropService").register();
+            }
+
+            // 原厂 HTTP 客户端使用实际对外 URL；IDL 中的服务名保持不变。
+            int port = server.getListenAddress("thrift-http").getPort();
+            for (int index = 0; index < 3; index++) {
+                String group = index == 2 ? "other" : "orders";
+                String version = index == 1 ? "2.0" : "1.0";
+                String identity = group + "/" + version;
+                String path = "/thrift/" + identity + "/ExtendedInteropService";
+                try (ThriftPeerProcess peer = ThriftPeerProcess.start("--command=client", //
+                        "--transport=http", "--protocol=binary", "--framed=false", //
+                        "--multiplexed=false", "--service-name=ExtendedInteropService", //
+                        "--port=" + port, "--path=" + path, "--scenario=echo", "--value=identity")) {
+                    peer.requireResult(identity + ":identity");
+                }
             }
         }
     }

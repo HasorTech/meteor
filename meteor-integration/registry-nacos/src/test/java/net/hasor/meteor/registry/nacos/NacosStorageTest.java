@@ -32,21 +32,14 @@ public class NacosStorageTest {
                  StorageAccess reader = configuration.openStorage()) {
                 EntInstanceRuntimeData registered = instance("one", "orders", "east");
                 EntInstanceEndpointData publicEndpoint = new EntInstanceEndpointData();
-                publicEndpoint.setConnectorName("public-http");
-                publicEndpoint.setTransport("http");
                 publicEndpoint.setProtocolName("jsonrpc");
-                publicEndpoint.setScheme("orders-rpc");
-                publicEndpoint.setContextPath("/orders");
-                publicEndpoint.setListenAddress("orders-rpc://127.0.0.1:8080/orders");
+                publicEndpoint.getEndpoints().put("endpoint", "orders-rpc://127.0.0.1:8080/orders");
                 EntInstanceEndpointData internalEndpoint = new EntInstanceEndpointData();
-                internalEndpoint.setConnectorName("internal-http");
-                internalEndpoint.setTransport("http");
                 internalEndpoint.setProtocolName("jsonrpc");
-                internalEndpoint.setScheme("jsonrpc");
-                internalEndpoint.setContextPath("/internal");
-                internalEndpoint.setListenAddress("jsonrpc://127.0.0.1:8081/internal");
-                internalEndpoint.setManagementAddress("jsonrpc://127.0.0.1:8081/internal/management");
+                internalEndpoint.getEndpoints().put("endpoint", "jsonrpc://127.0.0.1:8081/internal");
+                internalEndpoint.getEndpoints().put("management", "jsonrpc://127.0.0.1:8081/internal/management");
                 EntInstanceEndpointData[] expected = { publicEndpoint, internalEndpoint };
+                publicEndpoint.getEndpoints().put("schema", "");
                 registered.setEndpoints(expected);
                 writer.registerInstance(registered);
 
@@ -56,13 +49,8 @@ public class NacosStorageTest {
                 assertEquals(2, actual.length);
                 // 按登记顺序逐字段核对，不能将同协议的两个连接器合并。
                 for (int index = 0; index < expected.length; index++) {
-                    assertEquals(expected[index].getConnectorName(), actual[index].getConnectorName());
-                    assertEquals(expected[index].getTransport(), actual[index].getTransport());
                     assertEquals(expected[index].getProtocolName(), actual[index].getProtocolName());
-                    assertEquals(expected[index].getScheme(), actual[index].getScheme());
-                    assertEquals(expected[index].getContextPath(), actual[index].getContextPath());
-                    assertEquals(expected[index].getListenAddress(), actual[index].getListenAddress());
-                    assertEquals(expected[index].getManagementAddress(), actual[index].getManagementAddress());
+                    assertEquals(expected[index].getEndpoints(), actual[index].getEndpoints());
                 }
             }
         }
@@ -77,15 +65,15 @@ public class NacosStorageTest {
             EntServiceRuntimeData service = service("contract", MetServiceType.Provider);
             ObjectNode description = JsonNodeFactory.instance.objectNode();
             description.put("contractServiceId", 0L);
-            service.setDescription(description);
+            service.setDescription(RegistryJson.copy(description, RefServiceDescriptionData.class));
             storage.registerService("one", service);
 
             // 实例描述保留数值零，服务目录不复制描述或数值编号。
             EntServiceRuntimeData registered = storage.getInstanceService("one", "contract");
-            assertEquals(0L, registered.getDescription().get("contractServiceId").longValue());
+            assertEquals(0L, RegistryJson.copy(registered.getDescription(), ObjectNode.class).get("contractServiceId").longValue());
             assertEquals("contract", registered.getServiceId());
             ObjectNode catalog = RegistryJson.copy(storage.getService("contract"), ObjectNode.class);
-            assertFalse(catalog.has("contractServiceId"));
+            assertFalse(catalog.hasNonNull("contractServiceId"));
             assertFalse(catalog.has("description"));
         }
     }
@@ -99,12 +87,12 @@ public class NacosStorageTest {
             EntServiceRuntimeData service = service("contract", MetServiceType.Provider);
             ObjectNode description = JsonNodeFactory.instance.objectNode();
             description.put("contractServiceId", -1L);
-            service.setDescription(description);
+            service.setDescription(RegistryJson.copy(description, RefServiceDescriptionData.class));
             storage.registerService("one", service);
 
             // 负值也按 Long 原样读回，不与缺省编号或字符串 serviceId 混淆。
             EntServiceRuntimeData registered = storage.getInstanceService("one", "contract");
-            assertEquals(-1L, registered.getDescription().get("contractServiceId").longValue());
+            assertEquals(-1L, RegistryJson.copy(registered.getDescription(), ObjectNode.class).get("contractServiceId").longValue());
         }
     }
 
@@ -117,15 +105,15 @@ public class NacosStorageTest {
             EntServiceRuntimeData service = service("contract", MetServiceType.Provider);
             ObjectNode description = JsonNodeFactory.instance.objectNode();
             description.put("contractServiceId", 0xffffffffL);
-            service.setDescription(description);
+            service.setDescription(RegistryJson.copy(description, RefServiceDescriptionData.class));
             storage.registerService("one", service);
 
             // 成员查询从本实例描述返回完整 long 数值。
             RefServiceRelationData member = storage.getMember("contract", MetServiceType.Provider, "one");
-            ObjectNode storedDescription = member.getService().getDescription();
+            ObjectNode storedDescription = RegistryJson.copy(member.getService().getDescription(), ObjectNode.class);
             assertEquals(0xffffffffL, storedDescription.get("contractServiceId").longValue());
             ObjectNode runtime = RegistryJson.copy(member.getService(), ObjectNode.class);
-            assertFalse(runtime.has("contractServiceId"));
+            assertFalse(runtime.hasNonNull("contractServiceId"));
         }
     }
 
@@ -138,11 +126,11 @@ public class NacosStorageTest {
             EntServiceRuntimeData service = service("contract", MetServiceType.Provider);
             ObjectNode description = JsonNodeFactory.instance.objectNode();
             description.putNull("contractServiceId");
-            service.setDescription(description);
+            service.setDescription(RegistryJson.copy(description, RefServiceDescriptionData.class));
             storage.registerService("one", service);
 
             // null 随描述原样读回，不转成零或从目录补入其他实例的编号。
-            ObjectNode registered = storage.getInstanceService("one", "contract").getDescription();
+            ObjectNode registered = RegistryJson.copy(storage.getInstanceService("one", "contract").getDescription(), ObjectNode.class);
             assertTrue(registered.get("contractServiceId").isNull());
         }
     }
@@ -157,19 +145,19 @@ public class NacosStorageTest {
             EntServiceRuntimeData numbered = service("contract", MetServiceType.Provider);
             ObjectNode numberedDescription = JsonNodeFactory.instance.objectNode();
             numberedDescription.put("contractServiceId", 0xffffffffL);
-            numbered.setDescription(numberedDescription);
+            numbered.setDescription(RegistryJson.copy(numberedDescription, RefServiceDescriptionData.class));
             storage.registerService("numbered", numbered);
             EntServiceRuntimeData unnumbered = service("contract", MetServiceType.Provider);
             ObjectNode unnumberedDescription = JsonNodeFactory.instance.objectNode();
             unnumberedDescription.putNull("contractServiceId");
-            unnumbered.setDescription(unnumberedDescription);
+            unnumbered.setDescription(RegistryJson.copy(unnumberedDescription, RefServiceDescriptionData.class));
             storage.registerService("unnumbered", unnumbered);
 
             // 共享服务目录不能覆盖各实例自己的声明，未指定时仍返回 null。
             EntServiceRuntimeData first = storage.getInstanceService("numbered", "contract");
             EntServiceRuntimeData second = storage.getInstanceService("unnumbered", "contract");
-            assertEquals(0xffffffffL, first.getDescription().get("contractServiceId").longValue());
-            assertTrue(second.getDescription().get("contractServiceId").isNull());
+            assertEquals(0xffffffffL, RegistryJson.copy(first.getDescription(), ObjectNode.class).get("contractServiceId").longValue());
+            assertTrue(RegistryJson.copy(second.getDescription(), ObjectNode.class).get("contractServiceId").isNull());
         }
     }
 
@@ -186,22 +174,22 @@ public class NacosStorageTest {
                 first.put("contractServiceId", 0);
                 first.putArray("methods").addObject().put("name", "Before");
                 first.putObject("types").putObject("Order").put("name", "Order");
-                service.setDescription(first);
+                service.setDescription(RegistryJson.copy(first, RefServiceDescriptionData.class));
                 writer.registerService("one", service);
-                ObjectNode captured = reader.getInstanceService("one", "description").getDescription();
-                assertEquals(first, captured);
+                ObjectNode captured = RegistryJson.copy(reader.getInstanceService("one", "description").getDescription(), ObjectNode.class);
+                assertEquals(RegistryJson.copy(RegistryJson.copy(first, RefServiceDescriptionData.class), ObjectNode.class), captured);
 
                 // 编号随完整描述替换，旧方法和旧类型同时消失，不影响已读取的旧值。
                 ObjectNode replacement = JsonNodeFactory.instance.objectNode();
                 replacement.put("contractServiceId", 0xffffffffL);
                 replacement.putArray("methods").addObject().put("name", "After");
                 replacement.putObject("types");
-                service.setDescription(replacement);
+                service.setDescription(RegistryJson.copy(replacement, RefServiceDescriptionData.class));
                 writer.registerService("one", service);
-                ObjectNode current = reader.getMember("description", MetServiceType.Provider, "one") //
-                        .getService().getDescription();
-                assertEquals(replacement, current);
-                assertEquals(first, captured);
+                ObjectNode current = RegistryJson.copy(reader.getMember("description", MetServiceType.Provider, "one") //
+                        .getService().getDescription(), ObjectNode.class);
+                assertEquals(RegistryJson.copy(RegistryJson.copy(replacement, RefServiceDescriptionData.class), ObjectNode.class), current);
+                assertEquals(RegistryJson.copy(RegistryJson.copy(first, RefServiceDescriptionData.class), ObjectNode.class), captured);
                 assertFalse(RegistryJson.copy(reader.getService("description"), ObjectNode.class).has("description"));
             }
         }
@@ -216,17 +204,17 @@ public class NacosStorageTest {
             EntServiceRuntimeData service = service("contract", MetServiceType.Provider);
             ObjectNode initial = JsonNodeFactory.instance.objectNode();
             initial.put("contractServiceId", 0xffffffffL);
-            service.setDescription(initial);
+            service.setDescription(RegistryJson.copy(initial, RefServiceDescriptionData.class));
             storage.registerService("one", service);
 
             // 替换按整份描述保存，缺失的编号不从旧正文补回。
             ObjectNode replacement = JsonNodeFactory.instance.objectNode();
             replacement.put("name", "Renamed");
-            service.setDescription(replacement);
+            service.setDescription(RegistryJson.copy(replacement, RefServiceDescriptionData.class));
             storage.registerService("one", service);
-            ObjectNode current = storage.getInstanceService("one", "contract").getDescription();
-            assertEquals(replacement, current);
-            assertFalse(current.has("contractServiceId"));
+            ObjectNode current = RegistryJson.copy(storage.getInstanceService("one", "contract").getDescription(), ObjectNode.class);
+            assertEquals(RegistryJson.copy(RegistryJson.copy(replacement, RefServiceDescriptionData.class), ObjectNode.class), current);
+            assertFalse(current.hasNonNull("contractServiceId"));
         }
     }
 
@@ -239,14 +227,14 @@ public class NacosStorageTest {
             EntServiceRuntimeData service = service("contract", MetServiceType.Provider);
             ObjectNode description = JsonNodeFactory.instance.objectNode();
             description.put("contractServiceId", 0xffffffffL);
-            service.setDescription(description);
+            service.setDescription(RegistryJson.copy(description, RefServiceDescriptionData.class));
             storage.registerService("one", service);
 
             // 本次登记省略整份描述，成员正文不能留下旧编号。
             service.setDescription(null);
             storage.registerService("one", service);
             RefServiceRelationData member = storage.getMember("contract", MetServiceType.Provider, "one");
-            assertNull(member.getService().getDescription());
+            assertNull(RegistryJson.copy(member.getService().getDescription(), ObjectNode.class));
         }
     }
 

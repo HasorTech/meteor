@@ -11,7 +11,9 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import net.hasor.meteor.registry.admin.MetServiceEndpoint;
 import net.hasor.meteor.registry.admin.description.*;
+import net.hasor.meteor.registry.shared.storage.domain.RefServiceDescriptionData;
 import net.hasor.meteor.registry.shared.utils.RegistryJson;
 
 /** 将内部存储或管理 RPC 的描述转换为公开 DTO，不查询存储，也不改变原始正文。 */
@@ -19,11 +21,14 @@ final class DescriptionMapping {
     private DescriptionMapping() {
     }
 
+    static MetServiceDescription service(RefServiceDescriptionData source) {
+        return service(RegistryJson.copy(source, ObjectNode.class));
+    }
+
     static MetServiceDescription service(ObjectNode source) {
         ObjectNode remaining = source.deepCopy();
         JsonNode methods = remaining.remove("methods");
         JsonNode types = remaining.remove("types");
-        JsonNode protocols = remaining.remove("protocols");
         MetServiceDescription result = read(remaining, MetServiceDescription.class, //
                 MetServiceDescription::setExtensions, "contractServiceId", "javaType", "message");
 
@@ -39,15 +44,22 @@ final class DescriptionMapping {
             });
         }
 
-        // 协议名和连接器名分别保留，不能把同名协议的不同端点折叠为一份。
-        if (protocols != null) {
-            protocols.fields().forEachRemaining(entry -> {
-                Map<String, MetProtocolDescription> endpoints = new LinkedHashMap<>();
-                entry.getValue().fields().forEachRemaining(endpoint -> {
-                    endpoints.put(endpoint.getKey(), protocol((ObjectNode) endpoint.getValue()));
-                });
-                result.getProtocols().put(entry.getKey(), endpoints);
-            });
+        return result;
+    }
+
+    static MetServiceEndpoint[] endpoints(Object source) {
+        if (source == null) {
+            return new MetServiceEndpoint[0];
+        }
+
+        ObjectNode[] snapshots = RegistryJson.copy(source, ObjectNode[].class);
+        MetServiceEndpoint[] result = new MetServiceEndpoint[snapshots.length];
+        for (int i = 0; i < snapshots.length; i++) {
+            JsonNode description = snapshots[i].remove("description");
+            result[i] = RegistryJson.copy(snapshots[i], MetServiceEndpoint.class);
+            if (description != null && !description.isNull()) {
+                result[i].setDescription(protocol((ObjectNode) description));
+            }
         }
         return result;
     }
@@ -95,7 +107,7 @@ final class DescriptionMapping {
     }
 
     @SuppressWarnings("unchecked")
-    private static MetProtocolDescription protocol(ObjectNode source) {
+    static MetProtocolDescription protocol(ObjectNode source) {
         // 方法、返回值和类型图属于协议自己的形状，例如 SOAP 返回列表及 ONC RPC 的数值版本。
         ObjectNode remaining = source.deepCopy();
         JsonNode methods = remaining.remove("methods");

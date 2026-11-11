@@ -1,11 +1,11 @@
 // Copyright 2015-2026 the original author or authors. Licensed under the Apache License, Version 2.0.
 import grpcWeb from "grpc-web";
-import { create, fromBinary, toBinary } from "@bufbuild/protobuf";
-import { OrderSchema, OrderQuerySchema } from "./generated/order_pb.js";
+import {create, fromBinary, toBinary} from "@bufbuild/protobuf";
+import {OrderQuerySchema, OrderSchema} from "./generated/order_pb.js";
 
 // 使用公共 order.proto 的消息类型，通过 grpc-web SDK 调用 Meteor。
-const target = "http://127.0.0.1:8080/grpc-web";
-const client = new grpcWeb.GrpcWebClientBase({ format: "binary" });
+const target = "http://127.0.0.1:8080/grpc-web/default/1.0.0";
+const client = new grpcWeb.GrpcWebClientBase({format: "binary"});
 const service = "/meteor.example.OrderDemoService/";
 const save = new grpcWeb.MethodDescriptor(
     service + "save", grpcWeb.MethodType.UNARY, Object, Object,
@@ -48,7 +48,7 @@ form.addEventListener("submit", async (event) => {
 
         // 先保存，再查询；附件以 Base64 展示。
         await call(save, order);
-        const found = await call(find, create(OrderQuerySchema, { id: 1001 }));
+        const found = await call(find, create(OrderQuerySchema, {id: 1001}));
         output.textContent = JSON.stringify({
             id: found.id,
             description: found.description,

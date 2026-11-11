@@ -49,17 +49,17 @@ public class ProtocolMetaTest {
     }
 
     @Test
-    public void declaredPrefixesOverrideTheEndpointDefault() {
+    public void declaredPrefixesResolveUnderTheEndpointMount() {
         // 服务显式发布到多个目录，端点另有默认目录。
         ServiceDomain<Runnable> service = new ServiceDomain<>(Runnable.class);
         ContextPath declared = new ContextPath(List.of("/orders", "/inventory"), false);
         ProtocolMeta meta = new ProtocolMeta(service, declared, null, Map.of());
         ProtocolConfig config = ProtocolConfig.newConfig("http", "http", Map.of("contextPath", "/default"));
 
-        // 完整采用声明中的目录，不隐含加入端点默认目录。
+        // 服务子路径拼接到当前端点挂载目录，原始声明保持不变。
         ProtocolBinding binding = meta.build(config, null, null);
-        assertSame(declared, binding.getContextPath());
-        assertEquals(List.of("/orders", "/inventory"), List.copyOf(binding.getContextPath().getPaths()));
+        assertNotSame(declared, binding.getContextPath());
+        assertEquals(List.of("/default/orders", "/default/inventory"), List.copyOf(binding.getContextPath().getPaths()));
         assertSame(declared, meta.getContextPath());
     }
 
@@ -74,10 +74,27 @@ public class ProtocolMetaTest {
         // 构建不把精确地址转换为目录，也不移除有效的尾斜杠。
         ObjectNode description = JsonNodeFactory.instance.objectNode();
         ProtocolBinding binding = meta.build(config, null, description);
-        assertSame(declared, binding.getContextPath());
+        assertNotSame(declared, binding.getContextPath());
         assertTrue(binding.getContextPath().isExact());
         assertTrue(binding.getDescription().path("contextExact").asBoolean());
-        assertEquals(List.of("/orders/echo/"), List.copyOf(binding.getContextPath().getPaths()));
+        assertEquals(List.of("/default/orders/echo/"), List.copyOf(binding.getContextPath().getPaths()));
+        assertEquals("/orders/echo/", description.path("servicePaths").get(0).asText());
+        assertSame(declared, meta.getContextPath());
+    }
+
+    @Test
+    public void rootChildKeepsPrefixAndExactSemantics() {
+        ContextPath prefix = new ContextPath(List.of("/"), false);
+        ContextPath exact = new ContextPath(List.of("/"), true);
+        assertEquals(List.of("/rpc"), List.copyOf(prefix.resolve("/rpc/").getPaths()));
+        assertEquals(List.of("/rpc/"), List.copyOf(exact.resolve("/rpc/").getPaths()));
+        assertEquals(List.of("/"), List.copyOf(exact.resolve("/").getPaths()));
+    }
+
+    @Test
+    public void childCannotTraverseOutsideTheProtocolMount() {
+        ContextPath declared = new ContextPath(List.of("/../other"), false);
+        assertThrows(IllegalArgumentException.class, () -> declared.resolve("/rpc"));
     }
 
     @Test

@@ -23,7 +23,7 @@ public final class SdkConsumerMain {
     public static void main(String[] arguments) throws Exception {
         // 标准 SDK 访问 Meteor 的 XML-RPC 路径，关闭 Apache 私有类型扩展。
         XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();
-        config.setServerURL(URI.create("http://127.0.0.1:8080/xmlrpc").toURL());
+        config.setServerURL(URI.create("http://127.0.0.1:8080/xmlrpc/default/1.0.0").toURL());
         config.setEnabledForExtensions(false);
         XmlRpcClient client = new XmlRpcClient();
         client.setConfig(config);

@@ -7,10 +7,7 @@
  */
 package net.hasor.meteor.protocol.xmlrpc.codec;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import net.hasor.example.protocol.xmlrpc.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
@@ -47,7 +44,7 @@ public class XmlRpcBindingTest {
                 .addContextPath("/private");
         this.context = configuration.buildContext();
         this.context.publisher().rsfService(Methods.class, new Methods()) //
-                .name("Methods").aliasName("xmlrpc", "math").register();
+                .name("Methods").aliasName("xmlrpc", "math").contextPathByPrefix("xmlrpc", "/").register();
         this.protocol = ProtocolConfig.newConfig("xmlrpc", "xmlrpc", Map.of("contextPath", "/rpc"));
         this.routes = new RouteMountIndex("http-1", this.protocol);
         this.codec = new XmlRpcCodec(this.protocol, this.routes, this.context);
@@ -179,14 +176,14 @@ public class XmlRpcBindingTest {
     @Test
     public void omittedAliasUsesServiceName() throws Exception {
         // 服务名可以直接作为默认方法前缀。
-        this.context.publisher().rsfService(Methods.class, new Methods()).name("fallback").register();
+        this.context.publisher().rsfService(Methods.class, new Methods()).name("fallback").contextPathByPrefix("xmlrpc", "/").register();
         assertEquals("fallback", this.decode("fallback.ping", List.of()).getServiceName());
     }
 
     @Test
     public void consumerDeclarationIsNotInvocable() {
         // 订阅元信息不能作为本地提供者调用。
-        this.context.publisher().rsfService(Methods.class).name("consumer").register();
+        this.context.publisher().rsfService(Methods.class).name("consumer").contextPathByPrefix("xmlrpc", "/").register();
         XmlRpcException error = assertThrows(XmlRpcException.class, () -> this.decode("consumer.ping", List.of()));
         assertEquals(-32601, error.getCode());
     }
@@ -337,7 +334,7 @@ public class XmlRpcBindingTest {
     @Test
     public void inheritedGenericParameterResolvesFromPublishedType() throws Exception {
         // 父类方法声明 T，具体发布类型绑定为 Person。
-        this.context.publisher().rsfService(PersonService.class, new PersonService()).name("generic").register();
+        this.context.publisher().rsfService(PersonService.class, new PersonService()).name("generic").contextPathByPrefix("xmlrpc", "/").register();
         RequestPayload request = this.decode("generic.select", List.of(Map.of("name", "Ada")));
         assertEquals("Ada", ((Person) request.getParameterValues().get(0)).getName());
         assertEquals(List.of(Object.class.getName()), request.getParameterTypes());
@@ -362,7 +359,7 @@ public class XmlRpcBindingTest {
                 Map.of("contextPath", "/rpc", "allowNil", "true"));
         this.codec = new XmlRpcCodec(nil, new RouteMountIndex("http-1", nil), this.context);
         this.wire = new XmlRpcWireCodec(nil);
-        RequestPayload request = this.decode("math.binary", Arrays.asList((Object) null));
+        RequestPayload request = this.decode("math.binary", Collections.singletonList(null));
         assertNull(request.getParameterValues().get(0));
     }
 
@@ -395,7 +392,7 @@ public class XmlRpcBindingTest {
     public void methodTypeVariableShadowsThePublishedClassVariable() throws Exception {
         // 方法的 <T> 遮蔽父类的 T，不应被具体发布类上的 Person 绑定替换。
         this.context.publisher().rsfService(ShadowPersonService.class, new ShadowPersonService()) //
-                .name("shadow").register();
+                .name("shadow").contextPathByPrefix("xmlrpc", "/").register();
 
         // 未确定的方法类型保持普通值，不把整数误当作 Person 结构体。
         RequestPayload request = this.decode("shadow.select", List.of(7));

@@ -44,7 +44,7 @@ public class JsonRpcResponseTest {
                 .contextPath("/rpc");
         this.context = configuration.buildContext();
         this.context.publisher().rsfService(JsonRpcBindingTest.Methods.class) //
-                .name("Methods").aliasName("jsonrpc", "math").register();
+                .name("Methods").aliasName("jsonrpc", "math").contextPathByPrefix("jsonrpc", "/").register();
         ProtocolConfig protocol = ProtocolConfig.newConfig("jsonrpc", "jsonrpc", Map.of("contextPath", "/rpc"));
         this.codec = new JsonRpcCodec(protocol, new RouteMountIndex("http-0", protocol), this.context);
     }
@@ -211,7 +211,7 @@ public class JsonRpcResponseTest {
         byte[] wire = this.bytes("{\"jsonrpc\":\"2.0\",\"id\":7,\"result\":[{\"name\":\"Ada\"}]}");
         ResponsePayload response = this.codec.decodeResponse(request, wire);
         List<?> result = (List<?>) response.getReturnData();
-        assertTrue(result.get(0) instanceof JsonRpcBindingTest.Person);
+        assertInstanceOf(JsonRpcBindingTest.Person.class, result.get(0));
         assertEquals("Ada", ((JsonRpcBindingTest.Person) result.get(0)).getName());
     }
 

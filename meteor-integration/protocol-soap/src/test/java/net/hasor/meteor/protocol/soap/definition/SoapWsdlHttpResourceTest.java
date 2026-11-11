@@ -11,7 +11,6 @@ import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -122,24 +121,19 @@ public class SoapWsdlHttpResourceTest {
         this.document("/services/Echo?xsd=extra.xsd", this.emptySchema());
         SoapWsdlResource original = new SoapWsdlResource(this.url("/services/Echo?wsdl"));
 
-        // 将 WSDL 和每份 XSD 按公开渲染结果发布到新端点。
+        // 新端点只发布一个 WSDL，类型及多级 include 已全部内嵌。
         URI endpoint = this.url("/published/Echo").toURI();
         byte[] renderedWsdl = original.renderWsdl(endpoint);
         this.documents.put("/published/Echo?wsdl", renderedWsdl);
-        for (String resourceName : List.of("Echo?xsd=types.xsd", "Echo?xsd=extra.xsd")) {
-            String encoded = URLEncoder.encode(resourceName, StandardCharsets.UTF_8);
-            byte[] renderedSchema = original.renderResource(resourceName, endpoint);
-            this.documents.put("/published/Echo?xsd=" + encoded, renderedSchema);
-        }
+        this.requests.clear();
 
-        // 从新地址完整重载，确保渲染的 include 不再引用旧地址。
         SoapWsdlResource relocated = new SoapWsdlResource(this.url("/published/Echo?wsdl"));
         assertNotNull(relocated.definition().operation("echo"));
-        assertEquals(3, relocated.resourceNames().size());
+        assertEquals(1, relocated.resourceNames().size());
         String wsdl = new String(renderedWsdl, StandardCharsets.UTF_8);
         assertTrue(wsdl.contains("location=\"" + endpoint + "\""));
-        String extraRequest = "/published/Echo?xsd=Echo%3Fxsd%3Dextra.xsd";
-        assertTrue(this.requests.contains(extraRequest));
+        assertFalse(wsdl.contains("schemaLocation="));
+        assertEquals(List.of("/published/Echo?wsdl"), this.requests);
     }
 
     @Test
@@ -154,7 +148,7 @@ public class SoapWsdlHttpResourceTest {
         String rendered = new String(resource.renderWsdl(endpoint), StandardCharsets.UTF_8);
         String address = this.url("/soap%20services/Echo").toExternalForm();
         assertTrue(rendered.contains("location=\"" + address + "\""));
-        assertTrue(rendered.contains("schemaLocation=\"" + address + "?xsd="));
+        assertFalse(rendered.contains("schemaLocation="));
         assertFalse(rendered.contains("%2520"));
     }
 

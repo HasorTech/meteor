@@ -6,8 +6,10 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor.connector;
+import java.net.URI;
 import java.util.*;
 import java.util.function.Function;
+import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.cobble.CollectionUtils;
 import net.hasor.cobble.StringUtils;
 import net.hasor.cobble.logging.Logger;
@@ -44,10 +46,10 @@ final class RouteServiceRegistry {
     /** Bind once to a prepared endpoint; route lookups read its current service paths directly. */
     synchronized Function<String, RouteSelection> resolver(String endpointName) {
         RouteEndpoint endpoint = this.endpoints.get(endpointName);
-        return endpoint::selectExact;
+        return endpoint::selectService;
     }
 
-    /** Validate every endpoint first and publish all exact routes as one change. */
+    /** Validate every endpoint first and publish all service routes as one change. */
     synchronized void registerService(MetBindInfo<?> service) {
         // 并发移除可能先于登记回调到达，不能重新加入已回收服务的地址。
         if (this.context.getServiceInfo(service.getBindID()) != service) {
@@ -79,21 +81,27 @@ final class RouteServiceRegistry {
         for (RouteEndpoint endpoint : this.endpoints.values()) {
             endpoint.validateServiceKeys(service, inbound, this.publications);
         }
-        Map<RouteEndpoint, Map<String, RouteSelection>> candidates = this.prepareExactIndexes(service, inbound);
+        Map<RouteEndpoint, Map<String, RouteSelection>> candidates = this.prepareServiceIndexes(service, inbound);
 
-        // 第二阶段统一提交本轮完整元信息和精确路由快照。
+        // 文件请求仍走正常路径选路；发布前检查文件入口不能被其他挂载或精确服务路径遮蔽。
+        for (RouteEndpoint endpoint : this.endpoints.values()) {
+            Map<String, RouteSelection> serviceRoutes = candidates.getOrDefault(endpoint, endpoint.serviceRoutes);
+            endpoint.validateResourceRoutes(service, inbound, this.publications, serviceRoutes);
+        }
+
+        // 第二阶段统一提交本轮完整元信息和服务路由快照。
         domain.replaceProtocolPublication(metas);
         this.publications.put(service, provider ? domain.getProtocolMetas() : Map.of());
-        this.applyExactIndexes(candidates);
+        this.applyServiceIndexes(candidates);
     }
 
     synchronized void removeService(MetBindInfo<?> service) {
         // 先按已提交快照准备撤销，其他服务共享的路径仍参与索引重建。
-        Map<RouteEndpoint, Map<String, RouteSelection>> candidates = this.prepareExactIndexes(service, Map.of());
+        Map<RouteEndpoint, Map<String, RouteSelection>> candidates = this.prepareServiceIndexes(service, Map.of());
 
         this.publications.remove(service);
         MetBindInfoWrap.unwrap(service).replaceProtocolPublication(Map.of());
-        this.applyExactIndexes(candidates);
+        this.applyServiceIndexes(candidates);
     }
 
     synchronized void clear() {
@@ -103,50 +111,50 @@ final class RouteServiceRegistry {
 
         this.publications.clear();
         for (RouteEndpoint endpoint : this.endpoints.values()) {
-            endpoint.exact = Collections.emptyMap();
+            endpoint.serviceRoutes = Collections.emptyMap();
         }
         this.endpoints.clear();
     }
 
     /** 收集各端点的候选索引，只跳过 null，空 Map 仍需提交。 */
-    private Map<RouteEndpoint, Map<String, RouteSelection>> prepareExactIndexes(MetBindInfo<?> replaced, //
+    private Map<RouteEndpoint, Map<String, RouteSelection>> prepareServiceIndexes(MetBindInfo<?> replaced, //
             Map<String, ProtocolMeta> replacement) {
         Map<RouteEndpoint, Map<String, RouteSelection>> candidates = new LinkedHashMap<>();
         for (RouteEndpoint endpoint : this.endpoints.values()) {
-            Map<String, RouteSelection> exact = this.prepareExactIndex(endpoint, replaced, replacement);
-            if (exact != null) {
-                candidates.put(endpoint, exact);
+            Map<String, RouteSelection> serviceRoutes = this.prepareServiceIndex(endpoint, replaced, replacement);
+            if (serviceRoutes != null) {
+                candidates.put(endpoint, serviceRoutes);
             }
         }
         return candidates;
     }
 
     /** 准备全部成功后替换索引，服务元信息和发布快照由对应生命周期入口提交。 */
-    private void applyExactIndexes(Map<RouteEndpoint, Map<String, RouteSelection>> candidates) {
+    private void applyServiceIndexes(Map<RouteEndpoint, Map<String, RouteSelection>> candidates) {
         for (Map.Entry<RouteEndpoint, Map<String, RouteSelection>> entry : candidates.entrySet()) {
-            entry.getKey().exact = entry.getValue();
+            entry.getKey().serviceRoutes = entry.getValue();
         }
     }
 
     /** null 表示无需更新，空 Map 表示清空旧索引。 */
-    private Map<String, RouteSelection> prepareExactIndex(RouteEndpoint endpoint, MetBindInfo<?> replaced, //
+    private Map<String, RouteSelection> prepareServiceIndex(RouteEndpoint endpoint, MetBindInfo<?> replaced, //
             Map<String, ProtocolMeta> replacement) {
         if (!StringUtils.equalsIgnoreCase(endpoint.config.transportType(), "http")) {
             return null;
         }
 
-        // 本轮候选只属于当前端点；没有新增或旧精确路由时保持现有索引。
+        // 本轮候选只属于当前端点；没有新增或旧服务路由时保持现有索引。
         Map<String, RouteSelection> selected = new LinkedHashMap<>();
-        endpoint.addExactRoutes(replacement, selected);
+        endpoint.addServiceRoutes(replacement, selected);
         Map<String, ProtocolMeta> previous = this.publications.getOrDefault(replaced, Map.of());
-        if (selected.isEmpty() && !endpoint.hasExactRoutes(previous)) {
+        if (selected.isEmpty() && !endpoint.hasServiceRoutes(previous)) {
             return null;
         }
 
         // 其他服务只读取上次提交的协议结果，不读取正在变更的服务声明。
         for (Map.Entry<MetBindInfo<?>, Map<String, ProtocolMeta>> entry : this.publications.entrySet()) {
             if (entry.getKey() != replaced) {
-                endpoint.addExactRoutes(entry.getValue(), selected);
+                endpoint.addServiceRoutes(entry.getValue(), selected);
             }
         }
         return Collections.unmodifiableMap(selected);
@@ -179,18 +187,17 @@ final class RouteServiceRegistry {
         }
 
         // 此时发布结果尚未提交，只检查原始路径声明，不读取上一次端点发布结果。
-        if (selected.isExact()) {
-            String transport = protocol.provider().transportType();
-            if (!StringUtils.equalsIgnoreCase(transport, "http")) {
-                throw new IllegalArgumentException("Exact service paths require HTTP transport: " + name);
-            }
-            return;
+        String transport = protocol.provider().transportType();
+        if (!StringUtils.equalsIgnoreCase(transport, "http") || routes.contextPath() == null) {
+            throw new IllegalArgumentException("Service paths require an HTTP protocol mount: " + name);
         }
 
-        Set<String> paths = selected.getPaths();
-        if (!routes.contextPaths().containsAll(paths)) {
-            String message = "Context is not configured for protocol " + name + ": " + paths;
-            throw new IllegalArgumentException(message);
+        // 服务路径只能位于协议已声明的挂载点内，精确匹配也不能绕过该边界。
+        for (String path : selected.resolve(routes.contextPath()).getPaths()) {
+            if (routes.match(path) == null) {
+                String message = "Context is not configured for protocol " + name + ": " + path;
+                throw new IllegalArgumentException(message);
+            }
         }
     }
 
@@ -208,15 +215,15 @@ final class RouteServiceRegistry {
 
     private static void addRoute(Map<String, RouteSelection> selected, RouteSelection route) {
         RouteSelection previous = selected.putIfAbsent(route.mount().path(), route);
-        if (previous != null && !StringUtils.equals(previous.protocolName(), route.protocolName())) {
-            throw new IllegalArgumentException("Conflicting exact service path: " + route.mount().path());
+        if (previous != null && (!StringUtils.equals(previous.protocolName(), route.protocolName()) || previous.mount().exact() != route.mount().exact())) {
+            throw new IllegalArgumentException("Conflicting service path: " + route.mount().path());
         }
     }
 
     private static final class RouteEndpoint {
         private final    ConnectorConfig                               config;
         private final    Collection<? extends ProtocolMountBinding<?>> protocols;
-        private volatile Map<String, RouteSelection>                   exact = Collections.emptyMap();
+        private volatile Map<String, RouteSelection>                   serviceRoutes = Collections.emptyMap();
 
         private RouteEndpoint(PlanEndpoint<?> plan) {
             this.config = plan.config();
@@ -252,9 +259,9 @@ final class RouteServiceRegistry {
             }
         }
 
-        private boolean hasExactRoutes(Map<String, ProtocolMeta> metas) {
+        private boolean hasServiceRoutes(Map<String, ProtocolMeta> metas) {
             for (ProtocolMeta meta : metas.values()) {
-                if (this.exactPaths(meta) != null) {
+                if (this.servicePaths(meta) != null) {
                     return true;
                 }
             }
@@ -263,18 +270,18 @@ final class RouteServiceRegistry {
 
         private void validateServiceKeys(MetBindInfo<?> service, Map<String, ProtocolMeta> metas, Map<MetBindInfo<?>, Map<String, ProtocolMeta>> publications) {
             for (ProtocolMountBinding<?> protocol : this.protocols) {
-                if (!(protocol.provider() instanceof HttpProtocolProvider http)) {
-                    continue;
-                }
                 String name = protocol.config().name();
                 ProtocolMeta meta = metas.get(name);
                 ProtocolBinding binding = meta == null ? null : meta.getEndpoint(this.config.name());
-                if (binding == null || binding.getContextPath() == null) {
+                if (binding == null) {
                     continue;
                 }
-                List<String> key = http.serviceKey(service, binding);
-                if (key.isEmpty()) {
-                    continue;
+                List<List<String>> keys = new ArrayList<>(binding.getRouteKeys());
+                if (protocol.provider() instanceof HttpProtocolProvider http) {
+                    List<String> key = http.serviceKey(service, binding);
+                    if (!key.isEmpty()) {
+                        keys.add(key);
+                    }
                 }
 
                 // 只比较其他服务已经提交的同端点绑定，本轮失败不改动旧发布状态。
@@ -284,12 +291,88 @@ final class RouteServiceRegistry {
                     }
                     ProtocolMeta previous = entry.getValue().get(name);
                     ProtocolBinding existing = previous == null ? null : previous.getEndpoint(this.config.name());
-                    if (existing == null || !this.overlappingPaths(binding, existing)) {
+                    if (existing == null) {
                         continue;
                     }
-                    if (key.equals(http.serviceKey(entry.getKey(), existing))) {
+                    if (protocol.provider() instanceof HttpProtocolProvider && !this.overlappingPaths(binding, existing)) {
+                        continue;
+                    }
+                    List<List<String>> previousKeys = new ArrayList<>(existing.getRouteKeys());
+                    if (protocol.provider() instanceof HttpProtocolProvider http) {
+                        List<String> key = http.serviceKey(entry.getKey(), existing);
+                        if (!key.isEmpty()) {
+                            previousKeys.add(key);
+                        }
+                    }
+                    if (CollectionUtils.containsAny(keys, previousKeys)) {
                         String message = "Conflicting service route for protocol " + name + " at endpoint ";
-                        throw new IllegalArgumentException(message + this.config.name() + ": " + key);
+                        throw new IllegalArgumentException(message + this.config.name() + ": " + keys //
+                                + "; services " + entry.getKey().getBindID() + " and " + service.getBindID());
+                    }
+                }
+            }
+        }
+
+        private void validateResourceRoutes(MetBindInfo<?> replaced, Map<String, ProtocolMeta> replacement, //
+                Map<MetBindInfo<?>, Map<String, ProtocolMeta>> publications, Map<String, RouteSelection> serviceRoutes) {
+            if (!StringUtils.equalsIgnoreCase(this.config.transportType(), "http")) {
+                return;
+            }
+            Map<String, String> owners = new HashMap<>();
+            this.validateServiceResourceRoutes(replaced, replacement, serviceRoutes, owners);
+            for (Map.Entry<MetBindInfo<?>, Map<String, ProtocolMeta>> entry : publications.entrySet()) {
+                if (entry.getKey() != replaced) {
+                    this.validateServiceResourceRoutes(entry.getKey(), entry.getValue(), serviceRoutes, owners);
+                }
+            }
+        }
+
+        private void validateServiceResourceRoutes(MetBindInfo<?> service, Map<String, ProtocolMeta> metas, //
+                Map<String, RouteSelection> serviceRoutes, Map<String, String> owners) {
+            for (ProtocolMountBinding<?> protocol : this.protocols) {
+                ProtocolMeta meta = metas.get(protocol.config().name());
+                ProtocolBinding binding = meta == null ? null : meta.getEndpoint(this.config.name());
+                if (binding == null || binding.getDescription() == null) {
+                    continue;
+                }
+                JsonNode definitions = binding.getDescription().path("endpoints");
+                for (JsonNode addresses : definitions) {
+                    Iterator<Map.Entry<String, JsonNode>> fields = addresses.fields();
+                    while (fields.hasNext()) {
+                        Map.Entry<String, JsonNode> field = fields.next();
+                        if (!field.getValue().isTextual()) {
+                            continue;
+                        }
+                        URI uri = URI.create(field.getValue().asText());
+                        // 相对文件入口由当前监听器负责；绝对公开地址的转发由应用的代理配置负责。
+                        boolean resource = StringUtils.equals(field.getKey(), "schema");
+                        if (uri.isAbsolute() || !resource) {
+                            continue;
+                        }
+                        String path = uri.getRawPath();
+                        RouteSelection selected = this.selectService(path, serviceRoutes);
+                        if (selected == null || !selected.mount().exact()) {
+                            for (ProtocolMountBinding<?> candidate : this.protocols) {
+                                RouteMount mount = candidate.routes().match(path);
+                                if (mount == null) {
+                                    continue;
+                                }
+                                if (selected == null || mount.path().length() > selected.mount().path().length()) {
+                                    selected = new RouteSelection(candidate.config().name(), mount, candidate.config().options());
+                                }
+                            }
+                        }
+                        ContextPath contexts = binding.getContextPath();
+                        boolean owned = selected != null && StringUtils.equals(selected.protocolName(), protocol.config().name());
+                        owned = owned && contexts != null && contexts.isExact() == selected.mount().exact() //
+                                && contexts.getPaths().contains(selected.mount().path());
+                        if (!owned) {
+                            throw new IllegalArgumentException("Schema endpoint is shadowed by another route: " + uri);
+                        }
+                        String previous = owners.putIfAbsent(uri.toString(), service.getBindID());
+                        if (previous != null && !StringUtils.equals(previous, service.getBindID())) {
+                            throw new IllegalArgumentException("Conflicting schema endpoint: " + uri);
+                        }
                     }
                 }
             }
@@ -302,7 +385,7 @@ final class RouteServiceRegistry {
                     && CollectionUtils.containsAny(left.getPaths(), right.getPaths());
         }
 
-        private void addExactRoutes(Map<String, ProtocolMeta> metas, Map<String, RouteSelection> selected) {
+        private void addServiceRoutes(Map<String, ProtocolMeta> metas, Map<String, RouteSelection> selected) {
             for (ProtocolMountBinding<?> protocol : this.protocols) {
                 ProtocolConfig config = protocol.config();
                 ProtocolMeta meta = metas.get(config.name());
@@ -310,41 +393,58 @@ final class RouteServiceRegistry {
                     continue;
                 }
 
-                ContextPath paths = this.exactPaths(meta);
+                ContextPath paths = this.servicePaths(meta);
                 if (paths == null) {
                     continue;
                 }
 
                 for (String path : paths.getPaths()) {
                     // 端点配置在启动时固定，同一路径和协议可复用现有选择对象。
-                    RouteSelection route = this.exact.get(path);
-                    if (route == null || !StringUtils.equals(route.protocolName(), config.name())) {
-                        route = new RouteSelection(config.name(), RouteMount.exact(path), config.options());
+                    RouteSelection route = this.serviceRoutes.get(path);
+                    if (route == null || !StringUtils.equals(route.protocolName(), config.name()) //
+                            || route.mount().exact() != paths.isExact()) {
+                        route = new RouteSelection(config.name(), new RouteMount(path, paths.isExact()), config.options());
                     }
                     addRoute(selected, route);
                 }
             }
         }
 
-        private ContextPath exactPaths(ProtocolMeta meta) {
+        private ContextPath servicePaths(ProtocolMeta meta) {
             ProtocolBinding binding = meta.getEndpoint(this.config.name());
             if (binding == null) {
                 return null;
             }
 
             ContextPath paths = binding.getContextPath();
-            return paths != null && paths.isExact() ? paths : null;
+            boolean scoped = binding.getDescription() != null && binding.getDescription().path("serviceScoped").asBoolean();
+            return paths != null && (meta.getContextPath() != null || paths.isExact() || scoped) ? paths : null;
         }
 
-        private RouteSelection selectExact(String uri) {
-            Map<String, RouteSelection> routes = this.exact;
+        private RouteSelection selectService(String uri) {
+            Map<String, RouteSelection> routes = this.serviceRoutes;
             if (routes.isEmpty()) {
                 return null;
             }
 
             int query = uri.indexOf('?');
             String path = query < 0 ? uri : uri.substring(0, query);
-            return routes.get(path);
+            return this.selectService(path, routes);
+        }
+
+        private RouteSelection selectService(String path, Map<String, RouteSelection> routes) {
+            RouteSelection direct = routes.get(path);
+            if (direct != null) {
+                return direct;
+            }
+            int end = path.length();
+            while ((end = path.lastIndexOf('/', end - 1)) >= 0) {
+                RouteSelection prefix = routes.get(path.substring(0, end));
+                if (prefix != null && !prefix.mount().exact()) {
+                    return prefix;
+                }
+            }
+            return null;
         }
     }
 }

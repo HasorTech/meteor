@@ -27,6 +27,7 @@ import net.hasor.meteor.connector.ProtocolSession;
 import net.hasor.meteor.connector.ProtocolSessionContext;
 import net.hasor.meteor.connector.transport.NetworkChannel;
 import net.hasor.meteor.connector.transport.http.HttpProtocolProvider;
+import net.hasor.meteor.connector.transport.http.HttpServicePathUtils;
 import net.hasor.meteor.connector.transport.http.channel.HttpExchange;
 import net.hasor.meteor.domain.MetRuntimeUtils;
 import net.hasor.meteor.domain.ProtocolBinding;
@@ -44,6 +45,16 @@ import net.hasor.meteor.protocol.soap.mapping.SoapXmlProperty;
 
 /** SOAP 1.1/1.2 协议入口及 Java 服务映射校验。 */
 public final class SoapProtocol implements HttpProtocolProvider {
+    @Override
+    public Set<Integer> httpVersions(ProtocolConfig config) {
+        return Set.of(1, 2);
+    }
+
+    @Override
+    public Set<String> endpointTypes() {
+        return Set.of("endpoint", "http", "schema");
+    }
+
     @Override
     public String name() {
         return "soap";
@@ -161,13 +172,13 @@ public final class SoapProtocol implements HttpProtocolProvider {
         // 定义与描述复用同一份准备结果，绑定只在全部映射成功后创建。
         ObjectNode description = meta.createServiceDescription(config, this.defaultSerialize());
         prepared.describeContract(description);
-        ProtocolBinding binding = meta.build(config, prepared, description);
+        ProtocolBinding binding = HttpServicePathUtils.bind(config, meta, prepared, description);
         if (binding.getContextPath() == null) {
             return binding;
         }
 
         // 契约入口属于具体服务，精确路径不能再次追加服务名。
-        ObjectNode httpEndpoints = description.putObject("httpEndpoints");
+        ObjectNode endpoints = description.putObject("endpoints");
         for (String path : binding.getContextPath().getPaths()) {
             String endpoint = path;
             if (!binding.getContextPath().isExact()) {
@@ -177,7 +188,9 @@ public final class SoapProtocol implements HttpProtocolProvider {
             if (StringUtils.isNotBlank(publicBase)) {
                 endpoint = (publicBase.endsWith("/") ? publicBase.substring(0, publicBase.length() - 1) : publicBase) + endpoint;
             }
-            httpEndpoints.putObject(path).putArray(endpoint).add(endpoint + "?wsdl");
+            ObjectNode addresses = endpoints.putObject(path);
+            addresses.put("http", endpoint);
+            addresses.put("schema", endpoint + "?wsdl");
         }
         return binding;
     }

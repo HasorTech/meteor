@@ -18,7 +18,7 @@ public final class SdkConsumerMain {
 
     public static void main(String[] arguments) throws Exception {
         // 标准 JAX-WS 客户端从网络 WSDL 取得端点和 SOAP 契约。
-        URI wsdl = URI.create("http://127.0.0.1:8080/soap/orders?wsdl");
+        URI wsdl = URI.create("http://127.0.0.1:8080/soap/default/1.0.0/orders?wsdl");
         QName serviceName = new QName(MetroOrderService.NAMESPACE, "orders");
         QName portName = new QName(MetroOrderService.NAMESPACE, "ordersPort");
         Service service = Service.create(wsdl.toURL(), serviceName);

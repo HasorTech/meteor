@@ -19,8 +19,8 @@ import net.hasor.example.OrderExampleUtils;
 
 /** 使用 Caucho Hessian SDK 发布订单，供 Meteor 消费者调用。 */
 public final class SdkProviderMain implements AutoCloseable {
-    private final HttpServer server;
-    private final HessianSkeleton skeleton;
+    private final HttpServer        server;
+    private final HessianSkeleton   skeleton;
     private final SerializerFactory serializers;
 
     private SdkProviderMain() throws IOException {
@@ -28,7 +28,7 @@ public final class SdkProviderMain implements AutoCloseable {
         this.skeleton = new HessianSkeleton(new OrderDemoServiceImpl(), OrderDemoService.class);
         this.serializers = new SerializerFactory(OrderDemoService.class.getClassLoader());
         this.server = HttpServer.create(new InetSocketAddress("127.0.0.1", 8080), 0);
-        this.server.createContext("/hessian/orders", this::handleHttp);
+        this.server.createContext("/hessian/default/1.0.0/orders", this::handleHttp);
     }
 
     public static void main(String[] arguments) throws Exception {
@@ -36,7 +36,7 @@ public final class SdkProviderMain implements AutoCloseable {
         try (SdkProviderMain provider = new SdkProviderMain()) {
             Runtime.getRuntime().addShutdownHook(new Thread(provider::close, "hessian-sdk-shutdown"));
             provider.server.start();
-            System.out.println("SDK order provider is ready: http://127.0.0.1:8080/hessian/orders");
+            System.out.println("SDK order provider is ready: http://127.0.0.1:8080/hessian/default/1.0.0/orders");
             OrderExampleUtils.awaitShutdown();
         }
     }

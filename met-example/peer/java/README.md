@@ -42,9 +42,10 @@ Meteor 两端使用 Meteor 注册格式；[接入 Apache Dubbo 注册中心](#du
 两个 Meteor 入口均通过 `DubboRegistryConfiguration` 接入，配置随上下文构建并启动：
 
 ```java
-DubboRegistryConfiguration registry = new DubboRegistryConfiguration()
-        .setAddress("zookeeper://127.0.0.1:2181");
-configuration.addExtension(registry);
+DubboRegistryConfiguration registry = new DubboRegistryConfiguration().setAddress("zookeeper://127.0.0.1:2181");
+configuration.
+
+addExtension(registry);
 ```
 
 <a id="dubbo-registry-consumer"></a>
@@ -75,7 +76,7 @@ Apache Thrift 使用 Binary 编码、Framed 传输和 `OrderThriftService` 服�
 
 ## Hprose
 
-Hprose Java SDK 与 Meteor 共用普通 Java 接口和 DTO，函数别名前缀为 `orders`。业务地址为 `http://127.0.0.1:8080/hprose`。
+Hprose Java SDK 与 Meteor 共用普通 Java 接口和 DTO，函数别名前缀为 `orders`。业务地址为 `http://127.0.0.1:8080/hprose/default/1.0.0`。
 
 - **Meteor → Meteor（直连）**：提供者 [ProviderMain](meteor/src/main/java/net/hasor/example/hprose/ProviderMain.java)；消费者 [ConsumerMain](meteor/src/main/java/net/hasor/example/hprose/ConsumerMain.java)。
 - **Hprose Java → Meteor（直连）**：提供者 [ProviderMain](meteor/src/main/java/net/hasor/example/hprose/ProviderMain.java)；消费者 [SdkConsumerMain](hprose-java/src/main/java/net/hasor/example/hprose/SdkConsumerMain.java)。
@@ -85,7 +86,7 @@ Hprose Java SDK 与 Meteor 共用普通 Java 接口和 DTO，函数别名前缀�
 
 ## SOAP
 
-Metro JAX-WS 与 Meteor 通过 HTTP 调用 SOAP 服务。业务地址为 `http://127.0.0.1:8080/soap/orders`，Meteor 自动生成的 WSDL 位于该地址的 `?wsdl`。
+Metro JAX-WS 与 Meteor 通过 HTTP 调用 SOAP 服务。业务地址为 `http://127.0.0.1:8080/soap/default/1.0.0/orders`，Meteor 自动生成的 WSDL 位于该地址的 `?wsdl`。
 
 - **Meteor → Meteor（直连）**：提供者 [ProviderMain](meteor/src/main/java/net/hasor/example/soap/ProviderMain.java)；消费者 [ConsumerMain](meteor/src/main/java/net/hasor/example/soap/ConsumerMain.java)。
 - **Metro JAX-WS → Meteor（直连）**：提供者 [ProviderMain](meteor/src/main/java/net/hasor/example/soap/ProviderMain.java)；消费者 [SdkConsumerMain](metro-jaxws/src/main/java/net/hasor/example/soap/SdkConsumerMain.java)。
@@ -97,7 +98,7 @@ Metro JAX-WS 与 Meteor 通过 HTTP 调用 SOAP 服务。业务地址为 `http:/
 
 ## JSON-RPC
 
-jsonrpc4j 与 Meteor 共用普通 Java 接口和 DTO，服务别名为 `orders`。业务地址为 `http://127.0.0.1:8080/jsonrpc`。
+jsonrpc4j 与 Meteor 共用普通 Java 接口和 DTO，服务别名为 `orders`。业务地址为 `http://127.0.0.1:8080/jsonrpc/default/1.0.0`。
 
 - **Meteor → Meteor（直连）**：提供者 [ProviderMain](meteor/src/main/java/net/hasor/example/jsonrpc/ProviderMain.java)；消费者 [ConsumerMain](meteor/src/main/java/net/hasor/example/jsonrpc/ConsumerMain.java)。
 - **jsonrpc4j → Meteor（直连）**：提供者 [ProviderMain](meteor/src/main/java/net/hasor/example/jsonrpc/ProviderMain.java)；消费者 [SdkConsumerMain](jsonrpc4j/src/main/java/net/hasor/example/jsonrpc/SdkConsumerMain.java)。
@@ -109,7 +110,7 @@ jsonrpc4j 与 Meteor 共用普通 Java 接口和 DTO，服务别名为 `orders`�
 
 ## XML-RPC
 
-Apache XML-RPC 使用 struct 表示订单、base64 表示附件，服务名为 `orders`。业务地址为 `http://127.0.0.1:8080/xmlrpc`。
+Apache XML-RPC 使用 struct 表示订单、base64 表示附件，服务名为 `orders`。业务地址为 `http://127.0.0.1:8080/xmlrpc/default/1.0.0`。
 
 - **Meteor → Meteor（直连）**：提供者 [ProviderMain](meteor/src/main/java/net/hasor/example/xmlrpc/ProviderMain.java)；消费者 [ConsumerMain](meteor/src/main/java/net/hasor/example/xmlrpc/ConsumerMain.java)。
 - **Apache XML-RPC → Meteor（直连）**：提供者 [ProviderMain](meteor/src/main/java/net/hasor/example/xmlrpc/ProviderMain.java)；消费者 [SdkConsumerMain](apache-xmlrpc/src/main/java/net/hasor/example/xmlrpc/SdkConsumerMain.java)。
@@ -119,7 +120,7 @@ Apache XML-RPC 使用 struct 表示订单、base64 表示附件，服务名为 `
 
 ## Hessian
 
-Caucho Hessian 与 Meteor 共用普通 Java 接口和 DTO。业务地址为 `http://127.0.0.1:8080/hessian`。
+Caucho Hessian 与 Meteor 共用普通 Java 接口和 DTO。业务地址为 `http://127.0.0.1:8080/hessian/default/1.0.0/orders`。
 
 - **Meteor → Meteor（直连）**：提供者 [ProviderMain](meteor/src/main/java/net/hasor/example/hessian/ProviderMain.java)；消费者 [ConsumerMain](meteor/src/main/java/net/hasor/example/hessian/ConsumerMain.java)。
 - **Caucho Hessian → Meteor（直连）**：提供者 [ProviderMain](meteor/src/main/java/net/hasor/example/hessian/ProviderMain.java)；消费者 [SdkConsumerMain](caucho-hessian/src/main/java/net/hasor/example/hessian/SdkConsumerMain.java)。
@@ -129,7 +130,7 @@ Caucho Hessian 与 Meteor 共用普通 Java 接口和 DTO。业务地址为 `htt
 
 ## gRPC
 
-gRPC-Java 使用 HTTP/2 和 Protobuf，与 Meteor 共用 [order.proto](../../resource/order.proto)。本地端口为 `8080`，挂载路径为 `/grpc`。
+gRPC-Java 使用 HTTP/2 和 Protobuf，与 Meteor 共用 [order.proto](../../resource/order.proto)。本地端口为 `8080`，服务路径前缀为 `/grpc/default/1.0.0`。
 
 - **Meteor → Meteor（直连）**：提供者 [ProviderMain](meteor/src/main/java/net/hasor/example/grpc/ProviderMain.java)；消费者 [ConsumerMain](meteor/src/main/java/net/hasor/example/grpc/ConsumerMain.java)。
 - **gRPC-Java → Meteor（直连）**：提供者 [ProviderMain](meteor/src/main/java/net/hasor/example/grpc/ProviderMain.java)；消费者 [SdkConsumerMain](grpc-java/src/main/java/net/hasor/example/grpc/SdkConsumerMain.java)。
@@ -141,7 +142,7 @@ gRPC-Java 使用 HTTP/2 和 Protobuf，与 Meteor 共用 [order.proto](../../res
 
 ## gRPC-Web
 
-使用 Protobuf 和 [order.proto](../../resource/order.proto)，业务地址为 `http://127.0.0.1:8080/grpc-web`。SDK 消费者使用 Connect Kotlin/JVM 的 `GRPC_WEB` 模式；另有[浏览器示例](../browser/README.md#grpcweb)。
+使用 Protobuf 和 [order.proto](../../resource/order.proto)，业务地址为 `http://127.0.0.1:8080/grpc-web/default/1.0.0`。SDK 消费者使用 Connect Kotlin/JVM 的 `GRPC_WEB` 模式；另有[浏览器示例](../browser/README.md#grpcweb)。
 
 - **Meteor → Meteor（直连）**：提供者 [ProviderMain](meteor/src/main/java/net/hasor/example/grpcweb/ProviderMain.java)；消费者 [ConsumerMain](meteor/src/main/java/net/hasor/example/grpcweb/ConsumerMain.java)。
 - **Connect Kotlin/JVM（gRPC-Web） → Meteor（直连）**：提供者 [ProviderMain](meteor/src/main/java/net/hasor/example/grpcweb/ProviderMain.java)；消费者 [SdkConsumerMain](connect-kotlin/src/main/java/net/hasor/example/grpcweb/SdkConsumerMain.java)。
@@ -150,7 +151,7 @@ gRPC-Java 使用 HTTP/2 和 Protobuf，与 Meteor 共用 [order.proto](../../res
 
 ## Connect
 
-使用 Protobuf 和 [order.proto](../../resource/order.proto)，业务地址为 `http://127.0.0.1:8080/connect`。SDK 消费者使用官方 Connect Kotlin/JVM，SDK 提供者使用社区 connect-rpc-java。
+使用 Protobuf 和 [order.proto](../../resource/order.proto)，业务地址为 `http://127.0.0.1:8080/connect/default/1.0.0`。SDK 消费者使用官方 Connect Kotlin/JVM，SDK 提供者使用社区 connect-rpc-java。
 
 - **Meteor → Meteor（直连）**：提供者 [ProviderMain](meteor/src/main/java/net/hasor/example/connect/ProviderMain.java)；消费者 [ConsumerMain](meteor/src/main/java/net/hasor/example/connect/ConsumerMain.java)。
 - **Connect Kotlin/JVM → Meteor（直连）**：提供者 [ProviderMain](meteor/src/main/java/net/hasor/example/connect/ProviderMain.java)；消费者 [SdkConsumerMain](connect-kotlin/src/main/java/net/hasor/example/connect/SdkConsumerMain.java)。

@@ -58,6 +58,8 @@ public class HessianProtocolTest {
         assertEquals("name", binding.getDescription().fieldNames().next());
         assertEquals("name", binding.getDescription().path("methods").get(0).fieldNames().next());
         assertFalse(binding.getDescription().has("serviceName"));
+        String mount = binding.getContextPath().getPaths().iterator().next();
+        assertEquals(mount + "/echo", binding.getDescription().path("endpoints").path(mount).path("http").asText());
     }
 
     @Test

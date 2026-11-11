@@ -37,7 +37,7 @@ public class XmlRpcResponseTest {
                 .contextPath("/rpc");
         this.context = configuration.buildContext();
         this.context.publisher().rsfService(XmlRpcBindingTest.Methods.class) //
-                .name("Methods").aliasName("xmlrpc", "math").register();
+                .name("Methods").aliasName("xmlrpc", "math").contextPathByPrefix("xmlrpc", "/").register();
         ProtocolConfig protocol = ProtocolConfig.newConfig("xmlrpc", "xmlrpc", Map.of("contextPath", "/rpc"));
         this.codec = new XmlRpcCodec(protocol, new RouteMountIndex("http-0", protocol), this.context);
         this.wire = new XmlRpcWireCodec(protocol);
@@ -286,7 +286,7 @@ public class XmlRpcResponseTest {
     @Test
     public void inheritedGenericResultResolvesFromConsumerType() throws Exception {
         // 消费者继承泛型方法时，以订阅类型解析 T。
-        this.context.publisher().rsfService(XmlRpcBindingTest.PersonService.class).name("generic").register();
+        this.context.publisher().rsfService(XmlRpcBindingTest.PersonService.class).name("generic").contextPathByPrefix("xmlrpc", "/").register();
         RequestPayload request = this.request("select");
         request.setServiceName("generic");
         request.addParameter(Object.class.getName(), null);
@@ -298,7 +298,7 @@ public class XmlRpcResponseTest {
     @Test
     public void methodReturnVariableShadowsTheConsumerClassVariable() throws Exception {
         // 消费者的类变量绑定为 Person，返回类型来自独立的方法变量 T。
-        this.context.publisher().rsfService(XmlRpcBindingTest.ShadowPersonService.class).name("shadow").register();
+        this.context.publisher().rsfService(XmlRpcBindingTest.ShadowPersonService.class).name("shadow").contextPathByPrefix("xmlrpc", "/").register();
         RequestPayload request = this.request("select");
         request.setServiceName("shadow");
         request.addParameter(Object.class.getName(), null);
@@ -312,7 +312,7 @@ public class XmlRpcResponseTest {
     @Test
     public void voidResultUsesNilWhenEnabled() throws Exception {
         // nil 扩展为无返回值方法提供合法单个响应。
-        this.context.publisher().rsfService(EmptyResult.class).name("empty").register();
+        this.context.publisher().rsfService(EmptyResult.class).name("empty").contextPathByPrefix("xmlrpc", "/").register();
         ProtocolConfig nil = ProtocolConfig.newConfig("xmlrpc", "xmlrpc", Map.of("allowNil", "true"));
         XmlRpcCodec codec = new XmlRpcCodec(nil, new RouteMountIndex("http-0", nil), this.context);
         RequestPayload request = this.request("consume");
@@ -328,7 +328,7 @@ public class XmlRpcResponseTest {
     @Test
     public void nonNilVoidResultIsRejected() throws Exception {
         // void 消费者不能接受被对端伪造的业务结果。
-        this.context.publisher().rsfService(EmptyResult.class).name("empty").register();
+        this.context.publisher().rsfService(EmptyResult.class).name("empty").contextPathByPrefix("xmlrpc", "/").register();
         ProtocolConfig nil = ProtocolConfig.newConfig("xmlrpc", "xmlrpc", Map.of("allowNil", "true"));
         XmlRpcCodec codec = new XmlRpcCodec(nil, new RouteMountIndex("http-0", nil), this.context);
         RequestPayload request = this.request("consume");

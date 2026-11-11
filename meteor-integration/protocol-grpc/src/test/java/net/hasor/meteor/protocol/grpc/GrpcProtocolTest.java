@@ -20,13 +20,20 @@ import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.connector.ConnectorConfig;
 import net.hasor.meteor.connector.transport.http.HttpProtocolProvider;
-import net.hasor.meteor.domain.*;
 import net.hasor.meteor.domain.meta.ProtocolMeta;
 import net.hasor.meteor.domain.warp.MetBindInfoWrap;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class GrpcProtocolTest {
+    @Test
+    public void grpcBusinessRequiresHttp2WhileGrpcWebAcceptsBothVersions() {
+        // 描述文件可经普通 GET 获取，不能据此把原生 gRPC 业务声明为 HTTP/1.1。
+        ProtocolConfig config = ProtocolConfig.newConfig("grpc", "grpc", Map.of("httpVersion", "1"));
+        assertEquals(Set.of(2), new GrpcProtocol().httpVersions(config));
+        assertEquals(Set.of(1, 2), new GrpcWebProtocol().httpVersions(config));
+    }
+
     @Test
     public void serviceWithoutAnAliasUsesItsBoundName() {
         // 提供者只声明普通服务名，不需要重复声明相同的协议别名。
@@ -121,7 +128,7 @@ public class GrpcProtocolTest {
         // 正式协议校验结合当前配置，生成包含默认路径的静态绑定。
         ProtocolConfig config = ProtocolConfig.newConfig("grpc", "grpc", Map.of("contextPath", "/grpc"));
         ProtocolMeta meta = new ProtocolMeta(service, null, bindResource, Map.of());
-        ContextPath effective = new ContextPath(Set.of("/grpc"), false);
+        ContextPath effective = new ContextPath(Set.of("/grpc/~/~"), false);
         HttpProtocolProvider provider = new GrpcProtocol();
         ProtocolBinding binding = provider.prepareBinding(config, null, meta);
         assertNotNull(binding);
@@ -291,8 +298,8 @@ public class GrpcProtocolTest {
             ProtocolBinding secondaryBinding = grpc.getEndpoint(secondary.name());
             assertEquals("grpc-primary", primary.protocol("grpc").scheme());
             assertEquals("grpc-secondary", secondary.protocol("grpc").scheme());
-            assertEquals(Set.of("/primary"), primaryBinding.getContextPath().getPaths());
-            assertEquals(Set.of("/secondary"), secondaryBinding.getContextPath().getPaths());
+            assertEquals(Set.of("/primary/default/1.0.0"), primaryBinding.getContextPath().getPaths());
+            assertEquals(Set.of("/secondary/default/1.0.0"), secondaryBinding.getContextPath().getPaths());
             assertNotNull(primaryBinding.getDefinition());
             assertNotNull(secondaryBinding.getDefinition());
         }

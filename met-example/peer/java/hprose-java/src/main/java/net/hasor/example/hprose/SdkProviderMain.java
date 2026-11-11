@@ -25,7 +25,7 @@ public final class SdkProviderMain extends HproseService implements AutoCloseabl
         // SDK 注册普通业务实现，HTTP 监听仅负责转交正文。
         this.add(new OrderDemoServiceImpl(), OrderDemoService.class, "orders");
         this.server = HttpServer.create(new InetSocketAddress("127.0.0.1", 8080), 0);
-        this.server.createContext("/hprose", this::handleHttp);
+        this.server.createContext("/hprose/default/1.0.0", this::handleHttp);
     }
 
     public static void main(String[] arguments) throws Exception {
@@ -33,7 +33,7 @@ public final class SdkProviderMain extends HproseService implements AutoCloseabl
         try (SdkProviderMain provider = new SdkProviderMain()) {
             Runtime.getRuntime().addShutdownHook(new Thread(provider::close, "hprose-sdk-shutdown"));
             provider.server.start();
-            System.out.println("SDK order provider is ready: http://127.0.0.1:8080/hprose");
+            System.out.println("SDK order provider is ready: http://127.0.0.1:8080/hprose/default/1.0.0");
             OrderExampleUtils.awaitShutdown();
         }
     }

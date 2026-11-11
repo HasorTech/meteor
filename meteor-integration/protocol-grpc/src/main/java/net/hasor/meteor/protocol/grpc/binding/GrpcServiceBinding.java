@@ -18,6 +18,7 @@ import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetBindInfo;
+import net.hasor.meteor.connector.transport.http.HttpSchemaResource;
 import net.hasor.meteor.domain.MetRuntimeUtils;
 import net.hasor.meteor.domain.ProtocolConfig;
 import net.hasor.meteor.domain.meta.MethodMeta;
@@ -29,6 +30,7 @@ import net.hasor.meteor.protocol.grpc.GrpcProtoSchema;
 
 /** gRPC 家族共享的静态服务绑定；不持有会话、网络资源或业务对象。 */
 public final class GrpcServiceBinding {
+    private final HttpSchemaResource            schemaResource;
     private final String                        serviceName;
     private final GrpcProtoSchema               schema;
     private final ServiceDescriptor             service;
@@ -44,6 +46,11 @@ public final class GrpcServiceBinding {
         this.serviceName = serviceName;
         this.schema = schema;
         this.service = schema == null ? null : schema.service(serviceName);
+        if (this.service == null || schema.getSources().isEmpty()) {
+            this.schemaResource = null;
+        } else {
+            this.schemaResource = new HttpSchemaResource("proto", this.service.getFile().getName(), schema.getSources());
+        }
         this.javaMethods = methods;
         Map<String, GrpcValueMapping> mappings = new LinkedHashMap<>();
         for (Method method : methods.values()) {
@@ -137,6 +144,10 @@ public final class GrpcServiceBinding {
 
     public String serviceName() {
         return this.serviceName;
+    }
+
+    public HttpSchemaResource schemaResource() {
+        return this.schemaResource;
     }
 
     public GrpcProtoSchema schema() {

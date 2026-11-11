@@ -16,6 +16,7 @@ import net.hasor.meteor.registry.shared.storage.StorageAccess;
 import net.hasor.meteor.registry.shared.storage.domain.DirectoryQuery;
 import net.hasor.meteor.registry.shared.storage.domain.EntServiceCatalogData;
 import net.hasor.meteor.registry.shared.storage.domain.EntServiceRuntimeData;
+import net.hasor.meteor.registry.shared.storage.domain.RefServiceDescriptionData;
 import net.hasor.meteor.registry.shared.utils.RegistryJson;
 import org.junit.jupiter.api.Test;
 import static net.hasor.meteor.registry.nacos.NacosTestData.instance;
@@ -139,7 +140,7 @@ public class NacosLayoutTest {
             EntServiceRuntimeData registration = service("echo");
             ObjectNode description = JsonNodeFactory.instance.objectNode();
             description.put("contractServiceId", 0xffffffffL);
-            registration.setDescription(description);
+            registration.setDescription(RegistryJson.copy(description, RefServiceDescriptionData.class));
             storage.registerService("node", registration);
 
             // 关系只保存自身属性，主实体正文仅出现在对应主节点。

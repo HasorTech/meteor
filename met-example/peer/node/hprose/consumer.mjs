@@ -4,7 +4,7 @@ import hprose from "hprose";
 
 async function main() {
     // 连接 Meteor 的 Hprose 服务，附件使用原生 Buffer。
-    const client = hprose.Client.create("http://127.0.0.1:8080/hprose");
+    const client = hprose.Client.create("http://127.0.0.1:8080/hprose/default/1.0.0");
     client.timeout = 10_000;
     const orders = await client.ready();
     await orders.orders_save({
@@ -14,9 +14,9 @@ async function main() {
     });
 
     // 查询同一订单，终端中的二进制附件以 Base64 展示。
-    const found = await orders.orders_find({ id: 1001 });
-    const result = { ...found, attachment: Buffer.from(found.attachment).toString("base64") };
-    console.log(JSON.stringify({ language: "node", protocol: "hprose", result }));
+    const found = await orders.orders_find({id: 1001});
+    const result = {...found, attachment: Buffer.from(found.attachment).toString("base64")};
+    console.log(JSON.stringify({language: "node", protocol: "hprose", result}));
 }
 
 main().catch((error) => {

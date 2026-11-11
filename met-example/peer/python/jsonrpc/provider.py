@@ -28,7 +28,7 @@ class OrderRequestHandler(BaseHTTPRequestHandler):
 
 def main():
     with HTTPServer(("127.0.0.1", 8080), OrderRequestHandler) as server:
-        print("Order provider is ready: http://127.0.0.1:8080/jsonrpc", flush=True)
+        print("Order provider is ready: http://127.0.0.1:8080/jsonrpc/default/1.0.0", flush=True)
         try:
             server.serve_forever()
         except KeyboardInterrupt:

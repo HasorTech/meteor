@@ -18,12 +18,13 @@ def main():
     # 创建固定挂载路径下的两个 RPC 方法。
     with grpc.insecure_channel("127.0.0.1:8080") as channel:
         save = channel.unary_unary(
-            "/grpc/meteor.example.OrderDemoService/save",
+            "/grpc/default/1.0.0/meteor.example.OrderDemoService/save",
             request_serializer=order_pb2.Order.SerializeToString,
             response_deserializer=order_pb2.Order.FromString,
         )
+
         find = channel.unary_unary(
-            "/grpc/meteor.example.OrderDemoService/find",
+            "/grpc/default/1.0.0/meteor.example.OrderDemoService/find",
             request_serializer=order_pb2.OrderQuery.SerializeToString,
             response_deserializer=order_pb2.Order.FromString,
         )

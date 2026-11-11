@@ -23,9 +23,10 @@ public final class SdkProviderMain {
         JsonRpcMultiServer rpc = new JsonRpcMultiServer();
         rpc.addService("orders", new OrderDemoServiceImpl());
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 8080), 0);
+
         try {
             // JDK HTTP 容器只传递正文，协议处理全部交给 jsonrpc4j。
-            server.createContext("/jsonrpc", exchange -> {
+            server.createContext("/jsonrpc/default/1.0.0", exchange -> {
                 try (exchange) {
                     ByteArrayOutputStream response = new ByteArrayOutputStream();
                     rpc.handleRequest(exchange.getRequestBody(), response);
@@ -35,9 +36,10 @@ public final class SdkProviderMain {
                     exchange.getResponseBody().write(body);
                 }
             });
+
             Runtime.getRuntime().addShutdownHook(new Thread(() -> server.stop(0), "jsonrpc-sdk-shutdown"));
             server.start();
-            System.out.println("SDK order provider is ready: http://127.0.0.1:8080/jsonrpc");
+            System.out.println("SDK order provider is ready: http://127.0.0.1:8080/jsonrpc/default/1.0.0");
 
             // 当前进程拥有 HTTP 服务，退出时释放监听与连接。
             OrderExampleUtils.awaitShutdown();

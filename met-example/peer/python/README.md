@@ -19,7 +19,7 @@ gRPC、Thrift、SOAP 按对应小节安装依赖；JSON-RPC、XML-RPC 使用标�
 
 ## gRPC
 
-grpcio 使用 HTTP/2、Protobuf 和 [order.proto](../../resource/order.proto)，生成代码位于 [grpc/generated](grpc/generated)。地址为 `127.0.0.1:8080/grpc`。
+grpcio 使用 HTTP/2、Protobuf 和 [order.proto](../../resource/order.proto)，生成代码位于 [grpc/generated](grpc/generated)。地址为 `127.0.0.1:8080/grpc/default/1.0.0`。
 
 ```bash
 python -m pip install -r met-example/peer/python/grpc/requirements.txt
@@ -71,7 +71,7 @@ python met-example/peer/python/thrift/provider.py
 
 ## SOAP
 
-SOAP 1.1，Zeep 消费者读取 WSDL，soapfish2 提供者自动生成 WSDL。地址为 `http://127.0.0.1:8080/soap/orders`。
+SOAP 1.1，Zeep 消费者读取 WSDL，soapfish2 提供者自动生成 WSDL。地址为 `http://127.0.0.1:8080/soap/default/1.0.0/orders`。
 
 ```bash
 python -m pip install -r met-example/peer/python/soap/requirements.txt
@@ -99,7 +99,7 @@ python met-example/peer/python/soap/provider.py
 
 ## JSON-RPC
 
-标准库实现 JSON-RPC 2.0，按位置传参，附件使用 Base64。地址为 `http://127.0.0.1:8080/jsonrpc`。
+标准库实现 JSON-RPC 2.0，按位置传参，附件使用 Base64。地址为 `http://127.0.0.1:8080/jsonrpc/default/1.0.0`。
 
 ### urllib.request → Meteor（直连）
 
@@ -123,7 +123,7 @@ python met-example/peer/python/jsonrpc/provider.py
 
 ## XML-RPC
 
-标准库实现 XML-RPC，订单映射为 struct，附件使用 Base64。地址为 `http://127.0.0.1:8080/xmlrpc`。
+标准库实现 XML-RPC，订单映射为 struct，附件使用 Base64。地址为 `http://127.0.0.1:8080/xmlrpc/default/1.0.0`。
 
 ### xmlrpc.client → Meteor（直连）
 

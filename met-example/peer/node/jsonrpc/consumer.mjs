@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 // Copyright 2015-2026 the original author or authors. Licensed under the Apache License, Version 2.0.
 async function call(method, argument) {
-    const response = await fetch("http://127.0.0.1:8080/jsonrpc", {
+    const response = await fetch("http://127.0.0.1:8080/jsonrpc/default/1.0.0", {
         method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "orders." + method, params: [argument] }),
+        headers: {"content-type": "application/json"},
+        body: JSON.stringify({jsonrpc: "2.0", id: 1, method: "orders." + method, params: [argument]}),
         signal: AbortSignal.timeout(10_000),
     });
     const document = await response.json();
@@ -23,8 +23,8 @@ async function main() {
     });
 
     // 保存后查询，打印业务结果。
-    const result = await call("find", { id: 1001 });
-    console.log(JSON.stringify({ language: "node", protocol: "jsonrpc", result }));
+    const result = await call("find", {id: 1001});
+    console.log(JSON.stringify({language: "node", protocol: "jsonrpc", result}));
 }
 
 main().catch((error) => {

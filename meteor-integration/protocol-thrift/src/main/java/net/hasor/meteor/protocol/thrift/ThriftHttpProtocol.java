@@ -7,6 +7,7 @@
  */
 package net.hasor.meteor.protocol.thrift;
 import java.util.List;
+import java.util.Set;
 import java.util.function.ObjLongConsumer;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.hasor.meteor.MetBindInfo;
@@ -15,6 +16,8 @@ import net.hasor.meteor.connector.ProtocolSession;
 import net.hasor.meteor.connector.ProtocolSessionContext;
 import net.hasor.meteor.connector.transport.NetworkChannel;
 import net.hasor.meteor.connector.transport.http.HttpProtocolProvider;
+import net.hasor.meteor.connector.transport.http.HttpSchemaResource;
+import net.hasor.meteor.connector.transport.http.HttpServicePathUtils;
 import net.hasor.meteor.connector.transport.http.channel.HttpExchange;
 import net.hasor.meteor.domain.ProtocolBinding;
 import net.hasor.meteor.domain.ProtocolConfig;
@@ -25,6 +28,16 @@ import net.hasor.meteor.protocol.thrift.session.ThriftHttpSession;
 
 /** Thrift HTTP 入口；挂载目录和 HTTP/1、HTTP/2、安全传输均沿用内核。 */
 public final class ThriftHttpProtocol implements HttpProtocolProvider {
+    @Override
+    public Set<Integer> httpVersions(ProtocolConfig config) {
+        return Set.of(1, 2);
+    }
+
+    @Override
+    public Set<String> endpointTypes() {
+        return Set.of("endpoint", "http", "schema");
+    }
+
     @Override
     public String name() {
         return "thrift-http";
@@ -37,7 +50,10 @@ public final class ThriftHttpProtocol implements HttpProtocolProvider {
 
     @Override
     public List<String> serviceKey(MetBindInfo<?> service, ProtocolBinding binding) {
-        return List.of();
+        if (binding.getDescription().path("multiplexed").asBoolean()) {
+            return List.of(binding.getDescription().path("name").asText());
+        }
+        return List.of("single-service");
     }
 
     @Override
@@ -51,7 +67,17 @@ public final class ThriftHttpProtocol implements HttpProtocolProvider {
         ObjectNode description = meta.createServiceDescription(config, this.defaultSerialize());
         definition.describeContract(description);
         description.put("multiplexed", Boolean.parseBoolean(config.option("multiplexed", "false")));
-        return meta.build(config, definition, description);
+        description.put("servicePathName", definition.getName());
+        ProtocolBinding binding = HttpServicePathUtils.bind(config, meta, definition, description);
+        HttpSchemaResource resource = definition.schemaResource();
+        if (resource != null) {
+            List<String> identity = List.of(definition.getName());
+            if (description.path("serviceScoped").asBoolean()) {
+                identity = List.of();
+            }
+            resource.describe(binding, identity);
+        }
+        return binding;
     }
 
     @Override

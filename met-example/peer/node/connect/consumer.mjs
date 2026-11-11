@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 // Copyright 2015-2026 the original author or authors. Licensed under the Apache License, Version 2.0.
-import { Agent } from "node:http";
-import { createClient } from "@connectrpc/connect";
-import { createConnectTransport } from "@connectrpc/connect-node";
-import { OrderDemoService } from "./generated/order_pb.js";
+import {Agent} from "node:http";
+import {createClient} from "@connectrpc/connect";
+import {createConnectTransport} from "@connectrpc/connect-node";
+import {OrderDemoService} from "./generated/order_pb.js";
 
 async function main() {
     // 按 order.proto 创建官方 Connect 客户端。
-    const agent = new Agent({ keepAlive: true });
+    const agent = new Agent({keepAlive: true});
     const transport = createConnectTransport({
-        baseUrl: "http://127.0.0.1:8080/connect",
+        baseUrl: "http://127.0.0.1:8080/connect/default/1.0.0",
         httpVersion: "1.1",
-        nodeOptions: { agent },
+        nodeOptions: {agent},
         useBinaryFormat: true,
         defaultTimeoutMs: 10_000,
     });
@@ -23,13 +23,13 @@ async function main() {
             description: "Order from Node.js",
             attachment: Buffer.from("Meteor"),
         });
-        const found = await orders.find({ id: 1001 });
+        const found = await orders.find({id: 1001});
         const result = {
             id: found.id,
             description: found.description,
             attachment: Buffer.from(found.attachment).toString("base64"),
         };
-        console.log(JSON.stringify({ language: "node", protocol: "connect", result }));
+        console.log(JSON.stringify({language: "node", protocol: "connect", result}));
     } finally {
         agent.destroy();
     }

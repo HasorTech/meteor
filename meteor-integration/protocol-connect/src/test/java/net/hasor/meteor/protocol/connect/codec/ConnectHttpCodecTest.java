@@ -781,7 +781,7 @@ public class ConnectHttpCodecTest {
         GrpcProtoResource resource = new GrpcProtoResource(this.getClass().getResource("/proto/connect-demo.proto"));
         return context.publisher().rsfService(ConnectDemoService.class, new ConnectDemoServiceImpl()) //
                 .aliasName("connect", "meteor.connect.demo.ConnectDemoService") //
-                .serialize("Json").bindResource("connect", resource).register();
+                .serialize("Json").bindResource("connect", resource).contextPathByPrefix("connect", "/").register();
     }
 
     private MetConfiguration configuration() {

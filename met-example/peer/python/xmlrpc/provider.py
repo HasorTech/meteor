@@ -19,7 +19,7 @@ class OrderService:
 
 
 class OrderRequestHandler(SimpleXMLRPCRequestHandler):
-    rpc_paths = ("/xmlrpc",)
+    rpc_paths = ("/xmlrpc/default/1.0.0",)
 
 
 def main():
@@ -32,7 +32,7 @@ def main():
         service = OrderService()
         server.register_function(service.save, "orders.save")
         server.register_function(service.find, "orders.find")
-        print("Order provider is ready: http://127.0.0.1:8080/xmlrpc", flush=True)
+        print("Order provider is ready: http://127.0.0.1:8080/xmlrpc/default/1.0.0", flush=True)
         try:
             server.serve_forever()
         except KeyboardInterrupt:

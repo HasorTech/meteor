@@ -7,19 +7,19 @@
  */
 package net.hasor.realmeteor.protocol.jsonrpc;
 import java.net.URI;
+import java.util.concurrent.TimeUnit;
 import com.googlecode.jsonrpc4j.JsonRpcHttpClient;
-import net.hasor.example.protocol.jsonrpc.TestConfigurationUtils;
 import net.hasor.example.protocol.jsonrpc.JsonRpcDemoService;
 import net.hasor.example.protocol.jsonrpc.JsonRpcDemoServiceImpl;
+import net.hasor.example.protocol.jsonrpc.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.peer.protocol.jsonrpc.JsonRpcJavaSdkServer;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** 当前插件与独立 jsonrpc4j 实现的同 JVM 双向基础网络调用。 */
 public class JsonRpcJavaSdkBasicTest {
@@ -39,7 +39,7 @@ public class JsonRpcJavaSdkBasicTest {
                     .rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                     .aliasName("jsonrpc", "demo").protocol("jsonrpc") //
                     .serialize("Json") //
-                    .register();
+                    .contextPathByPrefix("jsonrpc", "/").register();
 
             // 直接使用 SDK 的公开 Java 客户端，仍通过随机监听端口完成真实 HTTP 往返。
             int port = server.getListenAddress("jsonrpc").getPort();
@@ -69,7 +69,7 @@ public class JsonRpcJavaSdkBasicTest {
                     .rsfService(JsonRpcDemoService.class) //
                     .aliasName("jsonrpc", "demo").protocol("jsonrpc") //
                     .serialize("Json") //
-                    .register();
+                    .contextPathByPrefix("jsonrpc", "/").register();
 
             // 前缀只能由 SDK 服务端添加，确保不是同 JVM 的本地调用捷径或普通回显。
             InterAddress address = new InterAddress("jsonrpc", "127.0.0.1", server.getPort());

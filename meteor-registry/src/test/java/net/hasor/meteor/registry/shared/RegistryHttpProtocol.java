@@ -7,6 +7,7 @@
  */
 package net.hasor.meteor.registry.shared;
 import java.util.List;
+import java.util.Set;
 import java.util.function.ObjLongConsumer;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetBindInfo;
@@ -24,6 +25,16 @@ import net.hasor.meteor.domain.payload.Payload;
 /** 注册目录场景使用的 HTTP 挂载；只声明协议元信息，不提供业务报文编解码。 */
 public final class RegistryHttpProtocol implements HttpProtocolProvider {
     @Override
+    public Set<Integer> httpVersions(ProtocolConfig config) {
+        return Set.of(1, 2);
+    }
+
+    @Override
+    public Set<String> endpointTypes() {
+        return Set.of("endpoint", "http");
+    }
+
+    @Override
     public String name() {
         return "registry-http";
     }
@@ -39,7 +50,9 @@ public final class RegistryHttpProtocol implements HttpProtocolProvider {
         if (StringUtils.equals(service.getBindName(), config.option("rejectService", null))) {
             return null;
         }
-        return meta.build(config, null, meta.createServiceDescription(config, this.defaultSerialize()));
+        var description = meta.createServiceDescription(config, this.defaultSerialize());
+        description.put("serviceBasePath", config.option("contextPath", null));
+        return meta.build(config, null, description);
     }
 
     @Override

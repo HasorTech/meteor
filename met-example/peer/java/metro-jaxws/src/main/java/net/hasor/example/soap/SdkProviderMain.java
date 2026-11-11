@@ -16,10 +16,10 @@ public final class SdkProviderMain {
 
     public static void main(String[] arguments) throws Exception {
         // Metro 发布订单服务，同时生成 WSDL。
-        Endpoint endpoint = Endpoint.publish("http://127.0.0.1:8080/soap/orders", new MetroOrderServiceImpl());
+        Endpoint endpoint = Endpoint.publish("http://127.0.0.1:8080/soap/default/1.0.0/orders", new MetroOrderServiceImpl());
         try {
             Runtime.getRuntime().addShutdownHook(new Thread(endpoint::stop, "metro-order-provider-shutdown"));
-            System.out.println("SDK order provider is ready: http://127.0.0.1:8080/soap/orders");
+            System.out.println("SDK order provider is ready: http://127.0.0.1:8080/soap/default/1.0.0/orders");
 
             // Ctrl+C 时关闭服务。
             OrderExampleUtils.awaitShutdown();

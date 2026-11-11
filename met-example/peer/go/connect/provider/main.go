@@ -35,7 +35,7 @@ func run() error {
 	// Mount the generated Connect handler into an ordinary HTTP server.
 	path, handler := ordersconnect.NewOrderDemoServiceHandler(&orderService{store: orders.NewStore()})
 	mux := http.NewServeMux()
-	mux.Handle("/connect"+path, http.StripPrefix("/connect", handler))
+	mux.Handle("/connect/default/1.0.0"+path, http.StripPrefix("/connect/default/1.0.0", handler))
 	listener, err := net.Listen("tcp", "127.0.0.1:8080")
 	if err != nil {
 		return err
@@ -45,7 +45,7 @@ func run() error {
 	defer server.Close()
 
 	// Serve until this provider process is stopped.
-	fmt.Println("Order provider is ready: http://127.0.0.1:8080/connect")
+	fmt.Println("Order provider is ready: http://127.0.0.1:8080/connect/default/1.0.0")
 	return server.Serve(listener)
 }
 

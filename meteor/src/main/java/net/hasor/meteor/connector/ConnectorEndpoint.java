@@ -20,8 +20,8 @@ import net.hasor.meteor.connector.transport.ChannelListenerFactory;
 import net.hasor.meteor.connector.transport.NetworkChannel;
 import net.hasor.meteor.connector.transport.NetworkConnector;
 import net.hasor.meteor.connector.transport.NetworkListen;
-import net.hasor.meteor.connector.transport.tcp.TcpProtocolProvider;
 import net.hasor.meteor.connector.transport.http.HttpProtocolProvider;
+import net.hasor.meteor.connector.transport.tcp.TcpProtocolProvider;
 import net.hasor.meteor.connector.transport.udp.UdpProtocolProvider;
 import net.hasor.meteor.domain.ProtocolConfig;
 import net.hasor.meteor.domain.payload.Payload;
@@ -338,12 +338,36 @@ final class ConnectorEndpoint<M> {
         }
     }
 
+    Set<String> protocolFamilies(String protocol) {
+        ProtocolMountBinding<M> binding = this.plan.protocolBindings().get(protocol);
+        if (binding == null) {
+            return Set.of();
+        }
+
+        if (binding.provider() instanceof HttpProtocolProvider http) {
+            Set<String> families = new LinkedHashSet<>();
+            // HTTP 版本按升序展示；出站 httpVersion 选项不代表监听端的业务能力。
+            for (int version : new TreeSet<>(http.httpVersions(binding.config()))) {
+                if (version == 1) {
+                    families.add("HTTP/1.1");
+                } else {
+                    families.add("HTTP/" + version);
+                }
+            }
+            return Collections.unmodifiableSet(families);
+        }
+        return Set.of(binding.provider().transportType().toUpperCase(Locale.ROOT));
+    }
+
     Set<String> endpointTypes(String protocol) {
         ProtocolMountBinding<M> binding = this.plan.protocolBindings().get(protocol);
-        if (binding != null && binding.provider() instanceof HttpProtocolProvider http) {
+        if (binding == null) {
+            return Set.of();
+        }
+        if (binding.provider() instanceof HttpProtocolProvider http) {
             return Set.copyOf(http.endpointTypes());
         }
-        return Set.of();
+        return Set.of("endpoint");
     }
 
     ConnectorChannel<M> createChannel() {

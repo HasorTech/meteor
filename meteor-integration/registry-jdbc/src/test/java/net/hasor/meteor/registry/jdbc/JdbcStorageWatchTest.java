@@ -17,7 +17,6 @@ import net.hasor.cobble.concurrent.future.Cancellable;
 import net.hasor.dbvisitor.jdbc.core.JdbcTemplate;
 import net.hasor.meteor.domain.MetServiceType;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
-import net.hasor.meteor.registry.shared.storage.domain.*;
 import org.junit.jupiter.api.Test;
 import static net.hasor.example.registry.jdbc.JdbcTestSupport.configuration;
 import static net.hasor.example.registry.jdbc.JdbcTestSupport.createDatabase;
@@ -199,7 +198,7 @@ public class JdbcStorageWatchTest {
             assertEquals("127.0.0.2", identity.getIpAddress());
             assertEquals(Long.valueOf(456), identity.getProcessId());
             assertEquals(1, identity.getEndpoints().length);
-            assertEquals("rsf://127.0.0.2:9000", identity.getEndpoints()[0].getListenAddress());
+            assertEquals("rsf://127.0.0.2:9000", identity.getEndpoints()[0].getEndpoints().get("endpoint"));
             assertEquals("rsf", identity.getEndpoints()[0].getProtocolName());
             assertArrayEquals(new String[] { "rsf://127.0.0.1:8000" }, member.getService().getAddresses());
             DirectoryQuery query = new DirectoryQuery();
@@ -236,8 +235,8 @@ public class JdbcStorageWatchTest {
             await(() -> notifications.get() == 2);
             RefServiceRelationData member = reader.getMember("echo", MetServiceType.Provider, "one");
             assertEquals(1, member.getInstance().getEndpoints().length);
-            assertEquals("rsf://127.0.0.1:9000", member.getInstance().getEndpoints()[0].getListenAddress());
-            assertEquals("rsf://127.0.0.1:8000", captured.getEndpoints()[0].getListenAddress());
+            assertEquals("rsf://127.0.0.1:9000", member.getInstance().getEndpoints()[0].getEndpoints().get("endpoint"));
+            assertEquals("rsf://127.0.0.1:8000", captured.getEndpoints()[0].getEndpoints().get("endpoint"));
             assertEquals("127.0.0.1", member.getInstance().getIpAddress());
             assertEquals(Long.valueOf(123), member.getInstance().getProcessId());
         }
@@ -268,11 +267,8 @@ public class JdbcStorageWatchTest {
 
     private static EntInstanceEndpointData instanceEndpoint(String address) {
         EntInstanceEndpointData endpoint = new EntInstanceEndpointData();
-        endpoint.setConnectorName("primary");
-        endpoint.setTransport("tcp");
         endpoint.setProtocolName("rsf");
-        endpoint.setScheme("rsf");
-        endpoint.setListenAddress(address);
+        endpoint.getEndpoints().put("endpoint", address);
         return endpoint;
     }
 

@@ -43,7 +43,7 @@ final class HessianCodecTestFixture implements AutoCloseable {
                 .addContextPath("/private");
         this.context = configuration.buildContext();
         this.context.publisher().rsfService(Methods.class, new Methods()) //
-                .name("Methods").aliasName("hessian", "math").register();
+                .name("Methods").aliasName("hessian", "math").contextPathByPrefix("hessian", "/").register();
         ConnectorConfig endpoint = this.context.getSettings().getConnectorConfigs().stream() //
                 .filter(candidate -> candidate.protocol("hessian") != null) //
                 .findFirst().orElseThrow();

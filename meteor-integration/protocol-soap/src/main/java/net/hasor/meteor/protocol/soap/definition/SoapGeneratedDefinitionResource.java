@@ -17,6 +17,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
@@ -35,6 +37,7 @@ import net.hasor.meteor.domain.meta.ServiceMetaParser;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
 
 /** 从已发布 Java 服务生成调用契约与 WSDL/XSD，不依赖调用方提供描述文件。 */
 final class SoapGeneratedDefinitionResource extends SoapDefinitionResource {
@@ -142,7 +145,27 @@ final class SoapGeneratedDefinitionResource extends SoapDefinitionResource {
         Element address = (Element) document.getElementsByTagNameNS(bindingNamespace, "address").item(0);
         URI publishedEndpoint = this.endpoint(endpoint);
         address.setAttribute("location", publishedEndpoint.toASCIIString());
-        this.rewriteSchemaLocations(document, publishedEndpoint);
+        SoapWsdlSchemas.embed(document, "service.wsdl", (current, location) -> {
+            Document schema = this.schemaResources.get(location);
+            if (schema == null) {
+                String path = "/META-INF/meteor/protocol/soap/" + location;
+                try (InputStream input = SoapGeneratedDefinitionResource.class.getResourceAsStream(path)) {
+                    if (input == null) {
+                        throw new IOException("SOAP XML Schema is missing: " + location);
+                    }
+
+                    var factory = DocumentBuilderFactory.newInstance();
+                    factory.setNamespaceAware(true);
+                    factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+                    factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+                    factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+                    schema = factory.newDocumentBuilder().parse(input);
+                } catch (ParserConfigurationException | SAXException failure) {
+                    throw new IOException("Cannot read SOAP XML Schema: " + location, failure);
+                }
+            }
+            return new SoapXmlResource(location, null, new byte[0], schema);
+        });
         return serialize(document);
     }
 

@@ -19,11 +19,7 @@ import io.grpc.stub.StreamObserver;
 import me.ivovk.connect_rpc_java.core.http.Paths;
 import me.ivovk.connect_rpc_java.netty.ConnectNettyServerBuilder;
 import me.ivovk.connect_rpc_java.netty.server.NettyServer;
-import net.hasor.example.OrderContract;
-import net.hasor.example.OrderDemoServiceImpl;
-import net.hasor.example.OrderExampleUtils;
-import net.hasor.example.OrderProtoUtils;
-import net.hasor.example.OrderQuery;
+import net.hasor.example.*;
 
 /** 社区 connect-rpc-java SDK 提供者，复用普通 Java 订单业务。 */
 public final class SdkProviderMain {
@@ -55,16 +51,16 @@ public final class SdkProviderMain {
                     respond(response, () -> OrderProtoUtils.toProto(orders.find(query)));
                 })).build();
 
-        // 社区 SDK 独立监听 /connect，当前入口负责自己的服务端及执行线程。
+        // 社区 SDK 独立监听 /connect/default/1.0.0，当前入口负责自己的服务端及执行线程。
         ExecutorService workers = Executors.newCachedThreadPool();
         try (NettyServer server = ConnectNettyServerBuilder.forServices(service) //
-                .host("127.0.0.1").port(8080).pathPrefix(Paths.Path.of("connect")) //
+                .host("127.0.0.1").port(8080).pathPrefix(Paths.Path.of("connect", "default", "1.0.0")) //
                 .executor(workers).build()) {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 server.close();
                 workers.shutdownNow();
             }, "connect-sdk-provider-shutdown"));
-            System.out.println("SDK order provider is ready: http://127.0.0.1:8080/connect");
+            System.out.println("SDK order provider is ready: http://127.0.0.1:8080/connect/default/1.0.0");
             OrderExampleUtils.awaitShutdown();
         } finally {
             workers.shutdownNow();

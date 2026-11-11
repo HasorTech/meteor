@@ -9,22 +9,20 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** 一个实例上报的完整服务声明；类型引用和协议端点分别保留。 */
+/** 一个实例上报的公共服务声明和类型图；协议契约随各服务接入点保存。 */
 public class MetServiceDescription {
     /** 数值契约编号；未声明时为 null。 */
-    private Long                                             contractServiceId = null;
+    private Long                            contractServiceId = null;
     /** 服务接口的 Java 类型名称。 */
-    private String                                           javaType          = null;
+    private String                          javaType          = null;
     /** 按声明顺序保存的方法列表。 */
-    private List<MetMethodDescription>                       methods           = new ArrayList<>();
+    private List<MetMethodDescription>      methods           = new ArrayList<>();
     /** 以完整类型引用为键的公共类型图。 */
-    private Map<String, MetTypeDescription>                  types             = new LinkedHashMap<>();
-    /** 按协议名、连接器名保存实际端点契约。 */
-    private Map<String, Map<String, MetProtocolDescription>> protocols         = new LinkedHashMap<>();
+    private Map<String, MetTypeDescription> types             = new LinkedHashMap<>();
     /** 是否为单向消息服务。 */
-    private boolean                                          message           = false;
+    private boolean                         message           = false;
     /** 未类型化的扩展字段；值仅包含 Map、List、标量及 null。 */
-    private Map<String, Object>                              extensions        = new LinkedHashMap<>();
+    private Map<String, Object>             extensions        = new LinkedHashMap<>();
 
     public Long getContractServiceId() {
         return this.contractServiceId;
@@ -56,14 +54,6 @@ public class MetServiceDescription {
 
     public void setTypes(Map<String, MetTypeDescription> types) {
         this.types = types;
-    }
-
-    public Map<String, Map<String, MetProtocolDescription>> getProtocols() {
-        return this.protocols;
-    }
-
-    public void setProtocols(Map<String, Map<String, MetProtocolDescription>> protocols) {
-        this.protocols = protocols;
     }
 
     public boolean isMessage() {

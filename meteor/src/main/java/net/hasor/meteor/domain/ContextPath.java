@@ -7,6 +7,7 @@
  */
 package net.hasor.meteor.domain;
 import java.util.*;
+import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.utils.ContextPathUtils;
 
 /** 服务在一个协议下的路径声明；所有路径使用相同的匹配方式。 */
@@ -41,6 +42,25 @@ public final class ContextPath {
     /** true 为精确匹配，false 为目录前缀匹配。 */
     public boolean isExact() {
         return this.exact;
+    }
+
+    /** 将服务声明的子路径解析到当前协议挂载点下；不修改原始声明。 */
+    public ContextPath resolve(String mount) {
+        Objects.requireNonNull(mount, "Protocol context path");
+        String prefix = ContextPathUtils.normalize(mount);
+        if (StringUtils.equals("/", prefix)) {
+            prefix = "";
+        }
+        List<String> resolved = new ArrayList<>();
+        for (String path : this.paths) {
+            for (String segment : path.split("/")) {
+                if (StringUtils.equals(".", segment) || StringUtils.equals("..", segment)) {
+                    throw new IllegalArgumentException("Invalid service context path: " + path);
+                }
+            }
+            resolved.add(prefix + path);
+        }
+        return new ContextPath(resolved, this.exact);
     }
 
     @Override

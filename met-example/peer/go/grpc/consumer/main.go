@@ -11,11 +11,12 @@ import (
 )
 
 func run() error {
-	// Dial the official SDK and add the endpoint context before the generated method path.
+	// Add the protocol context, default group and version before the generated method path.
 	interceptor := func(ctx context.Context, method string, request, reply any,
 		connection *grpc.ClientConn, invoke grpc.UnaryInvoker, options ...grpc.CallOption) error {
-		return invoke(ctx, "/grpc"+method, request, reply, connection, options...)
+		return invoke(ctx, "/grpc/default/1.0.0"+method, request, reply, connection, options...)
 	}
+
 	connection, err := grpc.NewClient("127.0.0.1:8080", grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithUnaryInterceptor(interceptor))
 	if err != nil {

@@ -39,12 +39,12 @@ func run() error {
 	server := grpc.NewServer()
 	service := &orderService{store: orders.NewStore()}
 	description := orders.OrderDemoService_ServiceDesc
-	description.ServiceName = "grpc/" + description.ServiceName
+	description.ServiceName = "grpc/default/1.0.0/" + description.ServiceName
 	server.RegisterService(&description, service)
 	defer server.Stop()
 
 	// Serve until this provider process is stopped.
-	fmt.Println("Order provider is ready: grpc://127.0.0.1:8080/grpc")
+	fmt.Println("Order provider is ready: grpc://127.0.0.1:8080/grpc/default/1.0.0")
 	return server.Serve(listener)
 }
 

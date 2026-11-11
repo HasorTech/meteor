@@ -7,8 +7,10 @@
  */
 package net.hasor.meteor.protocol.thrift;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.function.ObjLongConsumer;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.connector.ProtocolSession;
 import net.hasor.meteor.connector.ProtocolSessionContext;
@@ -19,6 +21,7 @@ import net.hasor.meteor.domain.ProtocolBinding;
 import net.hasor.meteor.domain.ProtocolConfig;
 import net.hasor.meteor.domain.meta.ProtocolMeta;
 import net.hasor.meteor.domain.payload.Payload;
+import net.hasor.meteor.protocol.thrift.codec.ThriftCodec;
 import net.hasor.meteor.protocol.thrift.codec.ThriftServiceSchema;
 import net.hasor.meteor.protocol.thrift.session.ThriftSession;
 
@@ -44,9 +47,15 @@ public final class ThriftProtocol implements TcpProtocolProvider {
         // 从本端点已准备的契约导出描述，再一次创建完整绑定。
         ObjectNode description = meta.createServiceDescription(config, this.defaultSerialize());
         definition.describeContract(description);
-        description.put("multiplexed", Boolean.parseBoolean(config.option("multiplexed", "false")));
+        boolean multiplexed = Boolean.parseBoolean(config.option("multiplexed", "false"));
+        String alias = ThriftCodec.alias(config, meta.getService(), definition);
+        description.put("idlServiceName", definition.getName());
+        description.put("name", StringUtils.defaultIfBlank(meta.getService().getAliasName(config.name()), definition.getName()));
+        description.put("multiplexedName", alias);
+        description.put("multiplexed", multiplexed);
         description.put("framed", Boolean.parseBoolean(config.option("framed", "true")));
-        return meta.build(config, definition, description);
+        String route = multiplexed ? alias : "";
+        return meta.build(config, definition, description).claimRoute(List.of("thrift-service", route));
     }
 
     @Override

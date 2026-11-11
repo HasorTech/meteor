@@ -6,26 +6,22 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor.registry.admin;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import net.hasor.meteor.registry.admin.description.MetProtocolDescription;
 
-/** 服务发布或订阅使用的连接器及协议挂载快照，不代表一次 TCP 会话。 */
+/** 服务发布或订阅的公开协议接入点及其契约。 */
 public final class MetServiceEndpoint {
-    private String  connectorName     = null;  // 实例内的连接器名称
-    private String  transport         = null;  // 传输 SPI 名称，如 tcp、http
-    private String  protocolName      = null;  // 协议 SPI 名称
-    private String  scheme            = null;  // 协议地址 scheme
-    private String  contextPath       = null;  // 协议上下文路径；未配置时为空
-    private boolean bindEnabled       = false; // 是否配置监听
-    private String  configuredAddress = null;  // 连接器配置地址，不表示已建立连接的本地地址
-    private String  listenAddress     = null;  // 实际协议监听地址；无监听时为空
-    private String  publishedAddress  = null;  // 当前服务已发布的地址；订阅端或未发布时为空
+    private String                           transport        = null;  // 传输 SPI 名称，如 tcp、http
+    private String                           protocolName     = null;  // 协议 SPI 名称
+    private String                           scheme           = null;  // 协议地址 scheme
+    private String                           contextPath      = null;  // 服务实际路由路径；默认路径可包含分组、版本
+    private String                           listenAddress    = null;  // 本机 SDK 连接地址；无监听时为空
+    private String                           publishedAddress = null;  // 已发布的 SDK 连接地址；订阅端或未发布时为空
+    // 按暴露 scheme 分组的本服务实际接入点，内层 key 为用途、value 为完整地址
+    private Map<String, Map<String, String>> endpoints        = new LinkedHashMap<>();
 
-    public String getConnectorName() {
-        return this.connectorName;
-    }
-
-    public void setConnectorName(String connectorName) {
-        this.connectorName = connectorName;
-    }
+    private MetProtocolDescription description; // 此接入点的协议契约，不携带内部连接器身份
 
     public String getTransport() {
         return this.transport;
@@ -35,12 +31,22 @@ public final class MetServiceEndpoint {
         this.transport = transport;
     }
 
+    private boolean defaultProtocol; // 是否为所属实例配置的默认协议
+
     public String getProtocolName() {
         return this.protocolName;
     }
 
     public void setProtocolName(String protocolName) {
         this.protocolName = protocolName;
+    }
+
+    public boolean isDefaultProtocol() {
+        return this.defaultProtocol;
+    }
+
+    public void setDefaultProtocol(boolean defaultProtocol) {
+        this.defaultProtocol = defaultProtocol;
     }
 
     public String getScheme() {
@@ -59,22 +65,6 @@ public final class MetServiceEndpoint {
         this.contextPath = contextPath;
     }
 
-    public boolean isBindEnabled() {
-        return this.bindEnabled;
-    }
-
-    public void setBindEnabled(boolean bindEnabled) {
-        this.bindEnabled = bindEnabled;
-    }
-
-    public String getConfiguredAddress() {
-        return this.configuredAddress;
-    }
-
-    public void setConfiguredAddress(String configuredAddress) {
-        this.configuredAddress = configuredAddress;
-    }
-
     public String getListenAddress() {
         return this.listenAddress;
     }
@@ -89,5 +79,21 @@ public final class MetServiceEndpoint {
 
     public void setPublishedAddress(String publishedAddress) {
         this.publishedAddress = publishedAddress;
+    }
+
+    public Map<String, Map<String, String>> getEndpoints() {
+        return this.endpoints;
+    }
+
+    public void setEndpoints(Map<String, Map<String, String>> endpoints) {
+        this.endpoints = endpoints;
+    }
+
+    public MetProtocolDescription getDescription() {
+        return this.description;
+    }
+
+    public void setDescription(MetProtocolDescription description) {
+        this.description = description;
     }
 }

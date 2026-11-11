@@ -12,14 +12,18 @@ import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.connector.ProtocolProvider;
 import net.hasor.meteor.connector.transport.http.channel.HttpExchange;
 import net.hasor.meteor.domain.ProtocolBinding;
+import net.hasor.meteor.domain.ProtocolConfig;
 
 /** HTTP protocol SPI; requests select protocol mounts by their URI path. */
 public interface HttpProtocolProvider extends ProtocolProvider<HttpExchange> {
     /** 按协议固定顺序返回已准备绑定的路由身份分量；空列表表示不参与名称冲突校验。 */
     List<String> serviceKey(MetBindInfo<?> service, ProtocolBinding binding);
 
-    /** 此协议挂载支持提供的附带接入点类型，不包含服务名称及具体地址。 */
+    /** 此协议挂载支持的全部接入点用途 key，如 endpoint、http、schema；不包含具体地址。 */
     Set<String> endpointTypes();
+
+    /** 此挂载的业务请求支持的 HTTP 主版本；不包含仅用于获取描述文件的版本。 */
+    Set<Integer> httpVersions(ProtocolConfig config);
 
     @Override
     default String transportType() {

@@ -14,6 +14,8 @@ import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetExtension;
 import net.hasor.meteor.MetExtensionFactory;
+import net.hasor.meteor.bootstrap.MetContextImpl;
+import net.hasor.meteor.connector.ConnectorManager;
 import net.hasor.meteor.registry.admin.RegistryInfo;
 import net.hasor.meteor.registry.client.support.DefaultRegistryClient;
 import net.hasor.meteor.registry.client.support.ManagementRPCImpl;
@@ -51,10 +53,11 @@ public class RegistryConfiguration implements MetExtensionFactory {
         if (context.getExtension(RegistryExtension.class) != null) {
             throw new IllegalStateException("Only one RegistryConfiguration can be installed on a Meteor context");
         }
+        ConnectorManager connectors = ((MetContextImpl) context).getConnectorManager();
 
         // 离线模式直接复用上下文的 RPC 能力。
         if (!this.online) {
-            new ManagementRPCImpl(context, this.publishHost, this.tokenProvider, this.managementProtocols);
+            new ManagementRPCImpl(context, connectors, this.publishHost, this.tokenProvider, this.managementProtocols);
             return new RegistryExtension(context, null, null, this.tokenProvider);
         }
 
@@ -65,7 +68,7 @@ public class RegistryConfiguration implements MetExtensionFactory {
 
         Callable<StorageAccess> opener = this.createStorageOpener();
         RegistryImpl admin = new RegistryImpl(opener, this.describeStorage(), this.tokenProvider);
-        DefaultRegistryClient client = new DefaultRegistryClient(context, opener, this.refreshMillis, //
+        DefaultRegistryClient client = new DefaultRegistryClient(context, connectors, opener, this.refreshMillis, //
                 this.publishHost, this.tokenProvider, this.managementProtocols);
         return new RegistryExtension(context, admin, client, this.tokenProvider);
     }

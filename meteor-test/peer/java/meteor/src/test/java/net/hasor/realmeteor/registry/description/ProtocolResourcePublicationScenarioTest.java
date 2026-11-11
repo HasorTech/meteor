@@ -28,6 +28,7 @@ import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
 import net.hasor.meteor.registry.RegistryAdmin;
+import net.hasor.meteor.registry.admin.MetServiceEndpoint;
 import net.hasor.meteor.registry.admin.description.MetProtocolDescription;
 import net.hasor.meteor.registry.admin.description.MetServiceDescription;
 import net.hasor.meteor.registry.client.RegistryClient;
@@ -74,7 +75,7 @@ public class ProtocolResourcePublicationScenarioTest {
 
             // 管理查询读取存储中的最终端点描述，不能保留原字段号。
             MetServiceDescription description = this.description(provider, published);
-            MetProtocolDescription protocol = description.getProtocols().get("grpc").values().iterator().next();
+            MetProtocolDescription protocol = this.endpoints(provider, published)[0].getDescription();
             assertEquals("example.Echo", protocol.getName());
             this.assertMessageFieldIds(protocol, 11, 19);
         }
@@ -114,7 +115,7 @@ public class ProtocolResourcePublicationScenarioTest {
 
             // 注册描述保留订单方法与生成类型，不携带已清除的 Echo 契约。
             MetServiceDescription description = this.description(provider, published);
-            MetProtocolDescription protocol = description.getProtocols().get("grpc").values().iterator().next();
+            MetProtocolDescription protocol = this.endpoints(provider, published)[0].getDescription();
             assertEquals(DirectRpcExample.SERVICE_NAME, protocol.getName());
             assertEquals(2, protocol.getMethods().size());
             assertFalse(protocol.getTypes().isEmpty());
@@ -149,6 +150,8 @@ public class ProtocolResourcePublicationScenarioTest {
             provider.getExtension(RegistryClient.class).pushSync().get(10, TimeUnit.SECONDS);
             MetServiceDescription previous = this.description(provider, stable);
             JsonNode snapshot = new ObjectMapper().valueToTree(previous);
+            MetServiceEndpoint[] previousEndpoints = this.endpoints(provider, stable);
+            JsonNode endpointSnapshot = new ObjectMapper().valueToTree(previousEndpoints);
 
             // 新服务的非法资源让发布回滚，不能污染两个端点上已提交的原服务。
             var rejected = provider.publisher().rsfService(Echo.class, new EchoImpl()) //
@@ -167,10 +170,11 @@ public class ProtocolResourcePublicationScenarioTest {
             JsonNode reported = new ObjectMapper().valueToTree(current);
             assertEquals(snapshot, reported);
             assertEquals(snapshot, new ObjectMapper().valueToTree(previous));
-            assertEquals(2, current.getProtocols().get("grpc").size());
             var admin = provider.getExtension(RegistryAdmin.class).getServiceAdmin(stable.getBindID());
             var members = admin.providers(null, null);
             assertEquals(2, members.getItems().get(0).getEndpoints().length);
+            assertEquals(endpointSnapshot, new ObjectMapper().valueToTree(members.getItems().get(0).getEndpoints()));
+            assertEquals(endpointSnapshot, new ObjectMapper().valueToTree(previousEndpoints));
         }
     }
 
@@ -228,6 +232,11 @@ public class ProtocolResourcePublicationScenarioTest {
     private MetServiceDescription description(MetContext context, MetBindInfo<?> service) {
         var admin = context.getExtension(RegistryAdmin.class).getServiceAdmin(service.getBindID());
         return admin.descriptions().get(context.getInstanceID());
+    }
+
+    private MetServiceEndpoint[] endpoints(MetContext context, MetBindInfo<?> service) {
+        var admin = context.getExtension(RegistryAdmin.class).getServiceAdmin(service.getBindID());
+        return admin.providers(null, null).getItems().get(0).getEndpoints();
     }
 
     private void assertMessageFieldIds(MetProtocolDescription protocol, int valueId, int countId) {

@@ -88,7 +88,7 @@ public final class StandardTypeApplicationMain {
             } else {
                 // 出站地址只来自提供者的就绪事件，代理没有本地实现可以绕过真实网络。
                 URI target = URI.create(System.getenv("METEOR_ORDER_TARGET"));
-                InterAddress address = new InterAddress(protocol, target.getHost(), target.getPort(), "nxn_types");
+                InterAddress address = new InterAddress(protocol, target.getHost(), target.getPort(), target.getRawPath());
                 Object remote = context.getRsfClient(address).getRemote(binding);
                 if (StringUtils.equals("scalar-v1", api)) {
                     TypeValue value = JSON.treeToValue(request, TypeValue.class);
@@ -146,13 +146,21 @@ public final class StandardTypeApplicationMain {
             declaration.serialize("Hessian");
             if (!provider) {
                 URI target = URI.create(System.getenv("METEOR_ORDER_TARGET"));
-                declaration.contextPathByExact(protocol, target.getPath());
+                String path = target.getPath();
+                if (path == null || !path.startsWith("/standard/")) {
+                    throw new IllegalArgumentException("Target path is outside /standard: " + path);
+                }
+                declaration.contextPathByExact(protocol, path.substring("/standard".length()));
             }
         } else {
             declaration.serialize("Json");
         }
         if (!StringUtils.equals("rsf", protocol)) {
             declaration.aliasName(protocol, service);
+            if (provider || !StringUtils.equals("hessian", protocol)) {
+                // 标准类型 API 的固定原生挂载；Hessian 消费者使用上面给出的相对协议挂载点的精确子路径。
+                declaration.contextPathByPrefix(protocol, "/");
+            }
         }
         return declaration;
     }

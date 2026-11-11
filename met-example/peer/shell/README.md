@@ -10,7 +10,7 @@
 
 ## JSON-RPC
 
-通过 curl 调用 `http://127.0.0.1:8080/jsonrpc`，保存并查询订单 `1001`，附件以 Base64 传递。
+通过 curl 调用 `http://127.0.0.1:8080/jsonrpc/default/1.0.0`，保存并查询订单 `1001`，附件以 Base64 传递。
 
 ### curl → Meteor（直连）
 

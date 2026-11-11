@@ -1,0 +1,66 @@
+{
+  "javaType": "example.Orders",
+  "protocols": [
+    "rsf"
+  ],
+  "methods": [
+    {
+      "name": "find",
+      "javaSignature": "find(example.Node)",
+      "parameters": [
+        {
+          "name": "request",
+          "type": "example.Node"
+        }
+      ],
+      "returns": {
+        "type": "example.Node"
+      }
+    },
+    {
+      "name": "find",
+      "javaSignature": "find(java.lang.String)",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "java.lang.String"
+        }
+      ],
+      "returns": {
+        "type": "example.Node"
+      }
+    },
+    {
+      "name": "save",
+      "javaSignature": "save(example.Node)",
+      "parameters": [
+        {
+          "name": "request",
+          "type": "example.Node"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      }
+    }
+  ],
+  "types": {
+    "example.Node": {
+      "kind": "object",
+      "properties": [
+        {
+          "name": "value",
+          "type": "java.lang.String"
+        },
+        {
+          "name": "next",
+          "type": "example.Node"
+        }
+      ]
+    },
+    "example.Unused": {
+      "kind": "object",
+      "properties": []
+    }
+  }
+}

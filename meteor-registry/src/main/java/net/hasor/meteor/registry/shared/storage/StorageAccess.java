@@ -41,6 +41,9 @@ public interface StorageAccess extends AutoCloseable {
     /** 读取指定服务的成员摘要；各提供者封装原生聚合或摘要投影，缺项按空摘要处理。 */
     Map<String, ServiceSummary> serviceSummaries(Collection<String> serviceIds) throws Exception;
 
+    /** 读取持久方法目录；methodName 非空时精确匹配，结果声明是否支持枚举。 */
+    ServiceMethodPage serviceMethods(String serviceId, String methodName, DirectoryQuery query) throws Exception;
+
     /** 点查实例当前服务子项；未登记或会话失效返回 null。 */
     EntServiceRuntimeData getInstanceService(String instanceId, String serviceId) throws Exception;
 

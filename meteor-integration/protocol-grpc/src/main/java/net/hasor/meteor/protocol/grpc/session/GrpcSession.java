@@ -17,6 +17,7 @@ import net.hasor.cobble.ref.Tuple;
 import net.hasor.meteor.connector.ProtocolSession;
 import net.hasor.meteor.connector.ProtocolSessionContext;
 import net.hasor.meteor.connector.transport.NetworkChannel;
+import net.hasor.meteor.connector.transport.http.HttpSchemaResource;
 import net.hasor.meteor.connector.transport.http.channel.HttpBodyStream;
 import net.hasor.meteor.connector.transport.http.channel.HttpExchange;
 import net.hasor.meteor.connector.transport.http.channel.HttpRequest;
@@ -27,6 +28,7 @@ import net.hasor.meteor.domain.payload.RequestPayload;
 import net.hasor.meteor.domain.payload.ResponsePayload;
 import net.hasor.meteor.domain.payload.ThrowPayload;
 import net.hasor.meteor.protocol.grpc.GrpcStatusException;
+import net.hasor.meteor.protocol.grpc.binding.GrpcServiceBinding;
 import net.hasor.meteor.protocol.grpc.codec.GrpcHttpCodec;
 
 /**
@@ -98,12 +100,25 @@ public final class GrpcSession implements ProtocolSession<HttpExchange> {
             this.closeExchange(exchange);
             return;
         }
+        HttpResponse schema = HttpSchemaResource.receive(exchange.request(), this.context.metContext(), //
+                this.context.routes(), "proto", binding -> {
+                    if (binding.getDefinition() instanceof GrpcServiceBinding definition) {
+                        return definition.schemaResource();
+                    }
+                    return null;
+                });
+        if (schema != null) {
+            this.reply(exchange, schema);
+            return;
+        }
+
         if (exchange.request().version() != 2) {
             IOException failure = new IOException("gRPC requires HTTP/2");
             HttpResponse response = HttpResponse.newBuffered(505, Map.of(), new byte[0], Map.of());
             this.reject(exchange, response, failure);
             return;
         }
+
         String contentType = exchange.request().header("content-type");
         String mediaType = contentType == null ? "" : contentType.toLowerCase(Locale.ROOT);
         boolean grpcType = mediaType.matches("application/grpc(?:[+;].*)?");

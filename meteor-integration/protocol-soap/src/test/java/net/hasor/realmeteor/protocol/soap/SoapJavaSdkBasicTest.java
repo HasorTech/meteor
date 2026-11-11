@@ -46,7 +46,7 @@ public class SoapJavaSdkBasicTest {
             server.publisher() //
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService").protocol("soap") //
-                    .register();
+                    .contextPathByPrefix("soap", "/").register();
 
             // 直接使用 SDK 的公开 Java 客户端，仍通过随机监听端口完成真实 HTTP 往返。
             int port = server.getListenAddress("soap").getPort();
@@ -84,7 +84,7 @@ public class SoapJavaSdkBasicTest {
             MetBindInfo<EchoService> service = client.publisher() //
                     .rsfService(EchoService.class) //
                     .aliasName("soap", "EchoService").protocol("soap") //
-                    .register();
+                    .contextPathByPrefix("soap", "/").register();
 
             // 前缀只能由 SDK 服务端添加，确保不是同 JVM 的本地调用捷径或普通回显。
             InterAddress address = new InterAddress("soap", "127.0.0.1", server.getPort());

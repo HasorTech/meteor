@@ -12,18 +12,16 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.registry.RegistryAdmin;
 import net.hasor.meteor.registry.RegistryConfiguration;
-import net.hasor.meteor.registry.admin.MetClusterAdmin;
-import net.hasor.meteor.registry.admin.MetInstanceEndpoint;
-import net.hasor.meteor.registry.admin.MetPage;
-import net.hasor.meteor.registry.admin.MetServiceInfo;
 import net.hasor.meteor.registry.client.RegistryClient;
 import net.hasor.meteor.registry.memory.MemoryRegistryConfiguration;
 import net.hasor.meteor.registry.shared.DecoratedRegistryConfiguration;
@@ -36,6 +34,7 @@ import net.hasor.meteor.registry.shared.rpc.ManagementRPC;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
 import net.hasor.meteor.registry.shared.storage.domain.EntInstanceEndpointData;
 import net.hasor.meteor.registry.shared.storage.domain.EntServiceCatalogData;
+import net.hasor.meteor.registry.shared.storage.domain.RefProtocolMountData;
 import net.hasor.meteor.registry.shared.utils.RegistryJson;
 import org.junit.jupiter.api.Test;
 import static net.hasor.meteor.registry.shared.RegistryTestUtils.createConfiguration;
@@ -44,30 +43,80 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class RegistryAdminConfigurationTest {
     @Test
-    public void httpEndpointsReportActualSoapServicesAndWsdlAddresses() throws Exception {
+    public void httpServiceDocumentsStayWithTheirOwnService() throws Exception {
+        // 同一个 SOAP 挂载发布两个服务，其中一个使用精确路径。
         MetConfiguration configuration = createConfiguration().addExtension(new RegistryConfiguration().setOnline(false));
         configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
         configuration.connector("http").bind("127.0.0.1", 0).protocol("soap").contextPath("/soap");
         try (MetContext context = configuration.buildContext()) {
             context.start();
-            context.publisher().rsfService(Echo.class).toInstance(value -> value).name("one").protocol("soap").aliasName("soap", "First").register();
-            context.publisher().rsfService(Echo.class).toInstance(value -> value).name("two").protocol("soap").aliasName("soap", "Second").contextPathByExact("soap", "/exact").register();
+            var first = context.publisher().rsfService(Echo.class).toInstance(value -> value) //
+                    .name("one").protocol("soap").aliasName("soap", "First").register();
+            var second = context.publisher().rsfService(Echo.class).toInstance(value -> value) //
+                    .name("two").protocol("soap").aliasName("soap", "Second") //
+                    .contextPathByExact("soap", "/exact").register();
             ManagementRPC management = context.getServiceProvider(context.getServiceInfo(ManagementRPC.class)).get();
-            InstanceEndpointData endpoint = Arrays.stream(management.instance(null).getEndpoints()).filter(item -> StringUtils.equals(item.getProtocolName(), "soap")).findFirst().orElseThrow();
             String base = "http://127.0.0.1:" + context.getListenAddress("soap").getPort();
-            assertEquals(List.of(base + "/soap/First?wsdl"), endpoint.getHttpEndpoints().get(base + "/soap/First"));
-            assertEquals(List.of(base + "/exact?wsdl"), endpoint.getHttpEndpoints().get(base + "/exact"));
-            // 精确服务不能冒充为 /soap/Second。
-            assertFalse(endpoint.getHttpEndpoints().containsKey(base + "/soap/Second"));
+
+            // 实例只上报挂载与能力，不能携带任何具体服务及其契约地址。
+            InstanceEndpointData instance = Arrays.stream(management.instance(null).getEndpoints()) //
+                    .filter(item -> StringUtils.equals(item.getProtocolName(), "soap")).findFirst().orElseThrow();
+            assertEquals(base + "/soap", instance.getEndpoints().get("http"));
+            assertEquals("", instance.getEndpoints().get("schema"));
+            ObjectNode instanceJson = RegistryJson.copy(instance, ObjectNode.class);
+            assertEquals(4, instanceJson.size());
+            assertEquals(Set.of("HTTP/1.1", "HTTP/2"), instance.getProtocolFamilies());
+            assertTrue(instanceJson.has("protocolFamilies"));
+            assertTrue(instanceJson.has("defaultProtocol"));
+            assertFalse(instanceJson.path("defaultProtocol").asBoolean());
+            assertTrue(instanceJson.has("protocolName"));
+            assertTrue(instanceJson.has("endpoints"));
+            EntInstanceEndpointData storedInstance = RegistryJson.copy(instance, EntInstanceEndpointData.class);
+            MetInstanceEndpoint restoredInstance = RegistryJson.copy(storedInstance, MetInstanceEndpoint.class);
+            assertEquals(instance.getEndpoints(), restoredInstance.getEndpoints());
+            assertEquals(instance.getProtocolFamilies(), restoredInstance.getProtocolFamilies());
+
+            // 每个服务只拥有自己的真实调用地址及 WSDL，不混入另一个服务。
+            var firstEndpoint = management.service(null, first.getBindID()).getEndpoints()[0];
+            var secondEndpoint = management.service(null, second.getBindID()).getEndpoints()[0];
+            String soap = context.getListenAddress("soap").toString();
+            Map<String, String> firstDocuments = Map.of("endpoint", soap, //
+                    "http", base + "/soap/registry-client/1/First", "schema", base + "/soap/registry-client/1/First?wsdl");
+            Map<String, String> exactDocuments = Map.of("endpoint", soap, //
+                    "http", base + "/soap/exact", "schema", base + "/soap/exact?wsdl");
+            assertEquals(firstDocuments, firstEndpoint.getEndpoints().get("soap"));
+            assertEquals(exactDocuments, secondEndpoint.getEndpoints().get("soap"));
+            RefProtocolMountData stored = RegistryJson.copy(firstEndpoint, RefProtocolMountData.class);
+            MetServiceEndpoint restored = RegistryJson.copy(stored, MetServiceEndpoint.class);
+            assertEquals(firstEndpoint.getEndpoints().get("soap"), restored.getEndpoints().get("soap"));
             HttpClient client = HttpClient.newHttpClient();
-            for (String definition : endpoint.getHttpEndpoints().values().stream().flatMap(List::stream).toList()) {
-                var response = client.send(HttpRequest.newBuilder(URI.create(definition)).GET().build(), HttpResponse.BodyHandlers.ofString());
+            List<String> definitions = List.of(firstEndpoint.getEndpoints().get("soap").get("schema"), secondEndpoint.getEndpoints().get("soap").get("schema"));
+            for (String definition : definitions) {
+                HttpRequest request = HttpRequest.newBuilder(URI.create(definition)).GET().build();
+                var response = client.send(request, HttpResponse.BodyHandlers.ofString());
                 assertEquals(200, response.statusCode(), response.body());
                 assertTrue(response.body().contains("definitions"), response.body());
             }
-            EntInstanceEndpointData stored = RegistryJson.copy(endpoint, EntInstanceEndpointData.class);
-            MetInstanceEndpoint restored = RegistryJson.copy(stored, MetInstanceEndpoint.class);
-            assertEquals(endpoint.getHttpEndpoints(), restored.getHttpEndpoints());
+        }
+    }
+
+    @Test
+    public void protocolEndpointTypesAreReportedWithoutPublishedBusinessServices() throws Exception {
+        // 协议能力由 SPI 声明，不能依赖业务服务当前是否存在。
+        MetConfiguration configuration = createConfiguration().addExtension(new RegistryConfiguration().setOnline(false));
+        configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        configuration.connector("http").bind("127.0.0.1", 0).protocol("soap").contextPath("/soap");
+        try (MetContext context = configuration.buildContext()) {
+            context.start();
+            ManagementRPC management = context.getServiceProvider(context.getServiceInfo(ManagementRPC.class)).get();
+            InstanceEndpointData soap = Arrays.stream(management.instance(null).getEndpoints()) //
+                    .filter(endpoint -> StringUtils.equals(endpoint.getProtocolName(), "soap")).findFirst().orElseThrow();
+            Set<String> types = context.getEndpointTypes("http-1", "soap");
+            assertEquals(Set.of("endpoint", "http", "schema"), types);
+            assertEquals(types, soap.getEndpoints().keySet());
+            assertEquals("", soap.getEndpoints().get("schema"));
+            assertFalse(soap.getEndpoints().get("http").contains("?wsdl"));
+            assertTrue(context.getEndpointTypes("missing", "soap").isEmpty());
         }
     }
 
@@ -94,18 +143,13 @@ public class RegistryAdminConfigurationTest {
             assertEquals(2, instance.getEndpoints().length);
             InstanceEndpointData rsf = Arrays.stream(instance.getEndpoints()) //
                     .filter(endpoint -> StringUtils.equals("rsf", endpoint.getProtocolName())).findFirst().orElseThrow();
-            assertEquals("tcp-0", rsf.getConnectorName());
-            assertEquals("tcp", rsf.getTransport());
-            assertEquals("rsf", rsf.getScheme());
-            assertEquals(context.getListenAddress("rsf").toString(), rsf.getListenAddress());
-            assertEquals(rsf.getListenAddress(), rsf.getManagementAddress());
+            assertEquals(context.getListenAddress("rsf").toString(), rsf.getEndpoints().get("endpoint"));
+            assertEquals(rsf.getEndpoints().get("endpoint"), rsf.getEndpoints().get("management"));
             InstanceEndpointData http = Arrays.stream(instance.getEndpoints()) //
                     .filter(endpoint -> StringUtils.equals("registry-http", endpoint.getProtocolName())) //
                     .findFirst().orElseThrow();
-            assertEquals("http-1", http.getConnectorName());
-            assertEquals("http", http.getTransport());
-            assertEquals(context.getListenAddress("registry-http").toString(), http.getListenAddress());
-            assertNull(http.getManagementAddress());
+            assertEquals(context.getListenAddress("registry-http").toString(), http.getEndpoints().get("endpoint"));
+            assertNull(http.getEndpoints().get("management"));
         }
     }
 
@@ -133,12 +177,11 @@ public class RegistryAdminConfigurationTest {
             InstanceEndpointData http = Arrays.stream(endpoints) //
                     .filter(endpoint -> StringUtils.equals("registry-http", endpoint.getProtocolName())) //
                     .findFirst().orElseThrow();
-            assertEquals("http-1", http.getConnectorName());
-            assertEquals(context.getListenAddress("registry-http").toString(), http.getManagementAddress());
+            assertEquals(context.getListenAddress("registry-http").toString(), http.getEndpoints().get("management"));
             InstanceEndpointData rsf = Arrays.stream(endpoints) //
                     .filter(endpoint -> StringUtils.equals("rsf", endpoint.getProtocolName())).findFirst().orElseThrow();
-            assertEquals(context.getListenAddress("rsf").toString(), rsf.getListenAddress());
-            assertNull(rsf.getManagementAddress());
+            assertEquals(context.getListenAddress("rsf").toString(), rsf.getEndpoints().get("endpoint"));
+            assertNull(rsf.getEndpoints().get("management"));
         }
     }
 

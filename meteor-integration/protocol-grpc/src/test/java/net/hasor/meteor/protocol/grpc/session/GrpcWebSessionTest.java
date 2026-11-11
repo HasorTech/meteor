@@ -78,7 +78,7 @@ public class GrpcWebSessionTest {
         // 注册一个只有 grpc-web 别名的提供者，避免误用原生 grpc 名称空间。
         try (MetContext context = this.configuration().buildContext()) {
             MetBindInfo<Echo> service = context.publisher().rsfService(Echo.class, value -> value) //
-                    .aliasName("grpc-web", "example.Echo").serialize("Json").register();
+                    .aliasName("grpc-web", "example.Echo").serialize("Json").contextPathByPrefix("grpc-web", "/").register();
             ObservedNetwork network = new ObservedNetwork();
             Received received = new Received();
             ProtocolSession<HttpExchange> session = this.session(context, network, received, false);
@@ -103,7 +103,7 @@ public class GrpcWebSessionTest {
         // 消费者通过 Web 工厂发送请求，参数编码仍复用 native gRPC。
         try (MetContext context = this.configuration().buildContext()) {
             MetBindInfo<Echo> service = context.publisher().rsfService(Echo.class) //
-                    .aliasName("grpc-web", "example.Echo").serialize("Json").register();
+                    .aliasName("grpc-web", "example.Echo").serialize("Json").contextPathByPrefix("grpc-web", "/").register();
             ObservedNetwork network = new ObservedNetwork();
             Received received = new Received();
             ProtocolSession<HttpExchange> session = this.session(context, network, received, true);
@@ -132,7 +132,7 @@ public class GrpcWebSessionTest {
         // 入站完成参数绑定后等待 Dispatcher 的业务结果。
         try (MetContext context = this.configuration().buildContext()) {
             MetBindInfo<Echo> service = context.publisher().rsfService(Echo.class, value -> value) //
-                    .aliasName("grpc-web", "example.Echo").serialize("Json").register();
+                    .aliasName("grpc-web", "example.Echo").serialize("Json").contextPathByPrefix("grpc-web", "/").register();
             ObservedNetwork network = new ObservedNetwork();
             Received received = new Received();
             ProtocolSession<HttpExchange> session = this.session(context, network, received, false);
@@ -159,7 +159,7 @@ public class GrpcWebSessionTest {
         // Web 包装层关闭后不得绕过 native 的生命周期判断。
         try (MetContext context = this.configuration().buildContext()) {
             MetBindInfo<Echo> service = context.publisher().rsfService(Echo.class) //
-                    .aliasName("grpc-web", "example.Echo").serialize("Json").register();
+                    .aliasName("grpc-web", "example.Echo").serialize("Json").contextPathByPrefix("grpc-web", "/").register();
             ObservedNetwork network = new ObservedNetwork();
             ProtocolSession<HttpExchange> session = this.session(context, network, new Received(), true);
             IOException failure = new IOException("session closed");
@@ -179,7 +179,7 @@ public class GrpcWebSessionTest {
         // 手工请求也必须遵守 Web 协议需要响应的约束，不能只依赖发布校验。
         try (MetContext context = this.configuration().buildContext()) {
             MetBindInfo<Echo> service = context.publisher().rsfService(Echo.class) //
-                    .aliasName("grpc-web", "example.Echo").serialize("Json").register();
+                    .aliasName("grpc-web", "example.Echo").serialize("Json").contextPathByPrefix("grpc-web", "/").register();
             ObservedNetwork network = new ObservedNetwork();
             ProtocolSession<HttpExchange> session = this.session(context, network, new Received(), true);
             try {
@@ -190,7 +190,7 @@ public class GrpcWebSessionTest {
                 // 不支持的消息请求在写入 HTTP 通道之前明确失败。
                 Future<Void> sent = session.send(request);
                 assertTrue(sent.isDone());
-                assertTrue(sent.getCause() instanceof GrpcStatusException);
+                assertInstanceOf(GrpcStatusException.class, sent.getCause());
                 assertEquals(12, ((GrpcStatusException) sent.getCause()).getCode());
                 assertTrue(network.writes.isEmpty());
             } finally {

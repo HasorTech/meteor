@@ -7,10 +7,7 @@
  */
 package net.hasor.example.connector.protocol;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.ObjLongConsumer;
 import net.hasor.meteor.MetBindInfo;
@@ -32,6 +29,16 @@ import net.hasor.meteor.domain.payload.ResponsePayload;
 
 /** HTTP 传输测试使用的协议夹具。 */
 public class TextProtocol implements TestHttpCodec, HttpProtocolProvider {
+    @Override
+    public Set<Integer> httpVersions(ProtocolConfig config) {
+        return Set.of(1, 2);
+    }
+
+    @Override
+    public Set<String> endpointTypes() {
+        return Set.of("endpoint", "http");
+    }
+
     public String defaultSerialize() {
         return "Java";
     }

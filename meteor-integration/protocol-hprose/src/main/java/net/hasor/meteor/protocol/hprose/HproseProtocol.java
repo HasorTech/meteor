@@ -8,7 +8,9 @@
 package net.hasor.meteor.protocol.hprose;
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.ObjLongConsumer;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -18,6 +20,7 @@ import net.hasor.meteor.connector.ProtocolSession;
 import net.hasor.meteor.connector.ProtocolSessionContext;
 import net.hasor.meteor.connector.transport.NetworkChannel;
 import net.hasor.meteor.connector.transport.http.HttpProtocolProvider;
+import net.hasor.meteor.connector.transport.http.HttpServicePathUtils;
 import net.hasor.meteor.connector.transport.http.channel.HttpExchange;
 import net.hasor.meteor.domain.ProtocolBinding;
 import net.hasor.meteor.domain.ProtocolConfig;
@@ -28,6 +31,16 @@ import net.hasor.meteor.protocol.hprose.session.HproseSession;
 
 /** Hprose SPI provider using the same session contract as every other protocol. */
 public final class HproseProtocol implements HttpProtocolProvider {
+    @Override
+    public Set<Integer> httpVersions(ProtocolConfig config) {
+        return Set.of(1, 2);
+    }
+
+    @Override
+    public Set<String> endpointTypes() {
+        return Set.of("endpoint", "http");
+    }
+
     private final Map<ProtocolConfig, HproseHttpCodec> codecs = new ConcurrentHashMap<>();
 
     @Override
@@ -42,7 +55,7 @@ public final class HproseProtocol implements HttpProtocolProvider {
 
     @Override
     public List<String> serviceKey(MetBindInfo<?> service, ProtocolBinding binding) {
-        return List.of();
+        return List.of(binding.getDescription().path("name").asText().toLowerCase(Locale.ROOT));
     }
 
     @Override
@@ -53,7 +66,7 @@ public final class HproseProtocol implements HttpProtocolProvider {
         }
         ObjectNode description = meta.createServiceDescription(config, this.defaultSerialize(), methods);
         description.put("name", meta.getService().getAliasName("Hprose"));
-        return meta.build(config, methods, description);
+        return HttpServicePathUtils.bind(config, meta, methods, description);
     }
 
     @Override

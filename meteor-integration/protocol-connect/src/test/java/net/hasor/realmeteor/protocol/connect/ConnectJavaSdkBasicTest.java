@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.connect;
+import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.connect.ConnectDemoService;
 import net.hasor.example.protocol.connect.ConnectDemoServiceImpl;
 import net.hasor.example.protocol.connect.TestConfigurationUtils;
@@ -13,9 +14,8 @@ import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.peer.protocol.connect.ConnectSdkClient;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** 同进程基础可用性：官方 JVM SDK 客户端通过真实 HTTP 调用 Meteor。 */
 public class ConnectJavaSdkBasicTest {
@@ -35,7 +35,7 @@ public class ConnectJavaSdkBasicTest {
             server.start();
             server.publisher().rsfService(ConnectDemoService.class, implementation) //
                     .aliasName("connect", "meteor.connect.demo.ConnectDemoService") //
-                    .serialize("Json").register();
+                    .serialize("Json").contextPathByPrefix("connect", "/").register();
 
             // 在当前 JUnit 进程直接调用官方 SDK，仍通过真实 HTTP 监听端口往返。
             int port = server.getListenAddress("connect").getPort();

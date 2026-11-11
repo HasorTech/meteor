@@ -165,21 +165,21 @@ public interface MetPublisher {
         ConfigurationBuilder<T> protocol(String protocol, String... protocolArrays);
 
         /**
-         * 选择服务在指定协议下暴露的上下文路径。协议名称忽略大小写，重复调用会替换该协议的选择及精确路径模式。
-         * 未选择路径的协议只使用其默认上下文；显式选择不会自动包含默认上下文，也不会改变协议选择。
+         * 设置服务相对于 HTTP 协议挂载点的子路径，完整路径由挂载点和子路径拼接。协议名称忽略大小写。
+         * 子路径 / 表示挂载点本身；未设置时使用协议默认的服务路径。重复调用替换该协议的路径及匹配模式。
          * @param protocol 已配置协议的 SPI 名称
-         * @param defaultContextPath 上下文路径，必须已在该协议上配置
-         * @param additionalContextPaths 同一协议的其他上下文路径
+         * @param defaultContextPath 相对于协议挂载点的服务子路径
+         * @param additionalContextPaths 同一协议的其他服务子路径
          * @return 返回ConfigurationBuilder
          */
         ConfigurationBuilder<T> contextPathByPrefix(String protocol, String defaultContextPath, String... additionalContextPaths);
 
         /**
-         * 选择服务在指定协议下精确匹配的完整路径，保留尾部斜杠，不自动添加上下文前缀。
+         * 设置服务相对于 HTTP 协议挂载点精确匹配的子路径，自动拼接挂载点，保留尾部斜杠。
          * 协议名称忽略大小写，重复调用会替换该协议的选择及上下文路径模式，不改变协议选择。
          * @param protocol 已配置协议的 SPI 名称
-         * @param path 完整路径
-         * @param additionalPaths 同一协议的其他完整路径
+         * @param path 相对于协议挂载点的服务子路径，/ 表示挂载点加尾部斜杠
+         * @param additionalPaths 同一协议的其他服务子路径
          * @return 返回ConfigurationBuilder
          */
         ConfigurationBuilder<T> contextPathByExact(String protocol, String path, String... additionalPaths);

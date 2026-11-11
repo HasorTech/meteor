@@ -15,7 +15,7 @@ def main():
     # 从 WSDL 读取服务地址和 XML 类型。
     with requests.Session() as session:
         client = zeep.Client(
-            "http://127.0.0.1:8080/soap/orders?wsdl",
+            "http://127.0.0.1:8080/soap/default/1.0.0/orders?wsdl",
             transport=Transport(session=session),
         )
 

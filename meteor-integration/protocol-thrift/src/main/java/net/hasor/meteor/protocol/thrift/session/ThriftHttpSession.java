@@ -18,6 +18,7 @@ import net.hasor.meteor.connector.ProtocolSessionContext;
 import net.hasor.meteor.connector.RouteMount;
 import net.hasor.meteor.connector.RouteMountIndex;
 import net.hasor.meteor.connector.transport.NetworkChannel;
+import net.hasor.meteor.connector.transport.http.HttpSchemaResource;
 import net.hasor.meteor.connector.transport.http.channel.HttpExchange;
 import net.hasor.meteor.connector.transport.http.channel.HttpRequest;
 import net.hasor.meteor.connector.transport.http.channel.HttpResponse;
@@ -29,12 +30,14 @@ import net.hasor.meteor.domain.payload.ResponsePayload;
 import net.hasor.meteor.domain.payload.ThrowPayload;
 import net.hasor.meteor.protocol.thrift.codec.ThriftCodec;
 import net.hasor.meteor.protocol.thrift.codec.ThriftMessage;
+import net.hasor.meteor.protocol.thrift.codec.ThriftServiceSchema;
 import net.hasor.meteor.protocol.thrift.codec.ThriftWireCodec;
 import org.apache.thrift.TApplicationException;
 import org.apache.thrift.protocol.TMessageType;
 
 /** Native unframed Thrift bodies carried by the shared HTTP exchange transport. */
 public final class ThriftHttpSession implements ProtocolSession<HttpExchange> {
+    private final ProtocolSessionContext           context;
     private final RouteMountIndex                  routes;
     private final NetworkChannel<HttpExchange>     channel;
     private final ObjLongConsumer<Payload>         messages;
@@ -51,6 +54,7 @@ public final class ThriftHttpSession implements ProtocolSession<HttpExchange> {
 
     public ThriftHttpSession(ProtocolConfig config, ProtocolSessionContext context, //
             NetworkChannel<HttpExchange> channel, ObjLongConsumer<Payload> messages) {
+        this.context = context;
         this.routes = context.routes();
         this.channel = channel;
         this.messages = messages;
@@ -77,6 +81,13 @@ public final class ThriftHttpSession implements ProtocolSession<HttpExchange> {
     public void receive(HttpExchange exchange) {
         if (this.closeCause != null) {
             exchange.complete(this.closeCause);
+            return;
+        }
+
+        HttpResponse schema = HttpSchemaResource.receive(exchange.request(), this.context.metContext(), //
+                this.context.routes(), "thrift", binding -> ((ThriftServiceSchema) binding.getDefinition()).schemaResource());
+        if (schema != null) {
+            this.reply(exchange, schema.status(), schema.headers(), schema.body());
             return;
         }
 

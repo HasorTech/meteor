@@ -21,6 +21,9 @@ public interface MetServiceAdmin {
     /** 按实例 ID 查询独立的完整描述 DTO；扩展属性只包含 JDK 数据，修改结果不会写回。 */
     Map<String, MetServiceDescription> descriptions();
 
+    /** 读取提供者曾上报的方法定义；不枚举实例，methodName 非空时精确匹配。 */
+    MetServiceMethodPage methods(String methodName, MetDirectoryQuery query);
+
     /** 查询本服务当前成员所属的单元目录。 */
     String[] units();
 

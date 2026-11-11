@@ -16,7 +16,7 @@ cd met-example/peer/go
 
 ## gRPC
 
-grpc-go 使用 HTTP/2、Protobuf 和 [order.proto](../../resource/order.proto)。地址为 `grpc://127.0.0.1:8080/grpc`。
+grpc-go 使用 HTTP/2、Protobuf 和 [order.proto](../../resource/order.proto)。地址为 `grpc://127.0.0.1:8080/grpc/default/1.0.0`。
 
 ### grpc-go → Meteor（直连）
 
@@ -38,7 +38,7 @@ go run ./grpc/provider
 
 ## Connect
 
-connect-go 使用 HTTP/1.1、Protobuf 和 [order.proto](../../resource/order.proto)。地址为 `http://127.0.0.1:8080/connect`。
+connect-go 使用 HTTP/1.1、Protobuf 和 [order.proto](../../resource/order.proto)。地址为 `http://127.0.0.1:8080/connect/default/1.0.0`。
 
 ### connect-go → Meteor（直连）
 

@@ -159,7 +159,7 @@ public class ConnectSessionTest {
                 assertTrue(sent.cancel());
                 network.runTasks();
                 assertTrue(network.writeResult.isCancelled());
-                assertTrue(request.completion().getCause() instanceof CancellationException);
+                assertInstanceOf(CancellationException.class, request.completion().getCause());
                 assertTrue(network.writes.get(0).completion().isDone());
                 assertEquals(0, network.closes);
             } finally {
@@ -335,7 +335,7 @@ public class ConnectSessionTest {
                 assertTrue(exchange.respond(occupied));
 
                 Future<Void> sent = session.send(response(request.getRequestID()));
-                assertTrue(sent.getCause() instanceof IllegalStateException);
+                assertInstanceOf(IllegalStateException.class, sent.getCause());
                 assertTrue(network.writes.isEmpty());
             } finally {
                 session.closed(null);
@@ -523,7 +523,7 @@ public class ConnectSessionTest {
                 request.complete(new CancellationException("already cancelled"));
 
                 Future<Void> sent = session.send(request);
-                assertTrue(sent.getCause() instanceof CancellationException);
+                assertInstanceOf(CancellationException.class, sent.getCause());
                 assertTrue(network.writes.isEmpty());
             } finally {
                 session.closed(null);
@@ -583,7 +583,7 @@ public class ConnectSessionTest {
                 .name("Echo") //
                 .aliasName("connect", "example.Echo") //
                 .serialize("Json") //
-                .register();
+                .contextPathByPrefix("connect", "/").register();
         return context;
     }
 

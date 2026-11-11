@@ -24,31 +24,34 @@ final class MemberMatcherUtils {
             return false;
         }
 
-        boolean anyConnector = StringUtils.isBlank(filter.getConnectorName());
         boolean anyTransport = StringUtils.isBlank(filter.getTransport());
         boolean anyProtocol = StringUtils.isBlank(filter.getProtocol()) && StringUtils.isBlank(filter.getScheme());
         boolean anyLocation = StringUtils.isBlank(filter.getContextPath()) && StringUtils.isBlank(filter.getAddress());
-        if (anyConnector && anyTransport && anyProtocol && anyLocation) {
+        if (anyTransport && anyProtocol && anyLocation) {
             return true;
         }
 
         // 所有条件必须匹配同一个协议挂载，返回时仍保留成员的完整端点列表。
         for (MetServiceEndpoint endpoint : member.getEndpoints()) {
-            boolean connector = matches(filter.getConnectorName(), endpoint.getConnectorName(), false);
             boolean transport = matches(filter.getTransport(), endpoint.getTransport(), true);
             boolean protocol = matches(filter.getProtocol(), endpoint.getProtocolName(), true);
             boolean scheme = matches(filter.getScheme(), endpoint.getScheme(), true);
             boolean path = matches(filter.getContextPath(), endpoint.getContextPath(), false);
-            if (!connector || !transport || !protocol || !scheme || !path) {
+            if (!transport || !protocol || !scheme || !path) {
                 continue;
             }
 
             String address = filter.getAddress();
-            boolean configured = matches(address, endpoint.getConfiguredAddress(), false);
             boolean listening = matches(address, endpoint.getListenAddress(), false);
             boolean published = matches(address, endpoint.getPublishedAddress(), false);
-            if (configured || listening || published) {
+            if (listening || published) {
                 return true;
+            }
+
+            for (var addresses : endpoint.getEndpoints().values()) {
+                if (addresses.values().stream().anyMatch(value -> matches(address, value, false))) {
+                    return true;
+                }
             }
         }
 

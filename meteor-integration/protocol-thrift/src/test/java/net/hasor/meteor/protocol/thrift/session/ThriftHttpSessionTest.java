@@ -282,8 +282,8 @@ public class ThriftHttpSessionTest {
             session.send(request).get(1, TimeUnit.SECONDS);
 
             network.writes.get(0).respond(HttpResponse.newBuffered(204, Map.of(), new byte[0], Map.of()));
-            assertTrue(received.get(0) instanceof ThrowPayload);
-            assertTrue(request.completion().getCause() instanceof IOException);
+            assertInstanceOf(ThrowPayload.class, received.get(0));
+            assertInstanceOf(IOException.class, request.completion().getCause());
         }
     }
 
@@ -298,8 +298,8 @@ public class ThriftHttpSessionTest {
             session.send(request).get(1, TimeUnit.SECONDS);
 
             network.writes.get(0).respond(httpResponse(new byte[] { 1 }));
-            assertTrue(received.get(0) instanceof ThrowPayload);
-            assertTrue(request.completion().getCause() instanceof IOException);
+            assertInstanceOf(ThrowPayload.class, received.get(0));
+            assertInstanceOf(IOException.class, request.completion().getCause());
         }
     }
 
@@ -501,8 +501,8 @@ public class ThriftHttpSessionTest {
             byte[] body = encode("binary", "echo", TMessageType.REPLY, 999, new InteropService.echo_result("wrong"));
             network.writes.get(0).respond(httpResponse(body));
 
-            assertTrue(received.get(0) instanceof ThrowPayload);
-            assertTrue(request.completion().getCause() instanceof IOException);
+            assertInstanceOf(ThrowPayload.class, received.get(0));
+            assertInstanceOf(IOException.class, request.completion().getCause());
             assertEquals(1, received.size());
         }
     }
@@ -520,8 +520,8 @@ public class ThriftHttpSessionTest {
             byte[] body = encode("binary", "other", TMessageType.REPLY, seqid, new InteropService.echo_result("wrong"));
             network.writes.get(0).respond(httpResponse(body));
 
-            assertTrue(received.get(0) instanceof ThrowPayload);
-            assertTrue(request.completion().getCause() instanceof IOException);
+            assertInstanceOf(ThrowPayload.class, received.get(0));
+            assertInstanceOf(IOException.class, request.completion().getCause());
         }
     }
 
@@ -541,7 +541,7 @@ public class ThriftHttpSessionTest {
             network.writes.get(0).respond(httpResponse(encode("binary", "fail", TMessageType.REPLY, seqid, result)));
 
             Throwable failure = ((ThrowPayload) received.get(0)).getThrowable();
-            assertTrue(failure instanceof DeclaredFailure);
+            assertInstanceOf(DeclaredFailure.class, failure);
             assertEquals(410, ((DeclaredFailure) failure).getCode());
             assertSame(failure, request.completion().getCause());
         }
@@ -680,7 +680,7 @@ public class ThriftHttpSessionTest {
             sent.cancel();
 
             assertTrue(network.writeResult.isCancelled());
-            assertTrue(request.completion().getCause() instanceof CancellationException);
+            assertInstanceOf(CancellationException.class, request.completion().getCause());
             assertTrue(network.writes.get(0).completion().isDone());
             assertEquals(1, received.size());
         }
@@ -756,7 +756,7 @@ public class ThriftHttpSessionTest {
             request.addOption("X-Trace", "first\r\nInjected: true");
             Future<Void> sent = session.send(request);
 
-            assertTrue(sent.getCause() instanceof IllegalArgumentException);
+            assertInstanceOf(IllegalArgumentException.class, sent.getCause());
             assertTrue(network.writes.isEmpty());
         }
     }
@@ -770,7 +770,7 @@ public class ThriftHttpSessionTest {
                 .contextPath("/rpc");
         MetContext context = configuration.buildContext();
         context.publisher().rsfService(ThriftDemoService.class, new ThriftDemoServiceImpl()) //
-                .name("Demo").aliasName("thrift-http", "Demo") //
+                .name("Demo").aliasName("thrift-http", "Demo").contextPathByPrefix("thrift-http", "/") //
                 .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)).register();
         return context;
     }

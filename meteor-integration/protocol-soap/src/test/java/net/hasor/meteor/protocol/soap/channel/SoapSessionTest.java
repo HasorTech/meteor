@@ -52,7 +52,7 @@ public class SoapSessionTest {
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<Arithmetic> service = context.publisher().rsfService(Arithmetic.class, Integer::sum) //
-                    .aliasName("soap", "RpcService").register();
+                    .aliasName("soap", "RpcService").contextPathByPrefix("soap", "/").register();
             ControlledNetwork network = new ControlledNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = this.session(context, network, received, false);
@@ -82,7 +82,7 @@ public class SoapSessionTest {
                 this.getClass().getResource("/wsdl/styles/rpc-parameter-order.wsdl"));
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<Arithmetic> service = context.publisher().rsfService(Arithmetic.class, Integer::sum) //
-                    .aliasName("soap", "RpcService").bindResource("soap", resource).register();
+                    .aliasName("soap", "RpcService").bindResource("soap", resource).contextPathByPrefix("soap", "/").register();
             ControlledNetwork network = new ControlledNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = this.session(context, network, received, false);
@@ -108,7 +108,7 @@ public class SoapSessionTest {
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<Arithmetic> service = context.publisher().rsfService(Arithmetic.class, Integer::sum) //
-                    .aliasName("soap", "RpcService").register();
+                    .aliasName("soap", "RpcService").contextPathByPrefix("soap", "/").register();
             ControlledNetwork network = new ControlledNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = this.session(context, network, received, false);
@@ -140,7 +140,7 @@ public class SoapSessionTest {
     private void replaceArithmeticBinding(MetContext context, MetBindInfo<?> service, SoapDefinitionResource resource) {
         ConnectorConfig endpoint = context.getSettings().getConnectorConfigs().iterator().next();
         ProtocolConfig config = endpoint.protocol("soap");
-        ProtocolMeta candidate = new ProtocolMeta(service, null, resource, new LinkedHashMap<>());
+        ProtocolMeta candidate = new ProtocolMeta(service, MetBindInfoWrap.unwrap(service).getProtocolMeta("soap").getContextPath(), resource, new LinkedHashMap<>());
         ProtocolBinding accepted = new SoapProtocol().prepareBinding(config, context, candidate);
         assertNotNull(accepted);
         candidate.getEndpoints().put(endpoint.name(), accepted);
@@ -203,7 +203,7 @@ public class SoapSessionTest {
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(EchoService.class, value -> value) //
-                    .aliasName("soap", "EchoService").register();
+                    .aliasName("soap", "EchoService").contextPathByPrefix("soap", "/").register();
             ControlledNetwork network = new ControlledNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = this.session(context, network, received, false);
@@ -236,7 +236,7 @@ public class SoapSessionTest {
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<EchoService> service = context.publisher().rsfService(EchoService.class, value -> value) //
-                    .aliasName("soap", "EchoService").register();
+                    .aliasName("soap", "EchoService").contextPathByPrefix("soap", "/").register();
             ControlledNetwork network = new ControlledNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = this.session(context, network, received, false);
@@ -248,7 +248,7 @@ public class SoapSessionTest {
             // 模拟服务回收清空发布结果；当前调用仍持有原来的契约和编码器。
             ServiceDomain<?> published = MetBindInfoWrap.unwrap(service);
             published.replaceProtocolPublication(Map.of());
-            assertNull(published.getProtocolMeta("soap"));
+            assertTrue(published.getProtocolMeta("soap").getEndpoints().isEmpty());
             Future<Void> sent = session.send(this.response(request.getRequestID(), ProtocolStatus.OK));
             assertEquals(200, exchange.response().getResult().status());
             assertEquals(List.of(exchange), network.writes);
@@ -268,7 +268,7 @@ public class SoapSessionTest {
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(SignalService.class, value -> {
-            }).aliasName("soap", "SignalService").register();
+            }).aliasName("soap", "SignalService").contextPathByPrefix("soap", "/").register();
             ControlledNetwork network = new ControlledNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = this.session(context, network, received, false);
@@ -291,7 +291,7 @@ public class SoapSessionTest {
             sent.get(1, TimeUnit.SECONDS);
             assertTrue(request.completion().isDone());
             Future<Void> late = session.send(this.response(request.getRequestID(), ProtocolStatus.OK));
-            assertTrue(late.getCause() instanceof IllegalStateException);
+            assertInstanceOf(IllegalStateException.class, late.getCause());
             assertEquals(1, network.writes.size());
         }
     }
@@ -302,7 +302,7 @@ public class SoapSessionTest {
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(EchoService.class, value -> value) //
-                    .aliasName("soap", "EchoService").register();
+                    .aliasName("soap", "EchoService").contextPathByPrefix("soap", "/").register();
             ControlledNetwork network = new ControlledNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = this.session(context, network, received, false);
@@ -316,7 +316,7 @@ public class SoapSessionTest {
 
             // 相同请求的重复响应必须失败，不能重写或额外写出 HTTP 响应。
             Future<Void> duplicate = session.send(this.response(request.getRequestID(), ProtocolStatus.OK));
-            assertTrue(duplicate.getCause() instanceof IllegalStateException);
+            assertInstanceOf(IllegalStateException.class, duplicate.getCause());
             assertSame(original, exchange.response().getResult());
             assertEquals(List.of(exchange), network.writes);
 
@@ -334,7 +334,7 @@ public class SoapSessionTest {
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(EchoService.class, value -> value) //
-                    .aliasName("soap", "EchoService").register();
+                    .aliasName("soap", "EchoService").contextPathByPrefix("soap", "/").register();
             ControlledNetwork network = new ControlledNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = this.session(context, network, received, false);
@@ -353,7 +353,7 @@ public class SoapSessionTest {
 
             // 超时后才到达的业务响应不能再占用该交换。
             Future<Void> late = session.send(this.response(request.getRequestID(), ProtocolStatus.OK));
-            assertTrue(late.getCause() instanceof IllegalStateException);
+            assertInstanceOf(IllegalStateException.class, late.getCause());
             assertEquals(1, network.writes.size());
         }
     }
@@ -364,7 +364,7 @@ public class SoapSessionTest {
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(EchoService.class, value -> value) //
-                    .aliasName("soap", "EchoService").register();
+                    .aliasName("soap", "EchoService").contextPathByPrefix("soap", "/").register();
             ControlledNetwork network = new ControlledNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = this.session(context, network, received, false);
@@ -377,7 +377,7 @@ public class SoapSessionTest {
             TimeoutException failure = new TimeoutException("business deadline");
             request.complete(failure);
             Future<Void> late = session.send(this.response(request.getRequestID(), ProtocolStatus.OK));
-            assertTrue(late.getCause() instanceof CancellationException);
+            assertInstanceOf(CancellationException.class, late.getCause());
             assertTrue(network.writes.isEmpty());
 
             // 清理回调只写出超时 Fault，迟到成功没有占用 HTTP 交换。
@@ -394,7 +394,7 @@ public class SoapSessionTest {
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(EchoService.class, value -> value) //
-                    .aliasName("soap", "EchoService").register();
+                    .aliasName("soap", "EchoService").contextPathByPrefix("soap", "/").register();
             ControlledNetwork network = new ControlledNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = this.session(context, network, received, false);
@@ -410,7 +410,7 @@ public class SoapSessionTest {
             assertSame(failure, request.completion().getCause());
             assertTrue(network.writes.isEmpty());
             Future<Void> late = session.send(this.response(request.getRequestID(), ProtocolStatus.OK));
-            assertTrue(late.getCause() instanceof IllegalStateException);
+            assertInstanceOf(IllegalStateException.class, late.getCause());
         }
     }
 
@@ -420,7 +420,7 @@ public class SoapSessionTest {
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(EchoService.class, value -> value) //
-                    .aliasName("soap", "EchoService").register();
+                    .aliasName("soap", "EchoService").contextPathByPrefix("soap", "/").register();
             ControlledNetwork network = new ControlledNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = this.session(context, network, received, false);
@@ -442,7 +442,7 @@ public class SoapSessionTest {
             assertSame(failure, secondRequest.completion().getCause());
             assertTrue(network.writes.isEmpty());
             Future<Void> late = session.send(this.response(firstRequest.getRequestID(), ProtocolStatus.OK));
-            assertTrue(late.getCause() instanceof IllegalStateException);
+            assertInstanceOf(IllegalStateException.class, late.getCause());
         }
     }
 
@@ -452,7 +452,7 @@ public class SoapSessionTest {
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(EchoService.class, value -> value) //
-                    .aliasName("soap", "EchoService").register();
+                    .aliasName("soap", "EchoService").contextPathByPrefix("soap", "/").register();
             ControlledNetwork network = new ControlledNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = this.session(context, network, received, false);
@@ -465,7 +465,7 @@ public class SoapSessionTest {
             session.closed(null);
             network.runTasks();
             Throwable exchangeFailure = exchange.completion().getCause();
-            assertTrue(exchangeFailure instanceof IOException);
+            assertInstanceOf(IOException.class, exchangeFailure);
             assertEquals("SOAP session closed", exchangeFailure.getMessage());
             assertSame(exchangeFailure, request.completion().getCause());
             assertTrue(network.writes.isEmpty());
@@ -478,7 +478,7 @@ public class SoapSessionTest {
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(EchoService.class, value -> value) //
-                    .aliasName("soap", "EchoService").register();
+                    .aliasName("soap", "EchoService").contextPathByPrefix("soap", "/").register();
             ControlledNetwork network = new ControlledNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = this.session(context, network, received, false);
@@ -496,14 +496,14 @@ public class SoapSessionTest {
             assertEquals(500, second.response().getResult().status());
             RequestPayload firstRequest = (RequestPayload) received.get(0);
             RequestPayload secondRequest = (RequestPayload) received.get(1);
-            assertTrue(firstRequest.completion().getCause() instanceof IOException);
-            assertTrue(secondRequest.completion().getCause() instanceof IOException);
+            assertInstanceOf(IOException.class, firstRequest.completion().getCause());
+            assertInstanceOf(IOException.class, secondRequest.completion().getCause());
             assertFalse(network.draining);
 
             // 重复 prepareDrain 不生成重复响应，也不重新接受业务结果。
             session.prepareDrain();
             Future<Void> late = session.send(this.response(firstRequest.getRequestID(), ProtocolStatus.OK));
-            assertTrue(late.getCause() instanceof IllegalStateException);
+            assertInstanceOf(IllegalStateException.class, late.getCause());
             assertEquals(2, network.writes.size());
         }
     }
@@ -540,7 +540,7 @@ public class SoapSessionTest {
 
             // 直接返回本地取消失败，保留原始 RPC 结束原因。
             Future<Void> sent = session.send(request);
-            assertTrue(sent.getCause() instanceof CancellationException);
+            assertInstanceOf(CancellationException.class, sent.getCause());
             assertSame(expired, request.completion().getCause());
             assertTrue(network.writes.isEmpty());
             assertTrue(received.isEmpty());
@@ -553,7 +553,7 @@ public class SoapSessionTest {
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<EchoService> service = context.publisher().rsfService(EchoService.class) //
-                    .aliasName("soap", "EchoService").register();
+                    .aliasName("soap", "EchoService").contextPathByPrefix("soap", "/").register();
             ControlledNetwork network = new ControlledNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = this.session(context, network, received, true);
@@ -566,9 +566,9 @@ public class SoapSessionTest {
             assertTrue(sent.cancel());
             network.runTasks();
             assertTrue(network.writeResults.get(0).isCancelled());
-            assertTrue(request.completion().getCause() instanceof CancellationException);
+            assertInstanceOf(CancellationException.class, request.completion().getCause());
             HttpExchange exchange = network.writes.get(0);
-            assertTrue(exchange.completion().getCause() instanceof CancellationException);
+            assertInstanceOf(CancellationException.class, exchange.completion().getCause());
             assertTrue(received.isEmpty());
         }
     }
@@ -579,7 +579,7 @@ public class SoapSessionTest {
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<EchoService> service = context.publisher().rsfService(EchoService.class) //
-                    .aliasName("soap", "EchoService").register();
+                    .aliasName("soap", "EchoService").contextPathByPrefix("soap", "/").register();
             ControlledNetwork network = new ControlledNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = this.session(context, network, received, true);
@@ -605,7 +605,7 @@ public class SoapSessionTest {
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<EchoService> service = context.publisher().rsfService(EchoService.class) //
-                    .aliasName("soap", "EchoService").register();
+                    .aliasName("soap", "EchoService").contextPathByPrefix("soap", "/").register();
             ControlledNetwork network = new ControlledNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = this.session(context, network, received, true);
@@ -633,7 +633,7 @@ public class SoapSessionTest {
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<EchoService> service = context.publisher().rsfService(EchoService.class) //
-                    .aliasName("soap", "EchoService").register();
+                    .aliasName("soap", "EchoService").contextPathByPrefix("soap", "/").register();
             ControlledNetwork network = new ControlledNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = this.session(context, network, received, true);
@@ -663,7 +663,7 @@ public class SoapSessionTest {
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<EchoService> service = context.publisher().rsfService(EchoService.class) //
-                    .aliasName("soap", "EchoService").register();
+                    .aliasName("soap", "EchoService").contextPathByPrefix("soap", "/").register();
             ControlledNetwork network = new ControlledNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = this.session(context, network, received, true);
@@ -689,7 +689,7 @@ public class SoapSessionTest {
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<EchoService> service = context.publisher().rsfService(EchoService.class) //
-                    .aliasName("soap", "EchoService").register();
+                    .aliasName("soap", "EchoService").contextPathByPrefix("soap", "/").register();
             ControlledNetwork network = new ControlledNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = this.session(context, network, received, true);
@@ -707,7 +707,7 @@ public class SoapSessionTest {
             network.runTasks();
             assertEquals(1, received.size());
             Throwable failure = ((ThrowPayload) received.get(0)).getThrowable();
-            assertTrue(failure instanceof IllegalArgumentException);
+            assertInstanceOf(IllegalArgumentException.class, failure);
             assertSame(failure, request.completion().getCause());
         }
     }
@@ -718,7 +718,7 @@ public class SoapSessionTest {
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(EchoService.class, value -> value) //
-                    .aliasName("soap", "EchoService").register();
+                    .aliasName("soap", "EchoService").contextPathByPrefix("soap", "/").register();
             ControlledNetwork network = new ControlledNetwork();
             network.completeExchanges = false;
             List<Payload> received = new ArrayList<>();
@@ -752,7 +752,7 @@ public class SoapSessionTest {
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
             context.publisher().rsfService(EchoService.class, value -> value) //
-                    .aliasName("soap", "EchoService").register();
+                    .aliasName("soap", "EchoService").contextPathByPrefix("soap", "/").register();
             ControlledNetwork network = new ControlledNetwork();
             network.completeExchanges = false;
             List<Payload> received = new ArrayList<>();
@@ -774,7 +774,7 @@ public class SoapSessionTest {
             // 取消产生显式的 exchange 失败，不能留下悬空的即时响应。
             network.writeResults.get(0).cancel();
             network.runTasks();
-            assertTrue(exchange.completion().getCause() instanceof CancellationException);
+            assertInstanceOf(CancellationException.class, exchange.completion().getCause());
             assertEquals(1, network.writes.size());
         }
     }

@@ -9,6 +9,7 @@ package net.hasor.meteor.domain.meta;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
+import java.util.function.UnaryOperator;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -63,16 +64,29 @@ public final class ProtocolMeta {
 
     /** 合并当前端点的默认路径，一次创建包含定义和描述的绑定；原始路径声明保持不变。 */
     public ProtocolBinding build(ProtocolConfig config, Object definition, ObjectNode description) {
+        return this.build(config, definition, description, UnaryOperator.identity());
+    }
+
+    /** 默认路径可由协议推导；显式子路径始终相对于当前端点的协议挂载点解析。 */
+    public ProtocolBinding build(ProtocolConfig config, Object definition, ObjectNode description, UnaryOperator<String> defaultPath) {
         ContextPath effective = this.contextPath;
+        String configuredPath = config.option("contextPath", null);
         if (effective == null) {
-            String defaultPath = config.option("contextPath", null);
-            if (defaultPath != null) {
-                effective = new ContextPath(List.of(defaultPath), false);
+            if (configuredPath != null) {
+                effective = new ContextPath(List.of(defaultPath.apply(configuredPath)), false);
             }
+        } else {
+            effective = effective.resolve(configuredPath);
         }
 
         if (description != null) {
             description.put("contextExact", effective != null && effective.isExact());
+            if (this.contextPath != null) {
+                ArrayNode servicePaths = description.putArray("servicePaths");
+                this.contextPath.getPaths().forEach(servicePaths::add);
+            } else {
+                description.remove("servicePaths");
+            }
         }
         return new ProtocolBinding(effective, definition, description);
     }

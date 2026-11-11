@@ -503,22 +503,7 @@ public class ConnectorManager implements AutoCloseable {
         return new MetException(ProtocolStatus.ProtocolUndefined, message);
     }
 
-    private static final class ResolvedMount {
-        private final ConnectorConfig endpoint;
-        private final ProtocolConfig  mount;
-
-        private ResolvedMount(ConnectorConfig endpoint, ProtocolConfig mount) {
-            this.endpoint = endpoint;
-            this.mount = mount;
-        }
-
-        private ConnectorConfig endpoint() {
-            return this.endpoint;
-        }
-
-        private ProtocolConfig mount() {
-            return this.mount;
-        }
+    private record ResolvedMount(ConnectorConfig endpoint, ProtocolConfig mount) {
     }
 
     private static <T> Future<T> failed(Throwable cause) {
@@ -623,6 +608,11 @@ public class ConnectorManager implements AutoCloseable {
             throw new IllegalArgumentException(message);
         }
         return addresses.get(0);
+    }
+
+    public synchronized Set<String> getProtocolFamilies(String connectorName, String protocol) {
+        ConnectorEndpoint<?> endpoint = this.endpoints.get(connectorName);
+        return endpoint == null ? Set.of() : endpoint.protocolFamilies(protocol);
     }
 
     public synchronized Set<String> getEndpointTypes(String connectorName, String protocol) {

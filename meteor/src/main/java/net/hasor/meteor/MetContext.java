@@ -90,7 +90,7 @@ public interface MetContext extends OnlineStatus, AutoCloseable {
     /** 获取指定连接器、逻辑协议和公开地址 scheme 对应的当前监听地址。 */
     InterAddress getListenAddress(String connectorName, String protocol, String addressScheme);
 
-    /** 查询协议挂载支持的附带接入点类型，不包含具体服务数据。 */
+    /** 查询协议挂载支持的全部接入点用途 key，不包含具体服务数据。 */
     Set<String> getEndpointTypes(String connectorName, String protocol);
 
     /** 获取本上下文独立的只读配置快照。 */

@@ -15,7 +15,6 @@ import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.annotation.MetService;
 import net.hasor.meteor.bootstrap.MetConfiguration;
-import net.hasor.meteor.address.InterAddress;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import static org.junit.jupiter.api.Assertions.*;
@@ -77,12 +76,12 @@ public class GrpcServiceNamingScenarioTest {
             // 同一挂载上的有效名称必须唯一，失败不能撤销之前的发布。
             IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, () -> {
                 server.publisher().rsfService(Echo.class, new EchoImpl()) //
-                        .name("catalog.OtherEcho").group("collision").version("1") //
+                        .name("catalog.OtherEcho") //
                         .aliasName("grpc", Echo.class.getName()) //
                         .serialize("Json").register();
             });
             assertTrue(failure.getMessage().contains(Echo.class.getName()));
-            assertNull(server.getServiceInfo("collision", "catalog.OtherEcho", "1"));
+            assertNull(server.getServiceInfo("default", "catalog.OtherEcho", "1.0.0"));
 
             // 原服务经过真实网络仍能正确处理调用。
             MetBindInfo<Echo> service = client.publisher().rsfService(Echo.class).serialize("Json").register();
@@ -95,22 +94,20 @@ public class GrpcServiceNamingScenarioTest {
     }
 
     @Test
-    public void differentMountsCanExposeTheSameEffectiveName() throws Exception {
-        // 一个端点声明两个目录，两个提供者分别选择自己的挂载。
+    public void differentServiceSubpathsCanExposeTheSameEffectiveName() throws Exception {
+        // 同一协议挂载点下，两个服务子路径可以发布相同的有效服务名。
         MetConfiguration incoming = TestConfigurationUtils.create() //
                 .setDefaultProtocol("grpc");
         incoming.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("grpc") //
-                .contextPath("/first") //
-                .addContextPath("/second");
+                .contextPath("/rpc");
         MetConfiguration outgoing = TestConfigurationUtils.create() //
                 .setDefaultProtocol("grpc");
         outgoing.connector("http") //
                 .option("httpVersion", 2) //
                 .protocol("grpc") //
-                .contextPath("/first") //
-                .addContextPath("/second");
+                .contextPath("/rpc");
         EchoImpl first = new EchoImpl();
         EchoImpl second = new EchoImpl();
         try (MetContext server = incoming.buildContext(); //
@@ -123,16 +120,14 @@ public class GrpcServiceNamingScenarioTest {
                     .aliasName("grpc", "catalog.Echo").serialize("Json") //
                     .contextPathByPrefix("grpc", "/second").register();
 
-            // 消费者携带对应目录，同名服务不能越过自己的挂载调用另一个提供者。
+            // 消费者声明对应子路径，同名服务不能调用另一个子路径中的提供者。
             MetBindInfo<Echo> firstService = client.publisher().rsfService(Echo.class).name("catalog.Echo") //
                     .serialize("Json").contextPathByPrefix("grpc", "/first").register();
             MetBindInfo<Echo> secondService = client.publisher().rsfService(Echo.class).name("catalog.OtherEcho") //
                     .aliasName("grpc", "catalog.Echo").serialize("Json") //
                     .contextPathByPrefix("grpc", "/second").register();
             Echo firstRemote = client.getRsfClient(server.getListenAddress("grpc")).getRemote(firstService);
-            var listener = server.getListenAddress("grpc");
-            var secondAddress = new InterAddress("grpc", listener.getHost(), listener.getPort(), "/second");
-            Echo secondRemote = client.getRsfClient(secondAddress).getRemote(secondService);
+            Echo secondRemote = client.getRsfClient(server.getListenAddress("grpc")).getRemote(secondService);
             assertEquals("first", firstRemote.echo(Message.of("first", 1)).getValue());
             assertEquals("second", secondRemote.echo(Message.of("second", 2)).getValue());
             assertEquals(1, first.getCalls());

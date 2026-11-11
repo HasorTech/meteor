@@ -6,42 +6,41 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.example.direct;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import net.hasor.example.direct.ContextMountExample;
-import net.hasor.example.direct.DirectRpcExample;
+import java.util.concurrent.TimeUnit;
+import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.OrderQuery;
+import net.hasor.example.direct.ContextMountExample;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
-import net.hasor.example.Order;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
-/** 使用可运行例子的相同配置和发布 API，展示服务如何选择已经配置的上下文。 */
+/** 使用可运行例子的相同配置和发布 API，展示服务如何配置协议挂载点下的子路径。 */
 @NxnRpc(name = "soap", version = "1.1")
 public class ContextScenarioTest {
     @Test
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void omittedContextPublishesOnlyAtTheDefaultPath() throws Exception {
-        // 服务端预配置三个 context，消费者选择默认的 /soap。
+        // 协议挂载在 /soap，服务以 / 子路径使用该挂载。
         MetConfiguration incoming = ContextMountExample.server("127.0.0.1", 0, 0);
-        MetConfiguration outgoing = ContextMountExample.client("/soap");
+        MetConfiguration outgoing = ContextMountExample.client();
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();
             client.start();
             ContextMountExample.publish(server, new OrderDemoServiceImpl());
-            MetBindInfo<OrderDemoService> binding = DirectRpcExample.subscribe(client);
+            MetBindInfo<OrderDemoService> binding = ContextMountExample.subscribe(client, "/");
 
             // 不传 context 的一次发布可通过默认 SOAP 路径保存和查询订单。
             OrderDemoService remote = client.getRsfClient(server.getListenAddress("soap")).getRemote(binding);
@@ -54,7 +53,7 @@ public class ContextScenarioTest {
             HttpResponse<String> definition = this.definition(port, "/soap");
             assertEquals(200, definition.statusCode());
             assertTrue(definition.body().contains("/soap/orders"), definition.body());
-            assertEquals(404, this.definition(port, "/private").statusCode());
+            assertEquals(404, this.definition(port, "/soap/private").statusCode());
         }
     }
 
@@ -63,15 +62,15 @@ public class ContextScenarioTest {
     @Test
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void explicitContextReplacesTheDefaultForThisService() throws Exception {
-        // 发布时选择 /private，消费者的 SOAP 出口也选择同一路径。
+        // 发布时选择 /private，消费者的 SOAP 服务声明也选择相同子路径。
         MetConfiguration incoming = ContextMountExample.server("127.0.0.1", 0, 0);
-        MetConfiguration outgoing = ContextMountExample.client("/private");
+        MetConfiguration outgoing = ContextMountExample.client();
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();
             client.start();
             ContextMountExample.publish(server, new OrderDemoServiceImpl(), "/private");
-            MetBindInfo<OrderDemoService> binding = DirectRpcExample.subscribe(client);
+            MetBindInfo<OrderDemoService> binding = ContextMountExample.subscribe(client, "/private");
 
             // JSON-RPC 保存的数据，可从显式挂载的 SOAP 路径查询到同一个订单。
             OrderDemoService json = client.getRsfClient(server.getListenAddress("jsonrpc")).getRemote(binding);
@@ -81,9 +80,9 @@ public class ContextScenarioTest {
 
             // SOAP 定义只跟随该服务选择的 context，默认路径不会继续暴露它。
             int port = server.getListenAddress("soap").getPort();
-            HttpResponse<String> definition = this.definition(port, "/private");
+            HttpResponse<String> definition = this.definition(port, "/soap/private");
             assertEquals(200, definition.statusCode());
-            assertTrue(definition.body().contains("/private/orders"), definition.body());
+            assertTrue(definition.body().contains("/soap/private/orders"), definition.body());
             assertEquals(404, this.definition(port, "/soap").statusCode());
         }
     }
@@ -91,10 +90,10 @@ public class ContextScenarioTest {
     @Test
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void twoSelectedContextsExposeTheSameServiceInstance() throws Exception {
-        // 同一监听提供两个已选择的挂载，每个消费者只配置自己访问的 SOAP context。
+        // 同一 /soap 挂载提供两个服务子路径，每个消费者声明相应子路径。
         MetConfiguration incoming = ContextMountExample.server("127.0.0.1", 0, 0);
-        MetConfiguration privateOutgoing = ContextMountExample.client("/private");
-        MetConfiguration partnerOutgoing = ContextMountExample.client("/partner");
+        MetConfiguration privateOutgoing = ContextMountExample.client();
+        MetConfiguration partnerOutgoing = ContextMountExample.client();
         try (MetContext server = incoming.buildContext(); //
              MetContext privateClient = privateOutgoing.buildContext(); //
              MetContext partnerClient = partnerOutgoing.buildContext()) {
@@ -102,8 +101,8 @@ public class ContextScenarioTest {
             privateClient.start();
             partnerClient.start();
             ContextMountExample.publish(server, new OrderDemoServiceImpl(), "/private", "/partner");
-            MetBindInfo<OrderDemoService> privateBinding = DirectRpcExample.subscribe(privateClient);
-            MetBindInfo<OrderDemoService> partnerBinding = DirectRpcExample.subscribe(partnerClient);
+            MetBindInfo<OrderDemoService> privateBinding = ContextMountExample.subscribe(privateClient, "/private");
+            MetBindInfo<OrderDemoService> partnerBinding = ContextMountExample.subscribe(partnerClient, "/partner");
 
             // 从 private 写入后，partner 查询同一实现中的订单，服务没有重复注册。
             OrderDemoService privateRemote = privateClient.getRsfClient(server.getListenAddress("soap")) //
@@ -115,12 +114,12 @@ public class ContextScenarioTest {
 
             // 两个描述地址分别保留自己的挂载路径，未选择的默认路径仍不可见。
             int port = server.getListenAddress("soap").getPort();
-            HttpResponse<String> privateDefinition = this.definition(port, "/private");
-            HttpResponse<String> partnerDefinition = this.definition(port, "/partner");
+            HttpResponse<String> privateDefinition = this.definition(port, "/soap/private");
+            HttpResponse<String> partnerDefinition = this.definition(port, "/soap/partner");
             assertEquals(200, privateDefinition.statusCode());
             assertEquals(200, partnerDefinition.statusCode());
-            assertTrue(privateDefinition.body().contains("/private/orders"), privateDefinition.body());
-            assertTrue(partnerDefinition.body().contains("/partner/orders"), partnerDefinition.body());
+            assertTrue(privateDefinition.body().contains("/soap/private/orders"), privateDefinition.body());
+            assertTrue(partnerDefinition.body().contains("/soap/partner/orders"), partnerDefinition.body());
             assertEquals(404, this.definition(port, "/soap").statusCode());
         }
     }

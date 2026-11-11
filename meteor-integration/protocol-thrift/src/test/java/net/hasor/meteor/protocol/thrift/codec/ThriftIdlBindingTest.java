@@ -54,6 +54,33 @@ public class ThriftIdlBindingTest {
         assertSame(String.class, names.element.javaType);
     }
 
+    @Test
+    public void nonExportableTypeNamesDoNotDisableTheWireBinding() throws Exception {
+        // Thrift 线编码不传类型名，两个不同的 Java 类型可以采用相同的本地名称。
+        ThriftServiceSchema schema = ThriftServiceSchema.annotated(new ServiceDomain<>(DuplicateNames.class));
+        assertNotNull(schema.javaMethod("convert"));
+
+        // 一个 IDL 无法声明两个同名结构时，不开放描述文件，保留可用的 RPC 绑定。
+        assertNull(schema.schemaResource());
+        assertThrows(IllegalArgumentException.class, schema::getSources);
+    }
+
+    public interface DuplicateNames {
+        SecondValue convert(@MetParam(id = 1) FirstValue value);
+    }
+
+    @MetType(name = "Value")
+    public static class FirstValue {
+        @MetField(id = 1)
+        public String text;
+    }
+
+    @MetType(name = "Value")
+    public static class SecondValue {
+        @MetField(id = 1)
+        public int count;
+    }
+
     public interface ArrayRecords {
         int[] counts(@MetParam(id = 1) int[] values);
 

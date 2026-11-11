@@ -114,7 +114,7 @@ public class ConnectProtoMappingTest {
                     .setField(descriptor.findFieldByNumber(1), "dynamic").build().toByteArray();
             Object decoded = this.codec(context).decodeValue(this.payload(service, "Protobuf"), //
                     DynamicMessage.class, bytes, true);
-            assertTrue(decoded instanceof DynamicMessage);
+            assertInstanceOf(DynamicMessage.class, decoded);
             assertEquals(descriptor, ((DynamicMessage) decoded).getDescriptorForType());
         }
     }
@@ -141,7 +141,7 @@ public class ConnectProtoMappingTest {
             GrpcProtoResource resource = this.resource();
             context.publisher().rsfService(ConnectDemoService.class, new ConnectDemoServiceImpl()) //
                     .aliasName("connect", this.alias()).serialize("Protobuf") //
-                    .bindResource("connect", resource).register();
+                    .bindResource("connect", resource).contextPathByPrefix("connect", "/").register();
             byte[] body = "{\"text\":\"json\",\"number\":3}".getBytes(StandardCharsets.UTF_8);
             Map<String, List<String>> headers = Map.of("content-type", List.of("application/json"));
             String path = "/" + this.alias() + "/echo";
@@ -187,7 +187,7 @@ public class ConnectProtoMappingTest {
         // JSON 订阅声明合法，但单次选择 Protobuf 时仍不能在缺少资源的情况下回退。
         try (MetContext context = this.configuration().buildContext()) {
             MetBindInfo<?> service = context.publisher().rsfService(ConnectDemoService.class) //
-                    .aliasName("connect", this.alias()).serialize("Json").register();
+                    .aliasName("connect", this.alias()).serialize("Json").contextPathByPrefix("connect", "/").register();
             RequestPayload request = this.payload(service, "Protobuf");
             ConnectStatusException failure = assertThrows(ConnectStatusException.class, //
                     () -> this.codec(context).encodeValue(request, ConnectMessage.of("value", 1), true));
@@ -200,7 +200,7 @@ public class ConnectProtoMappingTest {
         // 普通 Java JSON 服务不要求提供 proto 文件。
         try (MetContext context = this.configuration().buildContext()) {
             MetBindInfo<?> service = context.publisher().rsfService(ConnectDemoService.class) //
-                    .aliasName("connect", this.alias()).serialize("Json").register();
+                    .aliasName("connect", this.alias()).serialize("Json").contextPathByPrefix("connect", "/").register();
             RequestPayload request = this.payload(service, "Json");
             byte[] json = this.codec(context).encodeValue(request, ConnectMessage.of("plain", 3), true);
 
@@ -215,7 +215,7 @@ public class ConnectProtoMappingTest {
         // 单个 JSON RPC 消息不能在第一份对象后拼接第二份文档。
         try (MetContext context = this.configuration().buildContext()) {
             MetBindInfo<?> service = context.publisher().rsfService(ConnectDemoService.class) //
-                    .aliasName("connect", this.alias()).serialize("Json").register();
+                    .aliasName("connect", this.alias()).serialize("Json").contextPathByPrefix("connect", "/").register();
             RequestPayload request = this.payload(service, "Json");
             byte[] body = "{\"text\":\"first\"} {\"text\":\"second\"}".getBytes(StandardCharsets.UTF_8);
             ConnectHttpCodec codec = this.codec(context);
@@ -242,7 +242,7 @@ public class ConnectProtoMappingTest {
         // 同名属性不能在一个请求中给出两个互相冲突的值。
         try (MetContext context = this.configuration().buildContext()) {
             MetBindInfo<?> service = context.publisher().rsfService(ConnectDemoService.class) //
-                    .aliasName("connect", this.alias()).serialize("Json").register();
+                    .aliasName("connect", this.alias()).serialize("Json").contextPathByPrefix("connect", "/").register();
             RequestPayload request = this.payload(service, "Json");
             byte[] body = "{\"text\":\"first\",\"text\":\"second\"}".getBytes(StandardCharsets.UTF_8);
             ConnectHttpCodec codec = this.codec(context);
@@ -271,7 +271,7 @@ public class ConnectProtoMappingTest {
             GrpcProtoResource resource = this.numericResource();
             MetBindInfo<?> service = context.publisher().rsfService(NumericService.class) //
                     .aliasName("connect", "numeric.Service").serialize("Json") //
-                    .bindResource("connect", resource).register();
+                    .bindResource("connect", resource).contextPathByPrefix("connect", "/").register();
             RequestPayload request = this.payload(service, "Json");
             NumericMessage value = new NumericMessage();
             value.setNumber(9007199254740993L);
@@ -288,7 +288,7 @@ public class ConnectProtoMappingTest {
         try (MetContext context = this.configuration().buildContext()) {
             MetBindInfo<?> service = context.publisher().rsfService(NumericService.class) //
                     .aliasName("connect", "numeric.Service").serialize("Json") //
-                    .bindResource("connect", this.numericResource()).register();
+                    .bindResource("connect", this.numericResource()).contextPathByPrefix("connect", "/").register();
             RequestPayload request = this.payload(service, "Json");
             byte[] json = "{\"number\":\"9007199254740993\"}".getBytes(StandardCharsets.UTF_8);
 
@@ -388,7 +388,7 @@ public class ConnectProtoMappingTest {
 
     private MetBindInfo<?> publish(MetContext context, GrpcProtoResource resource) {
         return context.publisher().rsfService(ConnectDemoService.class, new ConnectDemoServiceImpl()) //
-                .aliasName("connect", this.alias()).serialize("Json").bindResource("connect", resource).register();
+                .aliasName("connect", this.alias()).serialize("Json").bindResource("connect", resource).contextPathByPrefix("connect", "/").register();
     }
 
     private GrpcProtoResource resource() throws Exception {

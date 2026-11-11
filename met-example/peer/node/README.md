@@ -18,7 +18,7 @@ npm --prefix met-example/peer/node ci
 
 ## Hprose
 
-使用 hprose SDK 和二进制编码，附件使用 `Buffer`。地址为 `http://127.0.0.1:8080/hprose`。
+使用 hprose SDK 和二进制编码，附件使用 `Buffer`。地址为 `http://127.0.0.1:8080/hprose/default/1.0.0`。
 
 ### hprose → Meteor（直连）
 
@@ -42,7 +42,7 @@ node met-example/peer/node/hprose/provider.mjs
 
 ## JSON-RPC
 
-使用 `fetch`、`node:http` 实现 HTTP/JSON 调用，附件使用 Base64。地址为 `http://127.0.0.1:8080/jsonrpc`。
+使用 `fetch`、`node:http` 实现 HTTP/JSON 调用，附件使用 Base64。地址为 `http://127.0.0.1:8080/jsonrpc/default/1.0.0`。
 
 ### fetch → Meteor（直连）
 
@@ -64,7 +64,7 @@ node met-example/peer/node/jsonrpc/provider.mjs
 
 ## Connect
 
-使用 @connectrpc/connect、@connectrpc/connect-node，通过 HTTP/1.1 和 Protobuf 调用。地址为 `http://127.0.0.1:8080/connect`，已包含[契约代码](connect/generated/order_pb.js)。
+使用 @connectrpc/connect、@connectrpc/connect-node，通过 HTTP/1.1 和 Protobuf 调用。地址为 `http://127.0.0.1:8080/connect/default/1.0.0`，已包含[契约代码](connect/generated/order_pb.js)。
 
 ### @connectrpc/connect → Meteor（直连）
 

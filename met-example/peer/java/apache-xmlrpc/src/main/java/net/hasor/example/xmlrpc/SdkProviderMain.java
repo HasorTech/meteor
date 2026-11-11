@@ -20,7 +20,7 @@ import org.apache.xmlrpc.webserver.WebServer;
 
 /** 使用 Apache XML-RPC 发布订单服务，供 Meteor 消费者调用。 */
 public final class SdkProviderMain {
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper         mapper = new ObjectMapper();
     private final OrderDemoServiceImpl orders = new OrderDemoServiceImpl();
 
     private SdkProviderMain() {
@@ -40,7 +40,7 @@ public final class SdkProviderMain {
             server.getXmlRpcServer().setHandlerMapping(mapping);
             Runtime.getRuntime().addShutdownHook(new Thread(server::shutdown, "xmlrpc-sdk-shutdown"));
             server.start();
-            System.out.println("SDK order provider is ready: http://127.0.0.1:8080/xmlrpc");
+            System.out.println("SDK order provider is ready: http://127.0.0.1:8080/xmlrpc/default/1.0.0");
 
             // 当前进程拥有 SDK HTTP 服务，退出时释放监听和工作线程。
             OrderExampleUtils.awaitShutdown();

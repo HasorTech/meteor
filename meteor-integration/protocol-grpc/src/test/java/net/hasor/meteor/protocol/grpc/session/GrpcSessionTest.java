@@ -54,7 +54,7 @@ public class GrpcSessionTest {
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<Echo> service = context.publisher().rsfService(Echo.class, value -> value) //
-                    .aliasName("grpc", "example.Echo").serialize("Json").register();
+                    .aliasName("grpc", "example.Echo").serialize("Json").contextPathByPrefix("grpc", "/").register();
             ControlledNetwork network = new ControlledNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = this.session(context, network, received, false);
@@ -90,7 +90,7 @@ public class GrpcSessionTest {
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<Echo> service = context.publisher().rsfService(Echo.class) //
-                    .aliasName("grpc", "example.Echo").serialize("Json").register();
+                    .aliasName("grpc", "example.Echo").serialize("Json").contextPathByPrefix("grpc", "/").register();
             ControlledNetwork network = new ControlledNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = this.session(context, network, received, true);
@@ -120,7 +120,7 @@ public class GrpcSessionTest {
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<Echo> service = context.publisher().rsfService(Echo.class) //
-                    .aliasName("grpc", "example.Echo").serialize("Json").register();
+                    .aliasName("grpc", "example.Echo").serialize("Json").contextPathByPrefix("grpc", "/").register();
             ControlledNetwork network = new ControlledNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = this.session(context, network, received, true);
@@ -159,7 +159,7 @@ public class GrpcSessionTest {
             session.receive(exchange);
             assertEquals(1, network.writes.size());
             exchange.complete(null);
-            assertTrue(body.completion().getCause() instanceof IOException);
+            assertInstanceOf(IOException.class, body.completion().getCause());
             session.closed(new IOException("test complete"));
         }
     }
@@ -170,7 +170,7 @@ public class GrpcSessionTest {
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<Echo> service = context.publisher().rsfService(Echo.class, value -> value) //
-                    .aliasName("grpc", "example.Echo").serialize("Json").register();
+                    .aliasName("grpc", "example.Echo").serialize("Json").contextPathByPrefix("grpc", "/").register();
             ControlledNetwork network = new ControlledNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = this.session(context, network, received, false);
@@ -186,7 +186,7 @@ public class GrpcSessionTest {
 
             // 协议不能把已完成响应的交换再次提交给传输层。
             Future<Void> sent = session.send(this.response(request.getRequestID()));
-            assertTrue(sent.getCause() instanceof IllegalStateException);
+            assertInstanceOf(IllegalStateException.class, sent.getCause());
             assertTrue(network.writes.isEmpty());
             session.closed(new IOException("test complete"));
         }
@@ -198,7 +198,7 @@ public class GrpcSessionTest {
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<Echo> service = context.publisher().rsfService(Echo.class) //
-                    .aliasName("grpc", "example.Echo").serialize("Json").register();
+                    .aliasName("grpc", "example.Echo").serialize("Json").contextPathByPrefix("grpc", "/").register();
             ControlledNetwork network = new ControlledNetwork();
             ProtocolSession<HttpExchange> session = this.session(context, network, new ArrayList<>(), true);
             IOException failure = new IOException("connection closed");
@@ -220,7 +220,7 @@ public class GrpcSessionTest {
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<Echo> service = context.publisher().rsfService(Echo.class, value -> value) //
-                    .aliasName("grpc", "example.Echo").serialize("Json").register();
+                    .aliasName("grpc", "example.Echo").serialize("Json").contextPathByPrefix("grpc", "/").register();
             ControlledNetwork network = new ControlledNetwork();
             List<Payload> received = new ArrayList<>();
             ProtocolSession<HttpExchange> session = this.session(context, network, received, false);

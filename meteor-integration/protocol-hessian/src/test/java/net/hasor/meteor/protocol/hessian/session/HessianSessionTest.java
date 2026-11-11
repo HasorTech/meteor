@@ -16,14 +16,14 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import com.caucho.hessian.io.*;
-import net.hasor.example.protocol.hessian.TestConfigurationUtils;
 import net.hasor.cobble.concurrent.future.BasicFuture;
 import net.hasor.cobble.concurrent.future.Cancellable;
 import net.hasor.cobble.concurrent.future.Future;
+import net.hasor.example.protocol.hessian.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
-import net.hasor.meteor.connector.*;
+import net.hasor.meteor.connector.ProtocolSessionContextTestAccess;
 import net.hasor.meteor.connector.transport.NetworkChannel;
 import net.hasor.meteor.connector.transport.http.channel.HttpExchange;
 import net.hasor.meteor.connector.transport.http.channel.HttpRequest;
@@ -198,7 +198,7 @@ public class HessianSessionTest {
             request.setMessage(true);
 
             Future<Void> sent = session.send(request);
-            assertTrue(sent.getCause() instanceof IllegalArgumentException);
+            assertInstanceOf(IllegalArgumentException.class, sent.getCause());
             assertTrue(network.writes.isEmpty());
         }
     }
@@ -213,7 +213,7 @@ public class HessianSessionTest {
             request.complete(new CancellationException("cancelled before send"));
 
             Future<Void> sent = session.send(request);
-            assertTrue(sent.getCause() instanceof CancellationException);
+            assertInstanceOf(CancellationException.class, sent.getCause());
             assertTrue(network.writes.isEmpty());
         }
     }
@@ -273,7 +273,7 @@ public class HessianSessionTest {
 
             assertTrue(sent.cancel());
             assertTrue(network.writeResult.isCancelled());
-            assertTrue(request.completion().getCause() instanceof CancellationException);
+            assertInstanceOf(CancellationException.class, request.completion().getCause());
             assertTrue(network.writes.get(0).completion().isDone());
             assertEquals(0, network.closes);
         }
@@ -321,7 +321,7 @@ public class HessianSessionTest {
             assertNull(second.completion().getCause());
             assertTrue(second.completion().isDone());
             assertEquals(2, received.size());
-            assertTrue(received.get(0) instanceof ThrowPayload);
+            assertInstanceOf(ThrowPayload.class, received.get(0));
             ResponsePayload result = (ResponsePayload) received.get(1);
             assertEquals(second.getRequestID(), result.getRequestID());
             assertEquals("unaffected", result.getReturnData());
@@ -413,7 +413,7 @@ public class HessianSessionTest {
             RequestPayload request = outgoing(24);
 
             Future<Void> sent = session.send(request);
-            assertTrue(sent.getCause() instanceof IOException);
+            assertInstanceOf(IOException.class, sent.getCause());
             assertSame(sent.getCause(), request.completion().getCause());
             assertTrue(network.writes.isEmpty());
             assertEquals(0, network.closes);
@@ -573,7 +573,7 @@ public class HessianSessionTest {
             request.addOption("X-Trace", "trace\r\nInjected: value");
 
             Future<Void> sent = session.send(request);
-            assertTrue(sent.getCause() instanceof IllegalArgumentException);
+            assertInstanceOf(IllegalArgumentException.class, sent.getCause());
             assertTrue(sent.getCause().getMessage().contains("X-Trace"));
             assertTrue(network.writes.isEmpty());
         }
@@ -614,7 +614,7 @@ public class HessianSessionTest {
             request.addOption("X Trace", "value");
 
             Future<Void> sent = session.send(request);
-            assertTrue(sent.getCause() instanceof IllegalArgumentException);
+            assertInstanceOf(IllegalArgumentException.class, sent.getCause());
             assertTrue(sent.getCause().getMessage().contains("X Trace"));
             assertTrue(network.writes.isEmpty());
         }
@@ -897,7 +897,7 @@ public class HessianSessionTest {
             session.receive(exchange);
             RequestPayload request = (RequestPayload) received.get(0);
             Throwable failure = exchange.completion().getCause();
-            assertTrue(failure instanceof RuntimeException);
+            assertInstanceOf(RuntimeException.class, failure);
             assertTrue(failure.getMessage().contains("Serializable"));
             assertSame(failure, request.completion().getCause());
             assertTrue(network.writes.isEmpty());
@@ -917,7 +917,7 @@ public class HessianSessionTest {
             ProtocolSession<HttpExchange> session = session(context, network, new ArrayList<>(), false);
 
             Future<Void> sent = session.send(outgoing(21));
-            assertTrue(sent.getCause() instanceof IllegalArgumentException);
+            assertInstanceOf(IllegalArgumentException.class, sent.getCause());
             assertTrue(network.writes.isEmpty());
         }
     }
@@ -933,7 +933,7 @@ public class HessianSessionTest {
                 .name("Echo") //
                 .aliasName("hessian", "demo") //
                 .serialize("Hessian") //
-                .register();
+                .contextPathByPrefix("hessian", "/").register();
         return context;
     }
 

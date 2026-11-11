@@ -20,6 +20,7 @@ import net.hasor.cobble.ref.Tuple;
 import net.hasor.meteor.connector.ProtocolSession;
 import net.hasor.meteor.connector.ProtocolSessionContext;
 import net.hasor.meteor.connector.transport.NetworkChannel;
+import net.hasor.meteor.connector.transport.http.HttpSchemaResource;
 import net.hasor.meteor.connector.transport.http.channel.HttpBodyStream;
 import net.hasor.meteor.connector.transport.http.channel.HttpExchange;
 import net.hasor.meteor.connector.transport.http.channel.HttpRequest;
@@ -31,6 +32,7 @@ import net.hasor.meteor.domain.payload.RequestPayload;
 import net.hasor.meteor.domain.payload.ResponsePayload;
 import net.hasor.meteor.domain.payload.ThrowPayload;
 import net.hasor.meteor.protocol.grpc.GrpcStatusException;
+import net.hasor.meteor.protocol.grpc.binding.GrpcServiceBinding;
 import net.hasor.meteor.protocol.triple.codec.TripleHttpCodec;
 import net.hasor.meteor.protocol.triple.codec.TripleMethodShape;
 
@@ -150,6 +152,18 @@ public final class TripleSession implements ProtocolSession<HttpExchange> {
     public void receive(HttpExchange exchange) {
         if (this.closed) {
             this.closeExchange(exchange);
+            return;
+        }
+
+        HttpResponse schema = HttpSchemaResource.receive(exchange.request(), this.context.metContext(), //
+                this.context.routes(), "proto", Set.of("group", "version"), binding -> {
+                    if (binding.getDefinition() instanceof GrpcServiceBinding definition) {
+                        return definition.schemaResource();
+                    }
+                    return null;
+                });
+        if (schema != null) {
+            this.reply(exchange, schema);
             return;
         }
 

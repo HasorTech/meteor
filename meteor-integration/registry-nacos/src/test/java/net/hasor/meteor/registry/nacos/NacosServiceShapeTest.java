@@ -27,7 +27,7 @@ public class NacosServiceShapeTest {
             EntServiceRuntimeData registration = service("echo");
             ObjectNode description = JsonNodeFactory.instance.objectNode();
             description.put("javaType", "example.EchoService");
-            registration.setDescription(description);
+            registration.setDescription(RegistryJson.copy(description, RefServiceDescriptionData.class));
             storage.registerService("node", registration);
 
             // 直接解析写给 Config 和 Naming SDK 的 JSON，顶层都不出现 type。
@@ -37,12 +37,12 @@ public class NacosServiceShapeTest {
             String catalogServiceId = catalog.path("serviceId").textValue();
             assertEquals("echo", catalogServiceId);
             assertFalse(catalog.has("type"));
-            assertFalse(catalog.has("javaType"));
+            assertFalse(catalog.hasNonNull("javaType"));
             assertFalse(catalog.has("description"));
             assertFalse(membership.has("type"));
-            assertFalse(membership.has("javaType"));
+            assertFalse(membership.hasNonNull("javaType"));
             JsonNode storedDescription = membership.get("description");
-            assertEquals(description, storedDescription);
+            assertEquals(RegistryJson.copy(RegistryJson.copy(description, RefServiceDescriptionData.class), ObjectNode.class), storedDescription);
             assertFalse(storedDescription.has("role"));
 
             // 正式查询返回的运行登记序列化后同样没有 type，角色仍然明确为提供者。
@@ -64,29 +64,32 @@ public class NacosServiceShapeTest {
             storage.registerInstance(instance("node"));
             EntServiceRuntimeData registration = service("echo");
             RefProtocolMountData primary = new RefProtocolMountData();
-            primary.setConnectorName("primary");
+            primary.setContextPath("/primary");
             primary.setProtocolName("rsf");
             primary.setPublishedAddress("rsf://127.0.0.1:8000");
             RefProtocolMountData backup = new RefProtocolMountData();
-            backup.setConnectorName("backup");
+            backup.setContextPath("/backup");
             backup.setProtocolName("rsf");
             backup.setPublishedAddress("rsf://127.0.0.1:8001");
             registration.setEndpoints(new RefProtocolMountData[] { primary, backup });
             storage.registerService("node", registration);
 
-            // Naming 正文保留两个连接器，每个端点只用 protocolName 表达协议名称。
+            // Naming 正文保留两个实际接入点，每个端点只用 protocolName 表达协议名称。
             String membershipJson = sdk.nodes.get("services.echo.providers").get("node").getMetadata().get("body");
             ObjectNode membership = RegistryJson.read(membershipJson, ObjectNode.class);
             JsonNode endpoints = membership.get("endpoints");
             assertEquals(2, endpoints.size());
-            String primaryConnectorName = endpoints.get(0).path("connectorName").textValue();
-            String backupConnectorName = endpoints.get(1).path("connectorName").textValue();
-            assertEquals("primary", primaryConnectorName);
-            assertEquals("backup", backupConnectorName);
+            String primaryAddress = endpoints.get(0).path("publishedAddress").textValue();
+            String backupAddress = endpoints.get(1).path("publishedAddress").textValue();
+            assertEquals("rsf://127.0.0.1:8000", primaryAddress);
+            assertEquals("rsf://127.0.0.1:8001", backupAddress);
             for (JsonNode endpoint : endpoints) {
                 String protocolName = endpoint.path("protocolName").textValue();
                 assertEquals("rsf", protocolName);
                 assertFalse(endpoint.has("protocol"));
+                assertFalse(endpoint.has("connectorName"));
+                assertFalse(endpoint.has("bindEnabled"));
+                assertFalse(endpoint.has("configuredAddress"));
             }
 
             // 查询条件仍叫 protocol，成员目录、实例目录和服务摘要都识别 rsf。
@@ -111,12 +114,12 @@ public class NacosServiceShapeTest {
             EntServiceRuntimeData first = service("echo");
             ObjectNode firstDescription = JsonNodeFactory.instance.objectNode();
             firstDescription.put("javaType", "example.FirstEchoService");
-            first.setDescription(firstDescription);
+            first.setDescription(RegistryJson.copy(firstDescription, RefServiceDescriptionData.class));
             storage.registerService("one", first);
             EntServiceRuntimeData second = service("echo");
             ObjectNode secondDescription = JsonNodeFactory.instance.objectNode();
             secondDescription.put("javaType", "example.SecondEchoService");
-            second.setDescription(secondDescription);
+            second.setDescription(RegistryJson.copy(secondDescription, RefServiceDescriptionData.class));
             storage.registerService("two", second);
 
             // 实际 Naming JSON 和重新组装的成员都保留本实例的类型。
@@ -124,13 +127,13 @@ public class NacosServiceShapeTest {
             String secondJson = sdk.nodes.get("services.echo.providers").get("two").getMetadata().get("body");
             ObjectNode firstMembership = RegistryJson.read(firstJson, ObjectNode.class);
             ObjectNode secondMembership = RegistryJson.read(secondJson, ObjectNode.class);
-            assertEquals(firstDescription, firstMembership.get("description"));
-            assertEquals(secondDescription, secondMembership.get("description"));
-            ObjectNode instanceDescription = storage.getInstanceService("one", "echo").getDescription();
-            assertEquals(firstDescription, instanceDescription);
-            ObjectNode memberDescription = storage.getMember("echo", MetServiceType.Provider, "two") //
-                    .getService().getDescription();
-            assertEquals(secondDescription, memberDescription);
+            assertEquals(RegistryJson.copy(RegistryJson.copy(firstDescription, RefServiceDescriptionData.class), ObjectNode.class), firstMembership.get("description"));
+            assertEquals(RegistryJson.copy(RegistryJson.copy(secondDescription, RefServiceDescriptionData.class), ObjectNode.class), secondMembership.get("description"));
+            ObjectNode instanceDescription = RegistryJson.copy(storage.getInstanceService("one", "echo").getDescription(), ObjectNode.class);
+            assertEquals(RegistryJson.copy(RegistryJson.copy(firstDescription, RefServiceDescriptionData.class), ObjectNode.class), instanceDescription);
+            ObjectNode memberDescription = RegistryJson.copy(storage.getMember("echo", MetServiceType.Provider, "two") //
+                    .getService().getDescription(), ObjectNode.class);
+            assertEquals(RegistryJson.copy(RegistryJson.copy(secondDescription, RefServiceDescriptionData.class), ObjectNode.class), memberDescription);
         }
     }
 
@@ -144,25 +147,25 @@ public class NacosServiceShapeTest {
             EntServiceRuntimeData missing = service("echo");
             ObjectNode missingDescription = JsonNodeFactory.instance.objectNode();
             missingDescription.put("name", "Echo");
-            missing.setDescription(missingDescription);
+            missing.setDescription(RegistryJson.copy(missingDescription, RefServiceDescriptionData.class));
             storage.registerService("missing", missing);
             EntServiceRuntimeData declared = service("echo");
             ObjectNode declaredDescription = JsonNodeFactory.instance.objectNode();
             declaredDescription.put("javaType", "example.EchoService");
-            declared.setDescription(declaredDescription);
+            declared.setDescription(RegistryJson.copy(declaredDescription, RefServiceDescriptionData.class));
             storage.registerService("declared", declared);
 
             // 缺省实例的真实正文和两种读取方向都不补入其他实例的 javaType。
             String membershipJson = sdk.nodes.get("services.echo.providers").get("missing").getMetadata().get("body");
             ObjectNode membership = RegistryJson.read(membershipJson, ObjectNode.class);
-            assertEquals(missingDescription, membership.get("description"));
-            ObjectNode instanceDescription = storage.getInstanceService("missing", "echo").getDescription();
-            ObjectNode memberDescription = storage.getMember("echo", MetServiceType.Provider, "missing") //
-                    .getService().getDescription();
-            assertFalse(instanceDescription.has("javaType"));
-            assertFalse(memberDescription.has("javaType"));
-            assertEquals(missingDescription, instanceDescription);
-            assertEquals(missingDescription, memberDescription);
+            assertEquals(RegistryJson.copy(RegistryJson.copy(missingDescription, RefServiceDescriptionData.class), ObjectNode.class), membership.get("description"));
+            ObjectNode instanceDescription = RegistryJson.copy(storage.getInstanceService("missing", "echo").getDescription(), ObjectNode.class);
+            ObjectNode memberDescription = RegistryJson.copy(storage.getMember("echo", MetServiceType.Provider, "missing") //
+                    .getService().getDescription(), ObjectNode.class);
+            assertFalse(instanceDescription.hasNonNull("javaType"));
+            assertFalse(memberDescription.hasNonNull("javaType"));
+            assertEquals(RegistryJson.copy(RegistryJson.copy(missingDescription, RefServiceDescriptionData.class), ObjectNode.class), instanceDescription);
+            assertEquals(RegistryJson.copy(RegistryJson.copy(missingDescription, RefServiceDescriptionData.class), ObjectNode.class), memberDescription);
         }
     }
 }

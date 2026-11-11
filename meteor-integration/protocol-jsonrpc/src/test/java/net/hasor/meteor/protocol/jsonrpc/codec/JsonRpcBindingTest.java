@@ -47,7 +47,7 @@ public class JsonRpcBindingTest {
         this.context = configuration.buildContext();
         this.context.publisher().rsfService(Methods.class, new Methods() {
                 }) //
-                .name("Methods").aliasName("jsonrpc", "math").register();
+                .name("Methods").aliasName("jsonrpc", "math").contextPathByPrefix("jsonrpc", "/").register();
         this.protocol = ProtocolConfig.newConfig("jsonrpc", "jsonrpc", Map.of("contextPath", "/rpc"));
         this.routes = new RouteMountIndex("http-1", this.protocol);
         this.codec = new JsonRpcCodec(this.protocol, this.routes, this.context);
@@ -109,7 +109,7 @@ public class JsonRpcBindingTest {
         // 泛型集合中的 DTO 按声明类型恢复。
         JsonRpcCall call = this.decode("math.people", "[[{\"name\":\"Ada\"}]]", "7");
         List<?> values = (List<?>) call.request().getParameterValues().get(0);
-        assertTrue(values.get(0) instanceof Person);
+        assertInstanceOf(Person.class, values.get(0));
         assertEquals("Ada", ((Person) values.get(0)).getName());
     }
 
@@ -186,7 +186,7 @@ public class JsonRpcBindingTest {
     public void compilerBridgeDoesNotCreateAnAmbiguousOverload() {
         // 泛型特化生成的桥接方法不属于另一项业务重载。
         this.context.publisher().rsfService(Specialized.class, new Specialized() {
-        }).name("specialized").register();
+        }).name("specialized").contextPathByPrefix("jsonrpc", "/").register();
         JsonRpcCall call = this.decode("specialized.select", "[\"value\"]", "7");
 
         // 采用真实的 String 参数签名，而非编译器生成的 Object 入口。
@@ -208,7 +208,7 @@ public class JsonRpcBindingTest {
     public void missingAliasFallsBackToPublishedServiceName() {
         // 普通接口发布不强制额外声明 JSON-RPC 别名。
         this.context.publisher().rsfService(Fallback.class, new Fallback() {
-        }).name("fallback").register();
+        }).name("fallback").contextPathByPrefix("jsonrpc", "/").register();
         JsonRpcCall call = this.decode("fallback.ping", null, "7");
         assertEquals("fallback", call.request().getServiceName());
     }
@@ -216,7 +216,7 @@ public class JsonRpcBindingTest {
     @Test
     public void consumerDeclarationsAreNotInvocableProviders() {
         // 仅订阅的接口不能被当作本地服务提供者。
-        this.context.publisher().rsfService(Fallback.class).name("consumer").register();
+        this.context.publisher().rsfService(Fallback.class).name("consumer").contextPathByPrefix("jsonrpc", "/").register();
         JsonRpcCall call = this.decode("consumer.ping", null, "7");
         assertEquals(-32601, call.response().path("error").path("code").intValue());
     }

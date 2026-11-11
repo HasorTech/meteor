@@ -19,7 +19,7 @@ public final class SdkConsumerMain {
 
     public static void main(String[] arguments) throws Throwable {
         // 使用 SDK 的 HTTP 客户端直接访问 Meteor 的 JSON-RPC 挂载路径。
-        URI endpoint = URI.create("http://127.0.0.1:8080/jsonrpc");
+        URI endpoint = URI.create("http://127.0.0.1:8080/jsonrpc/default/1.0.0");
         JsonRpcHttpClient client = new JsonRpcHttpClient(endpoint.toURL());
 
         // SDK 按 orders 别名调用普通 Java 订单方法。

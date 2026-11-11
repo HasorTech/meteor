@@ -359,7 +359,15 @@ final class Http2Channel extends HttpChannel implements ProtoHandler<HttpObject,
             return;
         }
 
-        message.setHeader("Content-Length", String.valueOf(length));
+        boolean headResponse = this.server && StringUtils.equalsIgnoreCase("HEAD", opening.method());
+        String explicitLength = this.server ? exchange.response().getResult().header("Content-Length") : null;
+        if (headResponse && length == 0 && explicitLength != null) {
+            // HEAD 的实体长度属于对应 GET 响应，不按未发送的正文重新计算。
+            message.setHeader("Content-Length", explicitLength);
+        } else {
+            message.setHeader("Content-Length", String.valueOf(length));
+        }
+
         if (this.server) {
             this.remove(id);
         }

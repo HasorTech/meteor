@@ -14,6 +14,7 @@ import net.hasor.example.protocol.thrift.annotated.*;
 import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
+import net.hasor.meteor.MetPublisher.ConfigurationBuilder;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
@@ -72,9 +73,14 @@ public class ThriftAnnotatedDtoScenarioTest {
         MetConfiguration configuration = this.configuration(true);
         try (MetContext server = configuration.buildContext()) {
             server.start();
-            server.publisher().rsfService(AnnotatedInteropService.class, new AnnotatedInteropServiceImpl()) //
+            ConfigurationBuilder<AnnotatedInteropService> publication = server.publisher() //
+                    .rsfService(AnnotatedInteropService.class, new AnnotatedInteropServiceImpl()) //
                     .aliasName(this.protocol(), "ExtendedInteropService") //
-                    .bindResource(this.protocol(), this.contract()).register();
+                    .bindResource(this.protocol(), this.contract());
+            if (this.http()) {
+                publication.contextPathByPrefix(this.protocol(), "/thrift");
+            }
+            publication.register();
 
             // 独立 JVM 的官方 Client 校验生成 Sample 的全部字段往返一致。
             int port = server.getListenAddress(this.protocol()).getPort();
@@ -96,10 +102,14 @@ public class ThriftAnnotatedDtoScenarioTest {
              MetContext client = configuration.buildContext()) {
             int port = peer.awaitPort();
             client.start();
-            MetBindInfo<AnnotatedInteropService> service = client.publisher() //
+            ConfigurationBuilder<AnnotatedInteropService> subscription = client.publisher() //
                     .rsfService(AnnotatedInteropService.class) //
                     .aliasName(this.protocol(), "ExtendedInteropService") //
-                    .bindResource(this.protocol(), this.contract()).register();
+                    .bindResource(this.protocol(), this.contract());
+            if (this.http()) {
+                subscription.contextPathByPrefix(this.protocol(), "/thrift");
+            }
+            MetBindInfo<AnnotatedInteropService> service = subscription.register();
             InterAddress address = new InterAddress(this.scheme(), peer.host(), port);
             AnnotatedInteropService remote = new ThriftClient(client.getRsfClient(address)).getRemote(service);
 
@@ -155,7 +165,11 @@ public class ThriftAnnotatedDtoScenarioTest {
         arguments.add("--protocol=" + this.encoding);
         arguments.add("--framed=" + !StringUtils.equals(this.transport, "raw"));
         arguments.add("--multiplexed=" + this.multiplexed);
-        arguments.add("--service-name=ExtendedInteropService");
+        String name = "ExtendedInteropService";
+        if (this.multiplexed && !this.http()) {
+            name = "default/1.0.0/" + name;
+        }
+        arguments.add("--service-name=" + name);
         arguments.add("--port=" + port);
         arguments.add("--path=/thrift");
         if (this.secure()) {

@@ -128,9 +128,9 @@ public class EndpointContextValidationTest {
     public void exactRoutesUseEachEndpointsProtocolOptions() {
         // 同一协议挂到两个端点，使用不同配置并共享一个服务精确地址。
         ProtocolConfig first = ProtocolConfig.newConfig("httpa", "http", //
-                Map.of("contextPath", "/first", "routeMarker", "first"));
+                Map.of("contextPath", "/first", "contextPaths", "[\"/tasks\"]", "routeMarker", "first"));
         ProtocolConfig second = ProtocolConfig.newConfig("httpa", "https", //
-                Map.of("contextPath", "/second", "routeMarker", "second"));
+                Map.of("contextPath", "/second", "contextPaths", "[\"/tasks\"]", "routeMarker", "second"));
         ConnectorConfig firstEndpoint = this.endpoint("first", first);
         ConnectorConfig secondEndpoint = this.endpoint("second", second);
         ServiceDomain<Runnable> service = new ServiceDomain<>(Runnable.class);
@@ -140,8 +140,8 @@ public class EndpointContextValidationTest {
         try (ValidationRuntime runtime = this.runtime(firstEndpoint, secondEndpoint)) {
             // 真实登记链路编译精确路由，参数直接取自各自端点的 ProtocolConfig。
             runtime.register(service);
-            RouteSelection firstRoute = runtime.manager.routeResolver(firstEndpoint.name()).apply("/tasks/run");
-            RouteSelection secondRoute = runtime.manager.routeResolver(secondEndpoint.name()).apply("/tasks/run");
+            RouteSelection firstRoute = runtime.manager.routeResolver(firstEndpoint.name()).apply("/first/tasks/run");
+            RouteSelection secondRoute = runtime.manager.routeResolver(secondEndpoint.name()).apply("/second/tasks/run");
 
             // 相同服务地址不导致跨端点复用另一份配置，绑定只保留路径和定义。
             assertNotNull(firstRoute);
@@ -215,7 +215,7 @@ public class EndpointContextValidationTest {
             replaced.setBindContextPaths("httpa", replacement);
             runtime.register(replaced);
             ProtocolBinding current = replaced.getProtocolMeta("httpa").getEndpoint(endpoint.name());
-            assertSame(replacement, current.getContextPath());
+            assertEquals(replacement, current.getContextPath());
             assertSame(retainedMeta, retained.getProtocolMeta("httpa"));
             assertNotNull(runtime.manager.routeResolver(endpoint.name()).apply("/orders/echo"));
             assertNotNull(runtime.manager.routeResolver(endpoint.name()).apply("/orders/replacement"));
@@ -276,20 +276,20 @@ public class EndpointContextValidationTest {
         ConnectorConfig endpoint = this.endpoint(protocol);
         ServiceDomain<Runnable> service = new ServiceDomain<>(Runnable.class);
         service.setServiceType(MetServiceType.Provider);
-        service.setBindContextPaths("httpa", new ContextPath(List.of("/orders/echo"), true));
+        service.setBindContextPaths("httpa", new ContextPath(List.of("/echo"), true));
 
         try (ValidationRuntime runtime = this.runtime(endpoint)) {
             runtime.register(service);
             RouteSelection previous = runtime.manager.routeResolver(endpoint.name()).apply("/orders/echo");
             assertNotNull(previous);
             service.setShadow(true);
-            service.setBindContextPaths("httpa", new ContextPath(List.of("/unconfigured"), false));
+            service.setBindContextPaths("httpa", new ContextPath(List.of("/../unconfigured"), false));
             assertThrows(IllegalArgumentException.class, () -> runtime.register(service));
 
             // 另一服务引起重建时仍使用旧发布快照，不读取失败的新声明或隐藏状态。
             ServiceDomain<AutoCloseable> other = new ServiceDomain<>(AutoCloseable.class);
             other.setServiceType(MetServiceType.Provider);
-            other.setBindContextPaths("httpa", new ContextPath(List.of("/orders/other"), true));
+            other.setBindContextPaths("httpa", new ContextPath(List.of("/other"), true));
             runtime.register(other);
             assertSame(previous, runtime.manager.routeResolver(endpoint.name()).apply("/orders/echo"));
             assertNotNull(runtime.manager.routeResolver(endpoint.name()).apply("/orders/other"));
@@ -338,19 +338,21 @@ public class EndpointContextValidationTest {
         ConnectorConfig endpoint = this.endpoint(protocol);
         ServiceDomain<Runnable> service = new ServiceDomain<>(Runnable.class);
         service.setServiceType(MetServiceType.Provider);
-        service.setBindContextPaths("httpa", new ContextPath(List.of("/orders/echo"), true));
+        service.setBindContextPaths("httpa", new ContextPath(List.of("/echo"), true));
 
         try (ValidationRuntime runtime = this.runtime(endpoint)) {
             runtime.register(service);
             assertNotNull(runtime.manager.routeResolver(endpoint.name()).apply("/orders/echo"));
 
             // 发布改成前缀后，空候选索引仍需提交，同时安装新的协议绑定。
-            ContextPath prefix = new ContextPath(List.of("/orders"), false);
+            ContextPath prefix = new ContextPath(List.of("/"), false);
             service.setBindContextPaths("httpa", prefix);
             runtime.register(service);
             ProtocolBinding binding = service.getProtocolMeta("httpa").getEndpoint(endpoint.name());
-            assertSame(prefix, binding.getContextPath());
-            assertNull(runtime.manager.routeResolver(endpoint.name()).apply("/orders/echo"));
+            assertEquals(prefix.resolve("/orders"), binding.getContextPath());
+            RouteSelection updated = runtime.manager.routeResolver(endpoint.name()).apply("/orders/echo");
+            assertNotNull(updated);
+            assertFalse(updated.mount().exact());
         }
     }
 
@@ -367,7 +369,7 @@ public class EndpointContextValidationTest {
 
         try (ValidationRuntime runtime = this.runtime(endpoint)) {
             runtime.register(exactService);
-            RouteSelection previous = runtime.manager.routeResolver(endpoint.name()).apply("/tasks/run");
+            RouteSelection previous = runtime.manager.routeResolver(endpoint.name()).apply("/orders/tasks/run");
             assertNotNull(previous);
 
             // 没有精确路由更新时，协议绑定仍需提交，已有服务的路由保持不变。
@@ -375,7 +377,7 @@ public class EndpointContextValidationTest {
             ProtocolMeta meta = prefixService.getProtocolMeta("httpa");
             ProtocolBinding binding = meta.getEndpoint(endpoint.name());
             assertEquals(new ContextPath(List.of("/orders"), false), binding.getContextPath());
-            assertSame(previous, runtime.manager.routeResolver(endpoint.name()).apply("/tasks/run"));
+            assertSame(previous, runtime.manager.routeResolver(endpoint.name()).apply("/orders/tasks/run"));
             assertNull(runtime.manager.routeResolver(endpoint.name()).apply("/orders"));
         }
     }
@@ -387,7 +389,7 @@ public class EndpointContextValidationTest {
         ConnectorConfig endpoint = this.endpoint(protocol);
         ServiceDomain<Runnable> service = new ServiceDomain<>(Runnable.class);
         service.setServiceType(MetServiceType.Provider);
-        service.setBindContextPaths("httpa", new ContextPath(List.of("/orders/echo"), true));
+        service.setBindContextPaths("httpa", new ContextPath(List.of("/echo"), true));
         ServiceDomain<AutoCloseable> other = new ServiceDomain<>(AutoCloseable.class);
         other.setServiceType(MetServiceType.Provider);
         other.setBindContextPaths("httpa", new ContextPath(List.of("/tasks/run"), true));
@@ -396,17 +398,19 @@ public class EndpointContextValidationTest {
             runtime.register(service);
             runtime.register(other);
             assertNotNull(runtime.manager.routeResolver(endpoint.name()).apply("/orders/echo"));
-            RouteSelection retained = runtime.manager.routeResolver(endpoint.name()).apply("/tasks/run");
+            RouteSelection retained = runtime.manager.routeResolver(endpoint.name()).apply("/orders/tasks/run");
             assertNotNull(retained);
 
             // 虽然本轮没有新增精确路由，仍需准备并提交旧路由的撤销。
-            ContextPath prefix = new ContextPath(List.of("/orders"), false);
+            ContextPath prefix = new ContextPath(List.of("/"), false);
             service.setBindContextPaths("httpa", prefix);
             runtime.register(service);
             ProtocolBinding binding = service.getProtocolMeta("httpa").getEndpoint(endpoint.name());
-            assertSame(prefix, binding.getContextPath());
-            assertNull(runtime.manager.routeResolver(endpoint.name()).apply("/orders/echo"));
-            assertSame(retained, runtime.manager.routeResolver(endpoint.name()).apply("/tasks/run"));
+            assertEquals(prefix.resolve("/orders"), binding.getContextPath());
+            RouteSelection updated = runtime.manager.routeResolver(endpoint.name()).apply("/orders/echo");
+            assertNotNull(updated);
+            assertFalse(updated.mount().exact());
+            assertSame(retained, runtime.manager.routeResolver(endpoint.name()).apply("/orders/tasks/run"));
         }
     }
 
@@ -414,17 +418,17 @@ public class EndpointContextValidationTest {
     public void laterEndpointConflictDoesNotCommitAnEarlierEndpointsRouteRemoval() {
         // 首个端点只有 HTTPA，第二个还支持 HTTPB；另一个服务通过 HTTPA 占用目标路径。
         ProtocolConfig first = ProtocolConfig.newConfig("httpa", "http", Map.of("contextPath", "/orders"));
-        ProtocolConfig second = ProtocolConfig.newConfig("httpb", "http", Map.of("contextPath", "/other"));
+        ProtocolConfig second = ProtocolConfig.newConfig("httpb", "http", Map.of("contextPath", "/"));
         ConnectorConfig plain = this.endpoint("plain", first);
         ConnectorConfig secure = this.endpoint("secure", first, second);
         ServiceDomain<Runnable> service = new ServiceDomain<>(Runnable.class);
         service.setServiceType(MetServiceType.Provider);
-        service.setBindContextPaths("httpa", new ContextPath(List.of("/orders/echo"), true));
+        service.setBindContextPaths("httpa", new ContextPath(List.of("/echo"), true));
         ContextPath occupied = new ContextPath(List.of("/orders/occupied"), true);
         ServiceDomain<AutoCloseable> blocker = new ServiceDomain<>(AutoCloseable.class);
         blocker.setServiceType(MetServiceType.Provider);
         blocker.addBindProtocol("httpa");
-        blocker.setBindContextPaths("httpa", occupied);
+        blocker.setBindContextPaths("httpa", new ContextPath(List.of("/occupied"), true));
 
         try (ValidationRuntime runtime = this.runtime(plain, secure)) {
             runtime.register(service);
@@ -436,14 +440,14 @@ public class EndpointContextValidationTest {
             assertNotNull(secureRoute);
 
             // 首个端点准备撤销旧精确路由，第二个端点通过 HTTPB 发布时发生冲突。
-            service.setBindContextPaths("httpa", new ContextPath(List.of("/orders"), false));
+            service.setBindContextPaths("httpa", new ContextPath(List.of("/"), false));
             service.setBindContextPaths("httpb", occupied);
             ProtocolMeta declared = service.getProtocolMeta("httpa");
             ProtocolMeta declaredSecond = service.getProtocolMeta("httpb");
             IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, () -> {
                 runtime.register(service);
             });
-            assertTrue(failure.getMessage().contains("Conflicting exact service path"));
+            assertTrue(failure.getMessage().contains("Conflicting service path"));
 
             // 失败前准备的撤销不会提交，两个协议的声明和两个端点的旧路由保持原样。
             assertSame(declared, service.getProtocolMeta("httpa"));
@@ -523,8 +527,8 @@ public class EndpointContextValidationTest {
             // 名称校验限定在所选目录，各自绑定保留自己的可达范围。
             ProtocolBinding firstBinding = first.getProtocolMeta("httpnamed").getEndpoint(endpoint.name());
             ProtocolBinding secondBinding = second.getProtocolMeta("httpnamed").getEndpoint(endpoint.name());
-            assertEquals(orders, firstBinding.getContextPath());
-            assertEquals(inventory, secondBinding.getContextPath());
+            assertEquals(orders.resolve("/orders"), firstBinding.getContextPath());
+            assertEquals(inventory.resolve("/orders"), secondBinding.getContextPath());
             assertEquals("Service", firstBinding.getDefinition());
             assertEquals("Service", secondBinding.getDefinition());
         }
@@ -536,9 +540,9 @@ public class EndpointContextValidationTest {
         ProtocolConfig protocol = ProtocolConfig.newConfig("httpnamed", "http", Map.of("contextPath", "/orders"));
         ConnectorConfig endpoint = this.endpoint(protocol);
         ServiceDomain<Runnable> exact = this.namedService(Runnable.class, "Orders", //
-                new ContextPath(List.of("/orders"), true));
+                new ContextPath(List.of("/"), true));
         ServiceDomain<AutoCloseable> directory = this.namedService(AutoCloseable.class, "Orders", //
-                new ContextPath(List.of("/orders"), false));
+                new ContextPath(List.of("/"), false));
 
         try (ValidationRuntime runtime = this.runtime(endpoint)) {
             runtime.register(exact);
@@ -549,7 +553,7 @@ public class EndpointContextValidationTest {
             ProtocolBinding directoryBinding = directory.getProtocolMeta("httpnamed").getEndpoint(endpoint.name());
             assertTrue(exactBinding.getContextPath().isExact());
             assertFalse(directoryBinding.getContextPath().isExact());
-            assertNotNull(runtime.manager.routeResolver(endpoint.name()).apply("/orders"));
+            assertNotNull(runtime.manager.routeResolver(endpoint.name()).apply("/orders/"));
         }
     }
 
@@ -761,7 +765,7 @@ public class EndpointContextValidationTest {
         ConnectorConfig endpoint = this.endpoint(protocol);
         ServiceDomain<Runnable> service = new ServiceDomain<>(Runnable.class);
         service.setBindContextPaths("httpa", new ContextPath(List.of("/old-name"), false));
-        service.setBindContextPaths("HTTPA", new ContextPath(List.of("/orders"), false));
+        service.setBindContextPaths("HTTPA", new ContextPath(List.of("/"), false));
 
         // 发布事件应使用最终有效选择，不再校验已被覆盖的路径。
         try (ValidationRuntime runtime = this.runtime(endpoint)) {
@@ -795,7 +799,7 @@ public class EndpointContextValidationTest {
         ConnectorConfig endpoint = this.endpoint(protocol);
         ServiceDomain<Runnable> service = new ServiceDomain<>(Runnable.class);
         service.setBindContextPaths("missing-protocol", new ContextPath(List.of("/orders"), false));
-        service.setBindContextPaths("HTTPA", new ContextPath(List.of("/orders"), false));
+        service.setBindContextPaths("HTTPA", new ContextPath(List.of("/"), false));
 
         // 即使最后一个选择合法，先前引用的未知协议仍须拒绝。
         try (ValidationRuntime runtime = this.runtime(endpoint)) {
@@ -828,23 +832,19 @@ public class EndpointContextValidationTest {
     }
 
     @Test
-    public void namedContextIsValidatedAgainstEveryEndpointMount() {
-        // 同一协议跨两个端点挂载，但只有首个端点声明订单路径。
-        ProtocolConfig first = ProtocolConfig.newConfig("httpa", "http", //
-                Map.of("contextPath", "/orders"));
-        ProtocolConfig second = ProtocolConfig.newConfig("httpa", "https", //
-                Map.of("contextPath", "/inventory"));
+    public void serviceChildPathIsResolvedAgainstEveryEndpointMount() {
+        // 同一子路径在各端点自己的协议挂载点下分别解析。
+        ProtocolConfig first = ProtocolConfig.newConfig("httpa", "http", Map.of("contextPath", "/orders"));
+        ProtocolConfig second = ProtocolConfig.newConfig("httpa", "https", Map.of("contextPath", "/inventory"));
         ConnectorConfig plain = this.endpoint("plain", first);
         ConnectorConfig secure = this.endpoint("secure", second);
         ServiceDomain<Runnable> service = new ServiceDomain<>(Runnable.class);
-        service.setBindContextPaths("httpa", new ContextPath(List.of("/orders"), false));
-
-        // 不能只校验最后写入索引的一个挂载；任一相关端点不支持该路径都必须失败。
+        service.setServiceType(MetServiceType.Provider);
+        service.setBindContextPaths("httpa", new ContextPath(List.of("/child"), false));
         try (ValidationRuntime runtime = this.runtime(plain, secure)) {
-            IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, () -> {
-                runtime.register(service);
-            });
-            assertTrue(failure.getMessage().contains("Context is not configured"));
+            runtime.register(service);
+            assertEquals(new ContextPath(List.of("/orders/child"), false), service.getProtocolMeta("httpa").getEndpoint("plain").getContextPath());
+            assertEquals(new ContextPath(List.of("/inventory/child"), false), service.getProtocolMeta("httpa").getEndpoint("secure").getContextPath());
         }
     }
 
@@ -874,7 +874,7 @@ public class EndpointContextValidationTest {
         ConnectorConfig endpoint = this.endpoint(first, second);
         ServiceDomain<Runnable> service = new ServiceDomain<>(Runnable.class);
         service.addBindProtocol("HTTPB");
-        service.setBindContextPaths("HTTPB", new ContextPath(List.of("/b"), false));
+        service.setBindContextPaths("HTTPB", new ContextPath(List.of("/"), false));
 
         // 名字只选中第二个协议，不会校验第一个协议的目录。
         try (ValidationRuntime runtime = this.runtime(endpoint)) {
@@ -891,7 +891,7 @@ public class EndpointContextValidationTest {
         ConnectorConfig endpoint = this.endpoint(protocol);
         ServiceDomain<Runnable> service = new ServiceDomain<>(Runnable.class);
         service.setServiceType(MetServiceType.Provider);
-        service.setBindContextPaths("httpa", new ContextPath(List.of("/orders/echo"), true));
+        service.setBindContextPaths("httpa", new ContextPath(List.of("/echo"), true));
 
         try (ValidationRuntime runtime = this.runtime(endpoint)) {
             runtime.register(service);
@@ -939,7 +939,7 @@ public class EndpointContextValidationTest {
         ConnectorConfig secure = this.endpoint("secure", invalid);
         ServiceDomain<Runnable> service = new ServiceDomain<>(Runnable.class);
         service.setServiceType(MetServiceType.Provider);
-        ContextPath declared = new ContextPath(List.of("/orders/echo"), true);
+        ContextPath declared = new ContextPath(List.of("/echo"), true);
         service.setBindContextPaths("httpa", declared);
         ProtocolMeta original = service.getProtocolMeta("httpa");
 
@@ -992,8 +992,8 @@ public class EndpointContextValidationTest {
     @Test
     public void laterEndpointRouteConflictPreservesTheExistingPublication() {
         // 已有服务只在第二个端点发布，另一个协议随后尝试占用相同精确地址。
-        ProtocolConfig firstProtocol = ProtocolConfig.newConfig("httpa", "http", Map.of("contextPath", "/a"));
-        ProtocolConfig secondProtocol = ProtocolConfig.newConfig("httpb", "http", Map.of("contextPath", "/b"));
+        ProtocolConfig firstProtocol = ProtocolConfig.newConfig("httpa", "http", Map.of("contextPath", "/orders"));
+        ProtocolConfig secondProtocol = ProtocolConfig.newConfig("httpb", "http", Map.of("contextPath", "/"));
         ConnectorConfig plain = this.endpoint("plain", firstProtocol);
         ConnectorConfig secure = this.endpoint("secure", firstProtocol, secondProtocol);
         ContextPath declared = new ContextPath(List.of("/orders/echo"), true);
@@ -1009,7 +1009,7 @@ public class EndpointContextValidationTest {
             ServiceDomain<Runnable> candidate = new ServiceDomain<>(Runnable.class);
             candidate.setServiceType(MetServiceType.Provider);
             candidate.addBindProtocol("httpa");
-            candidate.setBindContextPaths("httpa", declared);
+            candidate.setBindContextPaths("httpa", new ContextPath(List.of("/echo"), true));
             ProtocolMeta original = candidate.getProtocolMeta("httpa");
 
             // 首个端点准备成功后的冲突仍撤销整轮发布，旧绑定和旧精确路由保持原样。
@@ -1027,11 +1027,11 @@ public class EndpointContextValidationTest {
     @Test
     public void failedRevalidationPreservesTheServicesPublishedBindingsAndRoutes() {
         // 服务先在两个端点发布；另一协议只在第二个端点占用新路径。
-        ProtocolConfig firstProtocol = ProtocolConfig.newConfig("httpa", "http", Map.of("contextPath", "/a"));
-        ProtocolConfig secondProtocol = ProtocolConfig.newConfig("httpb", "http", Map.of("contextPath", "/b"));
+        ProtocolConfig firstProtocol = ProtocolConfig.newConfig("httpa", "http", Map.of("contextPath", "/orders"));
+        ProtocolConfig secondProtocol = ProtocolConfig.newConfig("httpb", "http", Map.of("contextPath", "/"));
         ConnectorConfig plain = this.endpoint("plain", firstProtocol);
         ConnectorConfig secure = this.endpoint("secure", firstProtocol, secondProtocol);
-        ContextPath originalPath = new ContextPath(List.of("/orders/original"), true);
+        ContextPath originalPath = new ContextPath(List.of("/original"), true);
         ContextPath occupiedPath = new ContextPath(List.of("/orders/occupied"), true);
         ServiceDomain<Runnable> service = new ServiceDomain<>(Runnable.class);
         service.setServiceType(MetServiceType.Provider);
@@ -1053,7 +1053,7 @@ public class EndpointContextValidationTest {
             RouteSelection occupiedRoute = runtime.manager.routeResolver("secure").apply("/orders/occupied");
 
             // 重新准备同一服务时，首个端点成功，第二个端点因路径冲突失败。
-            service.setBindContextPaths("httpa", occupiedPath);
+            service.setBindContextPaths("httpa", new ContextPath(List.of("/occupied"), true));
             ProtocolMeta declared = service.getProtocolMeta("httpa");
             assertThrows(IllegalArgumentException.class, () -> runtime.register(service));
 
@@ -1064,8 +1064,8 @@ public class EndpointContextValidationTest {
             assertSame(originalPath, previous.getContextPath());
             assertSame(plainBinding, previous.getEndpoint("plain"));
             assertSame(secureBinding, previous.getEndpoint("secure"));
-            assertSame(originalPath, plainBinding.getContextPath());
-            assertSame(originalPath, secureBinding.getContextPath());
+            assertEquals(originalPath.resolve("/orders"), plainBinding.getContextPath());
+            assertEquals(originalPath.resolve("/orders"), secureBinding.getContextPath());
             assertSame(plainRoute, runtime.manager.routeResolver("plain").apply("/orders/original"));
             assertSame(secureRoute, runtime.manager.routeResolver("secure").apply("/orders/original"));
             assertSame(occupiedRoute, runtime.manager.routeResolver("secure").apply("/orders/occupied"));
@@ -1086,8 +1086,8 @@ public class EndpointContextValidationTest {
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<HttpEchoService> service = context.publisher() //
                     .rsfService(HttpEchoService.class, value -> "local:" + value) //
-                    .contextPathByPrefix("httpa", "/orders") //
-                    .contextPathByPrefix("httpb", "/other").register();
+                    .contextPathByPrefix("httpa", "/") //
+                    .contextPathByPrefix("httpb", "/").register();
             ConnectorConfig endpoint = context.getSettings().getConnectorConfigs().iterator().next();
             RouteMountIndex rejected = new RouteMountIndex(endpoint.name(), endpoint.protocol("httpa"));
             RouteMountIndex accepted = new RouteMountIndex(endpoint.name(), endpoint.protocol("httpb"));
@@ -1095,7 +1095,7 @@ public class EndpointContextValidationTest {
             // 拒绝协议没有发布定义或目录入口，另一协议仍可接纳同一个服务。
             ProtocolMeta rejectedMeta = MetBindInfoWrap.unwrap(service).getProtocolMeta("httpa");
             assertNotNull(rejectedMeta);
-            assertEquals(new ContextPath(List.of("/orders"), false), rejectedMeta.getContextPath());
+            assertEquals(new ContextPath(List.of("/"), false), rejectedMeta.getContextPath());
             assertTrue(rejectedMeta.getEndpoints().isEmpty());
             assertNull(rejected.binding(service));
             assertTrue(rejected.contextPaths(service).isEmpty());
@@ -1122,13 +1122,14 @@ public class EndpointContextValidationTest {
         MetConfiguration configuration = TestConfigurationUtils.create();
         MetConfiguration.ConnectorSettings http = configuration.connector("http");
         http.protocol("httpa") //
+                .contextPath("/orders") //
                 .option("rejectService", true);
-        http.protocol("httpb");
+        http.protocol("httpb").contextPath("/other");
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<HttpEchoService> service = context.publisher() //
                     .rsfService(HttpEchoService.class, value -> value) //
-                    .contextPathByExact("httpa", "/orders/echo") //
-                    .contextPathByExact("httpb", "/other/echo").register();
+                    .contextPathByExact("httpa", "/echo") //
+                    .contextPathByExact("httpb", "/echo").register();
             ConnectorConfig endpoint = context.getSettings().getConnectorConfigs().iterator().next();
             RouteMountIndex rejected = new RouteMountIndex(endpoint.name(), endpoint.protocol("httpa"));
             RouteMountIndex accepted = new RouteMountIndex(endpoint.name(), endpoint.protocol("httpb"));
@@ -1137,7 +1138,7 @@ public class EndpointContextValidationTest {
 
             // 被拒绝服务的精确地址既不属于自身协议，也不会串入另一个协议。
             ProtocolMeta rejectedMeta = MetBindInfoWrap.unwrap(service).getProtocolMeta("httpa");
-            ContextPath original = new ContextPath(Set.of("/orders/echo"), true);
+            ContextPath original = new ContextPath(Set.of("/echo"), true);
             assertEquals(original, rejectedMeta.getContextPath());
             assertTrue(rejectedMeta.getEndpoints().isEmpty());
             assertFalse(rejected.accepts(service, rejectedPath));
@@ -1146,7 +1147,7 @@ public class EndpointContextValidationTest {
             assertNotNull(binding);
             ContextPath effective = new ContextPath(Set.of("/other/echo"), true);
             assertEquals(effective, binding.getContextPath());
-            assertEquals(effective, MetBindInfoWrap.unwrap(service).getProtocolMeta("httpb").getContextPath());
+            assertEquals(original, MetBindInfoWrap.unwrap(service).getProtocolMeta("httpb").getContextPath());
             assertEquals(Set.of("/other/echo"), accepted.exactPaths(service));
             assertTrue(accepted.accepts(service, acceptedPath));
             MetBindInfo<?> published = context.getServiceInfo(service.getBindID());
@@ -1232,11 +1233,11 @@ public class EndpointContextValidationTest {
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<HttpEchoService> service = context.publisher() //
                     .rsfService(HttpEchoService.class, value -> value) //
-                    .contextPathByPrefix("httpa", "/orders") //
+                    .contextPathByPrefix("httpa", "/") //
                     .bindResource("httpa", definition).register();
             ConnectorConfig endpoint = context.getSettings().getConnectorConfigs().iterator().next();
             ProtocolMeta before = MetBindInfoWrap.unwrap(service).getProtocolMeta("httpa");
-            ContextPath original = new ContextPath(List.of("/orders"), false);
+            ContextPath original = new ContextPath(List.of("/"), false);
             assertEquals(original, before.getContextPath());
             assertSame(definition, before.getEndpoint(endpoint.name()).getDefinition());
 
@@ -1326,17 +1327,17 @@ public class EndpointContextValidationTest {
             ConnectorConfig endpoint = context.getSettings().getConnectorConfigs().iterator().next();
             RouteMountIndex routes = new RouteMountIndex(endpoint.name(), endpoint.protocol("httpa"));
 
-            // 显式选择不含默认上下文，首个选择用于默认发布地址。
-            assertEquals(List.of("/orders", "/inventory"), routes.contextPaths(service));
-            assertEquals("/orders", routes.contextPath(service));
+            // 服务子路径挂载在默认上下文下，首个子路径用于默认发布地址。
+            assertEquals(List.of("/default/orders", "/default/inventory"), routes.contextPaths(service));
+            assertEquals("/default/orders", routes.contextPath(service));
             assertFalse(routes.accepts(service, routes.match("/default")));
-            assertTrue(routes.accepts(service, routes.match("/orders")));
-            assertTrue(routes.accepts(service, routes.match("/inventory")));
+            assertTrue(routes.accepts(service, new RouteMount("/default/orders", false)));
+            assertTrue(routes.accepts(service, new RouteMount("/default/inventory", false)));
             assertTrue(service.getBindProtocols().isEmpty());
             ContextPath selectedPaths = new ContextPath(List.of("/orders", "/inventory"), false);
             MetBindInfo<?> published = context.getServiceInfo(service.getBindID());
             assertEquals(selectedPaths, MetBindInfoWrap.unwrap(published).getProtocolMeta("httpa").getContextPath());
-            assertEquals(selectedPaths, routes.binding(service).getContextPath());
+            assertEquals(selectedPaths.resolve("/default"), routes.binding(service).getContextPath());
         }
     }
 
@@ -1378,6 +1379,39 @@ public class EndpointContextValidationTest {
         return service;
     }
 
+    @Test
+    public void serviceSubpathsRemainInsideProtocolMount() {
+        // 前缀和精确路径都允许位于协议挂载点下，不要求重复声明每一个服务路径。
+        for (boolean exact : List.of(false, true)) {
+            ProtocolConfig protocol = ProtocolConfig.newConfig("httpa", "http", Map.of("contextPath", "/rpc"));
+            ConnectorConfig endpoint = this.endpoint(protocol);
+            ServiceDomain<Runnable> service = new ServiceDomain<>(Runnable.class);
+            service.setServiceType(MetServiceType.Provider);
+            service.setBindContextPaths("httpa", new ContextPath(List.of("/orders"), exact));
+            try (ValidationRuntime runtime = this.runtime(endpoint)) {
+                runtime.register(service);
+                ProtocolBinding binding = service.getProtocolMeta("httpa").getEndpoint(endpoint.name());
+                assertEquals(new ContextPath(List.of("/rpc/orders"), exact), binding.getContextPath());
+            }
+        }
+    }
+
+    @Test
+    public void servicePathsCannotEscapeProtocolMount() {
+        // 精确路径和前缀路径都禁止使用点路径逃离协议挂载点。
+        for (boolean exact : List.of(false, true)) {
+            for (String path : List.of("/../orders", "/rpc/../orders")) {
+                ProtocolConfig protocol = ProtocolConfig.newConfig("httpa", "http", Map.of("contextPath", "/rpc"));
+                ServiceDomain<Runnable> service = new ServiceDomain<>(Runnable.class);
+                service.setServiceType(MetServiceType.Provider);
+                service.setBindContextPaths("httpa", new ContextPath(List.of(path), exact));
+                try (ValidationRuntime runtime = this.runtime(this.endpoint(protocol))) {
+                    assertThrows(IllegalArgumentException.class, () -> runtime.register(service));
+                }
+            }
+        }
+    }
+
     private ValidationRuntime runtime(ConnectorConfig... endpoints) {
         return new ValidationRuntime(Arrays.asList(endpoints));
     }
@@ -1387,6 +1421,14 @@ public class EndpointContextValidationTest {
     }
 
     private ConnectorConfig endpoint(String name, ProtocolConfig... protocols) {
+        // 该夹具绕过配置编译器，补齐真实 HTTP 配置的默认根挂载点。
+        for (ProtocolConfig protocol : protocols) {
+            if (!protocol.options().containsKey("contextPath") && !protocol.options().containsKey("contextPaths")) {
+                Map<String, String> options = new LinkedHashMap<>(protocol.options());
+                options.put("contextPath", "/");
+                protocol.setOptions(options);
+            }
+        }
         InterAddress address = InterAddress.forBinding("http", "127.0.0.1", 0);
         return new ConnectorConfig(name, address, Map.of(), List.of(protocols), false);
     }

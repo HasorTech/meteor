@@ -36,7 +36,6 @@ public final class ForeignServiceRegistrar implements AutoCloseable {
     public void register(MetBindInfo<?> service, long processId, String language, String protocol, //
             String transport, InterAddress address, String contextPath) throws Exception {
         // 外部进程已经报告实际监听地址；管理 RPC 地址保持空，不制造 Meteor 实例。
-        String connectorName = language + "-" + transport;
         EntInstanceRuntimeData instance = new EntInstanceRuntimeData();
         instance.setInstanceId(this.instanceId);
         instance.setApplicationName(language + "-order-provider");
@@ -48,13 +47,11 @@ public final class ForeignServiceRegistrar implements AutoCloseable {
 
         // 端点同时保留协议身份、context path 和注册地址，读取者不需要约定隐藏路径。
         RefProtocolMountData endpoint = new RefProtocolMountData();
-        endpoint.setConnectorName(connectorName);
         endpoint.setTransport(transport);
         endpoint.setProtocolName(protocol);
         endpoint.setScheme(address.getSchema());
         endpoint.setContextPath(contextPath);
-        endpoint.setBindEnabled(true);
-        endpoint.setConfiguredAddress(address.toString());
+
         endpoint.setListenAddress(address.toString());
         endpoint.setPublishedAddress(address.toString());
 

@@ -6,7 +6,7 @@
 package net.hasor.realmeteor.registry.description;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import net.hasor.cobble.StringUtils;
@@ -20,7 +20,6 @@ import net.hasor.example.protocol.grpc.EchoImpl;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
-import net.hasor.meteor.connector.ConnectorConfig;
 import net.hasor.meteor.registry.RegistryAdmin;
 import net.hasor.meteor.registry.admin.MetServiceEndpoint;
 import net.hasor.meteor.registry.admin.description.MetFieldDescription;
@@ -71,9 +70,12 @@ public class MultiProtocolDescriptionScenarioTest {
                 var admin = context.getExtension(RegistryAdmin.class).getServiceAdmin(service.getBindID());
                 MetServiceDescription description = admin.descriptions().get(context.getInstanceID());
                 assertEquals(2, description.getMethods().size());
-                assertEquals(DirectRpcExample.PROTOCOLS.size(), description.getProtocols().size());
+                var endpoints = admin.providers(null, null).getItems().get(0).getEndpoints();
+                assertEquals(DirectRpcExample.PROTOCOLS.size(), endpoints.length);
                 assertTrue(description.getTypes().containsKey(Order.class.getName()));
-                MetProtocolDescription grpc = description.getProtocols().get("grpc").values().iterator().next();
+                MetProtocolDescription grpc = Arrays.stream(endpoints) //
+                        .filter(endpoint -> StringUtils.equals("grpc", endpoint.getProtocolName())) //
+                        .findFirst().orElseThrow().getDescription();
                 assertFalse(grpc.getTypes().isEmpty());
             }
         }
@@ -102,13 +104,13 @@ public class MultiProtocolDescriptionScenarioTest {
             MetFieldDescription parameter = description.getMethods().get(0).getParameters().get(0);
             assertEquals(Long.valueOf(1), parameter.getFieldId());
             assertEquals(Integer.valueOf(0), parameter.getArgIndex());
-            Map<String, Map<String, MetProtocolDescription>> protocols = description.getProtocols();
-            assertEquals(DirectRpcExample.PROTOCOLS.size(), protocols.size());
+            var endpoints = admin.providers(null, null).getItems().get(0).getEndpoints();
+            assertEquals(DirectRpcExample.PROTOCOLS.size(), endpoints.length);
             for (String protocol : DirectRpcExample.PROTOCOLS) {
-                Map<String, MetProtocolDescription> endpoints = protocols.get(protocol);
-                assertEquals(1, endpoints.size(), protocol);
-                MetProtocolDescription contract = endpoints.values().iterator().next();
-                assertEquals(2, contract.getMethods().size(), protocol);
+                var matching = Arrays.stream(endpoints) //
+                        .filter(endpoint -> StringUtils.equals(protocol, endpoint.getProtocolName())).toList();
+                assertEquals(1, matching.size(), protocol);
+                assertEquals(2, matching.get(0).getDescription().getMethods().size(), protocol);
             }
         }
     }
@@ -150,8 +152,6 @@ public class MultiProtocolDescriptionScenarioTest {
             assertEquals(3, echoDescription.getMethods().size());
             assertTrue(orderDescription.getTypes().containsKey(Order.class.getName()));
             assertFalse(echoDescription.getTypes().containsKey(Order.class.getName()));
-            assertEquals(2, orderDescription.getProtocols().size());
-            assertEquals(2, echoDescription.getProtocols().size());
 
             // 成员端点与同实例的协议描述逐一对应，不混用另一实例的接口和路径。
             var members = admin.providers(null, null).getItems();
@@ -162,8 +162,7 @@ public class MultiProtocolDescriptionScenarioTest {
                 assertEquals(2, member.getEndpoints().length);
                 for (MetServiceEndpoint endpoint : member.getEndpoints()) {
                     String protocolName = endpoint.getProtocolName();
-                    Map<String, MetProtocolDescription> bindings = description.getProtocols().get(protocolName);
-                    MetProtocolDescription protocol = bindings.get(endpoint.getConnectorName());
+                    MetProtocolDescription protocol = endpoint.getDescription();
                     assertNotNull(protocol);
                     assertEquals(description.getMethods().size(), protocol.getMethods().size());
                     assertNotNull(endpoint.getPublishedAddress());
@@ -206,10 +205,13 @@ public class MultiProtocolDescriptionScenarioTest {
             // 两个描述分别来自本端点绑定，不能用首个协议配置覆盖第二个端点。
             var admin = context.getExtension(RegistryAdmin.class).getServiceAdmin(service.getBindID());
             MetServiceDescription description = admin.descriptions().get(context.getInstanceID());
-            Map<String, MetProtocolDescription> endpoints = description.getProtocols().get("grpc");
-            List<ConnectorConfig> connectors = List.copyOf(context.getSettings().getConnectorConfigs());
-            MetProtocolDescription json = endpoints.get(connectors.get(0).name());
-            MetProtocolDescription protobuf = endpoints.get(connectors.get(1).name());
+            var endpoints = admin.providers(null, null).getItems().get(0).getEndpoints();
+            MetProtocolDescription json = Arrays.stream(endpoints) //
+                    .filter(endpoint -> StringUtils.equals("/json", endpoint.getContextPath())) //
+                    .findFirst().orElseThrow().getDescription();
+            MetProtocolDescription protobuf = Arrays.stream(endpoints) //
+                    .filter(endpoint -> StringUtils.equals("/protobuf", endpoint.getContextPath())) //
+                    .findFirst().orElseThrow().getDescription();
             assertEquals(DirectRpcExample.SERVICE_NAME, json.getName());
             assertEquals(DirectRpcExample.SERVICE_NAME, protobuf.getName());
             assertEquals("Json", json.getSerializeType());
@@ -253,7 +255,6 @@ public class MultiProtocolDescriptionScenarioTest {
             // 注册记录只包含实际接受服务的 JSON 端点及其有效路径。
             var admin = context.getExtension(RegistryAdmin.class).getServiceAdmin(service.getBindID());
             MetServiceDescription description = admin.descriptions().get(context.getInstanceID());
-            assertEquals(1, description.getProtocols().get("grpc").size());
             var endpoints = admin.providers(null, null).getItems().get(0).getEndpoints();
             assertEquals(1, endpoints.length);
             assertEquals("/json", endpoints[0].getContextPath());

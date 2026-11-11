@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<console-types>
+    <protocols>
+        <protocol name="soap"/>
+    </protocols>
+</console-types>

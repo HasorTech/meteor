@@ -56,7 +56,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<?> service = context.publisher()//
-                    .rsfService(PersonEcho.class, value -> value).name("Generic").register();
+                    .rsfService(PersonEcho.class, value -> value).name("Generic").contextPathByPrefix("hprose", "/").register();
             ConnectorConfig endpoint = context.getSettings().getConnectorConfigs().iterator().next();
             ProtocolConfig config = endpoint.protocol("hprose");
             HproseHttpCodec codec = new HproseHttpCodec(config, this.routes(context, config), context);
@@ -76,7 +76,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<?> service = context.publisher().rsfService(PeopleEcho.class, value -> value) //
-                    .name("Generic").register();
+                    .name("Generic").contextPathByPrefix("hprose", "/").register();
             ConnectorConfig endpoint = context.getSettings().getConnectorConfigs().iterator().next();
             ProtocolConfig config = endpoint.protocol("hprose");
             HproseHttpCodec codec = new HproseHttpCodec(config, this.routes(context, config), context);
@@ -95,7 +95,7 @@ public class HproseHttpCodecTest {
         // 消费者的返回值继承自泛型父接口，远端响应为普通 Map。
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
-            MetBindInfo<?> service = context.publisher().rsfService(PersonEcho.class).name("Generic").register();
+            MetBindInfo<?> service = context.publisher().rsfService(PersonEcho.class).name("Generic").contextPathByPrefix("hprose", "/").register();
             ConnectorConfig endpoint = context.getSettings().getConnectorConfigs().iterator().next();
             ProtocolConfig config = endpoint.protocol("hprose");
             HproseHttpCodec codec = new HproseHttpCodec(config, this.routes(context, config), context);
@@ -116,7 +116,7 @@ public class HproseHttpCodecTest {
         // 消费者绑定 List<Person>，响应中不携带服务端 Java 类型。
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
-            MetBindInfo<?> service = context.publisher().rsfService(PeopleEcho.class).name("Generic").register();
+            MetBindInfo<?> service = context.publisher().rsfService(PeopleEcho.class).name("Generic").contextPathByPrefix("hprose", "/").register();
             ConnectorConfig endpoint = context.getSettings().getConnectorConfigs().iterator().next();
             ProtocolConfig config = endpoint.protocol("hprose");
             HproseHttpCodec codec = new HproseHttpCodec(config, this.routes(context, config), context);
@@ -139,7 +139,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
             MetBindInfo<?> service = context.publisher().rsfService(PeopleArrayEcho.class, value -> value) //
-                    .name("Generic").register();
+                    .name("Generic").contextPathByPrefix("hprose", "/").register();
             ConnectorConfig endpoint = context.getSettings().getConnectorConfigs().iterator().next();
             ProtocolConfig config = endpoint.protocol("hprose");
             HproseHttpCodec codec = new HproseHttpCodec(config, this.routes(context, config), context);
@@ -159,7 +159,7 @@ public class HproseHttpCodecTest {
         // 响应数组的元素仍为未携带 Java 类名的列表与 Map。
         MetConfiguration configuration = this.configuration();
         try (MetContext context = configuration.buildContext()) {
-            MetBindInfo<?> service = context.publisher().rsfService(PeopleArrayEcho.class).name("Generic").register();
+            MetBindInfo<?> service = context.publisher().rsfService(PeopleArrayEcho.class).name("Generic").contextPathByPrefix("hprose", "/").register();
             ConnectorConfig endpoint = context.getSettings().getConnectorConfigs().iterator().next();
             ProtocolConfig config = endpoint.protocol("hprose");
             HproseHttpCodec codec = new HproseHttpCodec(config, this.routes(context, config), context);
@@ -247,7 +247,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -271,7 +271,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -295,7 +295,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -339,7 +339,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -367,7 +367,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -386,7 +386,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -411,7 +411,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -436,7 +436,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -461,7 +461,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -486,7 +486,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -509,7 +509,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -528,7 +528,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -548,7 +548,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -568,7 +568,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -588,7 +588,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -609,7 +609,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -629,7 +629,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -649,7 +649,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -669,7 +669,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -689,7 +689,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -709,7 +709,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -729,7 +729,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -749,7 +749,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -769,7 +769,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -785,7 +785,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -801,7 +801,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -817,7 +817,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 
@@ -833,7 +833,7 @@ public class HproseHttpCodecTest {
         MetConfiguration configuration = this.configuration() //
                 .setDefaultGroup("wire");
         try (MetContext context = configuration.buildContext()) {
-            context.publisher().rsfService(Echo.class, value -> value).name("Echo").register();
+            context.publisher().rsfService(Echo.class, value -> value).name("Echo").contextPathByPrefix("hprose", "/").register();
             ProtocolConfig config = ProtocolConfig.newConfig("hprose", "hprose", Map.of("contextPath", "/rpc"));
             HproseHttpCodec protocol = new HproseHttpCodec(config, this.routes(context, config), context);
 

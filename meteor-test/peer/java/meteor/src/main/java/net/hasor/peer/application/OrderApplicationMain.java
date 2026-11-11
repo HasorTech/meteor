@@ -216,6 +216,17 @@ public final class OrderApplicationMain {
         } else if (!StringUtils.equals("rsf", protocol)) {
             builder.aliasName(protocol, "orders");
         }
+        // 标准矩阵的原生 SDK 使用约定的固定挂载，显式覆盖默认的分组/版本目录。
+        String protocolMount = "/";
+        for (var connector : context.getSettings().getConnectorConfigs()) {
+            var configured = connector.protocol(protocol);
+            if (configured != null && StringUtils.equals(connector.transportType(), "http")) {
+                protocolMount = configured.option("contextPath", "/");
+                builder.contextPathByPrefix(protocol, "/");
+                break;
+            }
+        }
+
         // Hessian 与 SOAP 地址已经包含服务路径，不再追加本地默认目录和服务名。
         String target = System.getenv("METEOR_ORDER_TARGET");
         boolean exact = StringUtils.equals("hessian", protocol) || StringUtils.equals("soap", protocol);
@@ -224,7 +235,11 @@ public final class OrderApplicationMain {
             if (path == null || path.isBlank()) {
                 path = "/";
             }
-            builder.contextPathByExact(protocol, path);
+            String mount = protocolMount.replaceAll("/+$", "");
+            if (!mount.isEmpty() && !path.startsWith(mount + "/")) {
+                throw new IllegalArgumentException("Target path is outside protocol mount: " + path);
+            }
+            builder.contextPathByExact(protocol, path.substring(mount.length()));
         }
         return builder.register();
     }

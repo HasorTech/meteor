@@ -6,32 +6,19 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor.registry.shared.rpc;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 
-/** 实例上报中的监听端点；协议身份与地址 scheme 分别保存。 */
+/** 实例上的一个协议挂载；附带类型以空地址声明，不包含具体业务服务地址。 */
 public final class InstanceEndpointData {
-    private String connectorName     = null; // 实例内的连接器名称
-    private String transport         = null; // 传输 SPI 名称
-    private String protocolName      = null; // 协议 SPI 名称
-    private String scheme            = null; // 地址 scheme，可独立于协议名配置
-    private String contextPath       = null; // HTTP 挂载路径；非 HTTP 端点为空
-    private String listenAddress     = null; // 当前实际监听地址
-    private String managementAddress = null; // 管理服务接受此挂载时的管理 RPC 地址，否则为空
+    private String              protocolName;
+    private Map<String, String> endpoints = new LinkedHashMap<>();
 
-    public String getConnectorName() {
-        return this.connectorName;
-    }
+    private Set<String> protocolFamilies = new LinkedHashSet<>();
 
-    public void setConnectorName(String connectorName) {
-        this.connectorName = connectorName;
-    }
-
-    public String getTransport() {
-        return this.transport;
-    }
-
-    public void setTransport(String transport) {
-        this.transport = transport;
-    }
+    private boolean defaultProtocol; // 是否为所属实例配置的默认协议
 
     public String getProtocolName() {
         return this.protocolName;
@@ -41,35 +28,29 @@ public final class InstanceEndpointData {
         this.protocolName = protocolName;
     }
 
-    public String getScheme() {
-        return this.scheme;
+    /** 协议插件声明的业务承载家族，旧快照缺少此字段时保持空集合。 */
+    public Set<String> getProtocolFamilies() {
+        return this.protocolFamilies;
     }
 
-    public void setScheme(String scheme) {
-        this.scheme = scheme;
+    public void setProtocolFamilies(Set<String> protocolFamilies) {
+        this.protocolFamilies = protocolFamilies;
     }
 
-    public String getContextPath() {
-        return this.contextPath;
+    public boolean isDefaultProtocol() {
+        return this.defaultProtocol;
     }
 
-    public void setContextPath(String contextPath) {
-        this.contextPath = contextPath;
+    public void setDefaultProtocol(boolean defaultProtocol) {
+        this.defaultProtocol = defaultProtocol;
     }
 
-    public String getListenAddress() {
-        return this.listenAddress;
+    /** key 为 endpoint、http、management、wsdl、xsd 等用途；空值字符串仅声明附带能力。 */
+    public Map<String, String> getEndpoints() {
+        return this.endpoints;
     }
 
-    public void setListenAddress(String listenAddress) {
-        this.listenAddress = listenAddress;
-    }
-
-    public String getManagementAddress() {
-        return this.managementAddress;
-    }
-
-    public void setManagementAddress(String managementAddress) {
-        this.managementAddress = managementAddress;
+    public void setEndpoints(Map<String, String> endpoints) {
+        this.endpoints = endpoints;
     }
 }
