@@ -7,7 +7,9 @@
  */
 package net.hasor.meteor.test.scenario;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
+import net.hasor.cobble.StringUtils;
 import net.hasor.boot.Boot;
 import net.hasor.boot.BootApplication;
 import net.hasor.meteor.MetContext;
@@ -30,19 +32,36 @@ public final class ConsoleBrowserFixture {
     }
 
     public static void main(String[] args) throws Exception {
+        Path fixtureDirectory = Files.createTempDirectory(Files.createDirectories(Path.of("build", "console-browser")), "run-");
         var registry = registry("jdbc:h2:mem:console-browser;DB_CLOSE_DELAY=-1");
         registry("jdbc:h2:mem:console-other;DB_CLOSE_DELAY=-1");
-        var provider = application(registry, "order-app", "east", true);
-        provider.connector("http").bind("127.0.0.1", 0).protocol("hprose").contextPath("/hprose");
-        var replica = application(registry, "order-app", "west", true);
-        var consumer = application(registry, "storefront", "east", false);
-        MetConfiguration offline = new MetConfiguration();
-        offline.setApplicationName("direct-order-app");
+        var provider = application(fixtureDirectory.resolve("provider"), registry, "order-app", "east", true);
+        provider.connector("http") //
+                .bind("127.0.0.1", 18770) //
+                .protocol("hprose") //
+                .contextPath("/hprose");
+        provider.connector("http") //
+                .bind("127.0.0.1", 18771) //
+                .protocol("hprose") //
+                .addressScheme("browser-hprose") //
+                .contextPath("/hprose");
+        // 默认协议刻意不取第一个 RSF，用于验证治理页面使用提供者的真实上报值。
+        provider.setDefaultProtocol("hprose");
+        var replica = application(fixtureDirectory.resolve("replica"), registry, "order-app", "west", true);
+        // 与 HTTP/管理端口一样固定在浏览器 fixture 范围，避免宿主临时端口段耗尽时无法监听。
+        provider.getConnectors().get(0).bind("127.0.0.1", 18769);
+        replica.getConnectors().get(0).bind("127.0.0.1", 18772);
+        var consumer = application(fixtureDirectory.resolve("consumer"), registry, "storefront", "east", false);
+        MetConfiguration offline = new MetConfiguration() //
+                .setDataHome(fixtureDirectory.resolve("offline")) //
+                .setApplicationName("direct-order-app");
         offline.addExtension(new RegistryConfiguration().setOnline(false).setManagementToken("browser-direct-令牌+secret"));
-        offline.connector("tcp").bind("127.0.0.1", 18767).protocol("rsf");
-        var configDirectory = Files.createTempDirectory("meteor-console-browser-");
+        offline.connector("tcp") //
+                .bind("127.0.0.1", 18767) //
+                .protocol("rsf");
+        var configDirectory = Files.createDirectories(fixtureDirectory.resolve("console"));
         var config = console(configDirectory, Map.of("hasor.boot.web.connectors.http.port", "18765"));
-        var anonymousDirectory = Files.createTempDirectory("meteor-console-anonymous-");
+        var anonymousDirectory = Files.createDirectories(fixtureDirectory.resolve("anonymous"));
         var anonymous = console(anonymousDirectory, Map.of(//
                 "hasor.boot.web.connectors.http.port", "18766", //
                 "security.enable", "false"));
@@ -64,7 +83,10 @@ public final class ConsoleBrowserFixture {
              MetContext direct = offline.buildContext(); //
              BootApplication server = consoleBoot.start(); //
              BootApplication publicServer = publicConsoleBoot.start()) {
-            a.publisher().rsfService(OrderService.class, id -> "order:" + id).register();
+            a.publisher().rsfService(OrderService.class, id -> {
+                if (StringUtils.equals(id, "debug-fail")) throw new IllegalArgumentException("debug-fail: provider rejected request");
+                return "order:" + id;
+            }).register();
             a.publisher().rsfService(InventoryService.class, id -> 12).register();
             b.publisher().rsfService(OrderService.class, id -> "replica:" + id).register();
             b.publisher().rsfService(InventoryService.class).register();

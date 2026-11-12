@@ -10,8 +10,21 @@ public final class StatusServiceImpl implements StatusService {
 
     @Override
     public DebugMessage status(DebugMessage request) {
-        DebugMessage response = new DebugMessage();
+        DebugMessage response = request.copy();
         response.setValue("status:" + this.unit + ":" + ProcessHandle.current().pid() + ":" + request.getValue());
+        return response;
+    }
+    @Override
+    public DebugMessage health(DebugMessage request) {
+        DebugMessage response = request.copy();
+        response.setValue("UP");
+        return response;
+    }
+
+    @Override
+    public DebugMessage runtime(DebugMessage request) {
+        DebugMessage response = request.copy();
+        response.setValue("Java " + System.getProperty("java.version") + ", PID " + ProcessHandle.current().pid());
         return response;
     }
 }

@@ -38,8 +38,7 @@ public final class RegistryMain {
             server.start();
             Boot boot = new Boot().arguments(arguments)//
                     .hconfigFile(configuration)//
-                    .sources(ConsoleMain.class, ConsoleLauncher.class)//
-                    .property("hasor.loadPackages", "net.hasor.meteor.example")//
+                    .sources(ConsoleMain.class)//
                     .property("storage.address", address);
             try (BootApplication application = boot.start()) {
                 System.out.println("H2 注册存储：" + address);

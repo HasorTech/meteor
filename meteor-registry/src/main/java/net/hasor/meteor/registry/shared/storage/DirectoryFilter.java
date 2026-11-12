@@ -36,6 +36,9 @@ public final class DirectoryFilter {
         }
 
         if (instance != null) {
+            if (StringUtils.equals(field, "ip")) {
+                return StringUtils.defaultString(instance.getIpAddress());
+            }
             if (StringUtils.equals(field, "application")) {
                 return StringUtils.defaultString(instance.getApplicationName());
             }

@@ -14,8 +14,10 @@ import net.hasor.meteor.console.component.commands.dto.metadata.FetchMetadataReq
 import net.hasor.meteor.console.component.commands.dto.metadata.PutMetadataRequest;
 import net.hasor.meteor.console.component.commands.dto.metadata.RemoveMetadataRequest;
 import net.hasor.meteor.console.component.commands.dto.rule.*;
+import net.hasor.meteor.console.component.commands.dto.service.ExampleTargetsRequest;
 import net.hasor.meteor.console.component.commands.dto.service.MembersRequest;
 import net.hasor.meteor.console.component.commands.dto.service.ServiceInfoRequest;
+import net.hasor.meteor.console.component.commands.dto.service.ServiceMethodsRequest;
 import net.hasor.meteor.console.component.commands.dto.service.SetServiceEnabledRequest;
 
 /** 注册中心管理操作及其请求、实现类型。 */
@@ -27,6 +29,8 @@ public enum CommandType {
     APPLICATIONS(ApplicationsRequest.class, ApplicationsRegistryCmd.class),
     INSTANCE_INFO(InstanceInfoRequest.class, InstanceInfoRegistryCmd.class),
     SERVICE_INFO(ServiceInfoRequest.class, ServiceInfoRegistryCmd.class),
+    SERVICE_METHODS(ServiceMethodsRequest.class, ServiceMethodsRegistryCmd.class),
+    EXAMPLE_TARGETS(ExampleTargetsRequest.class, ExampleTargetsRegistryCmd.class),
     MEMBERS(MembersRequest.class, MembersRegistryCmd.class),
     READ_RULE(ReadRuleRequest.class, ReadRuleRegistryCmd.class),
     VALIDATE_RULE(ValidateRuleRequest.class, ValidateRuleRegistryCmd.class),

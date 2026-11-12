@@ -55,7 +55,9 @@ EOF
     if [[ -n "$web_project" ]]; then
         printf '  .\\gradlew.bat :%s:assemble -x test\n' "$web_project"
     elif [[ ${#web_command[@]} -gt 0 ]]; then
-        echo '  .\gradlew.bat -PincludeTestProjects=false :meteor-console:webBuild :meteor-console:processResources'
+        echo '  npm --prefix meteor-console/src/web ci --no-audit --no-fund'
+        echo '  npm --prefix meteor-console/src/web run build'
+        echo '  .\gradlew.bat -PincludeTestProjects=false :meteor-console:processResources'
     fi
 }
 

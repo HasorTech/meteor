@@ -9,13 +9,13 @@ package net.hasor.meteor.console.component.commands.dto.rule;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import net.hasor.meteor.console.component.commands.ChangeResult;
+import net.hasor.meteor.console.component.commands.SuccessResult;
 import net.hasor.meteor.console.component.commands.CommandRequest;
 import net.hasor.meteor.console.component.commands.CommandType;
 import net.hasor.meteor.console.model.fo.ManagementTarget;
 import net.hasor.meteor.registry.admin.MetRuleType;
 
-public final class SetRuleEnabledRequest extends CommandRequest<ChangeResult> {
+public final class SetRuleEnabledRequest extends CommandRequest<SuccessResult> {
     private final MetRuleType ruleType;
     private final boolean     enabled;
 

@@ -143,11 +143,22 @@ final class DefaultServiceAdmin implements MetServiceAdmin {
             }
 
             // 端点条件在成员映射后筛选，每批只读取剩余容量，避免跨页丢弃尚未返回的成员。
+            boolean ipSearch = StringUtils.equals(selection.getField(), "ip");
+            String ipFilter = StringUtils.defaultString(selection.getSearch()).toLowerCase(Locale.ROOT);
+            if (ipSearch) {
+                // 复用各存储已有的实例身份查询，再按独立 IP 字段排除 PID/实例 ID 命中，无需变更存储表结构。
+                selection.setField("instance");
+            }
+
             int limit = selection.getLimit();
             do {
                 selection.setLimit(limit - result.getItems().size());
                 RecordPage<RefServiceRelationData> page = storage.members(this.serviceId, role, selection);
                 for (RefServiceRelationData record : page.getItems()) {
+                    String ip = StringUtils.defaultString(record.getInstance().getIpAddress());
+                    if (ipSearch && StringUtils.isNotBlank(ipFilter) && !ip.toLowerCase(Locale.ROOT).contains(ipFilter)) {
+                        continue;
+                    }
                     this.addMember(record, filter, result.getItems());
                 }
                 selection.setCursor(page.getNextCursor());

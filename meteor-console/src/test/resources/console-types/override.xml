@@ -1,0 +1,7 @@
+<console-types>
+    <protocols>
+        <protocol name="custom">
+            <type name="long" type="integer" component="input" default="2"/>
+        </protocol>
+    </protocols>
+</console-types>

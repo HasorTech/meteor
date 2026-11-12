@@ -146,8 +146,12 @@ public class ConsoleCascadeTest {
         storage.setManagementToken("local-admin-token");
         AtomicBoolean conflict = new AtomicBoolean();
         AtomicBoolean terminalReached = new AtomicBoolean();
-        MetConfiguration configuration = new MetConfiguration().setApplicationName("cascade-terminal");
-        configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setApplicationName("cascade-terminal") //
+                .setDataHome(this.directory.resolve("terminal"));
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
         RegistryAdmin observer = storage.buildAdmin();
         try (ProviderConnection connection = ProviderConnection.registry(observer); //
              MetContext c = configuration.buildContext()) {

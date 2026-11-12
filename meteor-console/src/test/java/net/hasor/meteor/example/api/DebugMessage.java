@@ -14,6 +14,16 @@ public class DebugMessage implements Serializable {
     @MetField(id = 4)
     private              int    result;
 
+    /** 复制请求字段，供示例服务在独立响应中修改业务结果。 */
+    public DebugMessage copy() {
+        DebugMessage message = new DebugMessage();
+        message.setValue(this.value);
+        message.setLeft(this.left);
+        message.setRight(this.right);
+        message.setResult(this.result);
+        return message;
+    }
+
     public String getValue() {
         return this.value;
     }

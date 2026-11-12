@@ -87,4 +87,7 @@ public interface RpcManagement {
 
     @MetMethod(id = 23)
     void removeMeta(RpcTarget target, String[] keys);
+
+    @MetMethod(id = 24)
+    MetServiceMethodPage methods(RpcTarget target, String methodName, MetDirectoryQuery query);
 }

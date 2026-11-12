@@ -6,6 +6,8 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor.console.web;
+import java.util.List;
+import java.util.Map;
 import net.hasor.cobble.StringUtils;
 import net.hasor.core.Inject;
 import net.hasor.meteor.console.component.commands.dto.directory.ServiceEntry;
@@ -13,6 +15,7 @@ import net.hasor.meteor.console.component.commands.dto.directory.ServicesResult;
 import net.hasor.meteor.console.global.http.ConsoleRequest;
 import net.hasor.meteor.console.model.fo.ManagementTarget;
 import net.hasor.meteor.console.service.GovernanceService;
+import net.hasor.meteor.console.service.ConsoleSettingsService;
 import net.hasor.meteor.registry.admin.MetPage;
 import net.hasor.meteor.registry.admin.MetServiceInfo;
 import net.hasor.web.Invoker;
@@ -24,6 +27,12 @@ import net.hasor.web.annotation.MappingTo;
 public class DirectoryController {
     @Inject
     private GovernanceService governance;
+
+    @Get
+    @MappingTo("/endpoint-types")
+    public List<Map<String, String>> endpointTypes() {
+        return ConsoleSettingsService.endpointTypes();
+    }
 
     @Get
     @MappingTo("/units")

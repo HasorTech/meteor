@@ -11,14 +11,16 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import net.hasor.meteor.registry.admin.MetServiceInfo;
+import net.hasor.meteor.registry.admin.MetServiceEndpoint;
 import net.hasor.meteor.registry.admin.description.MetServiceDescription;
 
-public record ServiceInfoResult(MetServiceInfo info, boolean enabled, MetServiceDescription description) {
+public record ServiceInfoResult(MetServiceInfo info, boolean enabled, MetServiceDescription description, MetServiceEndpoint[] endpoints) {
     @JsonCreator
-    public ServiceInfoResult(@JsonProperty("info") MetServiceInfo info, @JsonProperty("enabled") boolean enabled, @JsonProperty("description") MetServiceDescription description) {
+    public ServiceInfoResult(@JsonProperty("info") MetServiceInfo info, @JsonProperty("enabled") boolean enabled, @JsonProperty("description") MetServiceDescription description, @JsonProperty("endpoints") MetServiceEndpoint[] endpoints) {
         this.info = info;
         this.enabled = enabled;
         this.description = description;
+        this.endpoints = endpoints;
     }
 
     @Override

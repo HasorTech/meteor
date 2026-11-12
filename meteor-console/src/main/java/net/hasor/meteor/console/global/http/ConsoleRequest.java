@@ -111,13 +111,11 @@ public final class ConsoleRequest {
             target.setLimit(Integer.parseInt(limit));
         }
         target.setApplicationName(this.query("applicationName"));
-        target.setTargetUnit(this.query("targetUnit"));
-        target.setLocalUnit(this.query("localUnit"));
         if (target.isDirect()) {
             URI uri = URI.create(this.required("target"));
             boolean extra = uri.getUserInfo() != null || uri.getQuery() != null || uri.getFragment() != null;
             if (extra || !InterAddress.checkFormat(uri)) {
-                throw new IllegalArgumentException("管理地址格式应为 rsf://host:port/unit");
+                throw new IllegalArgumentException("管理地址格式应为 rsf://host:port");
             }
             target.setTarget(new InterAddress(uri));
             if (StringUtils.isBlank(this.managementToken) || this.managementToken.length() > 32768) {

@@ -1,4 +1,5 @@
 package net.hasor.meteor.console.component.rpc;
+import java.nio.file.Path;
 import net.hasor.cobble.StringUtils;
 import net.hasor.core.Destroy;
 import net.hasor.core.Init;
@@ -51,9 +52,13 @@ public final class RpcServer implements AutoCloseable {
         try {
             connection.registry().getClusterAdmin().info();
             connection.registry().getClusterAdmin().status();
-            MetConfiguration configuration = new MetConfiguration().setApplicationName("meteor-registry-server");
-            configuration.setUnitName(this.config.getRpcUnit());
-            configuration.connector("tcp").bind(this.config.getRpcHost(), this.config.getRpcPort()).protocol("rsf");
+            MetConfiguration configuration = new MetConfiguration() //
+                    .setApplicationName("meteor-registry-server") //
+                    .setDataHome(Path.of(this.config.getDataDirectory(), "rpc")) //
+                    .setUnitName(this.config.getRpcUnit());
+            configuration.connector("tcp") //
+                    .bind(this.config.getRpcHost(), this.config.getRpcPort()) //
+                    .protocol("rsf");
             context = configuration.buildContext();
             JsonUtils.configureRpc(context);
             RpcManagement management = new RpcManagementImpl(connection);

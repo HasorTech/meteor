@@ -38,8 +38,12 @@ public class ConsoleRemoteHttpTest {
         // 远端使用独立的内存注册中心和真实 RSF 监听，控制台通过正式配置启动。
         MemoryRegistryConfiguration storage = new MemoryRegistryConfiguration();
         storage.setManagementToken("local-admin-token");
-        MetConfiguration configuration = new MetConfiguration().setApplicationName("console-http-errors");
-        configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setApplicationName("console-http-errors") //
+                .setDataHome(this.temporary.resolve("remote"));
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
         String token = "remote-management-secret";
         String consoleConfiguration = console(this.temporary);
         Boot boot = new Boot()//

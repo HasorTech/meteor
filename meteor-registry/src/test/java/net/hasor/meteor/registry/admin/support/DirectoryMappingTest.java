@@ -6,6 +6,12 @@
 package net.hasor.meteor.registry.admin.support;
 import java.util.List;
 import net.hasor.meteor.domain.MetServiceType;
+import net.hasor.meteor.registry.admin.MetDirectoryQuery;
+import net.hasor.meteor.registry.admin.MetInstanceInfo;
+import net.hasor.meteor.registry.admin.MetPage;
+import net.hasor.meteor.registry.admin.MetServiceEndpoint;
+import net.hasor.meteor.registry.admin.MetServiceInfo;
+import net.hasor.meteor.registry.admin.MetServiceMember;
 import net.hasor.meteor.registry.shared.storage.domain.EntServiceRuntimeData;
 import net.hasor.meteor.registry.shared.storage.domain.RefProtocolMountData;
 import net.hasor.meteor.registry.shared.storage.domain.RefServiceDescriptionData;
@@ -196,6 +202,26 @@ public class DirectoryMappingTest {
         // 英文角色名按照普通文本搜索处理。
         MetPage<MetServiceInfo> page = DirectoryMapping.local(List.of(service), query, MetServiceInfo::getServiceId);
         assertEquals(List.of(service), page.getItems());
+    }
+
+    @Test
+    public void memberIpSearchExcludesTheProcessId() {
+        // 进程 ID 在身份文本中，但不属于 IP 搜索范围。
+        MetServiceMember member = member(MetServiceType.Provider);
+        MetDirectoryQuery query = search("ip", "4321");
+
+        MetPage<MetServiceMember> page = DirectoryMapping.local(List.of(member), query, DirectoryMapping::memberIdentity);
+        assertTrue(page.getItems().isEmpty());
+    }
+
+    @Test
+    public void memberIpSearchMatchesAnAddressFragment() {
+        // 消费者同样按照 IP 片段搜索。
+        MetServiceMember member = member(MetServiceType.Consumer);
+        MetDirectoryQuery query = search("ip", "192.0.2");
+
+        MetPage<MetServiceMember> page = DirectoryMapping.local(List.of(member), query, DirectoryMapping::memberIdentity);
+        assertEquals(List.of(member), page.getItems());
     }
 
     @Test

@@ -147,7 +147,7 @@ public class ConsoleSecurityTest {
     public void disabledWebSecurityDoesNotDisableTargetAuthentication() throws Exception {
         // 控制台允许免登录，但目标实例的管理 RPC 仍要求独立凭据。
         RegistryConfiguration registry = new RegistryConfiguration().setOnline(false).setManagementToken("target-secret");
-        var configuration = application(registry, "secured-target", "default", true);
+        var configuration = application(this.temporary.resolve("target"), registry, "secured-target", "default", true);
         String console = console(this.temporary, Map.of("security.enable", "false"));
         Boot boot = new Boot()//
                 .sources(ConsoleMain.class)//
@@ -171,7 +171,7 @@ public class ConsoleSecurityTest {
     public void targetAuthenticationFailureKeepsConsoleSession() throws Exception {
         // 控制台登录与目标实例认证相互独立。
         RegistryConfiguration registry = new RegistryConfiguration().setOnline(false).setManagementToken("target-secret");
-        var configuration = application(registry, "secured-target", "default", true);
+        var configuration = application(this.temporary.resolve("target"), registry, "secured-target", "default", true);
         String console = console(this.temporary);
         Boot boot = new Boot()//
                 .sources(ConsoleMain.class)//

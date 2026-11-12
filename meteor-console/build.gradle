@@ -9,57 +9,74 @@ buildscript {
 }
 
 plugins {
-    id 'application'
+    id 'java'
 }
 
 apply plugin: 'net.hasor.boot'
 
 description = 'Meteor registry management console using the Registry administration API.'
 
-def npmCommand = System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows') ? 'npm.cmd' : 'npm'
-
 configurations {
-    bootLoader
+    bootLoader {
+        canBeConsumed = false
+    }
 }
 
 dependencies {
-    implementation project(':meteor-registry')
-    implementation project(':meteor-registry-jdbc')
-    implementation project(':meteor-registry-nacos')
-    implementation project(':meteor-registry-zookeeper')
-
-    // 源码运行使用普通项目产物，为治理规则提供脚本引擎。
-    runtimeOnly "ognl:ognl:${property('lib.ognl')}"
-
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${property('lib.jackson')}"
     implementation "net.hasor:hasor-boot-web:${property('lib.hasor')}"
     implementation 'io.jsonwebtoken:jjwt-api:0.13.0'
-    runtimeOnly "net.hasor:hasor-boot-web-tomcat:${property('lib.hasor')}"
+    runtimeOnly "ognl:ognl:${property('lib.ognl')}"
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.13.0'
+    runtimeOnly "net.hasor:hasor-boot-web-tomcat:${property('lib.hasor')}"
+    bootLoader "net.hasor:hasor-boot-loader:${property('lib.hasor')}"
+
+    // database
     runtimeOnly 'com.h2database:h2:2.3.232'
     runtimeOnly 'org.postgresql:postgresql:42.7.4'
     runtimeOnly 'com.mysql:mysql-connector-j:8.4.0'
     runtimeOnly 'com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre8'
     runtimeOnly 'com.oracle.database.jdbc:ojdbc8:21.1.0.0'
-    bootLoader "net.hasor:hasor-boot-loader:${property('lib.hasor')}"
 
-    // for test
+    // registry & protocol
+    implementation project(':meteor-registry')
+    implementation project(':meteor-registry-jdbc')
+    implementation project(':meteor-registry-nacos')
+    implementation project(':meteor-registry-zookeeper')
+    implementation project(':meteor-protocol-hessian')
+    implementation project(':meteor-protocol-grpc')
+    implementation project(':meteor-protocol-hprose')
+    implementation project(':meteor-protocol-dubbo')
+    implementation project(':meteor-protocol-thrift')
+    implementation project(':meteor-protocol-oncrpc')
+    implementation project(':meteor-protocol-jsonrpc')
+    implementation project(':meteor-protocol-xmlrpc')
+    implementation project(':meteor-protocol-soap')
+    implementation project(':meteor-protocol-connect')
+    implementation project(':meteor-protocol-triple')
+
+    // 测试
     testImplementation project(':meteor-hasor')
     testImplementation 'com.h2database:h2:2.3.232'
-    testImplementation project(':meteor-protocol-hprose')
-    testImplementation project(':meteor-protocol-dubbo')
-    testImplementation project(':meteor-protocol-thrift')
-    testImplementation project(':meteor-protocol-oncrpc')
-    testImplementation project(':meteor-protocol-jsonrpc')
-    testImplementation project(':meteor-protocol-xmlrpc')
-    testImplementation project(':meteor-protocol-hessian')
-}
-
-application {
-    mainClass = 'net.hasor.meteor.console.ConsoleMain'
+    testImplementation 'org.apache.commons:commons-dbcp2:2.12.0'
+    testImplementation 'com.github.briandilley.jsonrpc4j:jsonrpc4j:1.7'
+    testImplementation 'org.apache.xmlrpc:xmlrpc-client:3.1.3'
+    testImplementation 'org.hprose:hprose-java:2.0.38'
+    testImplementation 'com.caucho:hessian:4.0.66'
+    testImplementation 'org.apache.thrift:libthrift:0.25.0'
+    testImplementation 'org.acplt.remotetea:remotetea-oncrpc:1.1.6'
+    testImplementation 'com.sun.xml.ws:jaxws-rt:2.3.7'
+    testImplementation 'org.apache.dubbo:dubbo:3.3.6'
+    testImplementation 'io.grpc:grpc-netty-shaded:1.84.1'
+    testImplementation 'io.grpc:grpc-protobuf:1.84.1'
+    testImplementation 'io.grpc:grpc-stub:1.84.1'
+    testImplementation 'com.google.protobuf:protobuf-java-util:4.33.0'
+    testImplementation 'com.connectrpc:connect-kotlin-okhttp:0.5.1'
+    testImplementation 'com.connectrpc:connect-kotlin-google-java-ext:0.5.1'
 }
 
 tasks.named('bootJar') {
-    mainClass.set(application.mainClass)
+    mainClass.set('net.hasor.meteor.console.ConsoleMain')
     loaderClasspath.from(configurations.bootLoader)
     archiveClassifier.set('')
 }
@@ -69,96 +86,32 @@ tasks.named('jar') {
     destinationDirectory.set(layout.buildDirectory.dir('libs/plain'))
 }
 
-// Frontend tooling writes downloads, diagnostics and temporary files into this module.
-tasks.withType(Exec).configureEach {
-    def cacheDirectory = layout.buildDirectory.dir('cache/npm').get().asFile
-    def temporaryDirectory = layout.buildDirectory.dir('tmp/node').get().asFile
-    environment 'npm_config_cache', cacheDirectory.absolutePath
-    environment 'PLAYWRIGHT_BROWSERS_PATH', layout.buildDirectory.dir('cache/playwright').get().asFile.absolutePath
-    environment 'TMPDIR', temporaryDirectory.absolutePath
-    environment 'TMP', temporaryDirectory.absolutePath
-    environment 'TEMP', temporaryDirectory.absolutePath
-    doFirst {
-        cacheDirectory.mkdirs()
-        temporaryDirectory.mkdirs()
-    }
+// Hprose 在 JDK 17 的 DTO 反序列化需要访问 java.io。
+tasks.named('test') {
+    jvmArgs '--add-opens=java.base/java.io=ALL-UNNAMED'
 }
 
-tasks.register('webInstall', Exec) {
-    workingDir 'src/web'
-    commandLine npmCommand, 'ci', '--no-audit', '--no-fund'
-    inputs.files('src/web/package.json', 'src/web/package-lock.json')
-    outputs.file('src/web/node_modules/.package-lock.json')
-}
-tasks.register('webBuild', Exec) {
-    dependsOn 'webInstall'
-    workingDir 'src/web'
-    commandLine npmCommand, 'run', 'build'
-    inputs.dir('src/web/src')
-    inputs.files('src/web/index.html', 'src/web/vite.config.js', 'src/web/package.json', 'src/web/package-lock.json')
-    outputs.dir('src/main/resources/META-INF/resources')
-}
-// 普通 Java 构建只复制已有资源；显式构建前端时，先生成资源再复制。
-tasks.named('processResources') {
-    mustRunAfter 'webBuild'
-}
-
-// 浏览器测试启动真实应用、内存注册中心及两个控制台，不进入发布产物。
-tasks.register('prepareBrowserFixture') {
+tasks.register('runBrowserFixture', JavaExec) {
+    group = 'verification'
+    description = 'Start the console backend for browser tests.'
     dependsOn 'testClasses'
-    def description = layout.buildDirectory.file('browser-fixture.json')
-    outputs.file(description)
-    inputs.files(sourceSets.test.runtimeClasspath)
-    doLast {
-        def launcher = javaToolchains.launcherFor(java.toolchain).get()
-        def workDirectory = layout.buildDirectory.dir('test-work/browser-fixture').get().asFile
-        def temporaryDirectory = new File(workDirectory, 'tmp')
-        def userDirectory = new File(workDirectory, 'home')
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'net.hasor.meteor.test.scenario.ConsoleBrowserFixture'
+    javaLauncher = javaToolchains.launcherFor(java.toolchain)
+    jvmArgs '-XX:ActiveProcessorCount=2', '--add-opens=java.base/java.io=ALL-UNNAMED'
+    def temporaryDirectory = layout.buildDirectory.dir('test-work/browser-fixture/tmp').get().asFile
+    def userDirectory = layout.buildDirectory.dir('test-work/browser-fixture/home').get().asFile
+    systemProperty 'java.io.tmpdir', temporaryDirectory.absolutePath
+    systemProperty 'user.home', userDirectory.absolutePath
+    doFirst {
         temporaryDirectory.mkdirs()
         userDirectory.mkdirs()
-        description.get().asFile.text = groovy.json.JsonOutput.toJson([
-                java              : launcher.executablePath.asFile.absolutePath,
-                classpath         : sourceSets.test.runtimeClasspath.asPath,
-                temporaryDirectory: temporaryDirectory.absolutePath,
-                userDirectory     : userDirectory.absolutePath
-        ])
     }
 }
 
-tasks.register('webTest', Exec) {
-    dependsOn 'webBuild', 'prepareBrowserFixture'
-    workingDir 'src/web'
-    commandLine npmCommand, 'run', 'test:e2e'
-}
-
-tasks.named('run') { workingDir project.projectDir }
-
-// 四个调试角色使用标准 test 类路径，分别运行；生命周期由各自的 Hasor Boot 管理。
-[Provider: 'ProviderMain', Consumer: 'ConsumerMain', Console: 'ConsoleLauncher', Registry: 'RegistryMain'].each { role, entry ->
-    tasks.register("run${role}", JavaExec) {
-        description = "Run the ${role.toLowerCase(Locale.ROOT)} example."
-        group = 'application'
-        dependsOn 'testClasses'
-        classpath = sourceSets.test.runtimeClasspath
-        mainClass = "net.hasor.meteor.example.${entry}"
-        workingDir projectDir
-        def directory = layout.buildDirectory.dir("examples/${role.toLowerCase(Locale.ROOT)}").get().asFile
-        systemProperty 'java.io.tmpdir', new File(directory, 'tmp').absolutePath
-        systemProperty 'user.home', new File(directory, 'home').absolutePath
-        jvmArgs '-XX:ActiveProcessorCount=2'
-        if (role == 'Provider' || role == 'Consumer') {
-            // Hprose 2.x 的对象构造器在 JDK 17 上需要访问 java.io。
-            jvmArgs '--add-opens=java.base/java.io=ALL-UNNAMED'
-        }
-        ['config', 'console.example.registry.port'].each { key ->
-            def value = System.getProperty(key)
-            if (value != null) {
-                systemProperty key, value
-            }
-        }
-        doFirst {
-            new File(directory, 'tmp').mkdirs()
-            new File(directory, 'home').mkdirs()
-        }
+tasks.named('processResources') {
+    inputs.property('exampleVersion', project.version.toString())
+    filesMatching('META-INF/invocation-examples/version.properties') {
+        expand(version: project.version.toString())
     }
 }

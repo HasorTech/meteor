@@ -1,4 +1,5 @@
 <script setup>
+import BreadcrumbTrail from '../components/BreadcrumbTrail.vue';
 import { computed, inject, reactive, ref } from 'vue';
 import { useFeedback } from '../useFeedback';
 import { trackDraft } from '../useNavigationGuard';
@@ -7,12 +8,23 @@ const props = defineProps({ profile: Object });
 const emit = defineEmits(['saved']);
 const api = inject('api');
 const navigate = inject('navigate');
+const settings = inject('consoleSettings');
+const types = computed(() => settings.value?.features.registryTypes || []);
+const databases = computed(() => settings.value?.features.jdbcDatabases || []);
+function typeAvailable(type) {
+  return (
+    types.value.some(({ key }) => key === type) &&
+    (type !== 'jdbc' || databases.value.some(({ available }) => available))
+  );
+}
 const initial = {
   id: props.profile?.id,
   name: props.profile?.name || '',
-  type: props.profile?.type || 'nacos',
+  type:
+    props.profile?.type ||
+    (typeAvailable('nacos') ? 'nacos' : types.value.find(({ key }) => typeAvailable(key))?.key || ''),
   address: props.profile?.address || '',
-  database: props.profile?.database || 'postgresql',
+  database: props.profile?.database || databases.value.find(({ available }) => available)?.key || '',
   username: props.profile?.username || '',
   password: null,
   managementToken: null,
@@ -28,19 +40,19 @@ const dirty = computed(() => !committed.value && JSON.stringify(form) !== JSON.s
 trackDraft(() => dirty.value);
 const signature = computed(() => JSON.stringify(form));
 const tested = computed(() => verified.value === signature.value);
-const types = [
-  ['remote', 'Remote'],
-  ['nacos', 'Nacos'],
-  ['jdbc', 'JDBC'],
-  ['zookeeper', 'ZooKeeper']
-];
 const placeholders = {
-  remote: 'rsf://registry.example.com:19193/default',
+  remote: 'rsf://registry.example.com:19193',
   nacos: 'nacos.example.com:8848',
   zookeeper: 'zk.example.com:2181',
   jdbc: 'jdbc:postgresql://db.example.com:5432/meteor'
 };
-const typeName = computed(() => types.find(([value]) => value === form.type)?.[1]);
+const typeName = computed(() => types.value.find(({ key }) => key === form.type)?.label || form.type);
+const unavailableReason = computed(() => {
+  if (!typeAvailable(form.type)) return '当前控制台未安装此注册中心类型所需的组件。';
+  if (form.type !== 'jdbc') return '';
+  const database = databases.value.find(({ key }) => key === form.database);
+  return database?.available ? '' : database?.reason || '当前控制台不支持此数据库。';
+});
 function changeType(type) {
   if (form.type === type) return;
   form.type = type;
@@ -78,7 +90,7 @@ function save() {
 }
 </script>
 <template>
-  <div class="breadcrumbs">
+  <BreadcrumbTrail>
     <button
       class="text-button"
       @click="navigate({ view: 'clusters' })"
@@ -89,19 +101,20 @@ function save() {
     <span>{{ profile ? '编辑连接' : '连接注册中心' }}</span>
     <span>/</span>
     <strong>{{ typeName }}</strong>
-  </div>
+  </BreadcrumbTrail>
   <nav
-    class="tabs connection-types"
+    class="tabs connection-types page-actionbar"
     aria-label="注册中心类型"
   >
     <button
-      v-for="[value, label] in types"
-      :key="value"
+      v-for="{ key, label } in types"
+      :key="key"
       type="button"
-      :class="{ active: form.type === value }"
-      :aria-current="form.type === value ? 'page' : undefined"
-      :disabled="busy"
-      @click="changeType(value)"
+      :class="{ active: form.type === key }"
+      :aria-current="form.type === key ? 'page' : undefined"
+      :disabled="busy || !typeAvailable(key)"
+      :title="typeAvailable(key) ? undefined : '当前控制台未安装此注册中心类型所需的组件'"
+      @click="changeType(key)"
     >
       {{ label }}
     </button>
@@ -139,11 +152,15 @@ function save() {
           v-model="form.database"
           :disabled="busy"
         >
-          <option value="postgresql">PostgreSQL</option>
-          <option value="mysql">MySQL</option>
-          <option value="h2">H2</option>
-          <option value="oracle">Oracle</option>
-          <option value="sqlserver">SQL Server</option>
+          <option
+            v-for="database in databases"
+            :key="database.key"
+            :value="database.key"
+            :disabled="!database.available"
+            :title="database.reason || undefined"
+          >
+            {{ database.label }}{{ database.available ? '' : '（不可用）' }}
+          </option>
         </select>
       </label>
       <label class="connection-field">
@@ -233,7 +250,7 @@ function save() {
       </label>
       <div class="connection-feedback">
         <Feedback
-          :error="error"
+          :error="error || unavailableReason"
           :success="tested ? success : ''"
         />
       </div>
@@ -241,14 +258,14 @@ function save() {
         <div class="actions">
           <button
             type="button"
-            :disabled="busy || !form.name.trim() || !form.address.trim()"
+            :disabled="busy || !!unavailableReason || !form.name.trim() || !form.address.trim()"
             @click="testConnection"
           >
             {{ busy ? '处理中…' : '测试连接' }}
           </button>
           <button
             class="primary"
-            :disabled="busy || !tested"
+            :disabled="busy || !!unavailableReason || !tested"
           >
             保存并进入
           </button>

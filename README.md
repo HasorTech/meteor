@@ -41,9 +41,12 @@ public class EchoServer {
     }
 
     public static void main(String[] args) throws Exception {
-        MetConfiguration configuration = new MetConfiguration().setUnitName("local");
-        configuration.connector("http").bind("127.0.0.1", 8080)
-                .protocol("jsonrpc").contextPath("/jsonrpc");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setUnitName("local");
+        configuration.connector("http") //
+                .bind("127.0.0.1", 8080) //
+                .protocol("jsonrpc") //
+                .contextPath("/jsonrpc");
 
         try (MetContext context = configuration.buildContext()) {
             context.start();

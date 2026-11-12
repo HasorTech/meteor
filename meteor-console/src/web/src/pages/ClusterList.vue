@@ -22,7 +22,7 @@ function remove() {
 }
 </script>
 <template>
-  <div class="tabbar">
+  <div class="tabbar page-actionbar">
     <h1>集群连接</h1>
     <div class="toolbar">
       <input

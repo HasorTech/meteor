@@ -15,6 +15,7 @@ import net.hasor.meteor.console.global.http.ConsoleRequest;
 import net.hasor.meteor.console.model.fo.ManagementTarget;
 import net.hasor.meteor.console.service.GovernanceService;
 import net.hasor.meteor.domain.MetServiceType;
+import net.hasor.meteor.registry.admin.MetDirectoryQuery;
 import net.hasor.web.Invoker;
 import net.hasor.web.annotation.Get;
 import net.hasor.web.annotation.MappingTo;
@@ -36,8 +37,19 @@ public class ServiceController {
         result.put("enabled", detail.enabled());
         if (target.isDirect() || StringUtils.isNotBlank(target.getInstanceId())) {
             result.put("description", detail.description());
+            result.put("endpoints", detail.endpoints());
         }
         return result;
+    }
+
+    @Get
+    @MappingTo("/service/methods")
+    public Object methods(Invoker invoker) {
+        ConsoleRequest request = ConsoleRequest.from(invoker);
+        MetDirectoryQuery query = new MetDirectoryQuery();
+        query.setCursor(request.query("cursor"));
+        query.setLimit(50);
+        return this.governance.methods(request.target(), request.query("methodName"), query);
     }
 
     @Get

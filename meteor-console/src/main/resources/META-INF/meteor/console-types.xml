@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<console-types>
+    <!-- 通用编辑提示；协议节点中的同名类型可覆盖这些默认值。 -->
+    <defaults>
+        <type name="java.lang.String" type="String" component="textarea" default=""/>
+        <type name="char" type="char" component="input" default="a"/>
+        <type name="java.lang.Character" type="char" component="input" default="a"/>
+        <type name="boolean" type="boolean" component="input" default="false"/>
+        <type name="java.lang.Boolean" type="boolean" component="input" default="false"/>
+        <type name="byte" type="byte" component="input" default="0"/>
+        <type name="java.lang.Byte" type="byte" component="input" default="0"/>
+        <type name="short" type="short" component="input" default="0"/>
+        <type name="java.lang.Short" type="short" component="input" default="0"/>
+        <type name="int" type="int" component="input" default="0"/>
+        <type name="java.lang.Integer" type="int" component="input" default="0"/>
+        <type name="long" type="long" component="input" default="0"/>
+        <type name="java.lang.Long" type="long" component="input" default="0"/>
+        <type name="float" type="float" component="input" default="0"/>
+        <type name="java.lang.Float" type="float" component="input" default="0"/>
+        <type name="double" type="double" component="input" default="0"/>
+        <type name="java.lang.Double" type="double" component="input" default="0"/>
+        <type name="java.math.BigDecimal" type="decimal" component="input" default="0"/>
+        <type name="java.math.BigInteger" type="integer" component="input" default="0"/>
+        <type name="java.time.LocalDate" type="Date" component="input" default="1970-01-01"/>
+        <type name="java.time.LocalTime" type="Time" component="input" default="00:00:00"/>
+        <type name="java.time.LocalDateTime" type="DateTime" component="input" default="1970-01-01T00:00:00"/>
+        <type name="java.time.Instant" type="DateTime" component="input" default="1970-01-01T00:00:00Z"/>
+        <type name="java.util.Date" type="DateTime" component="input" default="1970-01-01T00:00:00.000Z"/>
+        <type name="@object" type="JSON" component="json"/>
+        <type name="@array" type="JSON" component="json"/>
+        <type name="@collection" type="JSON" component="json"/>
+        <type name="@map" type="JSON" component="json"/>
+    </defaults>
+</console-types>

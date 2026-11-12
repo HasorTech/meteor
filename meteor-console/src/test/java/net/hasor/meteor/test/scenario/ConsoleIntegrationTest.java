@@ -250,12 +250,12 @@ public class ConsoleIntegrationTest {
     }
 
     @Test
-    public void clusterServiceDetailDoesNotChooseAnInstanceInterface() throws Exception {
-        // 同一服务的两个实例声明不同 Java 接口，整体视图仍只返回目录摘要。
+    public void clusterServiceDetailReturnsOnlyServiceSummary() throws Exception {
+        // 同一服务的两个实例声明不同 Java 接口，整体视图只返回服务摘要。
         String url = "jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1";
         var registry = registry(url);
-        var east = application(registry, "orders", "east", true);
-        var west = application(registry, "orders", "west", true);
+        var east = application(this.directory.resolve("east"), registry, "orders", "east", true);
+        var west = application(this.directory.resolve("west"), registry, "orders", "west", true);
         Boot boot = new Boot()//
                 .sources(ConsoleMain.class)//
                 .hconfigFile(console(this.directory));
@@ -271,12 +271,16 @@ public class ConsoleIntegrationTest {
             String cluster = api.ok("clusters", "POST", profile("不同接口", url)).get("id").asText();
             String scope = "mode=registry&clusterId=" + cluster;
 
-            // 集群服务详情和列表不选择某个实例的完整描述或接口类型。
+            // 整体详情不携带实例描述、方法列表或接入点。
             var detail = api.get("service?" + scope + "&serviceId=" + encode(id));
             assertEquals(2, detail.at("/info/providerCount").asInt());
             assertFalse(detail.has("description"));
             assertFalse(detail.get("info").has("type"));
             assertFalse(detail.get("info").has("javaType"));
+            assertFalse(detail.has("descriptions"));
+            assertFalse(detail.has("endpoints"));
+
+            // 列表仍只返回目录摘要，不携带完整方法及类型图。
             var summary = api.get("services?" + scope).at("/items/0");
             assertFalse(summary.has("description"));
             assertFalse(summary.get("info").has("type"));
@@ -289,8 +293,8 @@ public class ConsoleIntegrationTest {
         // 相同服务 ID 的接口声明按实例隔离，不使用目录摘要推断 Java 类型。
         String url = "jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1";
         var registry = registry(url);
-        var east = application(registry, "orders", "east", true);
-        var west = application(registry, "orders", "west", true);
+        var east = application(this.directory.resolve("east"), registry, "orders", "east", true);
+        var west = application(this.directory.resolve("west"), registry, "orders", "west", true);
         Boot boot = new Boot()//
                 .sources(ConsoleMain.class)//
                 .hconfigFile(console(this.directory));
@@ -322,8 +326,10 @@ public class ConsoleIntegrationTest {
         // 直连 URL 中即使保留其它实例 ID，也只读取管理地址对应实例的声明。
         RegistryConfiguration firstRegistry = new RegistryConfiguration().setOnline(false).setManagementToken("test-token");
         RegistryConfiguration secondRegistry = new RegistryConfiguration().setOnline(false).setManagementToken("test-token");
-        var firstConfig = application(firstRegistry, "original", "east", true);
-        var secondConfig = application(secondRegistry, "replacement", "west", true);
+        Path originalData = this.directory.resolve("original");
+        var firstConfig = application(originalData, firstRegistry, "original", "east", true);
+        Path replacementData = this.directory.resolve("replacement");
+        var secondConfig = application(replacementData, secondRegistry, "replacement", "west", true);
         Boot boot = new Boot()//
                 .sources(ConsoleMain.class)//
                 .hconfigFile(console(this.directory));
@@ -388,9 +394,12 @@ public class ConsoleIntegrationTest {
         // 两个提供者中仅一个挂载 Hprose，用协议名选择提供者仍返回完整端点。
         String url = "jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1";
         var registry = registry(url);
-        var east = application(registry, "orders", "east", true);
-        east.connector("http").bind("127.0.0.1", 0).protocol("hprose").contextPath("/hprose");
-        var west = application(registry, "orders", "west", true);
+        var east = application(this.directory.resolve("east"), registry, "orders", "east", true);
+        east.connector("http") //
+                .bind("127.0.0.1", 0) //
+                .protocol("hprose") //
+                .contextPath("/hprose");
+        var west = application(this.directory.resolve("west"), registry, "orders", "west", true);
         Boot boot = new Boot()//
                 .sources(ConsoleMain.class)//
                 .hconfigFile(console(this.directory));
@@ -559,13 +568,13 @@ public class ConsoleIntegrationTest {
     }
 
     @Test
-    public void registryGovernanceAndUnitTargetsStayIsolatedAcrossClusters() throws Exception {
+    public void registryGovernanceUsesCurrentContextAcrossClusters() throws Exception {
         String url = "jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1";
         String otherUrl = "jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1";
         var registry = registry(url);
         registry(otherUrl);
-        var east = application(registry, "orders", "east", true);
-        var west = application(registry, "orders", "west", true);
+        var east = application(this.directory.resolve("east"), registry, "orders", "east", true);
+        var west = application(this.directory.resolve("west"), registry, "orders", "west", true);
         Boot boot = new Boot()//
                 .sources(ConsoleMain.class)//
                 .hconfigFile(console(this.directory));
@@ -592,28 +601,28 @@ public class ConsoleIntegrationTest {
             assertEquals(2, api.get("service/members?" + service + "&role=providers").get("items").size());
             assertEquals(0, api.get("service/members?" + service + "&role=consumers").get("items").size());
 
-            // 全局、本服务、指定单元分别写入；不影响另一个单元或另一个集群。
+            // 全局和服务分别保存，服务配置不会被展开写入两个单元的实例覆盖。
             api.ok("rule?" + scope + "&scope=cluster&type=SERVICE_ROUTE", "PUT", Map.of("rule", ROUTE));
-            api.ok("rule?" + rule + "&targetUnit=east", "PUT", Map.of("rule", ROUTE));
-            assertEquals(ROUTE, admin.getServiceAdmin(id, a.getInstanceID()).fetchRule(MetRuleType.SERVICE_ROUTE));
+            var updated = api.ok("rule?" + rule, "PUT", Map.of("rule", ROUTE));
+            assertTrue(updated.get("success").asBoolean());
+            assertFalse(updated.has("affected"));
+            assertEquals(ROUTE, admin.getServiceAdmin(id).fetchRule(MetRuleType.SERVICE_ROUTE));
+            assertNull(admin.getServiceAdmin(id, a.getInstanceID()).fetchRule(MetRuleType.SERVICE_ROUTE));
             assertNull(admin.getServiceAdmin(id, b.getInstanceID()).fetchRule(MetRuleType.SERVICE_ROUTE));
-            assertNull(admin.getServiceAdmin(id).fetchRule(MetRuleType.SERVICE_ROUTE));
-            var unknownUnit = api.send("rule?" + rule + "&targetUnit=missing", "PUT", Map.of("rule", ROUTE));
-            assertEquals(400, unknownUnit.statusCode());
-            api.ok("rule?" + rule, "PUT", Map.of("rule", ROUTE));
             api.ok("rule/enabled?" + rule, "PUT", Map.of("enabled", false));
             assertFalse(api.get("rule?" + rule).get("enabled").asBoolean());
             assertEquals(ROUTE, api.get("rule?" + rule).get("rule").asText());
             assertEquals(400, api.send("rule?" + rule, "PUT", Map.of("rule", "<route/>")).statusCode());
+            String otherRule = "rule?mode=registry&clusterId=" + other;
+            otherRule += "&scope=service&serviceId=" + encode(id) + "&type=SERVICE_ROUTE";
+            assertTrue(api.get(otherRule).path("rule").isNull());
 
-            // 实例规则的单元选择只遍历当前应用，单元定向不覆盖其他单元。
+            // 实例规则只写入当前实例，不会扩大到同一应用下的其他实例。
             String instanceRule = scope + "&scope=instance&instanceId=" + encode(a.getInstanceID());
             instanceRule += "&type=METHOD_ROUTE";
-            api.ok("rule?" + instanceRule + "&targetUnit=LOCAL", "PUT", Map.of("rule", ROUTE));
+            api.ok("rule?" + instanceRule, "PUT", Map.of("rule", ROUTE));
             assertEquals(ROUTE, admin.getInstanceAdmin(a.getInstanceID()).fetchRule(MetRuleType.METHOD_ROUTE));
             assertNull(admin.getInstanceAdmin(b.getInstanceID()).fetchRule(MetRuleType.METHOD_ROUTE));
-            api.ok("rule?" + instanceRule + "&targetUnit=ALL", "PUT", Map.of("rule", ROUTE));
-            assertEquals(ROUTE, admin.getInstanceAdmin(b.getInstanceID()).fetchRule(MetRuleType.METHOD_ROUTE));
 
             // 元信息按键合并，查询保留 JSON 类型；实例级阻断不使管理服务失联。
             api.ok("metadata?" + service, "PUT", Map.of("values", Map.of("team", "orders", "weight", 10)));
@@ -638,7 +647,7 @@ public class ConsoleIntegrationTest {
     @Test
     public void instanceIdentityAndOnlineStatusFollowRegistrationLifecycle() throws Exception {
         String url = "jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1";
-        var config = application(registry(url), "orders", "east", false);
+        var config = application(this.directory.resolve("target"), registry(url), "orders", "east", false);
         Boot boot = new Boot()//
                 .sources(ConsoleMain.class)//
                 .hconfigFile(console(this.directory));
@@ -682,7 +691,7 @@ public class ConsoleIntegrationTest {
     public void directManagementUsesRpcAndReportsUnsupportedOperations() throws Exception {
         RegistryConfiguration offline = new RegistryConfiguration().setOnline(false);
         offline.setManagementToken("test-token");
-        var config = application(offline, "direct", "default", true);
+        var config = application(this.directory.resolve("target"), offline, "direct", "default", true);
         Boot boot = new Boot()//
                 .sources(ConsoleMain.class)//
                 .hconfigFile(console(this.directory));

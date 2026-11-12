@@ -7,6 +7,7 @@
  */
 package net.hasor.meteor.console.component.provider;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import net.hasor.cobble.StringUtils;
 import net.hasor.core.AppContext;
@@ -48,5 +49,9 @@ public final class ProviderFactories {
             throw new IllegalArgumentException("不支持的注册中心类型");
         }
         return factory.open(profile, credentials);
+    }
+
+    public List<String> names() {
+        return this.factories.keySet().stream().sorted().toList();
     }
 }

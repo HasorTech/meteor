@@ -1,0 +1,11 @@
+<console-types>
+    <protocols>
+        <protocol name="custom">
+            <type name="long" type="Long" component="input" default="1"/>
+        </protocol>
+    </protocols>
+    <defaults>
+        <type name="long" type="long" component="input" default="0"/>
+        <type name="java.lang.String" type="String" component="textarea" default=""/>
+    </defaults>
+</console-types>

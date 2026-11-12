@@ -1,13 +1,12 @@
 <script setup>
-import { computed, inject, onMounted, ref } from 'vue';
+import { inject, ref } from 'vue';
 import WorkspaceTabs from '../components/WorkspaceTabs.vue';
-import ProtocolBadges from '../components/ProtocolBadges.vue';
+import ProtocolSummary from '../components/ProtocolSummary.vue';
 import StatusBadge from '../components/StatusBadge.vue';
 import Feedback from '../components/Feedback.vue';
 import { useDirectory } from '../useDirectory';
 import DirectoryPager from '../components/DirectoryPager.vue';
 const props = defineProps({ scope: Object });
-const api = inject('api');
 const navigate = inject('navigate');
 const search = ref('');
 const directory = useDirectory(
@@ -36,7 +35,7 @@ function open(service) {
   </WorkspaceTabs>
   <Feedback :error="error" />
   <div class="table-scroll">
-    <table>
+    <table class="service-directory-table">
       <thead>
         <tr>
           <th>服务 ID</th>
@@ -59,7 +58,9 @@ function open(service) {
               <code>{{ service.info.serviceId }}</code>
             </button>
           </td>
-          <td><ProtocolBadges :protocols="service.info.protocols" /></td>
+          <td>
+            <ProtocolSummary :protocols="service.info.protocols" />
+          </td>
           <td>{{ service.info.providerCount }}</td>
           <td>{{ service.info.consumerCount }}</td>
           <td><StatusBadge :enabled="service.enabled" /></td>

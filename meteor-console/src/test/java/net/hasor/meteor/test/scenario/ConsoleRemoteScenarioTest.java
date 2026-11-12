@@ -1,9 +1,13 @@
 package net.hasor.meteor.test.scenario;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import net.hasor.cobble.ExceptionUtils;
@@ -55,18 +59,21 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** 命令通过真实 RSF 管理远端 Provider，验证作用域、凭据和生命周期。 */
 public class ConsoleRemoteScenarioTest {
-    private static final RemoteProviderFactory REMOTE = new RemoteProviderFactory();
     @TempDir
-    public               Path                  temporary;
+    public Path temporary;
 
     @MetService(group = "console-tests", version = "1")
     public interface Echo {
         String echo(String value);
     }
 
-    private static MetConfiguration serverConfiguration() {
-        MetConfiguration configuration = new MetConfiguration().setApplicationName("console-test");
-        configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+    private MetConfiguration serverConfiguration() {
+        MetConfiguration configuration = new MetConfiguration() //
+                .setApplicationName("console-test") //
+                .setDataHome(this.temporary.resolve("server-" + UUID.randomUUID()));
+        configuration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
         return configuration;
     }
 
@@ -86,14 +93,24 @@ public class ConsoleRemoteScenarioTest {
         return target;
     }
 
-    private Hasor commandContainer() {
+    private Hasor commandContainer() throws IOException {
+        MetConfiguration configuration = new MetConfiguration() //
+                .setApplicationName("console-test-client") //
+                .setDataHome(this.temporary.resolve("client"));
+        configuration.connector("tcp") //
+                .protocol("rsf");
+        MetContext context = configuration.buildContext();
+        JsonUtils.configureRpc(context);
+        context.publisher().rsfService(RpcManagement.class).asShadow().asDistributedCall().register();
         return Hasor.create().registerShutdownHook(false).addModules(binder -> {
+                    binder.bindType(MetContext.class).toProvider(() -> context)//
+                            .initMethod("start").destroyMethod("close").asEagerSingleton();
                     binder.bindType(MeteorConfig.class).asEagerSingleton();
                     binder.bindType(ClusterDao.class).asEagerSingleton();
                     binder.bindType(ConsoleCookies.class).asEagerSingleton();
                     binder.bindType(SessionService.class).asEagerSingleton();
                     binder.bindType(ProviderFactories.class);
-                    binder.bindType(RemoteProviderFactory.class).toInstance(REMOTE);
+                    binder.bindType(RemoteProviderFactory.class);
                     binder.bindType(CommandDispatcher.class);
                 }).addSettings(Settings.DefaultNameSpace, "hasor.boot.web.connectors.http.enabled", false) //
                 .addSettings(Settings.DefaultNameSpace, "data.directory", this.temporary.toString()) //
@@ -214,7 +231,8 @@ public class ConsoleRemoteScenarioTest {
         // 业务实例照常使用核心注册中心，命令通过远端 Provider 组合治理视图。
         MemoryRegistryConfiguration storage = new MemoryRegistryConfiguration();
         storage.setManagementToken("local-admin-token");
-        MetConfiguration businessConfiguration = serverConfiguration().addExtension(storage);
+        MetConfiguration businessConfiguration = serverConfiguration() //
+                .addExtension(storage);
         RegistryAdmin local = storage.buildAdmin();
         Hasor commandBuilder = this.commandContainer();
         try (ProviderConnection connection = ProviderConnection.registry(local); //
@@ -256,12 +274,18 @@ public class ConsoleRemoteScenarioTest {
     }
 
     @Test
-    public void batchGovernanceThroughRemoteProviderKeepsOtherUnitsUnchanged() throws Exception {
+    public void serviceGovernanceThroughRemoteProviderPreservesInstanceOverrides() throws Exception {
         MemoryRegistryConfiguration storage = new MemoryRegistryConfiguration();
         storage.setManagementToken("local-admin-token");
-        MetConfiguration east = serverConfiguration().setUnitName("east").addExtension(storage);
-        MetConfiguration eastReplica = serverConfiguration().setUnitName("east").addExtension(storage);
-        MetConfiguration west = serverConfiguration().setUnitName("west").addExtension(storage);
+        MetConfiguration east = serverConfiguration() //
+                .setUnitName("east") //
+                .addExtension(storage);
+        MetConfiguration eastReplica = serverConfiguration() //
+                .setUnitName("east") //
+                .addExtension(storage);
+        MetConfiguration west = serverConfiguration() //
+                .setUnitName("west") //
+                .addExtension(storage);
         RegistryAdmin local = storage.buildAdmin();
         Hasor commandBuilder = this.commandContainer();
         try (ProviderConnection connection = ProviderConnection.registry(local); //
@@ -286,20 +310,26 @@ public class ConsoleRemoteScenarioTest {
             server.start();
             ClusterProfile client = profile(server, "secret");
             commandContainer.getInstance(ClusterDao.class).save(client);
-            // 命令枚举 east 单元的目标，通过远端 Provider 完成校验和逐实例写入。
-            ManagementTarget target = target("service");
-            target.setServiceId(serviceId);
-            target.setTargetUnit("east");
-            String rule = "<controlSet/>";
-            var request = new UpdateRuleRequest(target, MetRuleType.FLOW_CONTROL, rule);
-            var result = dispatcher.execute(client.getId(), request);
-            assertEquals(2, result.affected());
+            // 各单元的实例覆盖已有独立配置，服务治理不应覆盖这些配置。
             var firstService = local.getServiceAdmin(serviceId, first.getInstanceID());
             var secondService = local.getServiceAdmin(serviceId, second.getInstanceID());
             var otherService = local.getServiceAdmin(serviceId, otherUnit.getInstanceID());
-            assertEquals(rule, firstService.fetchRule(MetRuleType.FLOW_CONTROL));
-            assertEquals(rule, secondService.fetchRule(MetRuleType.FLOW_CONTROL));
-            assertNull(otherService.fetchRule(MetRuleType.FLOW_CONTROL));
+            String override = "<controlSet><!-- instance override --></controlSet>";
+            firstService.updateRule(MetRuleType.FLOW_CONTROL, override);
+            secondService.updateRule(MetRuleType.FLOW_CONTROL, override);
+            otherService.updateRule(MetRuleType.FLOW_CONTROL, override);
+
+            // 通过远端 Console 写入服务本身，只返回当前操作的成功标记。
+            ManagementTarget target = target("service");
+            target.setServiceId(serviceId);
+            String rule = "<controlSet/>";
+            var request = new UpdateRuleRequest(target, MetRuleType.FLOW_CONTROL, rule);
+            var result = dispatcher.execute(client.getId(), request);
+            assertTrue(result.success());
+            assertEquals(rule, local.getServiceAdmin(serviceId).fetchRule(MetRuleType.FLOW_CONTROL));
+            assertEquals(override, firstService.fetchRule(MetRuleType.FLOW_CONTROL));
+            assertEquals(override, secondService.fetchRule(MetRuleType.FLOW_CONTROL));
+            assertEquals(override, otherService.fetchRule(MetRuleType.FLOW_CONTROL));
         }
     }
 
@@ -400,8 +430,10 @@ public class ConsoleRemoteScenarioTest {
     public void rawRpcCannotBypassAuthenticationWithNoCredential() throws Exception {
         MemoryRegistryConfiguration storage = new MemoryRegistryConfiguration();
         storage.setManagementToken("local-admin-token");
-        MetConfiguration rawConfiguration = new MetConfiguration();
-        rawConfiguration.connector("tcp").protocol("rsf");
+        MetConfiguration rawConfiguration = new MetConfiguration() //
+                .setDataHome(this.temporary.resolve("raw"));
+        rawConfiguration.connector("tcp") //
+                .protocol("rsf");
         RegistryAdmin local = storage.buildAdmin();
         try (ProviderConnection connection = ProviderConnection.registry(local); //
              MetContext server = serverConfiguration().buildContext(); //
@@ -453,8 +485,10 @@ public class ConsoleRemoteScenarioTest {
         // RPC 契约不接受直连地址；持有有效凭据也必须提供合法注册中心作用域。
         MemoryRegistryConfiguration storage = new MemoryRegistryConfiguration();
         storage.setManagementToken("local-admin-token");
-        MetConfiguration rawConfiguration = new MetConfiguration();
-        rawConfiguration.connector("tcp").protocol("rsf");
+        MetConfiguration rawConfiguration = new MetConfiguration() //
+                .setDataHome(this.temporary.resolve("raw"));
+        rawConfiguration.connector("tcp") //
+                .protocol("rsf");
         RegistryAdmin local = storage.buildAdmin();
         try (ProviderConnection connection = ProviderConnection.registry(local); //
              MetContext server = serverConfiguration().buildContext(); //
@@ -501,6 +535,95 @@ public class ConsoleRemoteScenarioTest {
             dispatcher.invalidate(client.getId());
             assertNotNull(dispatcher.execute(client.getId(), new ClusterInfoRequest(target("cluster"))));
             assertTrue(local.getClusterAdmin().status().isReachable());
+        }
+    }
+
+    @Test
+    public void concurrentRemoteConnectionsKeepAddressesAndCredentialsSeparate() throws Exception {
+        // 两个目标使用不同存储和凭据，客户端只持有同一个容器出站上下文。
+        MemoryRegistryConfiguration firstStorage = new MemoryRegistryConfiguration();
+        MemoryRegistryConfiguration secondStorage = new MemoryRegistryConfiguration();
+        firstStorage.setManagementToken("first-local-token");
+        secondStorage.setManagementToken("second-local-token");
+        Hasor commandBuilder = this.commandContainer();
+        try (ProviderConnection firstLocal = ProviderConnection.registry(firstStorage.buildAdmin()); //
+             ProviderConnection secondLocal = ProviderConnection.registry(secondStorage.buildAdmin()); //
+             AppContext application = commandBuilder.build(); //
+             MetContext firstServer = serverConfiguration().buildContext(); //
+             MetContext secondServer = serverConfiguration().buildContext()) {
+            firstServer.publisher().rsfService(RpcManagement.class, new RpcManagementImpl(firstLocal))//
+                    .bindFilter("console-auth", new RpcManagementFilter(() -> "first-secret"))//
+                    .asShadow().asDistributedCall().register();
+            secondServer.publisher().rsfService(RpcManagement.class, new RpcManagementImpl(secondLocal))//
+                    .bindFilter("console-auth", new RpcManagementFilter(() -> "second-secret"))//
+                    .asShadow().asDistributedCall().register();
+            firstServer.start();
+            secondServer.start();
+            ProviderFactories providers = application.getInstance(ProviderFactories.class);
+            var executor = Executors.newFixedThreadPool(2);
+            CountDownLatch ready = new CountDownLatch(2);
+            CountDownLatch start = new CountDownLatch(1);
+            try (ProviderConnection first = providers.open(profile(firstServer, "first-secret"), () -> ""); //
+                 ProviderConnection second = providers.open(profile(secondServer, "second-secret"), () -> "")) {
+                // 同时发送交错请求，凭据或地址串用都会在真实 RPC 校验或存储核对时失败。
+                CompletableFuture<Void> firstCalls = CompletableFuture.runAsync(() -> {
+                    ready.countDown();
+                    assertTrue(assertDoesNotThrow(() -> start.await(5, TimeUnit.SECONDS)));
+                    for (int index = 0; index < 4; index++) {
+                        first.registry().getClusterAdmin().putMeta("owner", "first");
+                        assertEquals(Map.of("owner", "first"), first.registry().getClusterAdmin().fetchMeta());
+                    }
+                }, executor);
+                CompletableFuture<Void> secondCalls = CompletableFuture.runAsync(() -> {
+                    ready.countDown();
+                    assertTrue(assertDoesNotThrow(() -> start.await(5, TimeUnit.SECONDS)));
+                    for (int index = 0; index < 4; index++) {
+                        second.registry().getClusterAdmin().putMeta("owner", "second");
+                        assertEquals(Map.of("owner", "second"), second.registry().getClusterAdmin().fetchMeta());
+                    }
+                }, executor);
+                assertTrue(ready.await(5, TimeUnit.SECONDS));
+                start.countDown();
+                CompletableFuture.allOf(firstCalls, secondCalls).get(15, TimeUnit.SECONDS);
+                assertEquals(Map.of("owner", "first"), firstLocal.registry().getClusterAdmin().fetchMeta());
+                assertEquals(Map.of("owner", "second"), secondLocal.registry().getClusterAdmin().fetchMeta());
+            } finally {
+                start.countDown();
+                executor.shutdownNow();
+            }
+        }
+    }
+
+    @Test
+    public void closingOneRemoteConnectionKeepsSharedContextAndOtherConnectionOpen() throws Exception {
+        // 同一目标可同时打开多条独立连接，关闭其中一条不能释放容器借出的上下文。
+        MemoryRegistryConfiguration storage = new MemoryRegistryConfiguration();
+        storage.setManagementToken("local-admin-token");
+        Hasor commandBuilder = this.commandContainer();
+        try (ProviderConnection local = ProviderConnection.registry(storage.buildAdmin()); //
+             AppContext application = commandBuilder.build(); //
+             MetContext server = serverConfiguration().buildContext()) {
+            server.publisher().rsfService(RpcManagement.class, new RpcManagementImpl(local))//
+                    .bindFilter("console-auth", new RpcManagementFilter(() -> "secret"))//
+                    .asShadow().asDistributedCall().register();
+            server.start();
+            ProviderFactories providers = application.getInstance(ProviderFactories.class);
+            ClusterProfile profile = profile(server, "secret");
+            try (ProviderConnection first = providers.open(profile, () -> ""); //
+                 ProviderConnection second = providers.open(profile, () -> "")) {
+                first.close();
+                assertThrows(IllegalStateException.class, () -> first.registry().getClusterAdmin());
+                second.registry().getClusterAdmin().putMeta("owner", "second");
+                assertEquals(Map.of("owner", "second"), local.registry().getClusterAdmin().fetchMeta());
+
+                // 凭据错误只影响该连接，不能修改同地址上其它代理的固定凭据。
+                try (ProviderConnection invalid = providers.open(profile(server, "wrong-secret"), () -> "")) {
+                    Throwable failure = assertThrows(Exception.class, () -> invalid.registry().getClusterAdmin().info());
+                    MetException denied = assertInstanceOf(MetException.class, ExceptionUtils.getRootCause(failure));
+                    assertEquals(401, denied.getStatus());
+                }
+                assertTrue(second.registry().getClusterAdmin().status().isReachable());
+            }
         }
     }
 }

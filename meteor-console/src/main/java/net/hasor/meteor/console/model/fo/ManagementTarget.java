@@ -10,7 +10,7 @@ import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.registry.admin.MetDirectoryQuery;
 
-/** 管理查询或写入的目标范围，与 HTTP 传输无关。 */
+/** 管理查询或写入的上下文，与 HTTP 传输无关。 */
 public final class ManagementTarget {
     private boolean      direct;
     private String       clusterId;
@@ -19,8 +19,6 @@ public final class ManagementTarget {
     private String       scope;
     private String       filter;
     private String       applicationName;
-    private String       targetUnit;
-    private String       localUnit;
     private InterAddress target;
     private String       managementToken;
 
@@ -149,22 +147,6 @@ public final class ManagementTarget {
         this.applicationName = value;
     }
 
-    public String getTargetUnit() {
-        return this.targetUnit;
-    }
-
-    public void setTargetUnit(String value) {
-        this.targetUnit = value;
-    }
-
-    public String getLocalUnit() {
-        return this.localUnit;
-    }
-
-    public void setLocalUnit(String value) {
-        this.localUnit = value;
-    }
-
     public InterAddress getTarget() {
         return this.target;
     }
@@ -210,7 +192,6 @@ public final class ManagementTarget {
         copy.scope = this.scope;
         copy.filter = this.filter;
         copy.applicationName = this.applicationName;
-        copy.localUnit = this.localUnit;
         copy.target = this.target;
         copy.managementToken = this.managementToken;
         return copy;

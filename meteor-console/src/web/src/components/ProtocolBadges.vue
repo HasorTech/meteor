@@ -1,8 +1,11 @@
 <script setup>
-defineProps({ protocols: { default: () => [] } });
+defineProps({ protocols: { type: Array, default: () => [] } });
 </script>
 <template>
-  <span class="protocols">
+  <span
+    class="protocols"
+    @click.stop
+  >
     <span
       v-for="protocol in [...new Set(protocols)]"
       :key="protocol"

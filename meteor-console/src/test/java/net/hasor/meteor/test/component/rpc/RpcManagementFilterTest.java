@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor.test.component.rpc;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.hasor.cobble.ExceptionUtils;
@@ -19,12 +20,16 @@ import net.hasor.meteor.console.component.rpc.RpcTarget;
 import net.hasor.meteor.console.utils.JsonUtils;
 import net.hasor.meteor.domain.MetException;
 import net.hasor.meteor.registry.memory.MemoryRegistryConfiguration;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** 通过真实管理 RPC 验证本机凭据脱敏、错误状态和后续调用隔离。 */
 public class RpcManagementFilterTest {
+    @TempDir
+    public Path temporary;
+
     @ParameterizedTest(name = "RPC {0} 隐藏本机凭据并保留状态")
     @ValueSource(ints = { 400, 409 })
     public void localCredentialsAreRedactedWithoutChangingStatusOrConnection(int expectedStatus) throws Exception {
@@ -43,10 +48,17 @@ public class RpcManagementFilterTest {
         AtomicBoolean failOnce = new AtomicBoolean(true);
         MemoryRegistryConfiguration storage = new MemoryRegistryConfiguration();
         storage.setManagementToken("local-registry-token");
-        MetConfiguration serverConfiguration = new MetConfiguration().setApplicationName("console-redaction-server");
-        serverConfiguration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
-        MetConfiguration clientConfiguration = new MetConfiguration().setApplicationName("console-redaction-client");
-        clientConfiguration.connector("tcp").protocol("rsf");
+        MetConfiguration serverConfiguration = new MetConfiguration() //
+                .setApplicationName("console-redaction-server") //
+                .setDataHome(this.temporary.resolve("server"));
+        serverConfiguration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
+        MetConfiguration clientConfiguration = new MetConfiguration() //
+                .setApplicationName("console-redaction-client") //
+                .setDataHome(this.temporary.resolve("client"));
+        clientConfiguration.connector("tcp") //
+                .protocol("rsf");
         try (ProviderConnection connection = ProviderConnection.registry(storage.buildAdmin()); //
              MetContext server = serverConfiguration.buildContext(); //
              MetContext client = clientConfiguration.buildContext()) {

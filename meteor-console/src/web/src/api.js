@@ -26,8 +26,11 @@ export function createApi(onUnauthorized, directCredential = () => undefined) {
         result = await response.json();
       } catch (error) {
         if (error.name === 'AbortError') throw error;
+        if (response.status === 404) {
+          throw new Error('控制台接口不存在（404）。');
+        }
         // 开发代理在后端未启动时可能返回空白或 HTML 错误页。
-        throw new Error('无法连接控制台后端，请确认后端服务已启动且 API 地址正确。');
+        throw new Error('控制台服务不可用。');
       }
       if (!response.ok) {
         if (response.status === 401 && path !== 'auth/login') onUnauthorized?.();
@@ -39,12 +42,12 @@ export function createApi(onUnauthorized, directCredential = () => undefined) {
     } catch (error) {
       if (error.name === 'AbortError') {
         if (method === 'GET') {
-          throw new Error('连接控制台后端超时，请确认后端服务已启动且 API 地址正确。');
+          throw new Error('控制台服务不可用。');
         }
         throw new Error('请求超时。写入可能已完成，请刷新后确认。');
       }
       if (error instanceof TypeError) {
-        throw new Error('无法连接控制台后端，请检查服务和网络连接。');
+        throw new Error('控制台服务不可用。');
       }
       throw error;
     } finally {

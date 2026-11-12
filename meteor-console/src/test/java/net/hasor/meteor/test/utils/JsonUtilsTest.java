@@ -23,6 +23,23 @@ public class JsonUtilsTest {
     };
 
     @Test
+    public void debugTemporalValuesUseIsoTextIncludingNestedFields() throws Exception {
+        Map<String, Object> dates = Map.of("date", java.time.LocalDate.of(2026, 11, 10),
+                "time", java.time.LocalTime.of(9, 30),
+                "dateTime", java.time.LocalDateTime.of(2026, 11, 10, 9, 30),
+                "instant", java.time.Instant.parse("2026-11-10T01:30:00Z"));
+        String json = JsonUtils.writeValueAsString(dates);
+        var tree = JsonUtils.readTree(json);
+        assertEquals("2026-11-10", tree.path("date").asText());
+        assertEquals("09:30:00", tree.path("time").asText());
+        assertEquals("2026-11-10T09:30:00", tree.path("dateTime").asText());
+        for (var entry : dates.entrySet()) {
+            assertEquals(entry.getValue(), JsonUtils.readValue(
+                    JsonUtils.writeValueAsBytes(tree.get(entry.getKey())), entry.getValue().getClass()));
+        }
+    }
+
+    @Test
     public void readingJsonLeavesBorrowedReaderOpen() throws Exception {
         // Reader 属于调用方，解析完成后仍由当前作用域关闭。
         TrackingReader reader = new TrackingReader("{\"message\":\"完成\"}");

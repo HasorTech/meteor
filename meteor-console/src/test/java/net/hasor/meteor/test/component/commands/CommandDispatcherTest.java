@@ -14,7 +14,6 @@ import net.hasor.cobble.StringUtils;
 import net.hasor.cobble.setting.Settings;
 import net.hasor.core.AppContext;
 import net.hasor.core.Hasor;
-import net.hasor.meteor.console.component.commands.ChangeResult;
 import net.hasor.meteor.console.component.commands.CommandDispatcher;
 import net.hasor.meteor.console.component.commands.CommandRequest;
 import net.hasor.meteor.console.component.commands.CommandType;
@@ -59,11 +58,10 @@ public class CommandDispatcherTest {
             ManagementTarget target = clusterTarget();
             String rule = "<controlSet/>";
 
-            // 集群整体写入不展开实例批次，affected 为零；实际规则写入仍须完成。
+            // 命令直接写入当前集群，返回成功后能读到保存的规则。
             UpdateRuleRequest request = new UpdateRuleRequest(target, MetRuleType.FLOW_CONTROL, rule);
-            ChangeResult result = dispatcher.execute("commands", request);
+            SuccessResult result = dispatcher.execute("commands", request);
             assertTrue(result.success());
-            assertEquals(0, result.affected());
             assertEquals(rule, registry.getClusterAdmin().fetchRule(MetRuleType.FLOW_CONTROL));
         }
     }
@@ -93,7 +91,7 @@ public class CommandDispatcherTest {
 
     @Test
     public void mismatchedRequestTypeIsRejectedBeforeProviderOpens() throws Exception {
-        // 声称更新规则却返回成功模型的伪请求，不能进入真实后端。
+        // 声称更新规则却使用错误请求类型的命令，不能进入真实后端。
         MemoryRegistryConfiguration storage = storage();
         AtomicInteger opened = new AtomicInteger();
         ProviderFactory factory = new ObservedProviderFactory(storage, opened);

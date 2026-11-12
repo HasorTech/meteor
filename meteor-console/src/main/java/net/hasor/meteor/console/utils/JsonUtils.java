@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.lang.reflect.Type;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -17,6 +18,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.hasor.meteor.MetContext;
@@ -26,6 +29,8 @@ import net.hasor.meteor.serialize.coder.JsonSerializeDelegate;
 /** 控制台内部共用的 JSON 读写；传入的流和 Reader 仍由调用方关闭。 */
 public final class JsonUtils implements JsonSerializeDelegate {
     private static final ObjectMapper MAPPER   = JsonMapper.builder() //
+            .addModule(new JavaTimeModule()) //
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS) //
             .disable(JsonParser.Feature.AUTO_CLOSE_SOURCE) //
             .disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET).build();
     private static final JsonUtils    INSTANCE = new JsonUtils();
@@ -92,6 +97,10 @@ public final class JsonUtils implements JsonSerializeDelegate {
 
     public static <T> T readValue(Reader json, TypeReference<T> type) throws IOException {
         return MAPPER.readValue(json, type);
+    }
+
+    public static Object readValue(byte[] json, Type type) throws IOException {
+        return MAPPER.readerFor(MAPPER.constructType(type)).readValue(json);
     }
 
     public static JsonNode readTree(String json) throws JsonProcessingException {

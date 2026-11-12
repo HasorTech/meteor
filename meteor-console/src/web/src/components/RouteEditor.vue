@@ -1,7 +1,7 @@
 <script setup>
 import { usePageTab } from '../navigation';
 import RuleEditor from './RuleEditor.vue';
-const props = defineProps({ scope: Object, units: Array, localUnit: String });
+const props = defineProps({ scope: Object });
 const { selected: level, select } = usePageTab(
   'SERVICE_ROUTE',
   ['SERVICE_ROUTE', 'METHOD_ROUTE', 'ARGS_ROUTE'],
@@ -14,26 +14,25 @@ const levels = [
 ];
 </script>
 <template>
-  <div class="route-layout">
-    <nav
-      class="route-tabs"
-      aria-label="路由级别"
-    >
-      <button
-        v-for="[key, name] in levels"
-        :key="key"
-        :class="{ active: level === key }"
-        @click="select(key)"
+  <RuleEditor
+    :scope="scope"
+    :type="level"
+  >
+    <template #navigation="{ busy }">
+      <nav
+        class="route-tabs"
+        aria-label="路由级别"
       >
-        {{ name }}
-      </button>
-    </nav>
-    <RuleEditor
-      :key="level"
-      :scope="scope"
-      :type="level"
-      :units="units"
-      :local-unit="localUnit"
-    />
-  </div>
+        <button
+          v-for="[key, name] in levels"
+          :key="key"
+          :class="{ active: level === key }"
+          :disabled="busy"
+          @click="select(key)"
+        >
+          {{ name }}
+        </button>
+      </nav>
+    </template>
+  </RuleEditor>
 </template>

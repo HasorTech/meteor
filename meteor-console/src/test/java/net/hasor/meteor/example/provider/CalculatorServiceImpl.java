@@ -6,8 +6,28 @@ import net.hasor.meteor.example.api.DebugMessage;
 public final class CalculatorServiceImpl implements CalculatorService {
     @Override
     public DebugMessage add(DebugMessage request) {
-        DebugMessage response = new DebugMessage();
+        DebugMessage response = request.copy();
         response.setResult(request.getLeft() + request.getRight());
+        return response;
+    }
+    @Override
+    public DebugMessage subtract(DebugMessage request) {
+        DebugMessage response = request.copy();
+        response.setResult(request.getLeft() - request.getRight());
+        return response;
+    }
+
+    @Override
+    public DebugMessage multiply(DebugMessage request) {
+        DebugMessage response = request.copy();
+        response.setResult(request.getLeft() * request.getRight());
+        return response;
+    }
+
+    @Override
+    public DebugMessage divide(DebugMessage request) {
+        DebugMessage response = request.copy();
+        response.setResult(request.getLeft() / request.getRight());
         return response;
     }
 }

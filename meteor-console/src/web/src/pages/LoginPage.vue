@@ -2,14 +2,13 @@
 import { inject, ref } from 'vue';
 import { useFeedback } from '../useFeedback';
 import Feedback from '../components/Feedback.vue';
-const props = defineProps({ checking: Boolean, connectionError: String });
+defineProps({ connectionError: String });
 const emit = defineEmits(['login']);
 const api = inject('api');
 const username = ref('');
 const password = ref('');
 const { busy, error, run } = useFeedback();
 function login() {
-  if (props.checking) return;
   run(async () => {
     const session = await api('auth/login', {}, 'POST', {
       username: username.value,
@@ -54,9 +53,9 @@ function login() {
       <Feedback :error="error || connectionError" />
       <button
         class="primary"
-        :disabled="busy || checking"
+        :disabled="busy"
       >
-        {{ checking ? '检查登录…' : busy ? '登录中…' : '登录' }}
+        {{ busy ? '登录中…' : '登录' }}
       </button>
     </form>
   </main>

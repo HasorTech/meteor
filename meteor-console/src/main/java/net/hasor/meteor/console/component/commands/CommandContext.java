@@ -8,11 +8,11 @@
 package net.hasor.meteor.console.component.commands;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
-import java.util.*;
+import java.util.ConcurrentModificationException;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Consumer;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.console.component.provider.ProviderConnection;
 import net.hasor.meteor.console.component.provider.ProviderFactories;
@@ -20,7 +20,6 @@ import net.hasor.meteor.console.global.error.ConsoleOperationException;
 import net.hasor.meteor.console.model.fo.ClusterProfile;
 import net.hasor.meteor.console.model.fo.ManagementTarget;
 import net.hasor.meteor.domain.MetException;
-import net.hasor.meteor.domain.MetServiceType;
 import net.hasor.meteor.domain.ProtocolStatus;
 import net.hasor.meteor.registry.RegistryAdmin;
 import net.hasor.meteor.registry.RegistryTokenProvider;
@@ -116,84 +115,6 @@ public final class CommandContext implements AutoCloseable {
             throw new UnsupportedOperationException("直连模式没有集群治理范围");
         }
         return scope;
-    }
-
-    public List<String> targetInstances(ManagementTarget request) {
-        String unit = request.getTargetUnit();
-        if (StringUtils.isBlank(unit)) {
-            return null;
-        }
-
-        boolean instanceRules = StringUtils.equals("instance", request.getScope());
-        if (StringUtils.equals("ALL", unit) && !instanceRules) {
-            return null;
-        }
-        if (request.isDirect()) {
-            throw new IllegalArgumentException("直连操作只能管理当前实例");
-        }
-
-        Set<String> targets = new LinkedHashSet<>();
-        MetDirectoryQuery query = new MetDirectoryQuery();
-        if (instanceRules) {
-            MetInstanceInfo source = this.instance(request).instance();
-            if (StringUtils.equals("LOCAL", unit)) {
-                unit = source.getUnitName();
-            }
-
-            query.setUnitName(StringUtils.equals("ALL", unit) ? null : unit);
-            do {
-                MetPage<MetInstanceInfo> page = this.cluster().instances(source.getApplicationName(), query);
-                for (MetInstanceInfo instance : page.getItems()) {
-                    targets.add(instance.getInstanceId());
-                }
-                query.setCursor(page.getNextCursor());
-            } while (query.getCursor() != null);
-        } else {
-            if (StringUtils.isNotBlank(request.getInstanceId())) {
-                throw new IllegalArgumentException("当前操作已限定单个实例，不能再扩大到单元");
-            }
-
-            query.setUnitName(StringUtils.equals("LOCAL", unit) ? request.getLocalUnit() : unit);
-            MetServiceAdmin service = this.service(request);
-            for (MetServiceType role : MetServiceType.values()) {
-                query.setCursor(null);
-                do {
-                    MetPage<MetServiceMember> page;
-                    if (role == MetServiceType.Provider) {
-                        page = service.providers(null, query);
-                    } else {
-                        page = service.consumers(null, query);
-                    }
-                    for (MetServiceMember member : page.getItems()) {
-                        targets.add(member.getInstance().getInstanceId());
-                    }
-                    query.setCursor(page.getNextCursor());
-                } while (query.getCursor() != null);
-            }
-        }
-
-        if (targets.isEmpty()) {
-            throw new IllegalArgumentException("目标单元没有可治理的实例");
-        }
-        return new ArrayList<>(targets);
-    }
-
-    public int applyTargets(ManagementTarget target, List<String> instances, Consumer<ManagementTarget> action) {
-        if (instances == null) {
-            action.accept(target);
-            return 0;
-        }
-        int affected = 0;
-        for (String id : instances) {
-            try {
-                action.accept(target.atInstance(id));
-                affected++;
-            } catch (Exception failure) {
-                String message = "已完成 " + affected + " 个实例；" + id + " 失败：" + failure.getMessage();
-                throw new ConsoleOperationException(message, failure);
-            }
-        }
-        return affected;
     }
 
     public MetValidationResult validateRule(ManagementTarget request, MetRuleType type, String rule) {

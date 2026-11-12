@@ -9,7 +9,6 @@ package net.hasor.meteor.console.service;
 import java.util.Map;
 import net.hasor.core.Inject;
 import net.hasor.core.Singleton;
-import net.hasor.meteor.console.component.commands.ChangeResult;
 import net.hasor.meteor.console.component.commands.CommandDispatcher;
 import net.hasor.meteor.console.component.commands.SuccessResult;
 import net.hasor.meteor.console.component.commands.dto.directory.*;
@@ -25,6 +24,8 @@ import net.hasor.meteor.console.component.commands.dto.service.*;
 import net.hasor.meteor.console.model.fo.ManagementTarget;
 import net.hasor.meteor.domain.MetServiceType;
 import net.hasor.meteor.registry.admin.MetRuleType;
+import net.hasor.meteor.registry.admin.MetServiceMethodPage;
+import net.hasor.meteor.registry.admin.MetDirectoryQuery;
 
 /** 按管理目标选择命令入口，上层业务不接触具体提供者。 */
 @Singleton
@@ -56,8 +57,19 @@ public final class GovernanceService {
         return this.dispatcher.execute(target.getClusterId(), new InstanceInfoRequest(target));
     }
 
+    public MetServiceMethodPage methods(ManagementTarget target, String methodName,
+            MetDirectoryQuery query) {
+        return this.dispatcher.execute(target.getClusterId(), new ServiceMethodsRequest(target, methodName, query));
+    }
+
     public ServiceInfoResult serviceInfo(ManagementTarget target) {
         return this.dispatcher.execute(target.getClusterId(), new ServiceInfoRequest(target));
+    }
+
+    public ExampleTargetsResult exampleTargets(ManagementTarget target, String protocol, //
+            String address, String contextPath) {
+        ExampleTargetsRequest request = new ExampleTargetsRequest(target, protocol, address, contextPath);
+        return this.dispatcher.execute(target.getClusterId(), request);
     }
 
     public MembersResult members(ManagementTarget target, MetServiceType role) {
@@ -72,19 +84,19 @@ public final class GovernanceService {
         return this.dispatcher.execute(target.getClusterId(), new ValidateRuleRequest(target, type, rule));
     }
 
-    public ChangeResult updateRule(ManagementTarget target, MetRuleType type, String rule) {
+    public SuccessResult updateRule(ManagementTarget target, MetRuleType type, String rule) {
         return this.dispatcher.execute(target.getClusterId(), new UpdateRuleRequest(target, type, rule));
     }
 
-    public ChangeResult resetRule(ManagementTarget target, MetRuleType type) {
+    public SuccessResult resetRule(ManagementTarget target, MetRuleType type) {
         return this.dispatcher.execute(target.getClusterId(), new ResetRuleRequest(target, type));
     }
 
-    public ChangeResult ruleEnabled(ManagementTarget target, MetRuleType type, boolean enabled) {
+    public SuccessResult ruleEnabled(ManagementTarget target, MetRuleType type, boolean enabled) {
         return this.dispatcher.execute(target.getClusterId(), new SetRuleEnabledRequest(target, type, enabled));
     }
 
-    public ChangeResult serviceEnabled(ManagementTarget target, boolean enabled) {
+    public SuccessResult serviceEnabled(ManagementTarget target, boolean enabled) {
         return this.dispatcher.execute(target.getClusterId(), new SetServiceEnabledRequest(target, enabled));
     }
 

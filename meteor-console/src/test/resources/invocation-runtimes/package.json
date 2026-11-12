@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "dependencies": {
+    "@grpc/grpc-js": "1.14.1",
+    "protobufjs": "7.5.4",
+    "hprose": "2.0.51",
+    "dubbo2.js": "2.3.9"
+  }
+}

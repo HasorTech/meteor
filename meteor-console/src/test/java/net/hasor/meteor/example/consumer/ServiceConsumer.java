@@ -1,5 +1,6 @@
 package net.hasor.meteor.example.consumer;
 import net.hasor.core.Inject;
+import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.example.api.CalculatorService;
 import net.hasor.meteor.example.api.DebugMessage;
 import net.hasor.meteor.example.api.EchoService;
@@ -19,6 +20,7 @@ public class ServiceConsumer {
         request.setValue("console-debug");
         request.setLeft(20);
         request.setRight(22);
+        request.setResult(7);
 
         DebugMessage echoed = this.echo.echo(request);
         if (echoed == null) {
@@ -26,6 +28,9 @@ public class ServiceConsumer {
         }
         if (echoed.getValue() == null || !echoed.getValue().endsWith(":console-debug")) {
             throw new IllegalStateException("Unexpected echo result: " + echoed.getValue());
+        }
+        if (echoed.getLeft() != 20 || echoed.getRight() != 22 || echoed.getResult() != 7) {
+            throw new IllegalStateException("Response did not preserve request fields: EchoService.echo");
         }
         System.out.println("[CALL] EchoService.echo -> " + echoed.getValue());
 
@@ -36,6 +41,10 @@ public class ServiceConsumer {
         if (calculated.getResult() != 42) {
             throw new IllegalStateException("Unexpected calculator result: " + calculated.getResult());
         }
+        if (calculated.getLeft() != 20 || calculated.getRight() != 22
+                || !StringUtils.equals("console-debug", calculated.getValue())) {
+            throw new IllegalStateException("Calculator response did not preserve request fields");
+        }
         System.out.println("[CALL] CalculatorService.add -> " + calculated.getResult());
 
         DebugMessage currentStatus = this.status.status(request);
@@ -45,6 +54,9 @@ public class ServiceConsumer {
         if (currentStatus.getValue() == null || !currentStatus.getValue().startsWith("status:")
                 || !currentStatus.getValue().endsWith(":console-debug")) {
             throw new IllegalStateException("Unexpected status result: " + currentStatus.getValue());
+        }
+        if (currentStatus.getLeft() != 20 || currentStatus.getRight() != 22 || currentStatus.getResult() != 7) {
+            throw new IllegalStateException("Response did not preserve request fields: StatusService.status");
         }
         System.out.println("[CALL] StatusService.status -> " + currentStatus.getValue());
     }

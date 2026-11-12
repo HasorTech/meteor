@@ -1,4 +1,5 @@
 <script setup>
+import BreadcrumbTrail from '../components/BreadcrumbTrail.vue';
 import { inject, onMounted, ref } from 'vue';
 import { useDirectory } from '../useDirectory';
 import DirectoryPager from '../components/DirectoryPager.vue';
@@ -6,7 +7,7 @@ import { instanceRole } from '../display';
 import Feedback from '../components/Feedback.vue';
 import WorkspaceTabs from '../components/WorkspaceTabs.vue';
 import ViewToggle from '../components/ViewToggle.vue';
-import ProtocolBadges from '../components/ProtocolBadges.vue';
+import ProtocolSummary from '../components/ProtocolSummary.vue';
 import InstanceStatus from '../components/InstanceStatus.vue';
 const props = defineProps({ scope: Object, application: String });
 const api = inject('api');
@@ -41,6 +42,9 @@ function viewMode(value) {
 function openApp(name) {
   navigate({ view: 'application', clusterId: props.scope.clusterId, application: name });
 }
+function instanceProtocols(instance) {
+  return (instance.endpoints || []).map((endpoint) => endpoint.protocolName);
+}
 function openInstance(instance) {
   navigate({
     view: 'instance',
@@ -52,10 +56,7 @@ function openInstance(instance) {
 onMounted(loadUnits);
 </script>
 <template>
-  <div
-    v-if="application"
-    class="breadcrumbs"
-  >
+  <BreadcrumbTrail v-if="application">
     <button
       class="text-button"
       @click="navigate({ view: 'applications', clusterId: scope.clusterId })"
@@ -64,64 +65,38 @@ onMounted(loadUnits);
     </button>
     <span>/</span>
     <strong>{{ application }}</strong>
-  </div>
-  <component
-    :is="application ? 'div' : WorkspaceTabs"
-    :class="{ tabbar: application }"
-    active="applications"
-  >
-    <template v-if="application">
-      <h1>实例</h1>
-      <div class="toolbar">
-        <select
-          v-model="unit"
-          aria-label="筛选单元"
-        >
-          <option value="">全部单元</option>
-          <option
-            v-for="item in units"
-            :key="item"
-          >
-            {{ item }}
-          </option>
-        </select>
-        <input
-          v-model="search"
-          type="search"
-          aria-label="搜索 IP、进程 ID 或实例 ID"
-          placeholder="搜索 IP、进程 ID 或实例 ID"
-        />
-        <button
-          :disabled="busy"
-          @click="refresh"
-        >
-          刷新
-        </button>
-        <ViewToggle
-          :model-value="display"
-          @update:model-value="viewMode"
-        />
-      </div>
-    </template>
-    <template v-else>
-      <input
-        v-model="search"
-        type="search"
-        aria-label="搜索应用名称"
-        placeholder="搜索应用名称"
-      />
-      <button
-        :disabled="busy"
-        @click="refresh"
+  </BreadcrumbTrail>
+  <WorkspaceTabs>
+    <select
+      v-if="application"
+      v-model="unit"
+      aria-label="筛选单元"
+    >
+      <option value="">全部单元</option>
+      <option
+        v-for="item in units"
+        :key="item"
       >
-        刷新
-      </button>
-      <ViewToggle
-        :model-value="display"
-        @update:model-value="viewMode"
-      />
-    </template>
-  </component>
+        {{ item }}
+      </option>
+    </select>
+    <input
+      v-model="search"
+      type="search"
+      :aria-label="application ? '搜索 IP、进程 ID 或实例 ID' : '搜索应用名称'"
+      :placeholder="application ? '搜索 IP、进程 ID 或实例 ID' : '搜索应用名称'"
+    />
+    <button
+      :disabled="busy"
+      @click="refresh"
+    >
+      刷新
+    </button>
+    <ViewToggle
+      :model-value="display"
+      @update:model-value="viewMode"
+    />
+  </WorkspaceTabs>
   <Feedback :error="error" />
   <template v-if="!application">
     <div
@@ -192,8 +167,7 @@ onMounted(loadUnits);
       v-if="display === 'cards'"
       class="cards"
     >
-      <button
-        type="button"
+      <article
         class="card instance-card"
         v-for="instance in filtered"
         :key="instance.instanceId"
@@ -201,7 +175,12 @@ onMounted(loadUnits);
       >
         <span class="card-heading">
           <span class="instance-identity">
-            <strong class="instance-primary">{{ instance.ipAddress || '—' }}</strong>
+            <button
+              class="text-button dark instance-primary"
+              @click.stop="openInstance(instance)"
+            >
+              {{ instance.ipAddress || '—' }}
+            </button>
             <span class="instance-process">PID {{ instance.processId ?? '—' }}</span>
           </span>
           <InstanceStatus
@@ -214,9 +193,9 @@ onMounted(loadUnits);
           <span>{{ instance.unitName || '—' }}</span>
         </span>
         <span class="card-actions">
-          <ProtocolBadges
-            v-if="Object.keys(instance.listenAddresses || {}).length"
-            :protocols="Object.keys(instance.listenAddresses || {})"
+          <ProtocolSummary
+            v-if="instance.endpoints?.length"
+            :protocols="instanceProtocols(instance)"
           />
           <span
             v-if="instance.roles?.length"
@@ -225,13 +204,13 @@ onMounted(loadUnits);
             {{ instanceRole(instance) }}
           </span>
         </span>
-      </button>
+      </article>
     </div>
     <div
       v-else
       class="table-scroll"
     >
-      <table>
+      <table class="instance-directory-table">
         <thead>
           <tr>
             <th>实例</th>
@@ -267,7 +246,9 @@ onMounted(loadUnits);
               />
             </td>
             <td>{{ instance.unitName || '—' }}</td>
-            <td><ProtocolBadges :protocols="Object.keys(instance.listenAddresses || {})" /></td>
+            <td>
+              <ProtocolSummary :protocols="instanceProtocols(instance)" />
+            </td>
             <td>
               <span
                 v-if="instance.roles?.length"

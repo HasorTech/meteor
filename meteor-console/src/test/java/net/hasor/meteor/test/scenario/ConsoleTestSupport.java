@@ -52,12 +52,13 @@ final class ConsoleTestSupport {
         return registry;
     }
 
-    static MetConfiguration application(RegistryConfiguration registry, String name, String unit, boolean bind) {
-        MetConfiguration config = new MetConfiguration();
-        config.setApplicationName(name);
-        config.setUnitName(unit);
-        config.setDefaultTimeout(2000);
-        config.setConnectTimeout(1000);
+    static MetConfiguration application(Path dataHome, RegistryConfiguration registry, String name, String unit, boolean bind) {
+        MetConfiguration config = new MetConfiguration() //
+                .setDataHome(dataHome) //
+                .setApplicationName(name) //
+                .setUnitName(unit) //
+                .setDefaultTimeout(2000) //
+                .setConnectTimeout(1000);
         config.addExtension(registry);
         var tcp = config.connector("tcp");
         if (bind) {

@@ -107,11 +107,18 @@ public class ServiceLifecycleTest {
         // 治理服务借用已启动的 Meteor 客户端；目标实例独立监听真实 RSF 端口。
         RegistryConfiguration targetRegistry = new RegistryConfiguration().setOnline(false);
         targetRegistry.setManagementToken("lifecycle-token");
-        MetConfiguration targetConfiguration = new MetConfiguration().setApplicationName("lifecycle-target");
-        targetConfiguration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        MetConfiguration targetConfiguration = new MetConfiguration() //
+                .setApplicationName("lifecycle-target") //
+                .setDataHome(this.temporary.resolve("target"));
+        targetConfiguration.connector("tcp") //
+                .bind("127.0.0.1", 0) //
+                .protocol("rsf");
         targetConfiguration.addExtension(targetRegistry);
-        MetConfiguration callerConfiguration = new MetConfiguration().setApplicationName("lifecycle-caller");
-        callerConfiguration.connector("tcp").protocol("rsf");
+        MetConfiguration callerConfiguration = new MetConfiguration() //
+                .setApplicationName("lifecycle-caller") //
+                .setDataHome(this.temporary.resolve("caller"));
+        callerConfiguration.connector("tcp") //
+                .protocol("rsf");
         callerConfiguration.addExtension(new RegistryConfiguration().setOnline(false));
         MemoryRegistryConfiguration storage = new MemoryRegistryConfiguration();
         storage.setManagementToken("lifecycle-token");

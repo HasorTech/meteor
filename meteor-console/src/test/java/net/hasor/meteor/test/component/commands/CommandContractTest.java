@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
-import net.hasor.meteor.console.component.commands.ChangeResult;
+import net.hasor.meteor.console.component.commands.SuccessResult;
 import net.hasor.meteor.console.component.commands.CommandType;
 import net.hasor.meteor.console.component.commands.dto.directory.ServicesRequest;
 import net.hasor.meteor.console.component.commands.dto.directory.ServicesResult;
@@ -42,16 +42,18 @@ public class CommandContractTest {
         assertFalse(encoded.has("command"));
         assertEquals("service", encoded.at("/target/scope").textValue());
         assertEquals("orders:OrderService:1", encoded.at("/target/serviceId").textValue());
+        assertFalse(encoded.path("target").has("targetUnit"));
+        assertFalse(encoded.path("target").has("localUnit"));
         assertEquals("FLOW_CONTROL", encoded.path("ruleType").textValue());
         assertEquals(rule, encoded.path("rule").textValue());
         assertEquals(CommandType.UPDATE_RULE, restored.getCommand());
         assertEquals(encoded, JsonUtils.valueToTree(restored));
 
-        // 修改结果使用明确的成功标记与影响数量，往返后保持固定形状。
-        byte[] resultJson = JsonUtils.writeValueAsBytes(new ChangeResult(true, 2));
-        ChangeResult result = JsonUtils.readValue(resultJson, new TypeReference<>() {
+        // 当前上下文的写入只返回成功标记，不再返回实例批次数量。
+        byte[] resultJson = JsonUtils.writeValueAsBytes(new SuccessResult(true));
+        SuccessResult result = JsonUtils.readValue(resultJson, new TypeReference<>() {
         });
-        JsonNode expected = JsonUtils.readTree("{\"success\":true,\"affected\":2}");
+        JsonNode expected = JsonUtils.readTree("{\"success\":true}");
         assertEquals(expected, JsonUtils.readTree(resultJson));
         assertEquals(expected, JsonUtils.valueToTree(result));
     }

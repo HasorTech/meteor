@@ -8,4 +8,16 @@ import net.hasor.meteor.annotation.MetService;
 public interface CalculatorService {
     @MetMethod(id = 1)
     DebugMessage add(@MetParam(id = 1, name = "request") DebugMessage request);
+
+    /** 计算 left 减 right。 */
+    @MetMethod(id = 2)
+    DebugMessage subtract(@MetParam(id = 1, name = "request") DebugMessage request);
+
+    /** 计算 left 乘 right。 */
+    @MetMethod(id = 3)
+    DebugMessage multiply(@MetParam(id = 1, name = "request") DebugMessage request);
+
+    /** 整数除法；除数为零时返回异常，便于验证错误展示。 */
+    @MetMethod(id = 4)
+    DebugMessage divide(@MetParam(id = 1, name = "request") DebugMessage request);
 }

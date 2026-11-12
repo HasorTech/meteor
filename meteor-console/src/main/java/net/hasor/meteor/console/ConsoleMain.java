@@ -21,6 +21,7 @@ import net.hasor.config.Configuration;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.console.component.commands.CommandDispatcher;
+import net.hasor.meteor.console.component.rpc.RpcManagement;
 import net.hasor.meteor.console.component.rpc.RpcServer;
 import net.hasor.meteor.console.dao.ClusterDao;
 import net.hasor.meteor.console.global.MeteorConfig;
@@ -28,17 +29,18 @@ import net.hasor.meteor.console.global.auth.ConsoleCookies;
 import net.hasor.meteor.console.global.auth.SessionService;
 import net.hasor.meteor.console.global.http.ConsoleApiFilter;
 import net.hasor.meteor.console.global.http.ConsoleJsonRender;
+import net.hasor.meteor.console.utils.JsonUtils;
 import net.hasor.meteor.registry.RegistryConfiguration;
 import net.hasor.web.WebApiBinder;
 import net.hasor.web.WebModule;
 
 /** 统一启动入口；HTTP 监听由 Hasor Boot 原生配置控制。 */
 @Configuration
-public final class ConsoleMain implements WebModule {
+public class ConsoleMain implements WebModule {
     /** 内置默认配置先加载，外部 meteor.properties 覆盖同名项。 */
     public static void main(String[] arguments) throws Exception {
         LoggerFactory.useJdkLogger();
-        String config = configuration().toUri().toString();
+        String config = configuration(arguments).toUri().toString();
         Boot boot = new Boot().arguments(arguments).sources(ConsoleMain.class).hconfigFile(config);
         try (BootApplication application = boot.start()) {
             application.join();
@@ -48,14 +50,28 @@ public final class ConsoleMain implements WebModule {
     @Bean(initMethod = "start", destroyMethod = "close")
     public MetContext meteorContext(MeteorConfig config) throws IOException {
         // 仅为直连管理提供 RPC 能力，不连接注册中心。
-        MetConfiguration meteor = new MetConfiguration();
-        meteor.setApplicationName("meteor-console");
-        meteor.setUnitName(config.getUnit());
-        meteor.setDefaultTimeout(5000);
-        meteor.setConnectTimeout(3000);
-        meteor.connector("tcp").protocol("rsf");
+        MetConfiguration meteor = new MetConfiguration() //
+                .setApplicationName("meteor-console") //
+                .setDataHome(Path.of(config.getDataDirectory(), "meteor")) //
+                .setUnitName(config.getUnit()) //
+                .setDefaultTimeout(5000) //
+                .setConnectTimeout(3000);
+        meteor.connector("tcp") //
+                .protocol("rsf");
         meteor.addExtension(new RegistryConfiguration().setOnline(false));
-        return meteor.buildContext();
+        MetContext context = meteor.buildContext();
+        try {
+            JsonUtils.configureRpc(context);
+            context.publisher().rsfService(RpcManagement.class).asShadow().asDistributedCall().register();
+            return context;
+        } catch (RuntimeException | Error failure) {
+            try {
+                context.close();
+            } catch (Exception closeFailure) {
+                failure.addSuppressed(closeFailure);
+            }
+            throw failure;
+        }
     }
 
     @Override
@@ -76,8 +92,16 @@ public final class ConsoleMain implements WebModule {
         return new ConsoleApiFilter(sessions, cookies);
     }
 
-    private static Path configuration() throws NoSuchFileException {
+    private static Path configuration(String[] arguments) throws NoSuchFileException {
         String configured = System.getProperty("config");
+        for (String argument : arguments) {
+            if (argument.startsWith("--config=")) {
+                configured = argument.substring("--config=".length());
+                if (StringUtils.isBlank(configured)) {
+                    throw new IllegalArgumentException("--config 必须指定配置文件");
+                }
+            }
+        }
         if (StringUtils.isBlank(configured)) {
             return Path.of(System.getProperty("user.home"), ".meteor", "meteor.properties").toAbsolutePath().normalize();
         }

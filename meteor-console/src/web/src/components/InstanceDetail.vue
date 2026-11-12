@@ -1,4 +1,5 @@
 <script setup>
+import BreadcrumbTrail from './BreadcrumbTrail.vue';
 import { usePageTab } from '../navigation';
 import { computed, inject, onMounted, ref } from 'vue';
 import { useFeedback } from '../useFeedback';
@@ -7,14 +8,14 @@ import DirectoryPager from './DirectoryPager.vue';
 import Feedback from './Feedback.vue';
 import RuleEditor from './RuleEditor.vue';
 import RouteEditor from './RouteEditor.vue';
-import ProtocolBadges from './ProtocolBadges.vue';
+import EndpointTable from './EndpointTable.vue';
+import ProtocolSummary from './ProtocolSummary.vue';
 import StatusBadge from './StatusBadge.vue';
 const props = defineProps({ scope: Object });
 const api = inject('api');
 const navigate = inject('navigate');
 const data = ref(null);
 const { selected: tab, select } = usePageTab('instance', ['instance', 'services', 'flow', 'route']);
-const units = ref([]);
 const search = ref('');
 const field = ref('id');
 const { busy, error, success, run } = useFeedback();
@@ -25,6 +26,11 @@ const tabs = [
   ['route', '路由策略']
 ];
 const instance = computed(() => data.value?.instance);
+const managementEndpoints = computed(() => [
+  ...new Set(
+    (instance.value?.endpoints || []).map((endpoint) => endpoint.endpoints?.management).filter(Boolean)
+  )
+]);
 const query = computed(() => ({ ...props.scope, scope: 'instance' }));
 const directory = useDirectory(
   () => 'services',
@@ -63,21 +69,10 @@ function service(info) {
     application: instance.value.applicationName
   });
 }
-onMounted(() =>
-  run(async () => {
-    await load();
-    if (props.scope.mode === 'registry') {
-      const names = await api('units', {
-        ...props.scope,
-        applicationName: instance.value.applicationName
-      });
-      units.value = names;
-    }
-  })
-);
+onMounted(() => run(load));
 </script>
 <template>
-  <div class="breadcrumbs">
+  <BreadcrumbTrail>
     <template v-if="scope.mode === 'registry'">
       <button
         class="text-button"
@@ -119,8 +114,8 @@ onMounted(() =>
     >
       直连
     </span>
-  </div>
-  <div class="tabbar detail-tabbar">
+  </BreadcrumbTrail>
+  <div class="tabbar detail-tabbar page-actionbar">
     <nav
       class="tabs"
       aria-label="实例详情"
@@ -170,113 +165,111 @@ onMounted(() =>
   />
   <template v-if="data">
     <template v-if="tab === 'instance'">
-      <section class="info-panel">
-        <dl class="details-grid">
-          <div>
-            <dt>实例 IP</dt>
-            <dd>{{ instance.ipAddress || '未上报' }}</dd>
-          </div>
-          <div>
-            <dt>进程 ID</dt>
-            <dd>{{ instance.processId ?? '未上报' }}</dd>
-          </div>
-          <div>
-            <dt>实例 ID</dt>
-            <dd>{{ instance.instanceId }}</dd>
-          </div>
-          <div>
-            <dt>应用</dt>
-            <dd>{{ instance.applicationName }}</dd>
-          </div>
-          <div>
-            <dt>单元</dt>
-            <dd>{{ instance.unitName || '—' }}</dd>
-          </div>
-          <div>
-            <dt>在线状态</dt>
-            <dd>
-              <StatusBadge
-                v-if="data.online !== null"
-                :enabled="data.online"
-                on="在线"
-                off="离线"
-              />
-              <span v-else>未知</span>
-            </dd>
-          </div>
-        </dl>
-        <div
-          v-if="scope.mode === 'registry' || data.online"
-          class="instance-control"
+      <section class="instance-info-panel">
+        <aside
+          class="instance-sidebar"
+          aria-label="实例信息"
         >
-          <span>阻断调用</span>
-          <label class="switch-label">
-            <span>{{ data.blocked ? '已阻断' : '已放行' }}</span>
-            <button
-              role="switch"
-              aria-label="阻断调用"
-              class="switch"
-              :class="{ checked: data.blocked }"
-              :aria-checked="data.blocked"
-              :disabled="busy || (scope.mode === 'direct' && data.online !== true)"
-              @click="toggle"
-            >
-              <span />
-            </button>
-          </label>
-        </div>
-      </section>
-      <section
-        v-if="data.online"
-        class="endpoint-section"
-      >
-        <h2>调用端点</h2>
-        <div class="table-scroll">
-          <table class="endpoint-table">
-            <thead>
-              <tr>
-                <th>协议</th>
-                <th>监听地址</th>
-                <th>管理 RPC 地址</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="protocol in [
-                  ...new Set([
-                    ...Object.keys(instance.listenAddresses),
-                    ...Object.keys(instance.managementAddress)
-                  ])
-                ]"
-                :key="protocol"
+          <dl class="details-grid instance-facts">
+            <div>
+              <dt>实例 IP</dt>
+              <dd>{{ instance.ipAddress || '未上报' }}</dd>
+            </div>
+            <div>
+              <dt>进程 ID</dt>
+              <dd>{{ instance.processId ?? '未上报' }}</dd>
+            </div>
+            <div>
+              <dt>应用</dt>
+              <dd>{{ instance.applicationName }}</dd>
+            </div>
+            <div>
+              <dt>单元</dt>
+              <dd>{{ instance.unitName || '—' }}</dd>
+            </div>
+            <div>
+              <dt>实例 ID</dt>
+              <dd>{{ instance.instanceId }}</dd>
+            </div>
+            <div>
+              <dt>在线状态</dt>
+              <dd>
+                <StatusBadge
+                  v-if="data.online !== null"
+                  :enabled="data.online"
+                  on="在线"
+                  off="离线"
+                />
+                <span v-else>未知</span>
+              </dd>
+            </div>
+            <div>
+              <dt>管理 Endpoint</dt>
+              <dd>
+                <template v-if="managementEndpoints.length">
+                  <div
+                    v-for="address in managementEndpoints"
+                    :key="address"
+                  >
+                    <code>{{ address }}</code>
+                  </div>
+                </template>
+                <span v-else>—</span>
+              </dd>
+            </div>
+          </dl>
+          <div
+            v-if="scope.mode === 'registry' || data.online"
+            class="instance-control"
+          >
+            <span>阻断调用</span>
+            <label class="switch-label">
+              <span>{{ data.blocked ? '已阻断' : '已放行' }}</span>
+              <button
+                role="switch"
+                aria-label="阻断调用"
+                class="switch"
+                :class="{ checked: data.blocked }"
+                :aria-checked="data.blocked"
+                :disabled="busy || (scope.mode === 'direct' && data.online !== true)"
+                @click="toggle"
               >
-                <td><ProtocolBadges :protocols="[protocol]" /></td>
-                <td>
-                  <code>{{ instance.listenAddresses[protocol] || '仅出站' }}</code>
-                </td>
-                <td>
-                  <code>{{ instance.managementAddress[protocol] || '—' }}</code>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <p
-          v-if="!Object.keys(instance.listenAddresses).length"
-          class="empty"
+                <span />
+              </button>
+            </label>
+          </div>
+        </aside>
+        <div
+          v-if="data.online"
+          class="endpoint-section"
+          role="region"
+          aria-label="实例接入点"
         >
-          此实例仅发起出站调用
-        </p>
+          <EndpointTable :endpoints="instance.endpoints || []" />
+          <p
+            v-if="!instance.endpoints?.length"
+            class="empty"
+          >
+            此实例仅发起出站调用
+          </p>
+        </div>
+        <div
+          v-else
+          class="instance-endpoints-empty"
+          role="status"
+        >
+          {{ data.online === false ? '实例已离线，接入点暂不可用' : '暂时无法获取实例接入点，请刷新重试' }}
+        </div>
       </section>
     </template>
     <template v-else-if="tab === 'services'">
       <div class="table-scroll">
-        <table>
+        <table class="instance-services-table">
           <thead>
             <tr>
               <th>服务 ID</th>
-              <th>关系</th>
               <th>支持协议</th>
+              <th>身份</th>
             </tr>
           </thead>
           <tbody>
@@ -292,8 +285,10 @@ onMounted(() =>
                   <code>{{ info.serviceId }}</code>
                 </button>
               </td>
-              <td>{{ info.role === 'Provider' ? '发布' : '订阅' }}</td>
-              <td><ProtocolBadges :protocols="info.protocols" /></td>
+              <td>
+                <ProtocolSummary :protocols="info.protocols" />
+              </td>
+              <td>{{ info.role === 'Provider' ? '提供者' : '消费者' }}</td>
             </tr>
           </tbody>
         </table>
@@ -318,8 +313,6 @@ onMounted(() =>
       v-else-if="tab === 'flow'"
       :scope="query"
       type="FLOW_CONTROL"
-      :units="units"
-      :local-unit="instance.unitName"
     />
     <RouteEditor
       v-else

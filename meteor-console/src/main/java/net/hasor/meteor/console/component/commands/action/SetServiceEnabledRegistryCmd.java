@@ -6,30 +6,22 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor.console.component.commands.action;
-import java.util.List;
-import net.hasor.meteor.console.component.commands.ChangeResult;
+import net.hasor.meteor.console.component.commands.SuccessResult;
 import net.hasor.meteor.console.component.commands.CommandContext;
 import net.hasor.meteor.console.component.commands.RegistryCommand;
 import net.hasor.meteor.console.component.commands.dto.service.SetServiceEnabledRequest;
-import net.hasor.meteor.console.model.fo.ManagementTarget;
 import net.hasor.meteor.registry.admin.MetServiceAdmin;
 
-/** 切换服务可用状态，支持按目标单元批量执行。 */
-public final class SetServiceEnabledRegistryCmd implements RegistryCommand<SetServiceEnabledRequest, ChangeResult> {
+/** 切换当前服务或实例服务的可用状态。 */
+public final class SetServiceEnabledRegistryCmd implements RegistryCommand<SetServiceEnabledRequest, SuccessResult> {
     @Override
-    public ChangeResult execute(CommandContext context, SetServiceEnabledRequest request) {
-        ManagementTarget target = request.getTarget();
-        List<String> instances = context.targetInstances(target);
-        int affected = context.applyTargets(target, instances, item -> this.setEnabled(context, item, request.isEnabled()));
-        return new ChangeResult(true, affected);
-    }
-
-    private void setEnabled(CommandContext context, ManagementTarget target, boolean enabled) {
-        MetServiceAdmin admin = context.service(target);
-        if (enabled) {
+    public SuccessResult execute(CommandContext context, SetServiceEnabledRequest request) {
+        MetServiceAdmin admin = context.service(request.getTarget());
+        if (request.isEnabled()) {
             admin.enable();
         } else {
             admin.disable();
         }
+        return new SuccessResult(true);
     }
 }

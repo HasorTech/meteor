@@ -94,6 +94,17 @@ public class DirectoryFilterTest {
     }
 
     @Test
+    public void ipTextExcludesTheRestOfTheInstanceIdentity() {
+        // IP 字段不能复用包含进程和实例 ID 的身份文本。
+        EntInstanceRuntimeData instance = new EntInstanceRuntimeData();
+        instance.setIpAddress("192.0.2.10");
+        RefServiceRelationData member = new RefServiceRelationData();
+        member.setInstance(instance);
+
+        assertEquals("192.0.2.10", DirectoryFilter.text(member, "ip", "node-4321 192.0.2.10 4321"));
+    }
+
+    @Test
     public void applicationTextReadsTheMemberInstance() {
         // 成员查询的应用名称来自该成员的实例身份。
         EntInstanceRuntimeData instance = new EntInstanceRuntimeData();

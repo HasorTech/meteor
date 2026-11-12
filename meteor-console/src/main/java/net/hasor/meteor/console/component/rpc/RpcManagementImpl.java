@@ -81,6 +81,11 @@ public final class RpcManagementImpl implements RpcManagement {
     }
 
     @Override
+    public MetServiceMethodPage methods(RpcTarget target, String methodName, MetDirectoryQuery query) {
+        return service(target).methods(methodName, query);
+    }
+
+    @Override
     public Map<String, MetServiceDescription> descriptions(RpcTarget target) {
         return service(target).descriptions();
     }

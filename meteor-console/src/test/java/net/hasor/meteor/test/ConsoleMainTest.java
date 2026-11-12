@@ -27,6 +27,7 @@ import net.hasor.boot.web.WebServerConfig;
 import net.hasor.cobble.setting.Settings;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.console.ConsoleMain;
+import net.hasor.meteor.example.ConsoleLauncher;
 import net.hasor.meteor.console.dao.ClusterDao;
 import net.hasor.meteor.console.global.MeteorConfig;
 import net.hasor.meteor.console.global.auth.SessionService;
@@ -37,6 +38,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.function.ThrowingConsumer;
 import org.junit.jupiter.api.parallel.ResourceLock;
 import org.junit.jupiter.api.parallel.Resources;
 import static org.junit.jupiter.api.Assertions.*;
@@ -94,7 +96,7 @@ public class ConsoleMainTest {
         Path directory = Files.createDirectories(this.temporary.resolve(".meteor"));
         int port = writeConfiguration(directory.resolve("meteor.properties"), "home");
 
-        JsonNode session = startApplication(port);
+        JsonNode session = startApplication(port, ConsoleMain::main);
         assertEquals("home", session.path("localUnit").asText());
     }
 
@@ -105,7 +107,7 @@ public class ConsoleMainTest {
         Path directory = Files.createDirectories(this.temporary.resolve(".meteor"));
         int port = writeConfiguration(directory.resolve("meteor.properties"), "home");
 
-        JsonNode session = startApplication(port);
+        JsonNode session = startApplication(port, ConsoleMain::main);
         assertEquals("home", session.path("localUnit").asText());
     }
 
@@ -117,8 +119,25 @@ public class ConsoleMainTest {
         int port = writeConfiguration(configuration, "east");
         System.setProperty("config", configuration.toString());
 
-        JsonNode session = startApplication(port);
+        JsonNode session = startApplication(port, ConsoleMain::main);
         assertEquals("east", session.path("localUnit").asText());
+    }
+
+    @Test
+    public void launcherPassesConfigurationArgumentsToProductionMain() throws Exception {
+        Path directory = Files.createDirectories(this.temporary.resolve("launcher configuration"));
+        Path configuration = directory.resolve("meteor.properties");
+        int port = writeConfiguration(configuration, "launcher");
+        System.setProperty("config", this.temporary.resolve("unused.properties").toString());
+
+        JsonNode session = startApplication(port, ConsoleLauncher::main, "--config=" + configuration);
+        assertEquals("launcher", session.path("localUnit").asText());
+
+        URI endpoint = URI.create("http://127.0.0.1:" + port + "/api/service/debug");
+        HttpRequest request = HttpRequest.newBuilder(endpoint).timeout(Duration.ofSeconds(5)).GET().build();
+        HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+        assertEquals(400, response.statusCode(), response.body());
+        assertEquals("缺少参数：mode", JsonUtils.readTree(response.body()).path("error").asText());
     }
 
     @Test
@@ -129,7 +148,7 @@ public class ConsoleMainTest {
         Path workingDirectory = Path.of("").toAbsolutePath();
         System.setProperty("config", workingDirectory.relativize(configuration).toString());
 
-        JsonNode session = startApplication(port);
+        JsonNode session = startApplication(port, ConsoleMain::main);
         assertEquals("east", session.path("localUnit").asText());
     }
 
@@ -240,10 +259,10 @@ public class ConsoleMainTest {
         return port;
     }
 
-    private JsonNode startApplication(int port) throws Exception {
+    private JsonNode startApplication(int port, ThrowingConsumer<String[]> main, String... arguments) throws Exception {
         this.application = new Thread(() -> {
             try {
-                ConsoleMain.main(new String[0]);
+                main.accept(arguments);
             } catch (Throwable failure) {
                 this.applicationFailure = failure;
             }

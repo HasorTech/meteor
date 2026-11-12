@@ -16,7 +16,6 @@ import java.util.function.Supplier;
 import com.fasterxml.jackson.core.type.TypeReference;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetBindInfo;
-import net.hasor.meteor.MetContext;
 import net.hasor.meteor.console.component.rpc.RpcManagement;
 import net.hasor.meteor.console.component.rpc.RpcTarget;
 import net.hasor.meteor.console.global.error.ConsoleOperationException;
@@ -26,16 +25,14 @@ import net.hasor.meteor.registry.RegistryAdmin;
 import net.hasor.meteor.registry.admin.*;
 import net.hasor.meteor.registry.admin.description.MetServiceDescription;
 
-/** 将注册中心管理接口映射到远端 Console 的 RPC，独占出站上下文。 */
+/** 将注册中心管理接口映射到远端 Console 的 RPC，连接关闭不影响共享出站上下文。 */
 final class RemoteConnection implements RegistryAdmin {
-    private final    MetContext    context;
     private final    RpcManagement management;
     private final    String        managementToken;
     private volatile boolean       closed;
 
-    /** 工厂转入上下文所有权；RPC 代理随上下文使用，不单独关闭。 */
-    RemoteConnection(MetContext context, RpcManagement management, String managementToken) {
-        this.context = context;
+    /** 借用容器上下文上的 RPC 代理，只管理当前连接的可用状态。 */
+    RemoteConnection(RpcManagement management, String managementToken) {
         this.management = management;
         this.managementToken = managementToken;
     }
@@ -73,7 +70,6 @@ final class RemoteConnection implements RegistryAdmin {
             return;
         }
         this.closed = true;
-        this.context.close();
     }
 
     private void requireOpen() {
@@ -327,6 +323,13 @@ final class RemoteConnection implements RegistryAdmin {
         @Override
         public MetServiceInfo info() {
             return call(() -> management.serviceInfo(this.target, null));
+        }
+
+        @Override
+        public MetServiceMethodPage methods(String methodName, MetDirectoryQuery query) {
+            return call(() -> JsonUtils.convertCompatibleValue(management.methods(this.target, methodName, query), //
+                    new TypeReference<MetServiceMethodPage>() {
+                    }));
         }
 
         @Override

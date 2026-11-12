@@ -11,8 +11,8 @@ import net.hasor.meteor.MeteorModule;
 import net.hasor.meteor.example.consumer.ServiceConsumer;
 import org.h2.jdbcx.JdbcDataSource;
 
-/** 消费者入口：注入 Meteor 代理并持续调用，便于观察控制台治理操作的效果。 */
-public class ConsumerMain implements Module {
+/** 消费者2 号入口：注入 Meteor 代理并持续调用，便于观察控制台治理操作的效果。 */
+public class Consumer2Main implements Module {
     @Override
     public void loadModule(ApiBinder binder) throws Throwable {
         JdbcDataSource source = new JdbcDataSource();
@@ -27,14 +27,14 @@ public class ConsumerMain implements Module {
     public static void main(String[] arguments) throws Exception {
         String configuration = System.getProperty("config");
         if (StringUtils.isBlank(configuration)) {
-            configuration = "example-consumer.properties";
+            configuration = "example-consumer2.properties";
         } else {
             configuration = Path.of(configuration).toAbsolutePath().toUri().toString();
         }
 
         Boot boot = new Boot().arguments(arguments)//
                 .hconfigFile(configuration)//
-                .sources(ConsumerMain.class)//
+                .sources(Consumer2Main.class)//
                 .property("hasor.loadPackages", "net.hasor.meteor.example");
 
         try (BootApplication application = boot.start()) {
@@ -43,7 +43,8 @@ public class ConsumerMain implements Module {
                 try {
                     consumer.call();
                 } catch (RuntimeException failure) {
-                    System.err.println("[CALL FAILED] " + failure.getMessage());
+                    System.err.println("[CALL FAILED] 消费调用失败");
+                    failure.printStackTrace(System.err);
                 }
                 TimeUnit.SECONDS.sleep(2);
             }

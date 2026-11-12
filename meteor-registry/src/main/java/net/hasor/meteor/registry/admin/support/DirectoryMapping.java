@@ -119,6 +119,9 @@ final class DirectoryMapping {
             return identity;
         }
         if (member != null) {
+            if (StringUtils.equals(field, "ip")) {
+                return StringUtils.defaultString(member.getInstance().getIpAddress());
+            }
             if (StringUtils.equals(field, "application")) {
                 return StringUtils.defaultString(member.getInstance().getApplicationName());
             }

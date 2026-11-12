@@ -8,4 +8,12 @@ import net.hasor.meteor.annotation.MetService;
 public interface EchoService {
     @MetMethod(id = 1)
     DebugMessage echo(@MetParam(id = 1, name = "request") DebugMessage request);
+
+    /** 将文本转换为大写。 */
+    @MetMethod(id = 2)
+    DebugMessage uppercase(@MetParam(id = 1, name = "request") DebugMessage request);
+
+    /** 按 left 指定的次数重复文本，范围 0～20。 */
+    @MetMethod(id = 3)
+    DebugMessage repeat(@MetParam(id = 1, name = "request") DebugMessage request);
 }
