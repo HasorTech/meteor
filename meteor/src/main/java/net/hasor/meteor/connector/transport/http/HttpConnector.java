@@ -17,10 +17,7 @@ import net.hasor.cobble.concurrent.future.Future;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.connector.RouteTable;
 import net.hasor.meteor.connector.transport.*;
-import net.hasor.meteor.connector.transport.http.channel.HttpApplicationInitializer;
-import net.hasor.meteor.connector.transport.http.channel.HttpExchange;
-import net.hasor.meteor.connector.transport.http.channel.HttpMessageUtils;
-import net.hasor.meteor.connector.transport.http.channel.HttpUpgradeCoordinator;
+import net.hasor.meteor.connector.transport.http.channel.*;
 import net.hasor.meteor.connector.transport.http.http1.Http1Pipeline;
 import net.hasor.meteor.connector.transport.http.http2.Http2Pipeline;
 import net.hasor.meteor.connector.transport.http.websocket.WebSocketPipeline;
@@ -103,18 +100,27 @@ final class HttpConnector extends SocketConnector<HttpExchange> {
             throw new IllegalArgumentException("httpVersion must be positive");
         }
 
-        if (httpVersion == 2) {
-            return super.connect(initial, target, routes, factory);
-        } else {
-            try {
-                ChannelListenerFactory<HttpExchange> tracked = channel -> this.createClientListener(channel, factory);
-                return this.http1.connect(target, routes, initial, tracked);
-            } catch (RuntimeException | Error failure) {
-                BasicFuture<Void> result = new BasicFuture<>();
-                result.failed(failure);
-                return result;
+        try {
+            int poolSize = this.config.integer("clientPoolSize", 1);
+            ChannelListenerFactory<HttpExchange> tracked = channel -> this.createClientListener(channel, factory);
+            if (poolSize == 1) {
+                return this.connectClient(httpVersion, initial, target, routes, tracked);
             }
+            HttpClientPoolChannel pool = new HttpClientPoolChannel(target, this.transport.nextExecutor(), poolSize);
+            return pool.initialize(tracked, member -> this.connectClient(httpVersion, initial, target, routes, member));
+        } catch (RuntimeException | Error failure) {
+            BasicFuture<Void> result = new BasicFuture<>();
+            result.failed(failure);
+            return result;
         }
+    }
+
+    private Future<Void> connectClient(int version, String initial, InterAddress target, //
+            RouteTable<HttpExchange> routes, ChannelListenerFactory<HttpExchange> factory) {
+        if (version == 2) {
+            return super.connect(initial, target, routes, factory);
+        }
+        return this.http1.connect(target, routes, initial, factory);
     }
 
     private ChannelListener<HttpExchange> createClientListener(NetworkChannel<HttpExchange> channel, ChannelListenerFactory<HttpExchange> factory) throws Exception {
@@ -172,6 +178,7 @@ final class HttpConnector extends SocketConnector<HttpExchange> {
     private static TcpSoConfig socketConfig(TransportConfig config) {
         TcpSoConfig socket = new TcpSoConfig();
         socket.setConnectTimeoutMs(config.connectTimeout());
+        socket.setSoNoDelay(Boolean.parseBoolean(config.option("tcpNoDelay", "true")));
         return socket;
     }
 

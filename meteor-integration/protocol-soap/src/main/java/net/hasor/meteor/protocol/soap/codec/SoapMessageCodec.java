@@ -16,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
+import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
@@ -52,14 +53,15 @@ public final class SoapMessageCodec {
     private static final Set<String> RESERVED_HEADERS = Set.of(//
             "connection", "content-length", "content-type", "host", "message", "soapaction", "transfer-encoding");
 
-    private final ProtocolConfig    config;
-    private final RouteMountIndex   routes;
-    private final SoapVersion       version;
-    private final SoapHeaderHandler headerHandler;
-    private final XmlMapper         mapper;
-    private final SoapBodyCodec     bodies;
-    private final SoapXmlMapping    mapping;
-    private final SoapProtocolMeta  binding;
+    private final ProtocolConfig         config;
+    private final RouteMountIndex        routes;
+    private final SoapVersion            version;
+    private final SoapHeaderHandler      headerHandler;
+    private final XmlMapper              mapper;
+    private final SoapBodyCodec          bodies;
+    private final SoapXmlMapping         mapping;
+    private final SoapProtocolMeta       binding;
+    private       DocumentBuilderFactory documentFactory;
 
     private SoapMessageCodec(ProtocolConfig config, RouteMountIndex routes, //
             SoapHeaderHandler headerHandler, SoapXmlMapping mapping, SoapProtocolMeta definition) {
@@ -1076,7 +1078,7 @@ public final class SoapMessageCodec {
     }
 
     private Document newDocument() throws Exception {
-        return this.documentFactory().newDocumentBuilder().newDocument();
+        return this.newDocumentBuilder().newDocument();
     }
 
     private Document parse(byte[] bytes, Charset charset) throws Exception {
@@ -1084,7 +1086,7 @@ public final class SoapMessageCodec {
         if (charset != null) {
             source.setEncoding(charset.name());
         }
-        Document document = this.documentFactory().newDocumentBuilder().parse(source);
+        Document document = this.newDocumentBuilder().parse(source);
         this.rejectProcessingInstructions(document);
         try {
             SoapXmlUtils.validateDocument(document, "SOAP message");
@@ -1115,16 +1117,20 @@ public final class SoapMessageCodec {
         return StringUtils.isBlank(message) ? failure.getClass().getSimpleName() : message;
     }
 
-    private DocumentBuilderFactory documentFactory() throws Exception {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(true);
-        factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-        factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-        factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
-        factory.setXIncludeAware(false);
-        factory.setExpandEntityReferences(false);
-        return factory;
+    private synchronized DocumentBuilder newDocumentBuilder() throws Exception {
+        if (this.documentFactory == null) {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setNamespaceAware(true);
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+            factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+            factory.setXIncludeAware(false);
+            factory.setExpandEntityReferences(false);
+            this.documentFactory = factory;
+        }
+        // Builder 不缓存：避免跨请求并发共享或保留上一份 DOM 文档。
+        return this.documentFactory.newDocumentBuilder();
     }
 
     private Element envelope(Document document) {

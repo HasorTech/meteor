@@ -27,6 +27,7 @@ final class TcpConnector extends SocketConnector<byte[]> {
     private static TcpSoConfig socketConfig(TransportConfig config) {
         TcpSoConfig socket = new TcpSoConfig();
         socket.setConnectTimeoutMs(config.connectTimeout());
+        socket.setSoNoDelay(Boolean.parseBoolean(config.option("tcpNoDelay", "true")));
         return socket;
     }
 

@@ -126,6 +126,13 @@ final class RsfV1WireBuffer {
         return this;
     }
 
+    byte[] readBytes(int size) {
+        this.require(size);
+        byte[] bytes = Arrays.copyOfRange(this.data, this.reader, this.reader + size);
+        this.reader += size;
+        return bytes;
+    }
+
     RsfV1WireBuffer writeBytes(byte[] bytes) {
         this.reserve(bytes.length);
         System.arraycopy(bytes, 0, this.data, this.writer, bytes.length);
@@ -134,7 +141,11 @@ final class RsfV1WireBuffer {
     }
 
     RsfV1WireBuffer writeBytes(RsfV1WireBuffer source) {
-        return this.writeBytes(source.toByteArray());
+        int size = source.readableBytes();
+        this.reserve(size);
+        System.arraycopy(source.data, source.reader, this.data, this.writer, size);
+        this.writer += size;
+        return this;
     }
 
     void release() {

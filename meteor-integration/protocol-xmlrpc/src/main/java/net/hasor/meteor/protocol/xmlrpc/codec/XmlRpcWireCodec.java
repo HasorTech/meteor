@@ -22,6 +22,7 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+import javax.xml.transform.stream.StreamSource;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.domain.ProtocolConfig;
 import net.hasor.meteor.protocol.xmlrpc.XmlRpcException;
@@ -33,6 +34,7 @@ final class XmlRpcWireCodec {
     private final        int               maxMessageSize;
     private final        int               maxDepth;
     private final        boolean           allowNil;
+    private final        XMLInputFactory   inputFactory;
 
     XmlRpcWireCodec(ProtocolConfig config) {
         this.maxMessageSize = positiveOption(config, "maxMessageSize", 4 * 1024 * 1024);
@@ -42,6 +44,12 @@ final class XmlRpcWireCodec {
             throw new IllegalArgumentException("allowNil must be true or false");
         }
         this.allowNil = Boolean.parseBoolean(nil);
+        this.inputFactory = XMLInputFactory.newFactory();
+        this.inputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+        this.inputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+        this.inputFactory.setXMLResolver((publicId, systemId, baseUri, namespace) -> {
+            throw new XMLStreamException("External XML resources are prohibited");
+        });
     }
 
     XmlRpcCall decodeRequest(byte[] body) throws IOException {
@@ -152,16 +160,14 @@ final class XmlRpcWireCodec {
         if (body == null || body.length == 0 || body.length > this.maxMessageSize) {
             throw new IOException("XML-RPC body is empty or exceeds maxMessageSize");
         }
-        // 每份文档独立创建解析器；禁止 DTD、实体声明和外部资源读取。
-        XMLInputFactory factory = XMLInputFactory.newFactory();
-        factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
-        factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
-        factory.setXMLResolver((publicId, systemId, baseUri, namespace) -> {
-            throw new XMLStreamException("External XML resources are prohibited");
-        });
+        // 只复用已配置的 factory，每份文档仍拥有独立 reader；factory 创建过程不并发执行。
         XMLStreamReader reader = null;
         try {
-            reader = factory.createXMLStreamReader(new ByteArrayInputStream(body));
+            synchronized (this.inputFactory) {
+                // JDK 的 InputStream 重载会缓存最后一个 reader；Source 重载不保留请求解析器。
+                StreamSource source = new StreamSource(new ByteArrayInputStream(body));
+                reader = this.inputFactory.createXMLStreamReader(source);
+            }
             String version = reader.getVersion();
             if (version != null && !StringUtils.equals(version, "1.0")) {
                 throw new XMLStreamException("XML-RPC requires XML 1.0");

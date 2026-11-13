@@ -12,9 +12,28 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.hasor.meteor.domain.OptionInfo;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class GrpcMetadataTest {
+    @ParameterizedTest
+    @ValueSource(strings = { "x_request.id-01", "0", "_", ".", "-" })
+    void acceptsAsciiMetadataNames(String key) {
+        // 复用正则仍接受协议定义的全部 ASCII 字符类别。
+        GrpcMetadata metadata = GrpcMetadata.create();
+        metadata.addHeader(key, "value");
+        assertEquals(List.of("value"), metadata.getHeader(key));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = { "", "x tag", "x:tag", "x\n", "标签", "\u0130" })
+    void rejectsInvalidMetadataNames(String key) {
+        // 拒绝空串、分隔符、换行和非 ASCII 名称，不放宽输入约束。
+        GrpcMetadata metadata = GrpcMetadata.create();
+        assertThrows(IllegalArgumentException.class, () -> metadata.addHeader(key, "value"));
+    }
+
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Test

@@ -7,6 +7,7 @@
  */
 package net.hasor.meteor.protocol.connect;
 import java.util.*;
+import java.util.regex.Pattern;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,13 +16,14 @@ import net.hasor.meteor.domain.OptionInfo;
 
 /** 单次 Connect 的元数据视图，以 JSON 选项保存多值字段并转换二进制值。 */
 public final class ConnectMetadata {
-    private static final ObjectMapper JSON         = new ObjectMapper();
-    private static final String       HEADERS      = "connect-metadata-headers";
-    private static final String       TRAILERS     = "connect-metadata-trailers";
-    private static final Set<String>  HTTP_HEADERS = Set.of(//
+    private static final Pattern      APPLICATION_KEY = Pattern.compile("[0-9a-z_.-]+");
+    private static final ObjectMapper JSON            = new ObjectMapper();
+    private static final String       HEADERS         = "connect-metadata-headers";
+    private static final String       TRAILERS        = "connect-metadata-trailers";
+    private static final Set<String>  HTTP_HEADERS    = Set.of(//
             "content-type", "content-length", "content-encoding", "accept-encoding", "host", "connection", //
             "transfer-encoding", "te", "user-agent");
-    private static final JavaType     FIELDS       = fieldsType();
+    private static final JavaType     FIELDS          = fieldsType();
     private final        MetOptionSet options;
 
     private ConnectMetadata(MetOptionSet options) {
@@ -103,7 +105,7 @@ public final class ConnectMetadata {
     }
 
     private static boolean isApplicationKey(String name) {
-        return name != null && name.matches("[0-9a-z_.-]+") && !name.startsWith("connect-") && //
+        return name != null && APPLICATION_KEY.matcher(name).matches() && !name.startsWith("connect-") && //
                 !HTTP_HEADERS.contains(name);
     }
 

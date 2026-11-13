@@ -14,6 +14,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CancellationException;
+import java.util.regex.Pattern;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
@@ -35,6 +36,7 @@ import net.hasor.meteor.serialize.SerializeCoder;
 
 /** 负责 Java 消息与标准 gRPC 报文之间的转换，调用仍交给 Caller/Dispatcher。 */
 public final class GrpcHttpCodec {
+    private static final Pattern         APPLICATION_KEY = Pattern.compile("[0-9a-z_.-]+");
     private static final Set<String>     HTTP_HEADERS;
     private final        ProtocolConfig  config;
     private final        RouteMountIndex routes;
@@ -536,7 +538,7 @@ public final class GrpcHttpCodec {
     }
 
     private static boolean isApplicationKey(String name) {
-        return name != null && name.matches("[0-9a-z_.-]+") && !name.startsWith("grpc-") && //
+        return name != null && APPLICATION_KEY.matcher(name).matches() && !name.startsWith("grpc-") && //
                 !HTTP_HEADERS.contains(name);
     }
 

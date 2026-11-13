@@ -17,6 +17,7 @@ import net.hasor.cobble.concurrent.future.Cancellable;
 import net.hasor.dbvisitor.jdbc.core.JdbcTemplate;
 import net.hasor.meteor.domain.MetServiceType;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
+import net.hasor.meteor.registry.shared.storage.domain.*;
 import org.junit.jupiter.api.Test;
 import static net.hasor.example.registry.jdbc.JdbcTestSupport.configuration;
 import static net.hasor.example.registry.jdbc.JdbcTestSupport.createDatabase;

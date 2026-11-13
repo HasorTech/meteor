@@ -45,6 +45,7 @@ public final class HttpTransportFactory implements TransportFactory<HttpExchange
     }
 
     public TransportPlan<HttpExchange> prepare(TransportConfig config, ClassLoader loader) {
+        config.integer("clientPoolSize", 1);
         return TransportPlan.withPipeline(config, loader, (pipeline, services) -> {
             return new HttpConnector(config, pipeline, services.classLoader());
         });

@@ -30,17 +30,18 @@ import net.hasor.meteor.protocol.grpc.GrpcProtoSchema;
 
 /** gRPC 家族共享的静态服务绑定；不持有会话、网络资源或业务对象。 */
 public final class GrpcServiceBinding {
-    private final HttpSchemaResource            schemaResource;
-    private final String                        serviceName;
-    private final GrpcProtoSchema               schema;
-    private final ServiceDescriptor             service;
-    private final Map<String, Method>           javaMethods;
-    private final Map<String, Method>           remoteMethods = new LinkedHashMap<>();
-    private final Map<Method, MethodDescriptor> descriptors   = new LinkedHashMap<>();
-    private final Map<Method, GrpcMethodShape>  shapes        = new LinkedHashMap<>();
-    private final Map<Method, GrpcValueMapping> requests      = new LinkedHashMap<>();
-    private final Map<Method, GrpcValueMapping> responses     = new LinkedHashMap<>();
-    private final JsonFormat.TypeRegistry       registry;
+    private final HttpSchemaResource               schemaResource;
+    private final String                           serviceName;
+    private final GrpcProtoSchema                  schema;
+    private final ServiceDescriptor                service;
+    private final Map<String, Method>              javaMethods;
+    private final Map<String, Method>              remoteMethods = new LinkedHashMap<>();
+    private final Map<Method, MethodDescriptor>    descriptors   = new LinkedHashMap<>();
+    private final Map<Method, GrpcMethodShape>     shapes        = new LinkedHashMap<>();
+    private final Map<Method, GrpcValueMapping>    requests      = new LinkedHashMap<>();
+    private final Map<Method, GrpcValueMapping>    responses     = new LinkedHashMap<>();
+    private final Map<Descriptor, GrpcMessageTree> messageTrees  = new IdentityHashMap<>();
+    private final JsonFormat.TypeRegistry          registry;
 
     private GrpcServiceBinding(GrpcProtoSchema schema, String serviceName, Map<String, Method> methods, Class<?> type) {
         this.serviceName = serviceName;
@@ -60,8 +61,11 @@ public final class GrpcServiceBinding {
             if (this.service == null) {
                 continue;
             }
+
             MethodDescriptor descriptor = this.service.findMethodByName(remoteName);
             this.descriptors.put(method, descriptor);
+            GrpcMessageTree.compile(descriptor.getInputType(), this.messageTrees);
+            GrpcMessageTree.compile(descriptor.getOutputType(), this.messageTrees);
             JavaType request = GrpcValueMapping.messageType(type, method, true);
             JavaType response = GrpcValueMapping.messageType(type, method, false);
             this.requests.put(method, GrpcValueMapping.compile(request, descriptor.getInputType(), mappings));
@@ -270,8 +274,14 @@ public final class GrpcServiceBinding {
             }
             return DynamicMessage.parseFrom(descriptor, message.toByteArray());
         }
+
         GrpcValueMapping mapping = this.mapping(method, request);
         JsonNode json = mapping.toProto(GrpcValueMapping.MAPPER.valueToTree(value));
+        DynamicMessage encoded = this.messageTrees.get(descriptor).tryEncode(json);
+        if (encoded != null) {
+            return encoded;
+        }
+
         DynamicMessage.Builder result = DynamicMessage.newBuilder(descriptor);
         GrpcProtoSchema.mergeJson(GrpcValueMapping.MAPPER.writeValueAsString(json), result, this.registry);
         return result.build();
@@ -298,7 +308,12 @@ public final class GrpcServiceBinding {
         if (type == DynamicMessage.class || type == Message.class) {
             return message;
         }
-        JsonNode json = GrpcValueMapping.MAPPER.readTree(this.json(message));
+
+        JsonNode json = this.messageTrees.get(message.getDescriptorForType()).tryDecode(message);
+        if (json == null) {
+            json = GrpcValueMapping.MAPPER.readTree(this.json(message));
+        }
+
         JsonNode javaValue = mapping.fromProto(json);
         return GrpcValueMapping.MAPPER.readerFor(mapping.javaType()).readValue(javaValue);
     }

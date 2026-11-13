@@ -1538,6 +1538,27 @@ public class MetCallerTest {
     }
 
     @Test
+    public void instanceAddressProviderSubclassStillReceivesRoutingMetadata() throws Exception {
+        try (Host host = new Host(10000, "normal")) {
+            // 自定义固定地址提供者仍可覆写选址行为，不能走内置提供者的无路由输入路径。
+            InstanceAddressProvider provider = new InstanceAddressProvider(host.address) {
+                @Override
+                public InterAddress get(RouteContext input) {
+                    assertNotNull(input);
+                    assertEquals(host.service.getBindID(), input.getServiceId());
+                    assertEquals("echo", input.getMethod().get("name"));
+                    return super.get(input);
+                }
+            };
+            Class<?>[] types = { String.class };
+            Object[] arguments = { "value" };
+            MetRequestObject request = host.rpc.createRequest(provider, host.service, "echo", types, arguments);
+            assertEquals(host.address, request.getTargetAddress());
+            assertTrue(request.isP2PCalls());
+        }
+    }
+
+    @Test
     public void requestCreationAllocatesDistinctIds() throws Exception {
         // 对同一服务连续创建请求，但不触发网络调用。
         try (Host host = new Host(10000, "normal")) {

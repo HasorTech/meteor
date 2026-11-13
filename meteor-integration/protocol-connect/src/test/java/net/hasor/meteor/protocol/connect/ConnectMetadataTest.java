@@ -10,9 +10,28 @@ import java.util.List;
 import java.util.Map;
 import net.hasor.meteor.domain.OptionInfo;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ConnectMetadataTest {
+    @ParameterizedTest
+    @ValueSource(strings = { "x_request.id-01", "0", "_", ".", "-" })
+    void acceptsAsciiMetadataNames(String key) {
+        // 复用正则仍接受协议定义的全部 ASCII 字符类别。
+        ConnectMetadata metadata = ConnectMetadata.create();
+        metadata.addHeader(key, "value");
+        assertEquals(List.of("value"), metadata.getHeader(key));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = { "", "x tag", "x:tag", "x\n", "标签", "\u0130" })
+    void rejectsInvalidMetadataNames(String key) {
+        // 拒绝空串、分隔符、换行和非 ASCII 名称，不放宽输入约束。
+        ConnectMetadata metadata = ConnectMetadata.create();
+        assertThrows(IllegalArgumentException.class, () -> metadata.addHeader(key, "value"));
+    }
+
     @Test
     public void standaloneMetadataStartsEmpty() {
         // 独立创建的元数据尚未附加任何消息字段。

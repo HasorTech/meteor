@@ -37,6 +37,26 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class GrpcCompletenessTest {
+    @Test
+    void receivedMetadataFiltersProtocolAndInvalidNames() {
+        // 真实解码入口过滤保留头部和非法名称，同时保留合法应用字段。
+        ProtocolConfig config = ProtocolConfig.newConfig("grpc", "grpc", Map.of());
+        GrpcHttpCodec codec = new GrpcHttpCodec(config, new RouteMountIndex("metadata-test", config), null);
+        Map<String, List<String>> headers = new LinkedHashMap<>();
+        headers.put("x_request.id-01", List.of("accepted"));
+        headers.put("grpc-status", List.of("0"));
+        headers.put("content-type", List.of("application/grpc"));
+        headers.put("x tag", List.of("ignored"));
+        headers.put("x:tag", List.of("ignored"));
+        headers.put("", List.of("ignored"));
+        headers.put("标签", List.of("ignored"));
+        OptionInfo options = new OptionInfo();
+        codec.readHeaders(headers, options);
+        assertEquals(Map.of("x_request.id-01", List.of("accepted")), GrpcMetadata.from(options).getHeaders());
+        assertNull(options.getOption("grpc-status"));
+        assertNull(options.getOption("x tag"));
+    }
+
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     public interface Types {

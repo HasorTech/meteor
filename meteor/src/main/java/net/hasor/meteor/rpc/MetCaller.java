@@ -23,6 +23,7 @@ import net.hasor.meteor.*;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.address.dsl.RouteContext;
 import net.hasor.meteor.address.provider.AddressProvider;
+import net.hasor.meteor.address.provider.InstanceAddressProvider;
 import net.hasor.meteor.connector.ConnectorConfig;
 import net.hasor.meteor.connector.ConnectorManager;
 import net.hasor.meteor.connector.MetChannel;
@@ -123,6 +124,29 @@ public final class MetCaller implements AutoCloseable {
         }
 
         Method targetMethod = MetRuntimeUtils.getServiceMethod(bindInfo.getBindType(), methodName, parameterTypes);
+        InterAddress targetAddress;
+        // 内置固定地址不读取路由输入；子类仍走完整上下文，保留覆写 get 的行为。
+        if (target.getClass() == InstanceAddressProvider.class) {
+            targetAddress = target.get(null);
+        } else {
+            targetAddress = this.route(target, bindInfo, targetMethod, parameterObjects);
+        }
+
+        MetRequestObject request = new MetRequestObject(//
+                REQUEST_IDS.incrementAndGet(), true, this.context, bindInfo, targetMethod, parameterObjects);
+        request.setPeerAddress(targetAddress);
+        request.setFlags(flags);
+        request.setSerializeType(bindInfo.getSerializeType());
+        request.setMessage(bindInfo.isMessage() || ServiceMetaParser.method(targetMethod).isMessage());
+        request.setTimeout(this.timeout(bindInfo.getClientTimeout()));
+
+        // 创建时复制默认选项，后续由调用方覆盖或删除。
+        request.addOptionMap(this.context.getSettings().getRequestOptions());
+        return request;
+    }
+
+    private InterAddress route(AddressProvider target, MetBindInfo<?> bindInfo, Method targetMethod, Object[] parameterObjects) {
+        String methodName = targetMethod.getName();
         RouteContext routing = new RouteContext(bindInfo.getBindID(), methodName, parameterObjects);
         routing.getEnv().put("applicationName", this.context.getApplicationName());
         routing.getEnv().put("unitName", this.context.getSettings().getUnitName());
@@ -137,19 +161,7 @@ public final class MetCaller implements AutoCloseable {
         routing.getService().put("meta", metadata);
         routing.getMethod().put("signature", targetMethod.toGenericString());
         routing.setAddressSchemes(this.selectedSchemes(bindInfo));
-        InterAddress targetAddress = target.get(routing);
-
-        MetRequestObject request = new MetRequestObject(//
-                REQUEST_IDS.incrementAndGet(), true, this.context, bindInfo, targetMethod, parameterObjects);
-        request.setPeerAddress(targetAddress);
-        request.setFlags(flags);
-        request.setSerializeType(bindInfo.getSerializeType());
-        request.setMessage(bindInfo.isMessage() || ServiceMetaParser.method(targetMethod).isMessage());
-        request.setTimeout(this.timeout(bindInfo.getClientTimeout()));
-
-        // 创建时复制默认选项，后续由调用方覆盖或删除。
-        request.addOptionMap(this.context.getSettings().getRequestOptions());
-        return request;
+        return target.get(routing);
     }
 
     /** 服务显式选择的协议先映射为地址 scheme，避免发现选址选中其它已安装的协议。 */
@@ -184,8 +196,10 @@ public final class MetCaller implements AutoCloseable {
             return rsfFuture;
         }
 
-        invLogger.info("request(" + requestID + ") -> doSendRequest, bindID =" + serviceID //
-                + ", callMethod =" + rsfRequest.getMethod() + ", isMessage =" + rsfRequest.isMessage() + ".");
+        if (invLogger.isDebugEnabled()) {
+            invLogger.debug("request(" + requestID + ") -> doSendRequest, bindID =" + serviceID //
+                    + ", callMethod =" + rsfRequest.getMethod() + ", isMessage =" + rsfRequest.isMessage() + ".");
+        }
 
         try {
             MetResponseObject response = new MetResponseObject(rsfRequest);
@@ -247,7 +261,9 @@ public final class MetCaller implements AutoCloseable {
         MetFilterHandler filters = new MetFilterHandler(filterProviders, (filterRequest, filterResponse) -> {
             if (!filterResponse.isResponse()) {
                 long requestID = filterRequest.getRequestID();
-                invLogger.info("request(" + requestID + ") -> sendRequest, response wait for remote.");
+                if (invLogger.isDebugEnabled()) {
+                    invLogger.debug("request(" + requestID + ") -> sendRequest, response wait for remote.");
+                }
                 this.sendRequest(future, selection);
             }
         });
@@ -695,7 +711,9 @@ public final class MetCaller implements AutoCloseable {
         response.sendData(result);
         long requestId = request.getRequestID();
         String bindId = request.getBindInfo().getBindID();
-        invLogger.info("response(" + requestId + ") -> successful, bindID =" + bindId + ".");
+        if (invLogger.isDebugEnabled()) {
+            invLogger.debug("response(" + requestId + ") -> successful, bindID =" + bindId + ".");
+        }
         future.completed(response);
     }
 

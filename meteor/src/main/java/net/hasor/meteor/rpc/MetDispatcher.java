@@ -78,18 +78,22 @@ final class MetDispatcher implements AutoCloseable {
         String serviceUniqueName = "[" + info.getServiceGroup() + "]";
         serviceUniqueName += info.getServiceName() + "-" + info.getServiceVersion();
         try {
-            String targetMethod = info.getTargetMethod();
-            String message = "request(" + info.getRequestID() + ") -> received, bindID =" + serviceUniqueName;
-            message += ", targetMethod =" + targetMethod + ", remoteAddress =" + target + ".";
-            logger.info(message);
+            if (logger.isDebugEnabled()) {
+                String targetMethod = info.getTargetMethod();
+                String message = "request(" + info.getRequestID() + ") -> received, bindID =" + serviceUniqueName;
+                message += ", targetMethod =" + targetMethod + ", remoteAddress =" + target + ".";
+                logger.debug(message);
+            }
 
             // 放入业务线程准备执行，再向对端发送接纳回执。
             MetInvocationTask task = new MetInvocationTask(channel, this, info, receivedNanos);
             this.dispatcherExecutor.execute(service, task);
-            ResponsePayload resp = MetPayloadBuilder.buildResponseStatus(//
-                    info.getRequestID(), ProtocolStatus.Accept, null);
-
-            channel.sendData(resp).onFinal(done -> this.completeResponse(info, resp, done));
+            // 消息调用以入队成功为终态；普通调用只需要实际结果，避免额外回执及传输排队。
+            if (info.isMessage()) {
+                ResponsePayload resp = MetPayloadBuilder.buildResponseStatus(//
+                        info.getRequestID(), ProtocolStatus.Accept, null);
+                channel.sendData(resp).onFinal(done -> this.completeResponse(info, resp, done));
+            }
         } catch (RejectedExecutionException e) {
             String targetMethod = info.getTargetMethod();
             String message = "request(" + info.getRequestID() + ") -> rejected request, queue is full.";

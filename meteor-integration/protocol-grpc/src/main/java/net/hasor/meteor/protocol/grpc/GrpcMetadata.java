@@ -7,6 +7,7 @@
  */
 package net.hasor.meteor.protocol.grpc;
 import java.util.*;
+import java.util.regex.Pattern;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,11 +16,12 @@ import net.hasor.meteor.domain.OptionInfo;
 
 /** 单次 gRPC 的元数据视图，以 JSON 选项保存多值字段并转换二进制值。 */
 public final class GrpcMetadata {
-    private static final ObjectMapper MAPPER   = new ObjectMapper();
-    private static final String       HEADERS  = "grpc-metadata-headers";
-    private static final String       TRAILERS = "grpc-metadata-trailers";
+    private static final Pattern      APPLICATION_KEY = Pattern.compile("[0-9a-z_.-]+");
+    private static final ObjectMapper MAPPER          = new ObjectMapper();
+    private static final String       HEADERS         = "grpc-metadata-headers";
+    private static final String       TRAILERS        = "grpc-metadata-trailers";
     private static final Set<String>  HTTP_HEADERS;
-    private static final JavaType     FIELDS   = fieldsType();
+    private static final JavaType     FIELDS          = fieldsType();
     private final        MetOptionSet options;
 
     static {
@@ -106,7 +108,7 @@ public final class GrpcMetadata {
     }
 
     private static boolean isApplicationKey(String name) {
-        return name != null && name.matches("[0-9a-z_.-]+") && !name.startsWith("grpc-") && //
+        return name != null && APPLICATION_KEY.matcher(name).matches() && !name.startsWith("grpc-") && //
                 !HTTP_HEADERS.contains(name);
     }
 

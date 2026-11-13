@@ -7,7 +7,6 @@
  */
 package net.hasor.meteor.connector.protocol.rsf.codec;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /** RSF/1 attribute pool. Each pool owns heap data and needs no native-buffer finalizer. */
@@ -38,12 +37,9 @@ class RsfV1AttributePool {
             throw new IllegalArgumentException("RSF pool data length mismatch");
         }
 
-        byte[] body = input.toByteArray();
         List<byte[]> decoded = new ArrayList<>(count);
-        int offset = 0;
         for (int length : lengths) {
-            decoded.add(length == NULL_MARKER ? null : Arrays.copyOfRange(body, offset, offset + length));
-            offset += Math.max(length, 0);
+            decoded.add(length == NULL_MARKER ? null : input.readBytes(length));
         }
         this.values = decoded;
     }

@@ -677,6 +677,34 @@ public class MetInvocationTest {
     }
 
     @Test
+    public void unaryDispatchDoesNotSendAnAcceptanceFrame() throws Exception {
+        CountDownLatch entered = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        try (Host host = new Host()) {
+            // 暂停实际业务执行，观察普通调用入队后的协议输出。
+            host.filters = new MetFilter[] { (request, response, chain) -> {
+                entered.countDown();
+                assertTrue(release.await(3, TimeUnit.SECONDS));
+                chain.doFilter(request, response);
+            } };
+            RequestPayload request = host.request();
+            try {
+                host.dispatcher.onRequest(host.channel, request.getRequestID(), request);
+                assertTrue(entered.await(2, TimeUnit.SECONDS));
+                assertTrue(host.responses.isEmpty(), "Unary calls must not send an extra acceptance frame");
+            } finally {
+                release.countDown();
+            }
+
+            // 业务完成后只返回最终结果，消息调用仍由独立场景验证 Accept 语义。
+            ResponsePayload response = host.take();
+            assertEquals(ProtocolStatus.OK, response.getStatus());
+            assertEquals(request.getRequestID(), response.getRequestID());
+            assertTrue(host.responses.isEmpty());
+        }
+    }
+
+    @Test
     public void boundedQueueRejectsExcessRequestsThenContinuesAfterDrain() throws Exception {
         // 用闸门占用唯一工作线程，保留一个排队位置。
         CountDownLatch entered = new CountDownLatch(1);
@@ -699,8 +727,6 @@ public class MetInvocationTest {
                 // 一个执行中、一个排队，第三个应立即被拒绝。
                 host.dispatch(2);
                 host.dispatch(3);
-                assertEquals(ProtocolStatus.Accept, host.take().getStatus());
-                assertEquals(ProtocolStatus.Accept, host.take().getStatus());
                 ResponsePayload rejected = host.take();
                 assertEquals(3, rejected.getRequestID());
                 assertEquals(ProtocolStatus.QueueFull, rejected.getStatus());
@@ -732,9 +758,7 @@ public class MetInvocationTest {
             try {
                 host.dispatch(1);
                 assertTrue(entered.await(2, TimeUnit.SECONDS));
-                assertEquals(ProtocolStatus.Accept, host.take().getStatus());
                 host.dispatch(2);
-                assertEquals(ProtocolStatus.Accept, host.take().getStatus());
 
                 // 拒绝必须立即通过现有协议状态返回给调用方。
                 host.dispatch(3);
@@ -771,9 +795,7 @@ public class MetInvocationTest {
             // 接纳一个运行请求和一个排队请求，再触发服务移除。
             host.dispatch(1);
             assertTrue(entered.await(2, TimeUnit.SECONDS));
-            assertEquals(ProtocolStatus.Accept, host.take().getStatus());
             host.dispatch(2);
-            assertEquals(ProtocolStatus.Accept, host.take().getStatus());
 
             // 移除后不能静默丢弃已接受的排队请求，也不能再进入业务方法。
             host.servicePresent = false;
@@ -817,15 +839,15 @@ public class MetInvocationTest {
             assertTrue(interrupted.await(2, TimeUnit.SECONDS));
             assertEquals(0, host.invocations.get());
             host.dispatch(3);
-            // 检查两个接纳回执、中断响应和关闭后的拒绝，不允许排队任务产生业务响应。
+            // 普通调用只产生执行中任务的终态响应及关闭后的拒绝，不再发送接纳回执。
             boolean rejected = false;
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < 2; i++) {
                 ResponsePayload response = host.take();
                 if (response.getRequestID() == 3) {
                     assertEquals(ProtocolStatus.QueueFull, response.getStatus());
                     rejected = true;
                 }
-                assertFalse(response.getRequestID() == 2 && response.getStatus() != ProtocolStatus.Accept);
+                assertNotEquals(2, response.getRequestID(), "Queued work must not produce a response after close");
             }
             assertTrue(rejected);
         }
