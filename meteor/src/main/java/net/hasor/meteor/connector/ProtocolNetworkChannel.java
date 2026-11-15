@@ -8,6 +8,7 @@
 package net.hasor.meteor.connector;
 import java.io.IOException;
 import java.util.function.Consumer;
+import net.hasor.cobble.StringUtils;
 import net.hasor.cobble.concurrent.future.BasicFuture;
 import net.hasor.cobble.concurrent.future.Future;
 import net.hasor.meteor.address.InterAddress;
@@ -16,12 +17,13 @@ import net.hasor.meteor.domain.ProtocolConfig;
 
 /** Protocol-scoped network channel. An isolated close leaves sibling protocol channels open. */
 final class ProtocolNetworkChannel<M> implements NetworkChannel<M> {
-    private final NetworkChannel<M>   networkChannel;
-    private final ProtocolConfig      protocol;
-    private final boolean             outbound;
-    private final boolean             isolatedClose;
-    private final BasicFuture<Void>   closeFuture = new BasicFuture<>();
-    private       Consumer<Throwable> closeListener;
+    private final    NetworkChannel<M>   networkChannel;
+    private final    ProtocolConfig      protocol;
+    private final    boolean             outbound;
+    private final    boolean             isolatedClose;
+    private final    BasicFuture<Void>   closeFuture = new BasicFuture<>();
+    private          Consumer<Throwable> closeListener;
+    private volatile RemoteAddress       remoteAddress;
 
     ProtocolNetworkChannel(NetworkChannel<M> networkChannel, ProtocolConfig protocol, //
             boolean outbound, boolean isolatedClose) {
@@ -69,7 +71,21 @@ final class ProtocolNetworkChannel<M> implements NetworkChannel<M> {
 
     @Override
     public InterAddress getRemote() {
-        return this.protocolAddress(this.networkChannel.getRemote());
+        InterAddress source = this.networkChannel.getRemote();
+        if (source == null) {
+            this.remoteAddress = null;
+            return null;
+        }
+
+        String host = source.getHost();
+        RemoteAddress cached = this.remoteAddress;
+        if (cached != null && cached.source == source && StringUtils.equals(cached.host, host)) {
+            return cached.mapped;
+        }
+
+        InterAddress mapped = new InterAddress(this.protocol.scheme(), host, source.getPort(), source.getPath());
+        this.remoteAddress = new RemoteAddress(source, host, mapped);
+        return mapped;
     }
 
     @Override
@@ -112,5 +128,8 @@ final class ProtocolNetworkChannel<M> implements NetworkChannel<M> {
 
         this.networkChannel.drainAndClose();
         return this.closeFuture;
+    }
+
+    private record RemoteAddress(InterAddress source, String host, InterAddress mapped) {
     }
 }

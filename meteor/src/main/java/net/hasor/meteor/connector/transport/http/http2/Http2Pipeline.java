@@ -67,7 +67,9 @@ public final class Http2Pipeline {
         };
 
         // 部分原厂 RPC 服务端在初始响应中发送 TE: trailers；只在客户端接收时忽略该无效字段。
-        Http2ObjectDuplex messages = new Http2ObjectDuplex(server, routing);
+        int connectionWindowSize = this.transport.config().integer("http2ConnectionWindowSize", 1024 * 1024);
+        Http2Settings settings = Http2Settings.defaultLocalSettings(server).connectionWindowSize(connectionWindowSize);
+        Http2ObjectDuplex messages = new Http2ObjectDuplex(server, settings, routing);
         messages.ignoreResponseTe(!server);
         ProtoHelper.standard()//
                 .nextDuplex("h2-frame", new Http2FrameDuplex(server))//

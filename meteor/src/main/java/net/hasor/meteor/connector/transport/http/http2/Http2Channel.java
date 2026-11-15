@@ -51,7 +51,7 @@ final class Http2Channel extends HttpChannel implements ProtoHandler<HttpObject,
 
     Http2Channel(SocketRuntime transport, NetChannel socket, InterAddress remote,//
             RouteTable<HttpExchange> routes, boolean streamingResponses) {
-        super(transport.config(), transport.nextExecutor(), routes, streamingResponses);
+        super(transport.config(), transport.nextExecutor(socket), routes, streamingResponses);
         this.socket = socket;
         this.remote = remote;
         this.server = !socket.isClient();

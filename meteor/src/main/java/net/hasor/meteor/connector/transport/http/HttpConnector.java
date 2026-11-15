@@ -32,7 +32,7 @@ import net.hasor.neta.codec.http.routing.*;
 import net.hasor.neta.codec.ssl.SslContext;
 
 /** HTTP 传输端点，负责管线组装并管理可重连的逻辑客户端。 */
-final class HttpConnector extends SocketConnector<HttpExchange> {
+final class HttpConnector extends SocketConnector<HttpExchange> implements PooledNetworkConnector<HttpExchange> {
     private final    Http1Pipeline                     http1;
     private final    Http2Pipeline                     http2;
     private final    WebSocketPipeline                 webSocket;
@@ -89,16 +89,7 @@ final class HttpConnector extends SocketConnector<HttpExchange> {
     @Override
     public Future<Void> connect(String initial, InterAddress target, RouteTable<HttpExchange> routes,  //
             ChannelListenerFactory<HttpExchange> factory) {
-        // 出站连接优先使用所选协议的 HTTP 版本，未声明时沿用连接器默认值。
-        String version = this.config.option("httpVersion", "1");
-        String protocol = routes.resolveProtocol(initial);
-        if (protocol != null) {
-            version = routes.definitions().get(protocol).options().getOrDefault("httpVersion", version);
-        }
-        int httpVersion = Integer.parseInt(version);
-        if (httpVersion <= 0) {
-            throw new IllegalArgumentException("httpVersion must be positive");
-        }
+        int httpVersion = this.clientHttpVersion(initial, routes);
 
         try {
             int poolSize = this.config.integer("clientPoolSize", 1);
@@ -113,6 +104,32 @@ final class HttpConnector extends SocketConnector<HttpExchange> {
             result.failed(failure);
             return result;
         }
+    }
+
+    @Override
+    public int clientPoolSize() {
+        return this.config.integer("clientPoolSize", 1);
+    }
+
+    @Override
+    public Future<Void> connectMember(String initial, InterAddress target, RouteTable<HttpExchange> routes, ChannelListenerFactory<HttpExchange> factory) {
+        int httpVersion = this.clientHttpVersion(initial, routes);
+        ChannelListenerFactory<HttpExchange> tracked = channel -> this.createClientListener(channel, factory);
+        return this.connectClient(httpVersion, initial, target, routes, tracked);
+    }
+
+    private int clientHttpVersion(String initial, RouteTable<HttpExchange> routes) {
+        // 出站连接优先使用所选协议的 HTTP 版本，未声明时沿用连接器默认值。
+        String version = this.config.option("httpVersion", "1");
+        String protocol = routes.resolveProtocol(initial);
+        if (protocol != null) {
+            version = routes.definitions().get(protocol).options().getOrDefault("httpVersion", version);
+        }
+        int httpVersion = Integer.parseInt(version);
+        if (httpVersion <= 0) {
+            throw new IllegalArgumentException("httpVersion must be positive");
+        }
+        return httpVersion;
     }
 
     private Future<Void> connectClient(int version, String initial, InterAddress target, //

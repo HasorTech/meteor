@@ -13,6 +13,7 @@ import java.util.function.Supplier;
 import net.hasor.cobble.setting.Settings;
 import net.hasor.core.*;
 import net.hasor.core.Module;
+import net.hasor.meteor.annotation.MetAddress;
 import net.hasor.meteor.annotation.MetService;
 
 /** Registers the context and service suppliers using Hasor's native bindings. */
@@ -39,6 +40,7 @@ public final class MeteorModule implements Module {
         Supplier<AppContext> app = binder.getProvider(AppContext.class);
         Set<String> generatedBindings = new HashSet<>();
         MeteorContextSupplier context = new MeteorContextSupplier(app, services, generatedBindings);
+        binder.bindAnnotationInjector(MetAddress.class, new AddressInjector(context));
         BindInfo<MetContext> binding = binder.bindType(MetContext.class).toProvider(context).asEagerSingleton().toInfo();
         generatedBindings.add(binding.getBindID());
         for (Class<?> service : services) {

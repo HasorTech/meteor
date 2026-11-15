@@ -7,6 +7,7 @@
  */
 package net.hasor.meteor;
 import java.util.Map;
+import net.hasor.cobble.StringUtils;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
@@ -25,8 +26,15 @@ public final class MeteorRegistrar implements ImportBeanDefinitionRegistrar {
         String className = metadata.getClassName();
         String defaultPackage = className.substring(0, className.lastIndexOf('.'));
         BeanDefinitionBuilder scanner = BeanDefinitionBuilder.genericBeanDefinition(ServiceScannerConfigurer.class);
-        scanner.addConstructorArgValue(packages);
-        scanner.addConstructorArgValue(defaultPackage);
+        for (String name : packages) {
+            if (StringUtils.isBlank(name)) {
+                throw new IllegalArgumentException("Empty Meteor service scan package");
+            }
+        }
+        if (packages.length > 0) {
+            scanner.addPropertyValue("basePackage", String.join(",", packages));
+        }
+        scanner.addPropertyValue("defaultPackage", defaultPackage);
         registry.registerBeanDefinition("meteorServiceScanner", scanner.getBeanDefinition());
     }
 }

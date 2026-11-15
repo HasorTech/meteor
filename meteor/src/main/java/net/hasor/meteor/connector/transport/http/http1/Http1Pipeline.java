@@ -40,7 +40,7 @@ public final class Http1Pipeline {
             ChannelListenerFactory<HttpExchange> factory) {
         NetChannel socket = (NetChannel) stack.getChannel();
         TransportConfig config = this.transport.config();
-        Http1ServerChannel channel = new Http1ServerChannel(config, socket, this.transport.nextExecutor(), routes);
+        Http1ServerChannel channel = new Http1ServerChannel(config, socket, this.transport.nextExecutor(socket), routes);
 
         // HTTP/1 编解码和生命周期由同一个版本入口完成组装。
         stack.addLast("http", new HttpServerDuplex());

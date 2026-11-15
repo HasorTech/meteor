@@ -8,6 +8,7 @@
 package net.hasor.meteor.connector;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 import java.util.function.ObjLongConsumer;
 import net.hasor.cobble.StringUtils;
@@ -16,10 +17,7 @@ import net.hasor.cobble.concurrent.future.Future;
 import net.hasor.cobble.concurrent.future.FutureListener;
 import net.hasor.cobble.logging.Logger;
 import net.hasor.meteor.address.InterAddress;
-import net.hasor.meteor.connector.transport.ChannelListenerFactory;
-import net.hasor.meteor.connector.transport.NetworkChannel;
-import net.hasor.meteor.connector.transport.NetworkConnector;
-import net.hasor.meteor.connector.transport.NetworkListen;
+import net.hasor.meteor.connector.transport.*;
 import net.hasor.meteor.connector.transport.http.HttpProtocolProvider;
 import net.hasor.meteor.connector.transport.tcp.TcpProtocolProvider;
 import net.hasor.meteor.connector.transport.udp.UdpProtocolProvider;
@@ -28,19 +26,20 @@ import net.hasor.meteor.domain.payload.Payload;
 
 /** Owns one configured endpoint, its listeners, transport connections and protocol channels. */
 final class ConnectorEndpoint<M> {
-    private static final Logger                                logger         = Logger.getLogger(ConnectorEndpoint.class);
-    private final        PlanEndpoint<M>                       plan;
-    private final        RouteTable<M>                         routes;
-    private final        ConnectorManager                      manager;
-    private final        Map<Long, ConnectorChannel<?>>        channels       = new LinkedHashMap<>();
-    private final        Map<InterAddress, OutboundConnection> outgoing       = new HashMap<>();
-    private final        Map<NetworkChannel<M>, Boolean>       connections    = new ConcurrentHashMap<>();
-    private final        Set<NetworkChannel<M>>                closingInbound = ConcurrentHashMap.newKeySet();
-    private              BasicFuture<NetworkListen>            binding;
-    private              NetworkListen                         listen;
-    private              NetworkConnector<M>                   networkConnector;
-    private volatile     State                                 state          = State.NEW;
-    private              boolean                               bindDisabled;
+    private static final Logger                          logger           = Logger.getLogger(ConnectorEndpoint.class);
+    private final        PlanEndpoint<M>                 plan;
+    private final        RouteTable<M>                   routes;
+    private final        ConnectorManager                manager;
+    private final        Map<Long, ConnectorChannel<?>>  channels         = new LinkedHashMap<>();
+    private final        Map<InterAddress, OutboundPool> outgoing         = new HashMap<>();
+    private final        Map<NetworkChannel<M>, Boolean> connections      = new ConcurrentHashMap<>();
+    private final        Set<NetworkChannel<M>>          closingInbound   = ConcurrentHashMap.newKeySet();
+    private              BasicFuture<NetworkListen>      binding;
+    private              NetworkListen                   listen;
+    private              NetworkConnector<M>             networkConnector;
+    private volatile     State                           state            = State.NEW;
+    private              boolean                         bindDisabled;
+    private              int                             outboundPoolSize = 1;
 
     private enum State {
         NEW,
@@ -113,8 +112,23 @@ final class ConnectorEndpoint<M> {
                 return;
             }
 
-            this.networkConnector = this.plan.transportPlan().create(this.manager.transportRuntimeServices());
-            this.state = State.READY;
+            NetworkConnector<M> created = this.plan.transportPlan().create(this.manager.transportRuntimeServices());
+            try {
+                int size = created instanceof PooledNetworkConnector<?> pooled ? pooled.clientPoolSize() : 1;
+                if (size <= 0) {
+                    throw new IllegalArgumentException("Client pool size must be positive");
+                }
+                this.networkConnector = created;
+                this.outboundPoolSize = size;
+                this.state = State.READY;
+            } catch (RuntimeException | Error failure) {
+                try {
+                    created.close();
+                } catch (Throwable closing) {
+                    failure.addSuppressed(closing);
+                }
+                throw failure;
+            }
         }
     }
 
@@ -231,14 +245,19 @@ final class ConnectorEndpoint<M> {
             if (!this.acceptsWrites()) {
                 return failed(new IllegalStateException("Connector endpoint is not ready for connections"));
             }
-            shared = this.outgoing.get(target);
-            if (shared != null && !StringUtils.equals(shared.protocol, protocolName)) {
+            OutboundPool pool = this.outgoing.get(target);
+            if (pool != null && !StringUtils.equals(pool.protocol, protocolName)) {
                 return failed(new IllegalArgumentException("One address cannot select multiple protocols: " + target));
             }
-
+            if (pool == null) {
+                pool = new OutboundPool(protocolName, target, this.outboundPoolSize);
+                this.outgoing.put(target, pool);
+            }
+            int slot = pool.members.size() == 1 ? 0 : ThreadLocalRandom.current().nextInt(pool.members.size());
+            shared = pool.members.get(slot);
             if (shared == null || !shared.channel.isReusable()) {
-                shared = new OutboundConnection(protocolName, target, this.createChannel());
-                this.outgoing.put(target, shared);
+                shared = new OutboundConnection(pool, slot, this.createChannel());
+                pool.members.set(slot, shared);
                 opening = true;
             }
             established = shared.established;
@@ -299,20 +318,53 @@ final class ConnectorEndpoint<M> {
     }
 
     private void removeOutgoing(OutboundConnection connection) {
-        this.outgoing.remove(connection.target, connection);
+        OutboundPool pool = this.outgoing.get(connection.target);
+        if (pool == connection.pool && pool.members.get(connection.slot) == connection) {
+            pool.members.set(connection.slot, null);
+            if (pool.isEmpty()) {
+                this.outgoing.remove(connection.target, pool);
+            }
+        }
     }
 
     private final class OutboundConnection {
-        private final String                       protocol;
         private final InterAddress                 target;
         private final ConnectorChannel<M>          channel;
+        private final OutboundPool                 pool;
+        private final int                          slot;
         private final Set<BasicFuture<MetChannel>> waiters = new HashSet<>();
         private       boolean                      established;
 
-        private OutboundConnection(String protocol, InterAddress target, ConnectorChannel<M> channel) {
+        private OutboundConnection(OutboundPool pool, int slot, ConnectorChannel<M> channel) {
+            this.target = pool.target;
+            this.channel = channel;
+            this.pool = pool;
+            this.slot = slot;
+        }
+    }
+
+    private final class OutboundPool {
+        private final String                   protocol;
+        private final InterAddress             target;
+        private final List<OutboundConnection> members;
+
+        private OutboundPool(String protocol, InterAddress target, int size) {
             this.protocol = protocol;
             this.target = target;
-            this.channel = channel;
+            this.members = new ArrayList<>(size);
+            // 槽位在池存续期间保持不变；首次选中时才建立对应会话。
+            for (int i = 0; i < size; i++) {
+                this.members.add(null);
+            }
+        }
+
+        private boolean isEmpty() {
+            for (OutboundConnection member : this.members) {
+                if (member != null) {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 
@@ -322,7 +374,12 @@ final class ConnectorEndpoint<M> {
                 this.attachChannel(channel, protocolName, networkChannel, true);
                 return new RouteChannelDispatcher<>(this, networkChannel, channel);
             };
-            Future<Void> connect = this.networkConnector.connect(protocolName, address, this.routes, factory);
+            Future<Void> connect;
+            if (this.networkConnector instanceof PooledNetworkConnector<M> pooled) {
+                connect = pooled.connectMember(protocolName, address, this.routes, factory);
+            } else {
+                connect = this.networkConnector.connect(protocolName, address, this.routes, factory);
+            }
 
             channel.ready().onCancel(done -> {
                 connect.cancel();
@@ -450,7 +507,19 @@ final class ConnectorEndpoint<M> {
 
     synchronized void unregisterChannel(ConnectorChannel<?> channel) {
         this.channels.remove(channel.channelId(), channel);
-        this.outgoing.values().removeIf(connection -> connection.channel == channel);
+        Iterator<OutboundPool> pools = this.outgoing.values().iterator();
+        while (pools.hasNext()) {
+            OutboundPool pool = pools.next();
+            for (int i = 0; i < pool.members.size(); i++) {
+                OutboundConnection member = pool.members.get(i);
+                if (member != null && member.channel == channel) {
+                    pool.members.set(i, null);
+                }
+            }
+            if (pool.isEmpty()) {
+                pools.remove();
+            }
+        }
     }
 
     void publishMessage(MetChannel channel, long requestId, Payload payload) {

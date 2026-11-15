@@ -71,6 +71,19 @@ public final class SocketRuntime {
         return this.workers[Math.floorMod(this.nextWorker.getAndIncrement(), this.workers.length)];
     }
 
+    /** Version branches on one physical socket share the same ordered worker. */
+    public Executor nextExecutor(NetChannel socket) {
+        String key = SocketRuntime.class.getName() + ".orderedExecutor";
+        synchronized (socket) {
+            Executor executor = (Executor) socket.getAttribute(key);
+            if (executor == null) {
+                executor = this.nextExecutor();
+                socket.setAttribute(key, executor);
+            }
+            return executor;
+        }
+    }
+
     /** Returns whether the caller is executing transport or ordered protocol work. */
     public static boolean isCurrentThreadInTransport() {
         boolean orderedProtocol = CURRENT.get() != null;

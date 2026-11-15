@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.Set;
 import net.hasor.cobble.StringUtils;
 import net.hasor.cobble.loader.CobbleClassScanner;
+import net.hasor.meteor.annotation.MetAddress;
 import net.hasor.meteor.annotation.MetService;
 import org.noear.solon.core.AppContext;
 import org.noear.solon.core.Plugin;
@@ -19,6 +20,7 @@ import org.noear.solon.core.Props;
 public final class MeteorPlugin implements Plugin {
     @Override
     public void start(AppContext app) {
+        app.beanInjectorAdd(MetAddress.class, new AddressInjector());
         Props properties = app.cfg();
         String scalar = properties.get("meteor.scan-packages");
         String[] packages;
@@ -49,5 +51,4 @@ public final class MeteorPlugin implements Plugin {
         // Prepare after conditional Bean definitions, before collection/parameter injection review.
         app.lifecycle(-97, lifecycle);
     }
-
 }

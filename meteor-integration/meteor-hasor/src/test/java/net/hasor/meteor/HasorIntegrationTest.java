@@ -19,11 +19,14 @@ import javax.sql.DataSource;
 import net.hasor.cobble.setting.Settings;
 import net.hasor.core.AppContext;
 import net.hasor.core.Hasor;
+import net.hasor.core.Inject;
 import net.hasor.core.Module;
 import net.hasor.example.OrderClient;
 import net.hasor.example.services.InventoryService;
+import net.hasor.example.services.Order;
 import net.hasor.example.services.OrderService;
 import net.hasor.example.services.OrderServiceImpl;
+import net.hasor.meteor.annotation.MetAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.domain.MetServiceType;
 import net.hasor.meteor.registry.TargetAdmin;
@@ -255,6 +258,139 @@ class HasorIntegrationTest {
         return config;
     }
 
+    @Test
+    void injectsIndependentAddressesBeforeInitialization() throws Throwable {
+        OrderService first = id -> {
+            Order order = new OrderServiceImpl().getOrder(id);
+            order.setStatus("FIRST");
+            return order;
+        };
+
+        OrderService second = id -> {
+            Order order = new OrderServiceImpl().getOrder(id);
+            order.setStatus("SECOND");
+            return order;
+        };
+
+        try (AppContext a = application("address-first", null, binder -> binder.bindType(OrderService.class).toInstance(first)).build(); AppContext b = application("address-second", null, binder -> binder.bindType(OrderService.class).toInstance(second)).build()) {
+            Properties addresses = new Properties();
+            addresses.setProperty("rpc.first", a.getInstance(MetContext.class).getListenAddress("rsf").toString());
+            addresses.setProperty("rpc.second", b.getInstance(MetContext.class).getListenAddress("rsf").toString());
+            try (AppContext app = application("address-consumer", null).loadSettings(addresses).build()) {
+                AddressClient client = app.getInstance(AddressClient.class);
+                assertTrue(client.initialized);
+                assertEquals("FIRST", client.first().getOrder("ORDER-1001").getStatus());
+                assertEquals("SECOND", client.second.getOrder("ORDER-1001").getStatus());
+                MetContext context = app.getInstance(MetContext.class);
+                assertTrue(context.getUpdater().queryAllAddresses(context.getServiceInfo(OrderService.class).getBindID()).isEmpty());
+            }
+        }
+    }
+
+    @Test
+    void explicitAddressBypassesLocalProvider() throws Throwable {
+        OrderService remote = id -> {
+            Order order = new OrderServiceImpl().getOrder(id);
+            order.setStatus("REMOTE");
+            return order;
+        };
+
+        try (AppContext provider = application("remote-provider", null, binder -> binder.bindType(OrderService.class).toInstance(remote)).build()) {
+            Properties addresses = new Properties();
+            addresses.setProperty("rpc.first", provider.getInstance(MetContext.class).getListenAddress("rsf").toString());
+            try (AppContext app = application("local-provider", null, binder -> binder.bindType(OrderServiceImpl.class)).loadSettings(addresses).build()) {
+                assertEquals("PAID", app.getInstance(OrderService.class).getOrder("ORDER-1001").getStatus());
+                assertEquals("REMOTE", app.getInstance(AddressParent.class).first().getOrder("ORDER-1001").getStatus());
+            }
+        }
+    }
+
+    @Test
+    void injectsDefaultAddressBookReference() throws Throwable {
+        try (AppContext provider = application("default-provider", null, binder -> binder.bindType(OrderServiceImpl.class)).build()) {
+            String address = provider.getInstance(MetContext.class).getListenAddress("rsf").toString();
+            try (AppContext app = application("default-consumer", address).build()) {
+                assertEquals("ORDER-1001", app.getInstance(DefaultAddressClient.class).service.getOrder("ORDER-1001").getOrderId());
+            }
+        }
+    }
+
+    @Test
+    void rejectsMissingAddressConfiguration() throws Throwable {
+        try (AppContext app = application("missing-address", null).build()) {
+            assertThrows(IllegalStateException.class, () -> app.getInstance(MissingAddressClient.class));
+        }
+    }
+
+    @Test
+    void rejectsEmptyAddress() throws Throwable {
+        // 空地址必须在创建代理前拒绝。
+        try (AppContext app = application("empty-address", null).build()) {
+            assertThrows(IllegalStateException.class, () -> app.getInstance(EmptyAddressClient.class));
+        }
+    }
+
+    @Test
+    void rejectsBlankAddress() throws Throwable {
+        // 空地址必须在创建代理前拒绝。
+        try (AppContext app = application("blank-address", null).build()) {
+            assertThrows(IllegalStateException.class, () -> app.getInstance(BlankAddressClient.class));
+        }
+    }
+
+    @Test
+    void rejectsResolvedBlankAddress() throws Throwable {
+        // 空地址必须在创建代理前拒绝。
+        try (AppContext app = application("resolvedblank-address", null).build()) {
+            assertThrows(IllegalStateException.class, () -> app.getInstance(ResolvedBlankAddressClient.class));
+        }
+    }
+
+    public static class AddressParent {
+        @MetAddress("${rpc.first}")
+        private OrderService first;
+
+        OrderService first() {
+            return this.first;
+        }
+    }
+
+    public static class AddressClient extends AddressParent {
+        @MetAddress("${rpc.second}")
+        private OrderService second;
+        boolean initialized;
+
+        @net.hasor.core.Init
+        public void init() {
+            this.initialized = first() != null && this.second != null;
+        }
+    }
+
+    public static class DefaultAddressClient {
+        @Inject
+        private OrderService service;
+    }
+
+    public static class EmptyAddressClient {
+        @MetAddress("")
+        private OrderService service;
+    }
+
+    public static class BlankAddressClient {
+        @MetAddress("  ")
+        private OrderService service;
+    }
+
+    public static class ResolvedBlankAddressClient {
+        @MetAddress("${rpc.empty:}")
+        private OrderService service;
+    }
+
+    public static class MissingAddressClient {
+        @MetAddress("${rpc.missing}")
+        private OrderService service;
+    }
+
     private Hasor application(String name, String address, Module... modules) {
         Properties properties = new Properties();
         properties.setProperty("hasor.loadPackages", "net.hasor.example.services");
@@ -263,6 +399,7 @@ class HasorIntegrationTest {
         properties.setProperty("meteor.unit", "framework");
         properties.setProperty("meteor.connectors.rsf.host", "127.0.0.1");
         properties.setProperty("meteor.connectors.rsf.port", "0");
+
         if (address != null) {
             try (InputStream input = getClass().getResourceAsStream("/hasor-consumer-address-book.xml")) {
                 assertNotNull(input);
@@ -274,6 +411,7 @@ class HasorIntegrationTest {
                 throw new UncheckedIOException(e);
             }
         }
+
         return Hasor.create().registerShutdownHook(false).loadSettings(properties) // 先安装 Meteor，再安装业务模块。
                 .addModules(new MeteorModule()).addModules(modules);
     }

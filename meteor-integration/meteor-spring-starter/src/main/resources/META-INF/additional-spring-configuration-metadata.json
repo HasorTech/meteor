@@ -1,0 +1,15 @@
+{
+  "properties": [
+    {
+      "name": "meteor.enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "Enable Meteor auto-configuration."
+    },
+    {
+      "name": "meteor.scan-packages",
+      "type": "java.lang.String[]",
+      "description": "Service interface packages. Defaults to the Spring Boot application packages."
+    }
+  ]
+}

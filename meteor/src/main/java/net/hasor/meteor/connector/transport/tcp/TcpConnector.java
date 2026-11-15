@@ -8,6 +8,7 @@
 package net.hasor.meteor.connector.transport.tcp;
 import java.io.IOException;
 import java.util.function.Function;
+import net.hasor.cobble.concurrent.future.Future;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.connector.RouteTable;
 import net.hasor.meteor.connector.transport.*;
@@ -16,12 +17,23 @@ import net.hasor.neta.channel.*;
 import net.hasor.neta.channel.routing.ProtoRoutingDataSelector;
 import net.hasor.neta.channel.transport.tcp.TcpSoConfig;
 
-final class TcpConnector extends SocketConnector<byte[]> {
+final class TcpConnector extends SocketConnector<byte[]> implements PooledNetworkConnector<byte[]> {
     private final int maxProbeSize;
 
     TcpConnector(TransportConfig config, TransportPipeline pipeline, ClassLoader loader) {
         super(config, pipeline, loader, socketConfig(config), false);
         this.maxProbeSize = config.integer("maxProbeSize", 256);
+    }
+
+    @Override
+    public int clientPoolSize() {
+        return this.config.integer("clientPoolSize", 1);
+    }
+
+    @Override
+    public Future<Void> connectMember(String initial, InterAddress target, RouteTable<byte[]> routes, //
+            ChannelListenerFactory<byte[]> factory) {
+        return this.connect(initial, target, routes, factory);
     }
 
     private static TcpSoConfig socketConfig(TransportConfig config) {

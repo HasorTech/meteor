@@ -17,11 +17,10 @@ public class ConsumerMain {
     public static void main(String[] args) {
         SolonApp app = Solon.start(ConsumerMain.class, args, boot -> {
             boot.cfg().loadAdd("classpath:solon-consumer.properties");
-            boot.context().beanMake(OrderClient.class);
         });
 
         try {
-            OrderClient client = app.context().getBean(OrderClient.class);
+            OrderClient client = app.context().getBeanOrNew(OrderClient.class);
             Order order = client.getOrder("ORDER-1001");
             System.out.printf("订单 %s：商品 %s，数量 %d，金额 %s，状态 %s%n", // 展示远程返回的订单 DTO。
                     order.getOrderId(), order.getSku(), order.getQuantity(), order.getTotalAmount(), order.getStatus());

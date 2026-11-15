@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor;
-
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -22,9 +21,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.sql.DataSource;
 import net.hasor.example.OrderClient;
 import net.hasor.example.services.InventoryService;
+import net.hasor.example.services.Order;
 import net.hasor.example.services.OrderService;
 import net.hasor.example.services.OrderServiceImpl;
 import net.hasor.meteor.address.InterAddress;
+import net.hasor.meteor.annotation.MetAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.domain.MetServiceType;
 import net.hasor.meteor.registry.TargetAdmin;
@@ -36,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -329,6 +331,153 @@ class SpringIntegrationTest {
         JdbcRegistryConfiguration config = new JdbcRegistryConfiguration().setDataSource(dataSource);
         config.setRefreshMillis(50);
         return config;
+    }
+
+    @Test
+    void injectsIndependentAddressesBeforeInitialization() {
+        OrderService first = id -> {
+            Order order = new OrderServiceImpl().getOrder(id);
+            order.setStatus("FIRST");
+            return order;
+        };
+        OrderService second = id -> {
+            Order order = new OrderServiceImpl().getOrder(id);
+            order.setStatus("SECOND");
+            return order;
+        };
+        try (AnnotationConfigApplicationContext a = application("address-first", null); AnnotationConfigApplicationContext b = application("address-second", null)) {
+            a.registerBean(OrderService.class, () -> first);
+            b.registerBean(OrderService.class, () -> second);
+            a.refresh();
+            b.refresh();
+            Map<String, Object> addresses = Map.of("rpc.first", a.getBean(MetContext.class).getListenAddress("rsf").toString(), "rpc.second", b.getBean(MetContext.class).getListenAddress("rsf").toString());
+            try (AnnotationConfigApplicationContext app = application("address-consumer", null)) {
+                app.getEnvironment().getPropertySources().addFirst(new MapPropertySource("addresses", addresses));
+                app.registerBean(AddressClient.class);
+                app.refresh();
+                AddressClient client = app.getBean(AddressClient.class);
+                assertTrue(client.initialized);
+                assertEquals("FIRST", client.first().getOrder("ORDER-1001").getStatus());
+                assertEquals("SECOND", client.second.getOrder("ORDER-1001").getStatus());
+                MetContext context = app.getBean(MetContext.class);
+                assertTrue(context.getUpdater().queryAllAddresses(context.getServiceInfo(OrderService.class).getBindID()).isEmpty());
+            }
+        }
+    }
+
+    @Test
+    void explicitAddressBypassesLocalProvider() {
+        OrderService remote = id -> {
+            Order order = new OrderServiceImpl().getOrder(id);
+            order.setStatus("REMOTE");
+            return order;
+        };
+        try (AnnotationConfigApplicationContext provider = application("remote-provider", null)) {
+            provider.registerBean(OrderService.class, () -> remote);
+            provider.refresh();
+            try (AnnotationConfigApplicationContext app = application("local-provider", null)) {
+                app.getEnvironment().getPropertySources().addFirst(new MapPropertySource("addresses", Map.of("rpc.first", provider.getBean(MetContext.class).getListenAddress("rsf").toString())));
+                app.registerBean(OrderService.class, OrderServiceImpl::new);
+                app.registerBean(AddressParent.class);
+                app.refresh();
+                assertEquals("PAID", app.getBean(OrderService.class).getOrder("ORDER-1001").getStatus());
+                assertEquals("REMOTE", app.getBean(AddressParent.class).first().getOrder("ORDER-1001").getStatus());
+            }
+        }
+    }
+
+    @Test
+    void injectsDefaultAddressBookReference() {
+        try (AnnotationConfigApplicationContext provider = application("default-provider", null)) {
+            provider.registerBean(OrderService.class, OrderServiceImpl::new);
+            provider.refresh();
+            String address = provider.getBean(MetContext.class).getListenAddress("rsf").toString();
+            try (AnnotationConfigApplicationContext app = application("default-consumer", address)) {
+                app.registerBean(DefaultAddressClient.class);
+                app.refresh();
+                assertEquals("ORDER-1001", app.getBean(DefaultAddressClient.class).service.getOrder("ORDER-1001").getOrderId());
+            }
+        }
+    }
+
+    @Test
+    void rejectsMissingAddressConfiguration() {
+        try (AnnotationConfigApplicationContext app = application("missing-address", null)) {
+            app.registerBean(MissingAddressClient.class);
+            assertThrows(org.springframework.beans.BeansException.class, app::refresh);
+        }
+    }
+
+    @Test
+    void rejectsEmptyAddress() {
+        // 空地址必须在创建代理前拒绝。
+        try (AnnotationConfigApplicationContext app = application("empty-address", null)) {
+            app.registerBean(EmptyAddressClient.class);
+            assertThrows(org.springframework.beans.BeansException.class, app::refresh);
+        }
+    }
+
+    @Test
+    void rejectsBlankAddress() {
+        // 空地址必须在创建代理前拒绝。
+        try (AnnotationConfigApplicationContext app = application("blank-address", null)) {
+            app.registerBean(BlankAddressClient.class);
+            assertThrows(org.springframework.beans.BeansException.class, app::refresh);
+        }
+    }
+
+    @Test
+    void rejectsResolvedBlankAddress() {
+        // 空地址必须在创建代理前拒绝。
+        try (AnnotationConfigApplicationContext app = application("resolvedblank-address", null)) {
+            app.registerBean(ResolvedBlankAddressClient.class);
+            assertThrows(org.springframework.beans.BeansException.class, app::refresh);
+        }
+    }
+
+    public static class AddressParent {
+        @MetAddress("${rpc.first}")
+        private OrderService first;
+
+        OrderService first() {
+            return this.first;
+        }
+    }
+
+    public static class AddressClient extends AddressParent implements org.springframework.beans.factory.InitializingBean {
+        @MetAddress("${rpc.second}")
+        private OrderService second;
+        boolean initialized;
+
+        @Override
+        public void afterPropertiesSet() {
+            this.initialized = first() != null && this.second != null;
+        }
+    }
+
+    public static class DefaultAddressClient {
+        @Autowired
+        private OrderService service;
+    }
+
+    public static class EmptyAddressClient {
+        @MetAddress("")
+        private OrderService service;
+    }
+
+    public static class BlankAddressClient {
+        @MetAddress("  ")
+        private OrderService service;
+    }
+
+    public static class ResolvedBlankAddressClient {
+        @MetAddress("${rpc.empty:}")
+        private OrderService service;
+    }
+
+    public static class MissingAddressClient {
+        @MetAddress("${rpc.missing}")
+        private OrderService service;
     }
 
     private AnnotationConfigApplicationContext application(String name, String address) {

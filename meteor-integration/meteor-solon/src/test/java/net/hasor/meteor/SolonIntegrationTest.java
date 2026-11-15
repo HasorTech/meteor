@@ -19,9 +19,11 @@ import javax.sql.DataSource;
 import net.hasor.example.OrderClient;
 import net.hasor.example.ProviderMain;
 import net.hasor.example.services.InventoryService;
+import net.hasor.example.services.Order;
 import net.hasor.example.services.OrderService;
 import net.hasor.example.services.OrderServiceImpl;
 import net.hasor.meteor.address.InterAddress;
+import net.hasor.meteor.annotation.MetAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.domain.MetServiceType;
 import net.hasor.meteor.registry.TargetAdmin;
@@ -34,6 +36,7 @@ import org.noear.solon.Solon;
 import org.noear.solon.SolonApp;
 import org.noear.solon.annotation.Bean;
 import org.noear.solon.annotation.Configuration;
+import org.noear.solon.annotation.Inject;
 import org.noear.solon.core.AppContext;
 import org.noear.solon.core.BeanWrap;
 import org.noear.solon.core.Props;
@@ -285,6 +288,185 @@ class SolonIntegrationTest {
         JdbcRegistryConfiguration config = new JdbcRegistryConfiguration().setDataSource(source);
         config.setRefreshMillis(50);
         return config;
+    }
+
+    @Test
+    void injectsIndependentAddressesBeforeInitialization() throws Throwable {
+        OrderService first = id -> {
+            Order order = new OrderServiceImpl().getOrder(id);
+            order.setStatus("FIRST");
+            return order;
+        };
+        OrderService second = id -> {
+            Order order = new OrderServiceImpl().getOrder(id);
+            order.setStatus("SECOND");
+            return order;
+        };
+        AppContext a = application("address-first", null);
+        AppContext b = application("address-second", null);
+        AppContext app = null;
+        try {
+            a.putWrap(OrderService.class, new BeanWrap(a, OrderService.class, first));
+            b.putWrap(OrderService.class, new BeanWrap(b, OrderService.class, second));
+            a.start();
+            b.start();
+            app = application("address-consumer", null);
+            app.cfg().setProperty("rpc.first", a.getBean(MetContext.class).getListenAddress("rsf").toString());
+            app.cfg().setProperty("rpc.second", b.getBean(MetContext.class).getListenAddress("rsf").toString());
+            app.beanMake(AddressClient.class);
+            app.start();
+            AddressClient client = app.getBean(AddressClient.class);
+            assertTrue(client.initialized);
+            assertEquals("FIRST", client.first().getOrder("ORDER-1001").getStatus());
+            assertEquals("SECOND", client.second.getOrder("ORDER-1001").getStatus());
+            MetContext context = app.getBean(MetContext.class);
+            assertTrue(context.getUpdater().queryAllAddresses(context.getServiceInfo(OrderService.class).getBindID()).isEmpty());
+        } finally {
+            if (app != null) {
+                app.stop();
+            }
+            b.stop();
+            a.stop();
+        }
+    }
+
+    @Test
+    void explicitAddressBypassesLocalProvider() throws Throwable {
+        OrderService remote = id -> {
+            Order order = new OrderServiceImpl().getOrder(id);
+            order.setStatus("REMOTE");
+            return order;
+        };
+        AppContext provider = application("remote-provider", null);
+        AppContext app = null;
+        try {
+            provider.putWrap(OrderService.class, new BeanWrap(provider, OrderService.class, remote));
+            provider.start();
+            app = application("local-provider", null);
+            app.cfg().setProperty("rpc.first", provider.getBean(MetContext.class).getListenAddress("rsf").toString());
+            app.beanMake(OrderServiceImpl.class);
+            app.beanMake(AddressParent.class);
+            app.start();
+            assertEquals("PAID", app.getBean(OrderServiceImpl.class).getOrder("ORDER-1001").getStatus());
+            assertEquals("REMOTE", app.getBean(AddressParent.class).first().getOrder("ORDER-1001").getStatus());
+        } finally {
+            if (app != null) {
+                app.stop();
+            }
+            provider.stop();
+        }
+    }
+
+    @Test
+    void injectsDefaultAddressBookReference() throws Throwable {
+        AppContext provider = application("default-provider", null);
+        AppContext app = null;
+        try {
+            provider.beanMake(OrderServiceImpl.class);
+            provider.start();
+            app = application("default-consumer", provider.getBean(MetContext.class).getListenAddress("rsf").toString());
+            app.beanMake(DefaultAddressClient.class);
+            app.start();
+            assertEquals("ORDER-1001", app.getBean(DefaultAddressClient.class).service.getOrder("ORDER-1001").getOrderId());
+        } finally {
+            if (app != null) {
+                app.stop();
+            }
+            provider.stop();
+        }
+    }
+
+    @Test
+    void rejectsMissingAddressConfiguration() throws Throwable {
+        AppContext app = application("missing-address", null);
+        try {
+            org.noear.solon.core.exception.ConstructionException error = assertThrows(org.noear.solon.core.exception.ConstructionException.class, () -> app.beanMake(MissingAddressClient.class));
+            assertInstanceOf(IllegalArgumentException.class, error.getCause());
+            assertTrue(error.getCause().getMessage().contains("rpc.missing"));
+        } finally {
+            app.stop();
+        }
+    }
+
+    @Test
+    void rejectsEmptyAddress() throws Throwable {
+        // 空地址必须在创建代理前拒绝。
+        AppContext app = application("empty-address", null);
+        try {
+            org.noear.solon.core.exception.ConstructionException error = assertThrows(org.noear.solon.core.exception.ConstructionException.class, () -> app.beanMake(EmptyAddressClient.class));
+            assertInstanceOf(IllegalArgumentException.class, error.getCause());
+        } finally {
+            app.stop();
+        }
+    }
+
+    @Test
+    void rejectsBlankAddress() throws Throwable {
+        // 空地址必须在创建代理前拒绝。
+        AppContext app = application("blank-address", null);
+        try {
+            org.noear.solon.core.exception.ConstructionException error = assertThrows(org.noear.solon.core.exception.ConstructionException.class, () -> app.beanMake(BlankAddressClient.class));
+            assertInstanceOf(IllegalArgumentException.class, error.getCause());
+        } finally {
+            app.stop();
+        }
+    }
+
+    @Test
+    void rejectsResolvedBlankAddress() throws Throwable {
+        // 空地址必须在创建代理前拒绝。
+        AppContext app = application("resolvedblank-address", null);
+        try {
+            org.noear.solon.core.exception.ConstructionException error = assertThrows(org.noear.solon.core.exception.ConstructionException.class, () -> app.beanMake(ResolvedBlankAddressClient.class));
+            assertInstanceOf(IllegalArgumentException.class, error.getCause());
+        } finally {
+            app.stop();
+        }
+    }
+
+    public static class AddressParent {
+        @MetAddress("${rpc.first}")
+        private OrderService first;
+
+        OrderService first() {
+            return this.first;
+        }
+    }
+
+    public static class AddressClient extends AddressParent {
+        @MetAddress("${rpc.second}")
+        private OrderService second;
+        boolean initialized;
+
+        @org.noear.solon.annotation.Init
+        public void init() {
+            this.initialized = first() != null && this.second != null;
+        }
+    }
+
+    public static class DefaultAddressClient {
+        @Inject
+        private OrderService service;
+    }
+
+    public static class EmptyAddressClient {
+        @MetAddress("")
+        private OrderService service;
+    }
+
+    public static class BlankAddressClient {
+        @MetAddress("  ")
+        private OrderService service;
+    }
+
+    public static class ResolvedBlankAddressClient {
+        @MetAddress("${rpc.empty:}")
+        private OrderService service;
+    }
+
+    public static class MissingAddressClient {
+        @MetAddress("${rpc.missing}")
+        private OrderService service;
     }
 
     private AppContext application(String name, String address) throws Throwable {

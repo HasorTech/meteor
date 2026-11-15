@@ -1,0 +1,17 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
+
+ext.pomName = 'Meteor Spring Starter'
+description = 'Meteor Spring Boot auto-configuration.'
+
+dependencies {
+    api project(':meteor-spring')
+    api "org.springframework.boot:spring-boot-starter:${property('lib.spring-boot')}"
+
+    // for test
+    testImplementation "org.springframework.boot:spring-boot-test:${property('lib.spring-boot')}"
+    testImplementation 'org.assertj:assertj-core:3.27.7'
+    testImplementation "ognl:ognl:${property('lib.ognl')}"
+}
