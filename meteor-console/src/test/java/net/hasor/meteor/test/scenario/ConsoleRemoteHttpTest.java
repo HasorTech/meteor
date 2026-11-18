@@ -10,6 +10,9 @@ import java.nio.file.Path;
 import java.util.Map;
 import net.hasor.boot.Boot;
 import net.hasor.boot.BootApplication;
+import net.hasor.meteor.MetAccessEnum;
+import net.hasor.meteor.MetAccessPolicy;
+import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.console.ConsoleMain;
@@ -53,14 +56,17 @@ public class ConsoleRemoteHttpTest {
         try (ProviderConnection connection = ProviderConnection.registry(local); //
              MetContext remote = configuration.buildContext()) {
             // 凭据校验后注入远端失败，让 RPC 状态和敏感消息经过完整管理调用链。
-            remote.publisher().rsfService(RpcManagement.class, new RpcManagementImpl(connection))//
+            MetBindInfo<RpcManagement> binding = remote.publisher().rsfService(RpcManagement.class, new RpcManagementImpl(connection))//
                     .bindFilter("console-auth", new RpcManagementFilter(() -> token))//
                     .bindFilter("remote-failure", (request, response, chain) -> {
                         response.sendStatus(remoteStatus, "Remote failure: managementToken=" + token);
                     })//
                     .asShadow().asDistributedCall().register();
+            remote.getExtension(MetAccessPolicy.class).allow(binding, MetAccessEnum.values());
             remote.start();
+            remote.getUpdater().setBlock(true);
             try (BootApplication application = boot.start()) {
+                application.getAppContext().getInstance(MetContext.class).getUpdater().setBlock(true);
                 Api api = new Api(application);
                 api.login();
                 Map<String, Object> profile = Map.of(//

@@ -52,6 +52,7 @@ public final class MetContextImpl implements MetContext, MetUpdater {
     private              Thread                   lifecycleEventThread;
     private volatile     boolean                  blocked;
     private volatile     State                    state           = State.NEW;
+    private final        MetAccessPolicyExtension accessPolicy;
 
     private enum State {
         NEW,
@@ -99,6 +100,7 @@ public final class MetContextImpl implements MetContext, MetUpdater {
             this.serializeFactory = this.createSerializeFactory();
             this.addresses = new CacheAddressPool(this.settings);
             this.rsfContainer = new MetContainer(this.addresses, this.settings);
+            this.accessPolicy = new MetAccessPolicyExtension(this.rsfContainer);
             this.publisher = new Publisher(this.rsfContainer.createPublisher());
         } catch (RuntimeException | Error failure) {
             try {
@@ -113,8 +115,9 @@ public final class MetContextImpl implements MetContext, MetUpdater {
     /** 构建入口在返回上下文前完成初始化；监听仍由 start() 开启。 */
     void init(List<MetExtensionFactory> extensionFactory) {
         this.installFilters();
-        // 保持默认过滤器在前，沿用管理 RPC 原有的治理过滤器安装顺序。
-        this.publisher.bindFilter(MetFilter.GOVERNANCE_FILTER_ID, this::filterGovernance);
+        // 保持默认过滤器在前，再接入独立于同名合并的 RPC 访问检查。
+        this.rsfContainer.installRpcAccessFilter(this::filterRpcAccess);
+        this.extensions.add(this.accessPolicy);
 
         // Context 持有连接管理器，连接失败时同步反馈给地址池。
         ContextConnectorManager connectorManager = new ContextConnectorManager();
@@ -124,6 +127,7 @@ public final class MetContextImpl implements MetContext, MetUpdater {
 
         // 服务路由同步校验必须先于普通事件通知，异常由容器负责回滚服务登记。
         this.rsfContainer.subscribe(connectorManager::onServiceEvent);
+        this.rsfContainer.subscribe(this.accessPolicy::onServiceEvent);
         this.rsfContainer.subscribe(this::notifyEvent);
         this.rsfCaller = new MetCaller(this.connectors, this.rsfContainer::getFilterProviders);
 
@@ -554,24 +558,23 @@ public final class MetContextImpl implements MetContext, MetUpdater {
         this.requireService(serviceID).setEnabled(enabled);
     }
 
-    private void filterGovernance(MetRequest request, MetResponse response, MetFilterChain chain) throws Throwable {
+    private void filterRpcAccess(MetRequest request, MetResponse response, MetFilterChain chain) throws Throwable {
         MetBindInfo<?> service = request.getBindInfo();
-        boolean instanceBlocked = this.blocked;
-        if (!service.isShadow() && (instanceBlocked || this.isRegisteredServiceDisabled(service.getBindID()))) {
-            String reason = instanceBlocked ? "Instance is blocked by governance" : "Service is disabled by governance";
-            response.sendStatus(ProtocolStatus.Forbidden, reason);
+        // 出站可以使用外部绑定，状态与豁免都以本上下文中的绑定为准。
+        ServiceDomain<?> registered = (ServiceDomain<?>) this.rsfContainer.getRsfBindInfo(service.getBindID());
+        if (this.blocked && !this.accessPolicy.allows(service, registered, MetAccessEnum.INSTANCE_BLOCKED)) {
+            response.sendStatus(ProtocolStatus.Forbidden, "Instance is blocked by governance");
+            return;
+        }
+        if (registered != null && !registered.isEnabled() && !this.accessPolicy.allows(service, registered, MetAccessEnum.SERVICE_DISABLED)) {
+            response.sendStatus(ProtocolStatus.Forbidden, "Service is disabled by governance");
             return;
         }
         chain.doFilter(request, response);
     }
 
-    private boolean isRegisteredServiceDisabled(String serviceID) {
-        // 出站调用允许传入外部绑定，治理以当前上下文登记的服务为准。
-        return this.rsfContainer.getRsfBindInfo(serviceID) instanceof ServiceDomain<?> service && !service.isEnabled();
-    }
-
     private ServiceDomain<?> requireService(String serviceID) {
-        if (this.rsfContainer.getRsfBindInfo(serviceID) instanceof ServiceDomain<?> service && !service.isShadow()) {
+        if (this.rsfContainer.getRsfBindInfo(serviceID) instanceof ServiceDomain<?> service) {
             return service;
         }
         throw new IllegalArgumentException("Service is not registered: " + serviceID);

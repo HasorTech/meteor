@@ -62,7 +62,7 @@ public class BootstrapBoundaryTest {
 
         // 每个类只能存在一份定义，且应与框架入口位于同一个产物。
         ClassLoader loader = this.getClass().getClassLoader();
-        URL framework = MetContextImpl.class.getProtectionDomain().getCodeSource().getLocation();
+        URL framework = MetContext.class.getProtectionDomain().getCodeSource().getLocation();
         for (Class<?> type : types) {
             String resource = type.getName().replace('.', '/') + ".class";
             List<URL> definitions = Collections.list(loader.getResources(resource));

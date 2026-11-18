@@ -18,8 +18,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.cobble.concurrent.future.Future;
-import net.hasor.meteor.*;
+import net.hasor.meteor.MetBindInfo;
+import net.hasor.meteor.MetClient;
+import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetPublisher.ConfigurationBuilder;
+import net.hasor.meteor.MetSettings;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.annotation.MetIgnore;
 import net.hasor.meteor.annotation.MetService;
@@ -219,20 +222,19 @@ public class ManagementPublicationTest {
     }
 
     @Test
-    public void conflictingFilterRejectsExtensionInstallation() {
-        // 准备离线扩展，并在扩展创建前占用治理过滤器标识。
+    public void governanceDoesNotReserveAnApplicationFilterName() throws Exception {
+        // 扩展安装前以旧标识注册应用过滤器，治理检查由内核独立执行。
         RegistryConfiguration registry = new RegistryConfiguration().setOnline(false);
         MetConfiguration application = createConfiguration();
         application.addExtension(context -> {
-            // 扩展安装前制造已有过滤器，验证真实 buildContext 的失败路径。
-            context.publisher().bindFilter(MetFilter.GOVERNANCE_FILTER_ID, (request, response, chain) -> {
-                chain.doFilter(request, response);
-            });
+            context.publisher().bindFilter("meteor.governance", (request, response, chain) -> chain.doFilter(request, response));
             return registry.create(context);
         });
 
-        // 正式构建入口报告过滤器冲突。
-        assertThrows(IllegalStateException.class, application::buildContext);
+        // 应用可以使用该标识，管理 RPC 正常安装。
+        try (MetContext context = application.buildContext()) {
+            assertNotNull(context.getServiceInfo(ManagementRPC.class));
+        }
     }
 
     @Test
@@ -683,6 +685,53 @@ public class ManagementPublicationTest {
             assertTrue(endpointBody.has("protocolName"));
             assertFalse(endpointBody.has("protocol"));
             assertEquals("public-http", endpoints[0].getScheme());
+        }
+    }
+
+    @Test
+    public void registrySyncAppliesInstanceAndServiceRestrictionsIndependently() throws Exception {
+        // 通过真实 RSF 监听验证注册中心同步的状态，调用方使用固定地址。
+        RegistryConfiguration registry = new MemoryRegistryConfiguration().setManagementToken("secret").setRefreshMillis(600000);
+        MetConfiguration provider = createConfiguration().addExtension(registry);
+        provider.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        MetConfiguration consumer = createConfiguration();
+        consumer.addExtension(new RegistryConfiguration().setOnline(false).setManagementToken("secret"));
+        consumer.connector("tcp").protocol("rsf");
+        try (MetContext target = provider.buildContext(); //
+             MetContext caller = consumer.buildContext()) {
+            String serviceId = target.publisher().rsfService(Echo.class, value -> value).register().getBindID();
+            caller.publisher().rsfService(Echo.class).register();
+            target.start();
+            caller.start();
+            InterAddress address = target.getListenAddress("rsf");
+            Echo echo = caller.getRsfClient(address).wrapper(Echo.class);
+            assertEquals("open", echo.echo("open"));
+            RegistryAdmin admin = target.getExtension(RegistryAdmin.class);
+            RegistryClient client = target.getExtension(RegistryClient.class);
+            String instanceId = target.getInstanceID();
+            MetInstanceAdmin instance = admin.getInstanceAdmin(instanceId);
+            MetServiceAdmin service = admin.getServiceAdmin(serviceId, instanceId);
+            TargetAdmin direct = caller.getExtension(TargetAdmin.class);
+            MetInstanceAdmin remoteInstance = direct.getInstanceAdminByAddress(address);
+            MetServiceAdmin remoteService = direct.getServiceAdminByAddress(address, serviceId);
+
+            // 两项限制同时下发后，业务请求被拒绝，带凭据的管理 RPC 仍能读取两项状态。
+            instance.block();
+            service.disable();
+            client.pullSync().get(5, TimeUnit.SECONDS);
+            assertTrue(remoteInstance.isBlock());
+            assertFalse(remoteService.isEnable());
+            assertForbidden(() -> echo.echo("blocked"));
+
+            // 解除实例阻断后，服务停用继续生效，直到注册中心重新启用服务。
+            instance.unblock();
+            client.pullSync().get(5, TimeUnit.SECONDS);
+            assertFalse(remoteInstance.isBlock());
+            assertFalse(remoteService.isEnable());
+            assertForbidden(() -> echo.echo("disabled"));
+            service.enable();
+            client.pullSync().get(5, TimeUnit.SECONDS);
+            assertEquals("restored", echo.echo("restored"));
         }
     }
 

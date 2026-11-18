@@ -41,7 +41,7 @@ public final class ManagementRPCImpl implements ManagementRPC {
     ////////////////////////////////////////////////////////////////////////////////////////
     // 本地运行服务与管理 RPC 生命周期
 
-    /** 发布管理 RPC，并通过服务级过滤器保留业务阻断后的恢复入口。 */
+    /** 发布管理 RPC，登记治理白名单并保留独立鉴权。 */
     public ManagementRPCImpl(MetContext context, ConnectorManager connectors, String publishHost, //
             RegistryTokenProvider tokenProvider, List<String> managementProtocols) {
         this.context = context;
@@ -59,9 +59,9 @@ public final class ManagementRPCImpl implements ManagementRPC {
         }
         this.managementService = management //
                 .bindFilter("management-authentication", new ManagementAuthentication(tokenProvider))//
-                .bindFilter(MetFilter.GOVERNANCE_FILTER_ID, (request, response, chain) -> chain.doFilter(request, response))//
                 .asDistributedCall()//
                 .register();
+        context.getExtension(MetAccessPolicy.class).allow(this.managementService, MetAccessEnum.values());
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////

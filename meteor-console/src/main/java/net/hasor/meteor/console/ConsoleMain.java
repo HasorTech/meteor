@@ -23,6 +23,9 @@ import net.hasor.config.Configuration;
 import net.hasor.core.ApiBinder;
 import net.hasor.core.Hasor;
 import net.hasor.core.Module;
+import net.hasor.meteor.MetAccessEnum;
+import net.hasor.meteor.MetAccessPolicy;
+import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.console.component.commands.CommandDispatcher;
@@ -81,7 +84,9 @@ public class ConsoleMain implements Module {
         MetContext context = meteor.buildContext();
         try {
             JsonUtils.configureRpc(context);
-            context.publisher().rsfService(RpcManagement.class).asShadow().asDistributedCall().register();
+            MetBindInfo<RpcManagement> binding = context.publisher().rsfService(RpcManagement.class) //
+                    .asShadow().asDistributedCall().register();
+            context.getExtension(MetAccessPolicy.class).allow(binding, MetAccessEnum.values());
             return context;
         } catch (RuntimeException | Error failure) {
             try {

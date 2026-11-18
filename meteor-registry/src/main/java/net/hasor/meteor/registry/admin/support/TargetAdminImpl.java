@@ -8,6 +8,9 @@
 package net.hasor.meteor.registry.admin.support;
 import java.util.Objects;
 import net.hasor.cobble.StringUtils;
+import net.hasor.meteor.MetAccessEnum;
+import net.hasor.meteor.MetAccessPolicy;
+import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.registry.RegistryTokenProvider;
@@ -58,10 +61,11 @@ public final class TargetAdminImpl implements TargetAdmin {
     private ManagementRPC remote(InterAddress address) {
         synchronized (this.context) {
             if (this.context.getServiceInfo(ManagementRPC.class) == null) {
-                this.context.publisher().rsfService(ManagementRPC.class)//
+                MetBindInfo<ManagementRPC> binding = this.context.publisher().rsfService(ManagementRPC.class)//
                         .asShadow()         //
                         .asDistributedCall()//
                         .register();
+                this.context.getExtension(MetAccessPolicy.class).allow(binding, MetAccessEnum.values());
             }
         }
 

@@ -41,6 +41,7 @@ public class MetContainer {
     private final        List<FilterDefine>                         filterList   = new ArrayList<>();
     private final        Object                                     filterLock   = new Object();
     private final        Map<String, Supplier<MetFilter>[]>         filterCache  = new ConcurrentHashMap<>();
+    private              FilterDefine                               rpcAccessFilter;
     private final        AddressPool                                addressPool;
     private final        MetSettings                                settings;
     private final        List<MetContextListener>                   listeners    = new CopyOnWriteArrayList<>();
@@ -48,6 +49,17 @@ public class MetContainer {
     public MetContainer(AddressPool addressPool, MetSettings settings) {
         this.settings = settings;
         this.addressPool = addressPool;
+    }
+
+    /** 将内核检查按安装顺序加入全局链。应用过滤器的注册 ID 必须非空。 */
+    public void installRpcAccessFilter(MetFilter filter) {
+        Objects.requireNonNull(filter, "filter");
+        synchronized (this.filterLock) {
+            // 无注册名的内核检查按原顺序执行，应用过滤器无法使用这个键。
+            this.rpcAccessFilter = new FilterDefine(null, () -> filter);
+            this.filterList.add(this.rpcAccessFilter);
+            this.filterCache.clear();
+        }
     }
 
     /** 同步监听服务登记与移除；REGISTERED 异常撤销本次登记，取消不打断正在执行的回调。 */
@@ -87,7 +99,8 @@ public class MetContainer {
         synchronized (this.filterLock) {
             ServiceDefine<?> info = this.serviceMap.get(serviceID);
             if (info == null) {
-                return EMPTY_FILTER;
+                // 出站调用可使用外部绑定，仍需检查当前实例是否处于阻断状态。
+                return this.rpcAccessFilter == null ? EMPTY_FILTER : new Supplier[] { this.rpcAccessFilter };
             }
 
             Supplier<MetFilter>[] result = this.filterCache.get(serviceID);

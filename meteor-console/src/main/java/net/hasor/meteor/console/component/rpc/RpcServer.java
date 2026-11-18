@@ -5,6 +5,9 @@ import net.hasor.core.Destroy;
 import net.hasor.core.Init;
 import net.hasor.core.Inject;
 import net.hasor.core.Singleton;
+import net.hasor.meteor.MetAccessEnum;
+import net.hasor.meteor.MetAccessPolicy;
+import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.console.component.provider.ProviderConnection;
@@ -62,10 +65,13 @@ public final class RpcServer implements AutoCloseable {
             context = configuration.buildContext();
             JsonUtils.configureRpc(context);
             RpcManagement management = new RpcManagementImpl(connection);
-            context.publisher().rsfService(RpcManagement.class, management)//
+            MetBindInfo<RpcManagement> binding = context.publisher().rsfService(RpcManagement.class, management)//
                     .protocol("rsf")//
-                    .bindFilter("console-management", new RpcManagementFilter(() -> expected, profile.getPassword(), profile.getManagementToken()))//
+                    .bindFilter(RpcManagementFilter.class.getName(), new RpcManagementFilter(() -> {
+                        return expected;
+                    }, profile.getPassword(), profile.getManagementToken()))//
                     .asShadow().asDistributedCall().register();
+            context.getExtension(MetAccessPolicy.class).allow(binding, MetAccessEnum.values());
             context.start();
             this.connection = connection;
             this.context = context;

@@ -219,6 +219,8 @@ public class ConsoleIntegrationTest {
                 .hconfigFile(console(this.directory.resolve("console")));
         try (BootApplication remote = bootA.start(); //
              BootApplication server = bootB.start()) {
+            // 控制台的出站实例处于阻断状态，仍须到达正式管理服务并执行凭据校验。
+            server.getAppContext().getInstance(MetContext.class).getUpdater().setBlock(true);
             Api api = new Api(server);
             api.login();
             Map<String, Object> profile = new LinkedHashMap<>();

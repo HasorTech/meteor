@@ -21,6 +21,7 @@ import net.hasor.meteor.registry.RegistryTokenProvider;
 import net.hasor.meteor.registry.TargetAdmin;
 import net.hasor.meteor.registry.admin.MetInstanceAdmin;
 import net.hasor.meteor.registry.admin.MetServiceAdmin;
+import net.hasor.meteor.registry.admin.support.TargetAdminImpl;
 import net.hasor.meteor.registry.shared.RegistryTestUtils.Echo;
 import net.hasor.meteor.registry.shared.rpc.ManagementRPC;
 import org.junit.jupiter.api.Test;
@@ -122,6 +123,71 @@ public class TargetAdminAuthenticationScenarioTest {
             MetInstanceAdmin valid = admin.withTokenProvider(() -> "secret").getInstanceAdminByAddress(address);
             assertFalse(valid.isBlock());
             assertEquals("business", caller.getRsfClient(address).wrapper(Echo.class).echo("business"));
+        }
+    }
+
+    @Test
+    public void authorizedManagementRpcUnblocksTheTargetWhenBothInstancesAreBlocked() throws Exception {
+        // 目标和调用方都安装离线管理扩展，业务与管理调用共用 RSF。
+        try (MetContext target = configuration(() -> "secret", true).buildContext(); //
+             MetContext caller = configuration(() -> "secret", false).buildContext()) {
+            target.publisher().rsfService(Echo.class, value -> value).register();
+            caller.publisher().rsfService(Echo.class).register();
+            target.start();
+            caller.start();
+            var address = target.getListenAddress("rsf");
+            MetInstanceAdmin instance = caller.getExtension(TargetAdmin.class).getInstanceAdminByAddress(address);
+            instance.block();
+            caller.getUpdater().setBlock(true);
+
+            // 调用方受阻断时仍可通过带凭据的管理 RPC 恢复目标。
+            assertTrue(instance.isBlock());
+            instance.unblock();
+            assertFalse(target.getUpdater().isBlock());
+            assertTrue(caller.getUpdater().isBlock());
+            caller.getUpdater().setBlock(false);
+            assertEquals("business", caller.getRsfClient(address).wrapper(Echo.class).echo("business"));
+        }
+    }
+
+    @Test
+    public void wrongCredentialCannotUnblockAnInstanceThroughTheAllowlist() throws Exception {
+        // 阻断发生在发起管理请求前，且调用方与目标的凭据不同。
+        try (MetContext target = configuration(() -> "secret", true).buildContext(); //
+             MetContext caller = configuration(() -> "wrong", false).buildContext()) {
+            target.start();
+            caller.start();
+            target.getUpdater().setBlock(true);
+            caller.getUpdater().setBlock(true);
+            TargetAdmin admin = caller.getExtension(TargetAdmin.class);
+            MetInstanceAdmin instance = admin.getInstanceAdminByAddress(target.getListenAddress("rsf"));
+
+            // 错误凭据到达目标鉴权，目标保持阻断。
+            Exception failure = assertThrows(Exception.class, instance::unblock);
+            MetException denied = assertInstanceOf(MetException.class, ExceptionUtils.getRootCause(failure));
+            assertEquals(401, denied.getStatus());
+            assertTrue(target.getUpdater().isBlock());
+        }
+    }
+
+    @Test
+    public void consumerOnlyManagementBindingCanUnblockAfterLazyRegistration() throws Exception {
+        // 只配置直连的调用上下文，首次管理调用时由 TargetAdminImpl 注册消费绑定。
+        MetConfiguration consumer = createConfiguration().setDefaultTimeout(3000);
+        consumer.connector("tcp").protocol("rsf");
+        try (MetContext target = configuration(() -> "secret", true).buildContext(); //
+             MetContext caller = consumer.buildContext()) {
+            target.start();
+            caller.start();
+            target.getUpdater().setBlock(true);
+            caller.getUpdater().setBlock(true);
+            assertNull(caller.getServiceInfo(ManagementRPC.class));
+            TargetAdmin admin = new TargetAdminImpl(caller, () -> "secret");
+
+            // Shadow 消费绑定通过显式登记保留出站管理能力。
+            admin.getInstanceAdminByAddress(target.getListenAddress("rsf")).unblock();
+            assertTrue(caller.getServiceInfo(ManagementRPC.class).isShadow());
+            assertFalse(target.getUpdater().isBlock());
         }
     }
 
