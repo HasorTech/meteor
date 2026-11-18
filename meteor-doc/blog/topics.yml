@@ -1,0 +1,9 @@
+getting-started:
+  label: 上手与实践
+  description: 从第一次调用开始，理解 Meteor 的服务开发方式。
+protocols:
+  label: 协议与连接
+  description: 理解协议挂载、路径和多协议发布的边界。
+discovery:
+  label: 注册发现
+  description: 从直连调用走向动态服务发现与管理。

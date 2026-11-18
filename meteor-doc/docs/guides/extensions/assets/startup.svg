@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1450" height="270" viewBox="0 0 1450 270" role="img" aria-labelledby="title desc">
+<title id="title">上下文构建和启动流程</title><desc id="desc">前三步在 buildContext 中完成，后三步在 start 中完成。</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#8a6b20"/></marker></defs>
+<rect width="1450" height="270" rx="16" fill="#fffdf6"/>
+<g font-family="system-ui, sans-serif" fill="#302c22">
+<path d="M 225 150 H 265" fill="none" stroke="#8a6b20" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 465 150 H 505" fill="none" stroke="#8a6b20" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 705 150 H 745" fill="none" stroke="#8a6b20" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 945 150 H 985" fill="none" stroke="#8a6b20" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 1185 150 H 1225" fill="none" stroke="#8a6b20" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="25" y="100" width="200" height="100" rx="10" fill="#ffffff" stroke="#d4c9aa" stroke-width="1.5"/>
+<text x="125.0" y="143.0" text-anchor="middle" font-size="19" font-weight="600">固化配置</text>
+<text x="125.0" y="169.0" text-anchor="middle" font-size="16" font-weight="400">加载 SPI</text>
+<rect x="265" y="100" width="200" height="100" rx="10" fill="#ffffff" stroke="#d4c9aa" stroke-width="1.5"/>
+<text x="365.0" y="143.0" text-anchor="middle" font-size="19" font-weight="600">准备核心组件</text>
+<text x="365.0" y="169.0" text-anchor="middle" font-size="16" font-weight="400">编译连接器计划</text>
+<rect x="505" y="100" width="200" height="100" rx="10" fill="#fff0b7" stroke="#c5a44b" stroke-width="1.5"/>
+<text x="605.0" y="143.0" text-anchor="middle" font-size="19" font-weight="600">创建扩展</text>
+<text x="605.0" y="169.0" text-anchor="middle" font-size="16" font-weight="400">factory.create(context)</text>
+<rect x="745" y="100" width="200" height="100" rx="10" fill="#fff0b7" stroke="#c5a44b" stroke-width="1.5"/>
+<text x="845.0" y="143.0" text-anchor="middle" font-size="19" font-weight="600">启动前回调</text>
+<text x="845.0" y="169.0" text-anchor="middle" font-size="16" font-weight="400">beforeStart()</text>
+<rect x="985" y="100" width="200" height="100" rx="10" fill="#ffffff" stroke="#d4c9aa" stroke-width="1.5"/>
+<text x="1085.0" y="143.0" text-anchor="middle" font-size="19" font-weight="600">加载地址 / 入站监听</text>
+<text x="1085.0" y="169.0" text-anchor="middle" font-size="16" font-weight="400">automaticOnline 决定</text>
+<rect x="1225" y="100" width="200" height="100" rx="10" fill="#fff0b7" stroke="#c5a44b" stroke-width="1.5"/>
+<text x="1325.0" y="143.0" text-anchor="middle" font-size="19" font-weight="600">启动后回调</text>
+<text x="1325.0" y="169.0" text-anchor="middle" font-size="16" font-weight="400">afterStart()</text>
+<text x="365" y="52" text-anchor="middle" font-size="16" fill="#6e6551">buildContext()：构建，尚未开启入站监听</text>
+<text x="1085" y="52" text-anchor="middle" font-size="16" fill="#6e6551">start()：执行启动阶段</text>
+<text x="725" y="240" text-anchor="middle" font-size="16" fill="#6e6551">构建或启动失败 → 关闭上下文并清理资源</text>
+</g></svg>

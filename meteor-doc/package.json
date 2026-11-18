@@ -1,0 +1,52 @@
+{
+  "name": "meteor-doc",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Meteor documentation website",
+  "scripts": {
+    "docusaurus": "docusaurus",
+    "start": "docusaurus start",
+    "build": "docusaurus build",
+    "swizzle": "docusaurus swizzle",
+    "deploy": "docusaurus deploy",
+    "clear": "docusaurus clear",
+    "serve": "docusaurus serve",
+    "write-translations": "docusaurus write-translations",
+    "write-heading-ids": "docusaurus write-heading-ids"
+  },
+  "dependencies": {
+    "@docusaurus/core": "3.10.2",
+    "@docusaurus/preset-classic": "3.10.2",
+    "@easyops-cn/docusaurus-search-local": "0.40.1",
+    "@mdx-js/react": "^3.1.1",
+    "clsx": "^2.1.1",
+    "js-yaml": "^4.3.2",
+    "prism-react-renderer": "^2.3.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "engines": {
+    "node": ">=20.0"
+  },
+  "browserslist": {
+    "production": [
+      ">0.5%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@docusaurus/module-type-aliases": "^3.10.2",
+    "@docusaurus/types": "^3.10.2",
+    "@signalwire/docusaurus-plugin-llms-txt": "1.2.2",
+    "remark-gfm": "4.0.1",
+    "remark-stringify": "11.0.0",
+    "unified": "11.0.5",
+    "remark-parse": "11.0.0"
+  }
+}

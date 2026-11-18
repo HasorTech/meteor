@@ -1,0 +1,17 @@
+{
+  "credentials": {
+    "docs-publisher": {
+      "accessKeyId": "",
+      "accessKeySecret": ""
+    }
+  },
+  "sites": {
+    "meteor": {
+      "credential": "docs-publisher",
+      "endpoint": "https://oss-cn-hangzhou.aliyuncs.com",
+      "bucketName": "your-meteor-docs-bucket",
+      "prefix": "rsf",
+      "cdnUrl": "https://www.hasor.net/rsf/"
+    }
+  }
+}

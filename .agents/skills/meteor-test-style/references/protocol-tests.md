@@ -62,4 +62,4 @@ public void jsonProxyCallsPublishedService() throws Exception {
 3. 迁移后清理旧编译输出，避免旧包里的测试类残留造成重复执行。文档中的测试命令和例子入口也一起更新。
 4. 宿主汇总结果必须属于本次实际执行。测试任务启动时先清理标准结果目录的旧 XML，再标记本轮开始；历史 run 归档保留。启动前失败时排除现存旧文件，缓存复用另行标记，不依赖 wall clock 或文件时间判断归属。分别注入启动前、报告设置后的故障，确认均不拾取旧结果；失败、中断和取消保持原状态，不计为通过。
 
-当前宿主计划与矩阵说明见 [meteor-test 计划](../../../../document/docs/other/testing/METEOR_TEST_PLAN.md)。能力清单只描述协议和对端，不将待补场景声明为已经验收。
+当前测试结构和矩阵说明见 [meteor-test 开发说明](../../../../meteor-test/DEVELOPMENT.md)。能力清单只描述协议和对端，不将待补场景声明为已经验收。

@@ -1,0 +1,113 @@
+/* Blog layouts shared with the dbVisitor documentation site. */
+/* List titles are smaller than the heading on a full article page. */
+.blog-list-page article > header > h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1.4;
+    margin-bottom: 0.65rem;
+}
+
+/* Keep blog navigation compact instead of growing to a quarter of a wide screen. */
+@media (min-width: 997px) {
+    .blog-wrapper:not(.blog-post-page) .container.margin-vert--lg {
+        /* Navigation width plus 8px side padding and the 1px sidebar border. */
+        --blog-sidebar-width: calc(var(--blog-browse-width) + 17px);
+        width: 100%;
+        max-width: none;
+        margin-top: 0 !important;
+        margin-left: 0;
+        margin-right: auto;
+        padding: 0;
+    }
+
+    .blog-wrapper:not(.blog-post-page) .container.margin-vert--lg > .row {
+        margin: 0;
+    }
+
+    .blog-wrapper:not(.blog-post-page) .container.margin-vert--lg > .row > aside.col--3 {
+        --ifm-col-width: var(--blog-sidebar-width);
+        padding: 0;
+        border-right: 1px solid var(--ifm-color-emphasis-200);
+    }
+
+    .blog-wrapper:not(.blog-post-page) .container.margin-vert--lg > .row > main,
+    .blog-wrapper:not(.blog-post-page) .container.margin-vert--lg > .row > .col--2 {
+        padding-top: 2rem;
+    }
+
+    .blog-wrapper:not(.blog-post-page) .container.margin-vert--lg > .row > main {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+
+    .blog-wrapper:not(.blog-post-page) .container.margin-vert--lg > .row > aside + main.col--7 {
+        --ifm-col-width: calc(100% - var(--blog-sidebar-width) - 100% / 6);
+    }
+
+    .blog-wrapper:not(.blog-post-page) .container.margin-vert--lg > .row > aside + main.col--7:last-child {
+        --ifm-col-width: calc(100% - var(--blog-sidebar-width));
+    }
+}
+
+/* Article detail shares the blog indexes' outer gutters, without a left sidebar. */
+.blog-post-page .theme-blog-footer-edit-meta-row {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.blog-post-page .theme-blog-footer-edit-meta-row > .col {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.blog-post-page .container.margin-vert--lg {
+    width: 100%;
+    max-width: none;
+    margin: 0 0 3rem !important;
+    padding: 8px;
+}
+
+.blog-post-page .container.margin-vert--lg > .row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 220px;
+    gap: 24px;
+    margin: 0;
+}
+
+.blog-post-page .container.margin-vert--lg > .row > main,
+.blog-post-page .container.margin-vert--lg > .row > .col--2 {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.blog-post-page .container.margin-vert--lg > .row > main:last-child {
+    grid-column: 1 / -1;
+}
+
+.blog-post-page .container.margin-vert--lg > .row > .col--2 {
+    padding-top: calc(40px + 0.5rem);
+}
+
+.blog-post-page article > header > h1 {
+    font-size: 2rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 996px) {
+    .blog-post-page .container.margin-vert--lg > .row {
+        display: block;
+    }
+
+    .blog-post-page .container.margin-vert--lg > .row > .col--2 {
+        display: none;
+    }
+
+    .blog-post-page article > header > h1 {
+        font-size: 1.75rem;
+    }
+}
+

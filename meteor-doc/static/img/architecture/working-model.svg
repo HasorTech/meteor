@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="760" viewBox="0 0 1600 760" role="img" aria-labelledby="title description">
+  <title id="title">Meteor 整体架构</title>
+  <desc id="description">Meteor 嵌入用户应用运行。调用方通过不同 RPC 接入点和统一 RPC 调度调用业务实现。注册中心提供服务发现和配置同步，API、Web 控制台和 Telnet 提供管理入口。</desc>
+  <defs>
+    <marker id="call" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#886008"/></marker>
+    <marker id="discovery" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#427397"/></marker>
+    <marker id="management" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#4f7a60"/></marker>
+  </defs>
+  <rect width="1600" height="760" fill="#fffefa" rx="16"/>
+  <g font-family="system-ui, -apple-system, 'Segoe UI', 'Noto Sans CJK SC', sans-serif" fill="#25251f">
+    <rect x="440" y="30" width="660" height="140" rx="12" fill="#f0f6fa" stroke="#a9c2d4" stroke-width="2"/>
+    <text x="470" y="70" font-size="28" font-weight="600">注册中心</text>
+    <text x="470" y="109" font-size="24">ZooKeeper · Nacos · JDBC</text>
+    <text x="470" y="143" font-size="22" fill="#526a7b">服务登记 · 地址发现 · 治理配置 / Dubbo 注册生态整合</text>
+    <rect x="1170" y="30" width="400" height="140" rx="12" fill="#f1f7f2" stroke="#aec7b5" stroke-width="2"/>
+    <text x="1200" y="75" font-size="28" font-weight="600">管理入口</text>
+    <text x="1200" y="120" font-size="25">API · Web 控制台 · Telnet</text>
+    <path d="M 1170 100 H 1104" fill="none" stroke="#4f7a60" stroke-width="3" stroke-dasharray="8 6" marker-end="url(#management)"/>
+    <text x="1109" y="83" font-size="20" fill="#4f7a60">管理</text>
+    <path d="M 440 100 H 180 V 300" fill="none" stroke="#427397" stroke-width="3" stroke-dasharray="8 6" marker-end="url(#discovery)"/>
+    <text x="198" y="210" font-size="22" fill="#427397">地址发现</text>
+    <text x="198" y="242" font-size="22" fill="#427397">配置同步</text>
+    <path d="M 880 174 V 206 H 1010 V 235" fill="none" stroke="#427397" stroke-width="3" stroke-dasharray="8 6" marker-start="url(#discovery)" marker-end="url(#discovery)"/>
+    <text x="1030" y="209" font-size="22" fill="#427397">服务登记 · 配置同步</text>
+    <path d="M 1440 170 V 235" fill="none" stroke="#4f7a60" stroke-width="3" stroke-dasharray="8 6" marker-end="url(#management)"/>
+    <text x="1455" y="210" font-size="22" fill="#4f7a60">本地管理</text>
+    <rect x="410" y="235" width="1160" height="460" rx="14" fill="#fbf6e6" stroke="#d7c69a" stroke-width="2"/>
+    <text x="440" y="275" font-size="28" font-weight="600">Meteor 嵌入应用进程</text>
+    <rect x="25" y="300" width="315" height="325" rx="12" fill="#ffffff" stroke="#cfc7b3" stroke-width="2"/>
+    <text x="55" y="350" font-size="30" font-weight="600">调用方</text>
+    <text x="55" y="400" font-size="25">Meteor 客户端</text>
+    <text x="55" y="445" font-size="25">原生 RPC SDK</text>
+    <text x="55" y="501" font-size="23" fill="#625c4c">Java · Python · Go</text>
+    <text x="55" y="538" font-size="23" fill="#625c4c">JavaScript · C / C++</text>
+    <text x="55" y="590" font-size="20" fill="#776e59">语言支持范围取决于协议</text>
+    <path d="M 344 468 H 435" stroke="#886008" stroke-width="3" marker-start="url(#call)" marker-end="url(#call)"/>
+    <text x="345" y="449" font-size="19" fill="#886008">RPC 调用</text>
+    <rect x="440" y="295" width="550" height="355" rx="12" fill="#ffffff" stroke="#dbcba5" stroke-width="2"/>
+    <text x="460" y="328" font-size="26" font-weight="600">RPC 接入点</text>
+    <rect x="455" y="345" width="520" height="78" rx="8" fill="#fbf6e6"/>
+    <text x="475" y="374" font-size="22" font-weight="600">Protobuf 协议组</text>
+    <text x="475" y="406" font-size="22">gRPC · gRPC-Web · Connect · Triple</text>
+    <rect x="455" y="433" width="520" height="111" rx="8" fill="#fbf6e6"/>
+    <text x="475" y="462" font-size="22" font-weight="600">HTTP / WebSocket 协议组</text>
+    <text x="475" y="495" font-size="22">JSON-RPC · XML-RPC · SOAP</text>
+    <text x="475" y="526" font-size="22">Hessian · Hprose</text>
+    <rect x="455" y="554" width="520" height="78" rx="8" fill="#fbf6e6"/>
+    <text x="475" y="583" font-size="22" font-weight="600">TCP / UDP 协议组</text>
+    <text x="475" y="615" font-size="22">RSF · Dubbo · Thrift · ONC RPC</text>
+    <path d="M 994 468 H 1035" stroke="#886008" stroke-width="3" marker-start="url(#call)" marker-end="url(#call)"/>
+    <rect x="1040" y="350" width="205" height="275" rx="12" fill="#f7e8b5" stroke="#c8ac61" stroke-width="2"/>
+    <text x="1064" y="401" font-size="29" font-weight="600">RPC 调度</text>
+    <text x="1070" y="465" font-size="25">服务定位</text>
+    <text x="1070" y="512" font-size="25">方法调用</text>
+    <text x="1064" y="570" font-size="22">拦截器 · 超时</text>
+    <path d="M 1249 468 H 1285" stroke="#886008" stroke-width="3" marker-start="url(#call)" marker-end="url(#call)"/>
+    <rect x="1290" y="350" width="260" height="275" rx="12" fill="#ffffff" stroke="#cfc7b3" stroke-width="2"/>
+    <text x="1320" y="401" font-size="29" font-weight="600">用户应用</text>
+    <text x="1320" y="452" font-size="25">业务接口</text>
+    <text x="1320" y="492" font-size="25">业务实现</text>
+    <text x="1315" y="554" font-size="22" fill="#625c4c">普通 Java</text>
+    <text x="1315" y="590" font-size="21" fill="#625c4c">Spring · Hasor · Solon</text>
+    <text x="440" y="678" font-size="21" fill="#776e59">连接器管理 TCP、UDP、HTTP、WebSocket 连接，可按需配置 TLS、HTTPS、DTLS</text>
+    <path d="M 45 731 H 92" stroke="#886008" stroke-width="3" marker-end="url(#call)"/>
+    <text x="107" y="739" font-size="22">业务调用</text>
+    <path d="M 325 731 H 372" stroke="#427397" stroke-width="3" stroke-dasharray="8 6" marker-end="url(#discovery)"/>
+    <text x="387" y="739" font-size="22">注册发现 / 配置同步</text>
+    <path d="M 720 731 H 767" stroke="#4f7a60" stroke-width="3" stroke-dasharray="8 6" marker-end="url(#management)"/>
+    <text x="782" y="739" font-size="22">管理操作</text>
+    <text x="1110" y="739" font-size="22" fill="#625c4c">注册中心不转发业务请求</text>
+  </g>
+</svg>

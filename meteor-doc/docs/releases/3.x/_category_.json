@@ -1,0 +1,11 @@
+{
+  "label": "v3.x",
+  "position": 3,
+  "className": "meteor-release-group",
+  "collapsible": true,
+  "collapsed": true,
+  "link": {
+    "type": "generated-index",
+    "title": "v3.x"
+  }
+}
