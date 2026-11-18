@@ -24,6 +24,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import net.hasor.cobble.ResourcesUtils;
 import net.hasor.cobble.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -45,6 +46,21 @@ public final class SoapWsdlResource extends SoapDefinitionResource {
     private final        Map<String, SoapXmlResource> resources;
     private final        SoapDefinition               definition;
     private final        SoapSchemaParser             schemas;
+
+    /** 加载并校验 classpath:、file: 或 URL 指定的定义文件；加载失败时抛出 IOException。 */
+    public static SoapWsdlResource load(String location) throws IOException {
+        URL source = ResourcesUtils.getResource(location);
+        if (source == null) {
+            throw new IOException("WSDL resource not found: " + location);
+        }
+
+        try {
+            return new SoapWsdlResource(source);
+        } catch (IOException | IllegalArgumentException failure) {
+            String message = "Failed to load WSDL resource: " + location + ": " + failure.getMessage();
+            throw new IOException(message, failure);
+        }
+    }
 
     public SoapWsdlResource(URL wsdl) throws IOException {
         if (wsdl == null) {

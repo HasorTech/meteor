@@ -11,6 +11,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import net.hasor.cobble.ResourcesUtils;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.protocol.thrift.codec.ThriftServiceSchema;
@@ -22,6 +23,21 @@ import net.hasor.meteor.protocol.thrift.definition.ThriftIdlType;
 public final class ThriftIdlResource {
     private final ThriftIdlDocument document;
     private       String            serviceName;
+
+    /** 加载并校验 classpath:、file: 或 URL 指定的定义文件；加载失败时抛出 IOException。 */
+    public static ThriftIdlResource load(String location) throws IOException {
+        URL source = ResourcesUtils.getResource(location);
+        if (source == null) {
+            throw new IOException("Thrift IDL resource not found: " + location);
+        }
+
+        try {
+            return new ThriftIdlResource(source);
+        } catch (IOException | IllegalArgumentException failure) {
+            String message = "Failed to load Thrift IDL resource: " + location + ": " + failure.getMessage();
+            throw new IOException(message, failure);
+        }
+    }
 
     public ThriftIdlResource(URL source) throws IOException {
         this.document = ThriftIdlParser.load(source);

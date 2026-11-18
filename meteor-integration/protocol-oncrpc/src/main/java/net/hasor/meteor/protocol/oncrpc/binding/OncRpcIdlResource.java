@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.Map;
+import net.hasor.cobble.ResourcesUtils;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.domain.meta.MethodMeta;
 import net.hasor.meteor.domain.meta.ServiceMetaParser;
@@ -23,6 +24,21 @@ public final class OncRpcIdlResource {
     final   XdrIdlDocument document;
     private String         programName;
     private Long           version;
+
+    /** 加载并校验 classpath:、file: 或 URL 指定的定义文件；加载失败时抛出 IOException。 */
+    public static OncRpcIdlResource load(String location) throws IOException {
+        URL source = ResourcesUtils.getResource(location);
+        if (source == null) {
+            throw new IOException("ONC RPC IDL resource not found: " + location);
+        }
+
+        try {
+            return new OncRpcIdlResource(source);
+        } catch (IOException | IllegalArgumentException failure) {
+            String message = "Failed to load ONC RPC IDL resource: " + location + ": " + failure.getMessage();
+            throw new IOException(message, failure);
+        }
+    }
 
     public OncRpcIdlResource(URL source) throws IOException {
         this.document = XdrIdlParser.load(source);
