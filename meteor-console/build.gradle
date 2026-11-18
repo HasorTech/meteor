@@ -16,6 +16,8 @@ apply plugin: 'net.hasor.boot'
 
 description = 'Meteor registry management console using the Registry administration API.'
 
+def npmCommand = System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows') ? 'npm.cmd' : 'npm'
+
 configurations {
     bootLoader {
         canBeConsumed = false
@@ -23,11 +25,14 @@ configurations {
 }
 
 dependencies {
+    implementation "net.hasor:tconsole:${property('lib.neta')}"
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${property('lib.jackson')}"
-    implementation "net.hasor:hasor-boot-web:${property('lib.hasor')}"
     implementation 'io.jsonwebtoken:jjwt-api:0.13.0'
     runtimeOnly "ognl:ognl:${property('lib.ognl')}"
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.13.0'
+
+    // boot
+    implementation "net.hasor:hasor-boot-web:${property('lib.hasor')}"
     runtimeOnly "net.hasor:hasor-boot-web-tomcat:${property('lib.hasor')}"
     bootLoader "net.hasor:hasor-boot-loader:${property('lib.hasor')}"
 
@@ -91,27 +96,67 @@ tasks.named('test') {
     jvmArgs '--add-opens=java.base/java.io=ALL-UNNAMED'
 }
 
-tasks.register('runBrowserFixture', JavaExec) {
-    group = 'verification'
-    description = 'Start the console backend for browser tests.'
-    dependsOn 'testClasses'
-    classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'net.hasor.meteor.test.scenario.ConsoleBrowserFixture'
-    javaLauncher = javaToolchains.launcherFor(java.toolchain)
-    jvmArgs '-XX:ActiveProcessorCount=2', '--add-opens=java.base/java.io=ALL-UNNAMED'
-    def temporaryDirectory = layout.buildDirectory.dir('test-work/browser-fixture/tmp').get().asFile
-    def userDirectory = layout.buildDirectory.dir('test-work/browser-fixture/home').get().asFile
-    systemProperty 'java.io.tmpdir', temporaryDirectory.absolutePath
-    systemProperty 'user.home', userDirectory.absolutePath
+// Frontend tooling writes downloads, diagnostics and temporary files into this module.
+tasks.withType(Exec).configureEach {
+    workingDir 'src/web'
+    def cacheDirectory = layout.buildDirectory.dir('cache/npm').get().asFile
+    def temporaryDirectory = layout.buildDirectory.dir('tmp/node').get().asFile
+    environment 'npm_config_cache', cacheDirectory.absolutePath
+    environment 'PLAYWRIGHT_BROWSERS_PATH', layout.buildDirectory.dir('cache/playwright').get().asFile.absolutePath
+    environment 'TMPDIR', temporaryDirectory.absolutePath
+    environment 'TMP', temporaryDirectory.absolutePath
+    environment 'TEMP', temporaryDirectory.absolutePath
     doFirst {
+        cacheDirectory.mkdirs()
         temporaryDirectory.mkdirs()
-        userDirectory.mkdirs()
     }
 }
 
+tasks.register('webInstall', Exec) {
+    commandLine npmCommand, 'ci', '--no-audit', '--no-fund'
+    inputs.files('src/web/package.json', 'src/web/package-lock.json')
+    outputs.file('src/web/node_modules/.package-lock.json')
+}
+tasks.register('webBuild', Exec) {
+    dependsOn 'webInstall'
+    commandLine npmCommand, 'run', 'build'
+    inputs.dir('src/web/src')
+    inputs.dir('src/web/public')
+    inputs.files('src/web/index.html', 'src/web/vite.config.js', 'src/web/package.json', 'src/web/package-lock.json')
+    outputs.dir('src/main/resources/META-INF/resources')
+}
+// 普通 Java 构建只复制已有资源；显式构建前端时，先生成资源再复制。
 tasks.named('processResources') {
+    mustRunAfter 'webBuild'
     inputs.property('exampleVersion', project.version.toString())
     filesMatching('META-INF/invocation-examples/version.properties') {
         expand(version: project.version.toString())
     }
+}
+
+// 浏览器测试启动真实应用、内存注册中心及两个控制台，不进入发布产物。
+tasks.register('prepareBrowserFixture') {
+    dependsOn 'testClasses'
+    def description = layout.buildDirectory.file('browser-fixture.json')
+    outputs.file(description)
+    inputs.files(sourceSets.test.runtimeClasspath)
+    doLast {
+        def launcher = javaToolchains.launcherFor(java.toolchain).get()
+        def workDirectory = layout.buildDirectory.dir('test-work/browser-fixture').get().asFile
+        def temporaryDirectory = new File(workDirectory, 'tmp')
+        def userDirectory = new File(workDirectory, 'home')
+        temporaryDirectory.mkdirs()
+        userDirectory.mkdirs()
+        description.get().asFile.text = groovy.json.JsonOutput.toJson([
+                java              : launcher.executablePath.asFile.absolutePath,
+                classpath         : sourceSets.test.runtimeClasspath.asPath,
+                temporaryDirectory: temporaryDirectory.absolutePath,
+                userDirectory     : userDirectory.absolutePath
+        ])
+    }
+}
+
+tasks.register('webTest', Exec) {
+    dependsOn 'webBuild', 'prepareBrowserFixture'
+    commandLine npmCommand, 'run', 'test:e2e'
 }

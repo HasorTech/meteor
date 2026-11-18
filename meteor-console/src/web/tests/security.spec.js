@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('disabled security enters management without login or logout controls', async ({ page }) => {
-  // 对接实际读取 security.enable=false 配置的控制台，不模拟会话接口。
+  // 对接实际读取 meteor.web.auth.enabled=false 配置的控制台，不模拟会话接口。
   await page.goto('http://127.0.0.1:18766/');
   await expect(page.getByRole('navigation', { name: '主要导航' })).toBeVisible();
   await expect(page.getByRole('heading', { name: '连接到注册中心' })).toBeVisible();
