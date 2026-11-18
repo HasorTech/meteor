@@ -17,6 +17,7 @@ public final class ClusterView {
     private final String  address;
     private final String  database;
     private final String  username;
+    private final String  remoteClusterId;
     private final String  namespace;
     private final String  group;
     private final String  root;
@@ -30,6 +31,7 @@ public final class ClusterView {
         this.address = profile.getAddress();
         this.database = profile.getDatabase();
         this.username = profile.getUsername();
+        this.remoteClusterId = profile.getRemoteClusterId();
         this.namespace = profile.getNamespace();
         this.group = profile.getGroup();
         this.root = profile.getRoot();
@@ -59,6 +61,10 @@ public final class ClusterView {
 
     public String getUsername() {
         return this.username;
+    }
+
+    public String getRemoteClusterId() {
+        return this.remoteClusterId;
     }
 
     public String getNamespace() {

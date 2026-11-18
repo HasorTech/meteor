@@ -15,7 +15,6 @@ import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.console.component.provider.ProviderConnection;
 import net.hasor.meteor.console.component.rpc.RpcManagement;
 import net.hasor.meteor.console.component.rpc.RpcManagementFilter;
-import net.hasor.meteor.console.component.rpc.RpcManagementImpl;
 import net.hasor.meteor.console.component.rpc.RpcTarget;
 import net.hasor.meteor.console.utils.JsonUtils;
 import net.hasor.meteor.domain.MetException;
@@ -65,7 +64,7 @@ public class RpcManagementFilterTest {
             JsonUtils.configureRpc(server);
             JsonUtils.configureRpc(client);
             RpcManagementFilter authentication = new RpcManagementFilter(() -> managementToken, password, downstreamToken, null, "");
-            server.publisher().rsfService(RpcManagement.class, new RpcManagementImpl(connection)) //
+            server.publisher().rsfService(RpcManagement.class, RegistryRpcFixture.management(connection)) //
                     .bindFilter("console-auth", authentication) //
                     .bindFilter("storage-failure", (request, response, chain) -> {
                         if (failOnce.getAndSet(false)) {
@@ -82,7 +81,7 @@ public class RpcManagementFilterTest {
             Map<String, String> options = Map.of(RpcManagement.CREDENTIAL_OPTION, managementToken);
             RpcManagement rpc = client.getRsfClient(server.getListenAddress("rsf")).withOptions(options) //
                     .wrapper(RpcManagement.class);
-            Throwable failure = assertThrows(Exception.class, () -> rpc.registryInfo(RpcTarget.cluster()));
+            Throwable failure = assertThrows(Exception.class, () -> rpc.registryInfo(RpcTarget.cluster("saved-registry")));
             MetException rejected = assertInstanceOf(MetException.class, ExceptionUtils.getRootCause(failure));
             assertEquals(expectedStatus, rejected.getStatus());
             String visible = rejected.getMessage();
@@ -92,7 +91,7 @@ public class RpcManagementFilterTest {
             assertFalse(visible.contains(managementToken), visible);
 
             // 同一代理和连接继续调用成功，前一次失败不改变实际注册中心或认证状态。
-            assertNotNull(rpc.registryInfo(RpcTarget.cluster()));
+            assertNotNull(rpc.registryInfo(RpcTarget.cluster("saved-registry")));
         }
     }
 }

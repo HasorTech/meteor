@@ -19,7 +19,7 @@ import net.hasor.meteor.console.ConsoleMain;
 import net.hasor.meteor.console.component.provider.ProviderConnection;
 import net.hasor.meteor.console.component.rpc.RpcManagement;
 import net.hasor.meteor.console.component.rpc.RpcManagementFilter;
-import net.hasor.meteor.console.component.rpc.RpcManagementImpl;
+import net.hasor.meteor.test.component.rpc.RegistryRpcFixture;
 import net.hasor.meteor.console.utils.JsonUtils;
 import net.hasor.meteor.registry.RegistryAdmin;
 import net.hasor.meteor.registry.memory.MemoryRegistryConfiguration;
@@ -56,7 +56,7 @@ public class ConsoleRemoteHttpTest {
         try (ProviderConnection connection = ProviderConnection.registry(local); //
              MetContext remote = configuration.buildContext()) {
             // 凭据校验后注入远端失败，让 RPC 状态和敏感消息经过完整管理调用链。
-            MetBindInfo<RpcManagement> binding = remote.publisher().rsfService(RpcManagement.class, new RpcManagementImpl(connection))//
+            MetBindInfo<RpcManagement> binding = remote.publisher().rsfService(RpcManagement.class, RegistryRpcFixture.management(connection))//
                     .bindFilter("console-auth", new RpcManagementFilter(() -> token))//
                     .bindFilter("remote-failure", (request, response, chain) -> {
                         response.sendStatus(remoteStatus, "Remote failure: managementToken=" + token);
@@ -72,6 +72,7 @@ public class ConsoleRemoteHttpTest {
                 Map<String, Object> profile = Map.of(//
                         "name", "Remote Console", //
                         "type", "remote", //
+                        "remoteClusterId", "saved-registry", //
                         "address", remote.getListenAddress("rsf").toString(), //
                         "managementToken", token);
 

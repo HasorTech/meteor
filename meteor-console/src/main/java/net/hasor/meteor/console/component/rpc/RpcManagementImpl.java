@@ -9,39 +9,44 @@ package net.hasor.meteor.console.component.rpc;
 import java.util.Map;
 import java.util.Objects;
 import net.hasor.cobble.StringUtils;
-import net.hasor.meteor.console.component.provider.ProviderConnection;
+import java.util.function.Function;
 import net.hasor.meteor.domain.MetServiceType;
 import net.hasor.meteor.registry.RegistryAdmin;
 import net.hasor.meteor.registry.admin.*;
 import net.hasor.meteor.registry.admin.description.MetServiceDescription;
 
-/** RPC 服务端借用 Provider，直接转发注册中心 API，不执行控制台业务命令或管理其生命周期。 */
+/** 通过请求携带的集群 ID 借用已保存连接，调用注册中心 API。 */
 public final class RpcManagementImpl implements RpcManagement {
-    private final ProviderConnection connection;
+    @FunctionalInterface
+    public interface RegistryAccess {
+        <T> T withRegistry(String clusterId, Function<RegistryAdmin, T> operation);
+    }
 
-    public RpcManagementImpl(ProviderConnection connection) {
-        this.connection = Objects.requireNonNull(connection, "connection");
+    private final RegistryAccess registries;
+
+    public RpcManagementImpl(RegistryAccess registries) {
+        this.registries = Objects.requireNonNull(registries, "registries");
     }
 
     @Override
     public RegistryInfo registryInfo(RpcTarget target) {
-        return cluster(target).info();
+        return cluster(target, admin -> admin.info());
     }
 
     @Override
     public RegistryStatus registryStatus(RpcTarget target) {
-        return cluster(target).status();
+        return cluster(target, admin -> admin.status());
     }
 
     @Override
     public MetPage<MetServiceInfo> services(RpcTarget target, String filter, MetDirectoryQuery query) {
         return switch (scope(target)) {
-            case CLUSTER -> cluster(target).services(filter, query);
+            case CLUSTER -> cluster(target, admin -> admin.services(filter, query));
             case INSTANCE -> {
                 if (StringUtils.isNotBlank(filter)) {
                     throw new IllegalArgumentException("实例服务目录使用 query 提供查询条件");
                 }
-                yield instance(target).getServiceList(query);
+                yield instance(target, admin -> admin.getServiceList(query));
             }
             case SERVICE -> throw new IllegalArgumentException("服务目录不接受服务作用域");
         };
@@ -49,55 +54,54 @@ public final class RpcManagementImpl implements RpcManagement {
 
     @Override
     public MetPage<String> applications(RpcTarget target, MetDirectoryQuery query) {
-        return cluster(target).applications(query);
+        return cluster(target, admin -> admin.applications(query));
     }
 
     @Override
     public MetPage<MetInstanceInfo> instances(RpcTarget target, String application, MetDirectoryQuery query) {
-        return cluster(target).instances(application, query);
+        return cluster(target, admin -> admin.instances(application, query));
     }
 
     @Override
     public String[] units(RpcTarget target, String application) {
         return switch (scope(target)) {
-            case CLUSTER -> cluster(target).units(application);
-            case SERVICE -> service(target).units();
+            case CLUSTER -> cluster(target, admin -> admin.units(application));
+            case SERVICE -> service(target, admin -> admin.units());
             case INSTANCE -> throw new IllegalArgumentException("单元目录不接受实例作用域");
         };
     }
 
     @Override
     public MetInstanceInfo instanceInfo(RpcTarget target) {
-        return instance(target).instance();
+        return instance(target, admin -> admin.instance());
     }
 
     @Override
     public MetServiceInfo serviceInfo(RpcTarget target, String serviceId) {
         return switch (scope(target)) {
-            case SERVICE -> service(target).info();
-            case INSTANCE -> instance(target).getServiceById(serviceId);
+            case SERVICE -> service(target, admin -> admin.info());
+            case INSTANCE -> instance(target, admin -> admin.getServiceById(serviceId));
             case CLUSTER -> throw new IllegalArgumentException("服务信息要求服务或实例作用域");
         };
     }
 
     @Override
     public MetServiceMethodPage methods(RpcTarget target, String methodName, MetDirectoryQuery query) {
-        return service(target).methods(methodName, query);
+        return service(target, admin -> admin.methods(methodName, query));
     }
 
     @Override
     public Map<String, MetServiceDescription> descriptions(RpcTarget target) {
-        return service(target).descriptions();
+        return service(target, admin -> admin.descriptions());
     }
 
     @Override
     public MetPage<MetServiceMember> members(RpcTarget target, MetServiceType role, MetEndpointFilter filter, MetDirectoryQuery query) {
-        MetServiceAdmin admin = service(target);
         if (role == MetServiceType.Provider) {
-            return admin.providers(filter, query);
+            return service(target, admin -> admin.providers(filter, query));
         }
         if (role == MetServiceType.Consumer) {
-            return admin.consumers(filter, query);
+            return service(target, admin -> admin.consumers(filter, query));
         }
         throw new IllegalArgumentException("成员目录要求提供者或消费者角色");
     }
@@ -105,26 +109,35 @@ public final class RpcManagementImpl implements RpcManagement {
     @Override
     public String fetchRule(RpcTarget target, MetRuleType type) {
         return switch (scope(target)) {
-            case CLUSTER -> cluster(target).fetchRule(type);
-            case SERVICE -> service(target).fetchRule(type);
-            case INSTANCE -> instance(target).fetchRule(type);
+            case CLUSTER -> cluster(target, admin -> admin.fetchRule(type));
+            case SERVICE -> service(target, admin -> admin.fetchRule(type));
+            case INSTANCE -> instance(target, admin -> admin.fetchRule(type));
         };
     }
 
     @Override
     public void resetRule(RpcTarget target, MetRuleType type) {
         switch (scope(target)) {
-            case CLUSTER -> cluster(target).resetRule(type);
-            case SERVICE -> service(target).resetRule(type);
-            case INSTANCE -> instance(target).resetRule(type);
+            case CLUSTER -> cluster(target, admin -> {
+                admin.resetRule(type);
+                return null;
+            });
+            case SERVICE -> service(target, admin -> {
+                admin.resetRule(type);
+                return null;
+            });
+            case INSTANCE -> instance(target, admin -> {
+                admin.resetRule(type);
+                return null;
+            });
         }
     }
 
     @Override
     public MetValidationResult validateRule(RpcTarget target, MetRuleType type, String rule) {
         return switch (scope(target)) {
-            case CLUSTER -> cluster(target).validateRule(type, rule);
-            case SERVICE -> service(target).validateRule(type, rule);
+            case CLUSTER -> cluster(target, admin -> admin.validateRule(type, rule));
+            case SERVICE -> service(target, admin -> admin.validateRule(type, rule));
             case INSTANCE -> throw new UnsupportedOperationException("实例作用域不支持独立规则校验");
         };
     }
@@ -132,86 +145,99 @@ public final class RpcManagementImpl implements RpcManagement {
     @Override
     public void updateRule(RpcTarget target, MetRuleType type, String rule) {
         switch (scope(target)) {
-            case CLUSTER -> cluster(target).updateRule(type, rule);
-            case SERVICE -> service(target).updateRule(type, rule);
-            case INSTANCE -> instance(target).updateRule(type, rule);
+            case CLUSTER -> cluster(target, admin -> {
+                admin.updateRule(type, rule);
+                return null;
+            });
+            case SERVICE -> service(target, admin -> {
+                admin.updateRule(type, rule);
+                return null;
+            });
+            case INSTANCE -> instance(target, admin -> {
+                admin.updateRule(type, rule);
+                return null;
+            });
         }
     }
 
     @Override
     public boolean isRuleEnabled(RpcTarget target, MetRuleType type) {
         return switch (scope(target)) {
-            case CLUSTER -> cluster(target).isRuleEnabled(type);
-            case SERVICE -> service(target).isRule(type);
-            case INSTANCE -> instance(target).isRuleEnabled(type);
+            case CLUSTER -> cluster(target, admin -> admin.isRuleEnabled(type));
+            case SERVICE -> service(target, admin -> admin.isRule(type));
+            case INSTANCE -> instance(target, admin -> admin.isRuleEnabled(type));
         };
     }
 
     @Override
     public void ruleEnabled(RpcTarget target, MetRuleType type, boolean enabled) {
         switch (scope(target)) {
-            case CLUSTER -> {
-                MetClusterAdmin admin = cluster(target);
+            case CLUSTER -> cluster(target, admin -> {
                 if (enabled) {
                     admin.enableRule(type);
                 } else {
                     admin.disableRule(type);
                 }
-            }
-            case SERVICE -> {
-                MetServiceAdmin admin = service(target);
+                return null;
+            });
+            case SERVICE -> service(target, admin -> {
                 if (enabled) {
                     admin.enableRule(type);
                 } else {
                     admin.disableRule(type);
                 }
-            }
-            case INSTANCE -> {
-                MetInstanceAdmin admin = instance(target);
+                return null;
+            });
+            case INSTANCE -> instance(target, admin -> {
                 if (enabled) {
                     admin.enableRule(type);
                 } else {
                     admin.disableRule(type);
                 }
-            }
+                return null;
+            });
         }
     }
 
     @Override
     public boolean isServiceEnabled(RpcTarget target) {
-        return service(target).isEnable();
+        return service(target, admin -> admin.isEnable());
     }
 
     @Override
     public void serviceEnabled(RpcTarget target, boolean enabled) {
-        MetServiceAdmin admin = service(target);
-        if (enabled) {
-            admin.enable();
-        } else {
-            admin.disable();
-        }
+        service(target, admin -> {
+            if (enabled) {
+                admin.enable();
+            } else {
+                admin.disable();
+            }
+            return null;
+        });
     }
 
     @Override
     public boolean isInstanceBlocked(RpcTarget target) {
-        return instance(target).isBlock();
+        return instance(target, admin -> admin.isBlock());
     }
 
     @Override
     public void instanceBlocked(RpcTarget target, boolean blocked) {
-        MetInstanceAdmin admin = instance(target);
-        if (blocked) {
-            admin.block();
-        } else {
-            admin.unblock();
-        }
+        instance(target, admin -> {
+            if (blocked) {
+                admin.block();
+            } else {
+                admin.unblock();
+            }
+            return null;
+        });
     }
 
     @Override
     public Map<String, Object> fetchMeta(RpcTarget target) {
         return switch (scope(target)) {
-            case CLUSTER -> cluster(target).fetchMeta();
-            case SERVICE -> service(target).fetchMeta();
+            case CLUSTER -> cluster(target, admin -> admin.fetchMeta());
+            case SERVICE -> service(target, admin -> admin.fetchMeta());
             case INSTANCE -> throw new UnsupportedOperationException("实例作用域不支持元信息配置");
         };
     }
@@ -219,8 +245,14 @@ public final class RpcManagementImpl implements RpcManagement {
     @Override
     public void putMeta(RpcTarget target, Map<String, Object> values) {
         switch (scope(target)) {
-            case CLUSTER -> cluster(target).putMeta(values);
-            case SERVICE -> service(target).putMeta(values);
+            case CLUSTER -> cluster(target, admin -> {
+                admin.putMeta(values);
+                return null;
+            });
+            case SERVICE -> service(target, admin -> {
+                admin.putMeta(values);
+                return null;
+            });
             case INSTANCE -> throw new UnsupportedOperationException("实例作用域不支持元信息配置");
         }
     }
@@ -228,8 +260,14 @@ public final class RpcManagementImpl implements RpcManagement {
     @Override
     public void removeMeta(RpcTarget target, String[] keys) {
         switch (scope(target)) {
-            case CLUSTER -> cluster(target).removeMeta(keys);
-            case SERVICE -> service(target).removeMeta(keys);
+            case CLUSTER -> cluster(target, admin -> {
+                admin.removeMeta(keys);
+                return null;
+            });
+            case SERVICE -> service(target, admin -> {
+                admin.removeMeta(keys);
+                return null;
+            });
             case INSTANCE -> throw new UnsupportedOperationException("实例作用域不支持元信息配置");
         }
     }
@@ -242,32 +280,29 @@ public final class RpcManagementImpl implements RpcManagement {
         return target.getScope();
     }
 
-    private MetClusterAdmin cluster(RpcTarget target) {
+    private <T> T cluster(RpcTarget target, Function<MetClusterAdmin, T> operation) {
         if (scope(target) != RpcTarget.Scope.CLUSTER) {
             throw new IllegalArgumentException("操作要求集群作用域");
         }
-        return registry().getClusterAdmin();
+        return this.registries.withRegistry(target.getClusterId(), registry -> operation.apply(registry.getClusterAdmin()));
     }
 
-    private MetInstanceAdmin instance(RpcTarget target) {
+    private <T> T instance(RpcTarget target, Function<MetInstanceAdmin, T> operation) {
         if (scope(target) != RpcTarget.Scope.INSTANCE) {
             throw new IllegalArgumentException("操作要求实例作用域");
         }
-        return registry().getInstanceAdmin(target.getInstanceId());
+        return this.registries.withRegistry(target.getClusterId(), registry -> operation.apply(registry.getInstanceAdmin(target.getInstanceId())));
     }
 
-    private MetServiceAdmin service(RpcTarget target) {
+    private <T> T service(RpcTarget target, Function<MetServiceAdmin, T> operation) {
         if (scope(target) != RpcTarget.Scope.SERVICE) {
             throw new IllegalArgumentException("操作要求服务作用域");
         }
-        RegistryAdmin registry = registry();
-        if (StringUtils.isBlank(target.getInstanceId())) {
-            return registry.getServiceAdmin(target.getServiceId());
-        }
-        return registry.getServiceAdmin(target.getServiceId(), target.getInstanceId());
-    }
-
-    private RegistryAdmin registry() {
-        return this.connection.registry();
+        return this.registries.withRegistry(target.getClusterId(), registry -> {
+            if (StringUtils.isBlank(target.getInstanceId())) {
+                return operation.apply(registry.getServiceAdmin(target.getServiceId()));
+            }
+            return operation.apply(registry.getServiceAdmin(target.getServiceId(), target.getInstanceId()));
+        });
     }
 }

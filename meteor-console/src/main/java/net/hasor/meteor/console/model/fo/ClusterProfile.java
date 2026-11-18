@@ -19,6 +19,7 @@ public final class ClusterProfile {
     private String username;
     private String password;
     private String managementToken;
+    private String remoteClusterId;
     private String namespace;
     private String group;
     private String root;
@@ -85,6 +86,14 @@ public final class ClusterProfile {
 
     public void setManagementToken(String value) {
         this.managementToken = value;
+    }
+
+    public String getRemoteClusterId() {
+        return this.remoteClusterId;
+    }
+
+    public void setRemoteClusterId(String value) {
+        this.remoteClusterId = value;
     }
 
     public String getNamespace() {
@@ -163,6 +172,7 @@ public final class ClusterProfile {
         }
         if (!StringUtils.equals("remote", this.type)) {
             this.managementToken = null;
+            this.remoteClusterId = null;
         }
     }
 }

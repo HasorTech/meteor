@@ -29,30 +29,32 @@ import net.hasor.meteor.registry.admin.description.MetServiceDescription;
 final class RemoteConnection implements RegistryAdmin {
     private final    RpcManagement management;
     private final    String        managementToken;
+    private final    String        clusterId;
     private volatile boolean       closed;
 
     /** 借用容器上下文上的 RPC 代理，只管理当前连接的可用状态。 */
-    RemoteConnection(RpcManagement management, String managementToken) {
+    RemoteConnection(RpcManagement management, String managementToken, String clusterId) {
         this.management = management;
         this.managementToken = managementToken;
+        this.clusterId = clusterId;
     }
 
     @Override
     public MetClusterAdmin getClusterAdmin() {
         requireOpen();
-        return new ClusterAdmin(RpcTarget.cluster());
+        return new ClusterAdmin(RpcTarget.cluster(this.clusterId));
     }
 
     @Override
     public MetInstanceAdmin getInstanceAdmin(String instanceId) {
         requireOpen();
-        return new InstanceAdmin(RpcTarget.instance(instanceId));
+        return new InstanceAdmin(RpcTarget.instance(this.clusterId, instanceId));
     }
 
     @Override
     public MetServiceAdmin getServiceAdmin(String serviceId) {
         requireOpen();
-        return new ServiceAdmin(RpcTarget.service(serviceId, null));
+        return new ServiceAdmin(RpcTarget.service(this.clusterId, serviceId, null));
     }
 
     @Override
@@ -61,7 +63,7 @@ final class RemoteConnection implements RegistryAdmin {
         if (StringUtils.isBlank(instanceId)) {
             throw new IllegalArgumentException("Instance ID must not be blank");
         }
-        return new ServiceAdmin(RpcTarget.service(serviceId, instanceId));
+        return new ServiceAdmin(RpcTarget.service(this.clusterId, serviceId, instanceId));
     }
 
     @Override

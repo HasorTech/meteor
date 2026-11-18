@@ -6,6 +6,8 @@ import net.hasor.boot.Boot;
 import net.hasor.boot.BootApplication;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.console.ConsoleMain;
+import net.hasor.meteor.console.dao.ClusterDao;
+import net.hasor.meteor.console.model.fo.ClusterProfile;
 import net.hasor.meteor.console.component.rpc.RpcServer;
 import org.h2.jdbcx.JdbcDataSource;
 import org.h2.tools.RunScript;
@@ -38,10 +40,19 @@ public final class RegistryMain {
             server.start();
             Boot boot = new Boot().arguments(arguments)//
                     .hconfigFile(configuration)//
-                    .sources(ConsoleMain.class)//
-                    .property("meteor.storage.address", address);
+                    .sources(ConsoleMain.class);
             try (BootApplication application = boot.start()) {
+                ClusterProfile saved = new ClusterProfile();
+                saved.setId("console-debug");
+                saved.setName("调试注册中心");
+                saved.setType("jdbc");
+                saved.setDatabase("h2");
+                saved.setAddress(address);
+                saved.setUsername("sa");
+                saved.validate();
+                application.getAppContext().getInstance(ClusterDao.class).save(saved);
                 System.out.println("H2 注册存储：" + address);
+                System.out.println("远端集群 ID：" + saved.getId());
                 System.out.println("Remote 管理服务：" + application.getAppContext().getInstance(RpcServer.class).getAddress());
                 System.out.println("停止此进程会清空调试注册数据。");
                 application.join();

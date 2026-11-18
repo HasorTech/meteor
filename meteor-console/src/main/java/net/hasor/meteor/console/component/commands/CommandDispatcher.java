@@ -10,6 +10,7 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import net.hasor.cobble.StringUtils;
 import net.hasor.cobble.logging.Logger;
 import net.hasor.cobble.logging.LoggerFactory;
@@ -23,6 +24,7 @@ import net.hasor.meteor.console.dao.ClusterDao;
 import net.hasor.meteor.console.global.MeteorConfig;
 import net.hasor.meteor.console.model.fo.ClusterProfile;
 import net.hasor.meteor.console.model.fo.ManagementTarget;
+import net.hasor.meteor.registry.RegistryAdmin;
 import net.hasor.meteor.registry.TargetAdmin;
 
 /** 按集群分发命令，持有连接环境并回收空闲连接。 */
@@ -84,10 +86,19 @@ public final class CommandDispatcher implements AutoCloseable {
             }
         }
 
+        return this.withContext(clusterId, target.isDirect(), context -> context.execute(request, command));
+    }
+
+    /** 借用已保存集群的连接执行管理 RPC，共用命令连接缓存。 */
+    public <R> R withRegistry(String clusterId, Function<RegistryAdmin, R> operation) {
+        return this.withContext(clusterId, false, context -> context.withRegistry(operation));
+    }
+
+    private <R> R withContext(String clusterId, boolean direct, Function<CommandContext, R> operation) {
         ContextEntry entry;
         synchronized (this.contexts) {
             this.requireOpen();
-            if (target.isDirect()) {
+            if (direct) {
                 if (this.direct == null) {
                     MetContext meteor = this.appContext.getInstance(MetContext.class);
                     this.direct = new ContextEntry(CommandContext.direct(meteor.getExtension(TargetAdmin.class)));
@@ -104,7 +115,7 @@ public final class CommandDispatcher implements AutoCloseable {
             entry.lastAccessNanos = System.nanoTime();
         }
         try {
-            return entry.context.execute(request, command);
+            return operation.apply(entry.context);
         } finally {
             synchronized (this.contexts) {
                 entry.active--;

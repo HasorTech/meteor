@@ -8,6 +8,7 @@
 package net.hasor.meteor.console.component.provider.remote;
 import java.net.URI;
 import java.util.Map;
+import net.hasor.cobble.StringUtils;
 import net.hasor.config.Configuration;
 import net.hasor.core.Inject;
 import net.hasor.meteor.MetContext;
@@ -33,10 +34,14 @@ public final class RemoteProviderFactory implements ProviderFactory {
     @Override
     public ProviderConnection open(ClusterProfile profile, RegistryTokenProvider credentials) throws Exception {
         profile.validate();
+        if (StringUtils.isBlank(profile.getRemoteClusterId())) {
+            throw new IllegalArgumentException("缺少远端集群 ID");
+        }
+
         InterAddress address = new InterAddress(URI.create(profile.getAddress()));
         Map<String, String> options = Map.of(RpcManagement.CREDENTIAL_OPTION, profile.getManagementToken());
         var client = this.context.getRsfClient(address).withOptions(options);
-        RegistryAdmin admin = new RemoteConnection(client.wrapper(RpcManagement.class), profile.getManagementToken());
+        RegistryAdmin admin = new RemoteConnection(client.wrapper(RpcManagement.class), profile.getManagementToken(), profile.getRemoteClusterId());
         return ProviderConnection.registry(admin);
     }
 }

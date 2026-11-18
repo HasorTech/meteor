@@ -16,18 +16,21 @@ public final class RpcTarget {
         INSTANCE
     }
 
+    private String clusterId;
     private Scope  scope;
     private String serviceId;
     private String instanceId;
 
-    public static RpcTarget cluster() {
+    public static RpcTarget cluster(String clusterId) {
         RpcTarget target = new RpcTarget();
+        target.clusterId = clusterId;
         target.scope = Scope.CLUSTER;
         return target;
     }
 
-    public static RpcTarget service(String serviceId, String instanceId) {
+    public static RpcTarget service(String clusterId, String serviceId, String instanceId) {
         RpcTarget target = new RpcTarget();
+        target.clusterId = clusterId;
         target.scope = Scope.SERVICE;
         target.serviceId = serviceId;
         target.instanceId = instanceId;
@@ -35,12 +38,21 @@ public final class RpcTarget {
         return target;
     }
 
-    public static RpcTarget instance(String instanceId) {
+    public static RpcTarget instance(String clusterId, String instanceId) {
         RpcTarget target = new RpcTarget();
+        target.clusterId = clusterId;
         target.scope = Scope.INSTANCE;
         target.instanceId = instanceId;
         target.validate();
         return target;
+    }
+
+    public String getClusterId() {
+        return this.clusterId;
+    }
+
+    public void setClusterId(String clusterId) {
+        this.clusterId = clusterId;
     }
 
     public Scope getScope() {
@@ -68,6 +80,9 @@ public final class RpcTarget {
     }
 
     public void validate() {
+        if (StringUtils.isBlank(this.clusterId)) {
+            throw new IllegalArgumentException("缺少远端集群 ID");
+        }
         if (this.scope == null) {
             throw new IllegalArgumentException("缺少注册中心管理作用域");
         }

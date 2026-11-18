@@ -216,14 +216,17 @@ public class ConsoleTelnetServiceTest {
     public void remoteClusterUsesSavedManagementTokenWithoutBrowserSession() throws Exception {
         ClusterProfile registry = this.profile("source");
         Path remoteConfig = this.configuration(false, 0);
-        Files.writeString(remoteConfig, Files.readString(remoteConfig) + "\nmeteor.storage.type=jdbc\nmeteor.storage.database=h2\nmeteor.storage.username=sa\n" + "meteor.storage.address=" + registry.getAddress() + "\n" + "meteor.storage.password=" + registry.getPassword() + "\n" + "meteor.rpc.auth.token=remote-management-secret\nmeteor.rpc.port=0\n");
+        Files.writeString(remoteConfig, Files.readString(remoteConfig) + "\nmeteor.rpc.enabled=true\nmeteor.rpc.token=remote-management-secret\nmeteor.rpc.port=0\n");
         try (MetContext provider = this.provider(registry, "remote-provider").buildContext(); BootApplication remote = ConsoleMain.start("--config=" + remoteConfig); BootApplication application = ConsoleMain.start("--config=" + this.configuration(false, 0)); TelClient client = new TelClient()) {
             provider.publisher().rsfService(Echo.class, text -> text).register();
             provider.start();
+            registry.setId("saved-registry");
+            remote.getAppContext().getInstance(ClusterDao.class).save(registry);
             ClusterProfile profile = new ClusterProfile();
             profile.setId("remote");
             profile.setName("remote");
             profile.setType("remote");
+            profile.setRemoteClusterId("saved-registry");
             profile.setAddress(remote.getAppContext().getInstance(RpcServer.class).getAddress());
             profile.setManagementToken("remote-management-secret");
             application.getAppContext().getInstance(ClusterDao.class).save(profile);

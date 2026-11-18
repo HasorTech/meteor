@@ -11,12 +11,15 @@ import net.hasor.core.InjectSettings;
 
 /** 控制台运行配置，由 Hasor 统一注入。 */
 public final class MeteorConfig {
-    public static final String  WEB_ENABLED_KEY      = "meteor.web.enabled";
-    public static final String  TELNET_ENABLED_KEY   = "meteor.telnet.enabled";
-    public static final String  REGISTRY_ADDRESS_KEY = "meteor.storage.address";
+    public static final String  WEB_ENABLED_KEY    = "meteor.web.enabled";
+    public static final String  TELNET_ENABLED_KEY = "meteor.telnet.enabled";
+    public static final String  RPC_ENABLED_KEY    = "meteor.rpc.enabled";
     // 控制台本地数据
     @InjectSettings(value = "meteor.data.directory", defaultValue = "data")
     private             String  dataDirectory;
+    // 命令执行上下文
+    @InjectSettings(value = "meteor.commands.context.ttl-millis", defaultValue = "300000")
+    private             long    commandContextTtl;
     // 出站管理客户端
     @InjectSettings(value = "meteor.client.unit", defaultValue = "default")
     private             String  unit;
@@ -29,36 +32,16 @@ public final class MeteorConfig {
     private             String  securityAccount;
     @InjectSettings(value = "meteor.web.session.secure-cookie", defaultValue = "false")
     private             boolean secureCookie;
-    // 命令执行上下文
-    @InjectSettings(value = "meteor.commands.context.ttl-millis", defaultValue = "300000")
-    private             long    commandContextTtl;
-    // 注册中心后端连接
-    @InjectSettings(value = "meteor.storage.type", defaultValue = "jdbc")
-    private             String  storageType;
-    @InjectSettings(REGISTRY_ADDRESS_KEY)
-    private             String  storageAddress;
-    @InjectSettings(value = "meteor.storage.database", defaultValue = "h2")
-    private             String  storageDatabase;
-    @InjectSettings(value = "meteor.storage.username")
-    private             String  storageUsername;
-    @InjectSettings(value = "meteor.storage.password")
-    private             String  storagePassword;
-    @InjectSettings(value = "meteor.storage.management-token")
-    private             String  storageManagementToken;
-    @InjectSettings(value = "meteor.storage.namespace")
-    private             String  storageNamespace;
-    @InjectSettings(value = "meteor.storage.group", defaultValue = "meteor")
-    private             String  storageGroup;
-    @InjectSettings(value = "meteor.storage.root", defaultValue = "/meteor")
-    private             String  storageRoot;
     // 注册中心管理 RPC 监听与认证
+    @InjectSettings(value = RPC_ENABLED_KEY, defaultValue = "false")
+    private             boolean rpcEnabled;
     @InjectSettings(value = "meteor.rpc.unit", defaultValue = "default")
     private             String  rpcUnit;
     @InjectSettings(value = "meteor.rpc.host", defaultValue = "127.0.0.1")
     private             String  rpcHost;
     @InjectSettings(value = "meteor.rpc.port", defaultValue = "19193")
     private             int     rpcPort;
-    @InjectSettings(value = "meteor.rpc.auth.token")
+    @InjectSettings(value = "meteor.rpc.token")
     private             String  managementToken;
     // Telnet 监听、认证与会话
     @InjectSettings(value = TELNET_ENABLED_KEY, defaultValue = "false")
@@ -153,44 +136,8 @@ public final class MeteorConfig {
         return this.managementToken;
     }
 
-    public boolean isRegistryEnabled() {
-        return StringUtils.isNotBlank(this.storageAddress);
-    }
-
-    public String getStorageType() {
-        return this.storageType;
-    }
-
-    public String getStorageAddress() {
-        return this.storageAddress;
-    }
-
-    public String getStorageDatabase() {
-        return this.storageDatabase;
-    }
-
-    public String getStorageUsername() {
-        return this.storageUsername;
-    }
-
-    public String getStoragePassword() {
-        return this.storagePassword;
-    }
-
-    public String getStorageManagementToken() {
-        return this.storageManagementToken;
-    }
-
-    public String getStorageNamespace() {
-        return this.storageNamespace;
-    }
-
-    public String getStorageGroup() {
-        return this.storageGroup;
-    }
-
-    public String getStorageRoot() {
-        return this.storageRoot;
+    public boolean isRpcEnabled() {
+        return this.rpcEnabled;
     }
 
     public String getRpcUnit() {

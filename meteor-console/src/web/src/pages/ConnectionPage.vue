@@ -28,6 +28,7 @@ const initial = {
   username: props.profile?.username || '',
   password: null,
   managementToken: null,
+  remoteClusterId: props.profile?.remoteClusterId || '',
   group: props.profile?.group || 'meteor',
   namespace: props.profile?.namespace || '',
   root: props.profile?.root || '/meteor'
@@ -59,6 +60,7 @@ function changeType(type) {
   form.address = '';
   form.password = null;
   form.managementToken = null;
+  form.remoteClusterId = '';
   error.value = '';
   success.value = '';
 }
@@ -69,10 +71,11 @@ function connectionPayload() {
       name: form.name,
       type: form.type,
       address: form.address,
-      managementToken: form.managementToken
+      managementToken: form.managementToken,
+      remoteClusterId: form.remoteClusterId.trim()
     };
   }
-  const { managementToken, ...storage } = form;
+  const { managementToken, remoteClusterId, ...storage } = form;
   return storage;
 }
 function testConnection() {
@@ -124,6 +127,16 @@ function save() {
       class="connection-editor"
       @submit.prevent="tested ? save() : testConnection()"
     >
+      <label
+        v-if="profile?.id"
+        class="connection-field"
+      >
+        <span class="field-caption">本机集群 ID</span>
+        <input
+          :value="profile.id"
+          readonly
+        />
+      </label>
       <label class="connection-field">
         <span class="field-caption">
           <span
@@ -178,6 +191,26 @@ function save() {
           required
           :placeholder="placeholders[form.type]"
           :disabled="busy"
+        />
+      </label>
+      <label
+        v-if="form.type === 'remote'"
+        class="connection-field"
+      >
+        <span class="field-caption">
+          <span
+            class="required-mark"
+            aria-hidden="true"
+          >
+            *
+          </span>
+          远端集群 ID
+        </span>
+        <input
+          v-model="form.remoteClusterId"
+          required
+          :disabled="busy"
+          placeholder="填写远端 Console 保存的集群 ID"
         />
       </label>
       <template v-if="form.type === 'nacos'">
@@ -258,7 +291,13 @@ function save() {
         <div class="actions">
           <button
             type="button"
-            :disabled="busy || !!unavailableReason || !form.name.trim() || !form.address.trim()"
+            :disabled="
+              busy ||
+              !!unavailableReason ||
+              !form.name.trim() ||
+              !form.address.trim() ||
+              (form.type === 'remote' && !form.remoteClusterId.trim())
+            "
             @click="testConnection"
           >
             {{ busy ? '处理中…' : '测试连接' }}

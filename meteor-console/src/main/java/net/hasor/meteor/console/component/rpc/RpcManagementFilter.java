@@ -58,9 +58,11 @@ public final class RpcManagementFilter implements MetFilter {
         } catch (Exception failure) {
             Throwable cause = failure;
             String message = failure.getMessage();
+            boolean redacted = false;
             while ((cause instanceof ConsoleOperationException || cause instanceof InvocationTargetException || cause instanceof UndeclaredThrowableException || cause instanceof ExecutionException || cause instanceof CompletionException) && cause.getCause() != null) {
-                if (cause instanceof ConsoleOperationException) {
+                if (!redacted && cause instanceof ConsoleOperationException) {
                     message = cause.getMessage();
+                    redacted = true;
                 }
                 cause = cause.getCause();
             }
@@ -82,7 +84,7 @@ public final class RpcManagementFilter implements MetFilter {
             } else if (cause instanceof TimeoutException || cause instanceof SocketTimeoutException) {
                 status = ProtocolStatus.Timeout;
             }
-            // 本地 SDK 不经过命令层，RPC 边界仍须隐藏本机存储凭据和当前管理令牌。
+            // 集群连接已处理后端凭据，RPC 边界还要隐藏入站管理令牌。
             message = message.replace(expected, "***");
             if (this.secrets != null) {
                 for (String secret : this.secrets) {

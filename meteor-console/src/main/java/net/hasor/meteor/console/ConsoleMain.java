@@ -62,7 +62,7 @@ public class ConsoleMain implements Module {
             return new Boot().arguments(arguments).sources(ConsoleMain.class).hconfigFile(config).start();
         }
 
-        if (!settings.getBoolean(MeteorConfig.TELNET_ENABLED_KEY, false) && StringUtils.isBlank(settings.getString(MeteorConfig.REGISTRY_ADDRESS_KEY))) {
+        if (!settings.getBoolean(MeteorConfig.TELNET_ENABLED_KEY, false) && !settings.getBoolean(MeteorConfig.RPC_ENABLED_KEY, false)) {
             throw new IllegalArgumentException("Headless Console requires Telnet or a registry management listener");
         }
 

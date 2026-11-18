@@ -30,7 +30,7 @@ import net.hasor.meteor.console.component.commands.dto.rule.ValidateRuleRequest;
 import net.hasor.meteor.console.component.provider.ProviderConnection;
 import net.hasor.meteor.console.component.rpc.RpcManagement;
 import net.hasor.meteor.console.component.rpc.RpcManagementFilter;
-import net.hasor.meteor.console.component.rpc.RpcManagementImpl;
+import net.hasor.meteor.test.component.rpc.RegistryRpcFixture;
 import net.hasor.meteor.console.component.rpc.RpcServer;
 import net.hasor.meteor.console.dao.ClusterDao;
 import net.hasor.meteor.console.model.fo.ClusterProfile;
@@ -155,7 +155,7 @@ public class ConsoleCascadeTest {
         RegistryAdmin observer = storage.buildAdmin();
         try (ProviderConnection connection = ProviderConnection.registry(observer); //
              MetContext c = configuration.buildContext()) {
-            c.publisher().rsfService(RpcManagement.class, new RpcManagementImpl(connection)) //
+            c.publisher().rsfService(RpcManagement.class, RegistryRpcFixture.management(connection)) //
                     .bindFilter("console-auth", new RpcManagementFilter(() -> "token-c")) //
                     .bindFilter("terminal-conflict", (request, response, chain) -> {
                         if (conflict.get() && StringUtils.equals(request.getMethod().getName(), "fetchMeta")) {
@@ -225,12 +225,18 @@ public class ConsoleCascadeTest {
                 assertEquals(401, denied.getStatus());
                 dispatcher.invalidate(wrong.getId());
 
-                // 同一错误凭据用于 A 的出站连接时，正式 Boot 启动也必须失败。
+                // A 通过已保存的目标访问 B 时，在实际调用处拒绝该错误凭据。
                 Boot bootA = new Boot().sources(ConsoleMain.class) //
                         .hconfigFile(this.configuration("a", "remote", address(b), "token-a", "token-c"));
-                assertThrows(IllegalStateException.class, bootA::start);
+                try (BootApplication a = bootA.start()) {
+                    CommandDispatcher atA = a.getAppContext().getInstance(CommandDispatcher.class);
+                    Throwable failedHop = assertThrows(Exception.class, () -> {
+                        atA.execute("saved-registry", new ClusterInfoRequest(cluster()));
+                    });
+                    assertEquals(401, assertInstanceOf(MetException.class, ExceptionUtils.getRootCause(failedHop)).getStatus());
+                }
 
-                // 失败节点的回滚不能关闭它借助网络访问的 B、C，正确凭据仍可完成写入。
+                // 错误认证不影响 B、C，正确凭据仍可完成写入。
                 ClusterProfile client = profile(b, "token-b");
                 b.getAppContext().getInstance(ClusterDao.class).save(client);
                 dispatcher.execute(client.getId(), new PutMetadataRequest(cluster(), Map.of("after-failure", true)));
@@ -249,13 +255,11 @@ public class ConsoleCascadeTest {
         overrides.put("hasor.boot.web.connectors.http.enabled", "false");
         overrides.put("meteor.rpc.host", "127.0.0.1");
         overrides.put("meteor.rpc.port", "0");
-        overrides.put("meteor.rpc.auth.token", token);
-        overrides.put("meteor.storage.type", type);
-        overrides.put("meteor.storage.address", address);
-        overrides.put("meteor.storage.database", "h2");
-        overrides.put("meteor.storage.username", "sa");
-        overrides.put("meteor.storage.management-token", downstreamToken);
-        return console(this.directory.resolve(name), overrides);
+        overrides.put("meteor.rpc.token", token);
+        overrides.put("meteor.rpc.enabled", "true");
+        Path directory = this.directory.resolve(name);
+        ConsoleTestSupport.savedCluster(directory, type, address, downstreamToken);
+        return console(directory, overrides);
     }
 
     private static String address(BootApplication application) {
@@ -267,6 +271,7 @@ public class ConsoleCascadeTest {
         profile.setId(UUID.randomUUID().toString());
         profile.setName("cascade-client");
         profile.setType("remote");
+        profile.setRemoteClusterId("saved-registry");
         profile.setAddress(address(application));
         profile.setManagementToken(token);
         return profile;

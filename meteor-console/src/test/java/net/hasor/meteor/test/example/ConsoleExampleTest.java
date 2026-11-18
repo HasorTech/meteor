@@ -32,6 +32,7 @@ import net.hasor.core.AppContext;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.console.ConsoleMain;
+import net.hasor.meteor.console.dao.ClusterDao;
 import net.hasor.meteor.console.component.commands.dto.service.ExampleTarget;
 import net.hasor.meteor.console.component.debug.DebugContract;
 import net.hasor.meteor.console.component.debug.DebugInvoker;
@@ -267,7 +268,6 @@ public class ConsoleExampleTest {
             RunScript.execute(connection, script);
             Boot boot = new Boot().sources(ConsoleMain.class) //
                     .hconfigFile("example-registry.properties") //
-                    .property("meteor.storage.address", source.getURL()) //
                     .property("meteor.rpc.port", 0) //
                     .property("meteor.data.directory", this.temporary.resolve("registry").toString());
             try (BootApplication application = boot.start()) {
@@ -283,9 +283,18 @@ public class ConsoleExampleTest {
                 assertFalse(app.getSettings().getBoolean("hasor.boot.web.connectors.http.enabled"));
 
                 // 通过实际管理 RPC 访问 H2 注册中心，证明连接工厂与无头管理服务均已就绪。
+                ClusterProfile saved = new ClusterProfile();
+                saved.setId("saved-registry");
+                saved.setName("registry-example");
+                saved.setType("jdbc");
+                saved.setDatabase("h2");
+                saved.setAddress(source.getURL());
+                saved.setUsername("sa");
+                app.getInstance(ClusterDao.class).save(saved);
                 ClusterProfile profile = new ClusterProfile();
                 profile.setName("registry-example");
                 profile.setType("remote");
+                profile.setRemoteClusterId("saved-registry");
                 profile.setAddress(app.getInstance(RpcServer.class).getAddress());
                 profile.setManagementToken("console-debug");
                 RemoteProviderFactory factory = app.getInstance(RemoteProviderFactory.class);

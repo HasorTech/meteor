@@ -14,7 +14,7 @@ import net.hasor.meteor.registry.admin.*;
 import net.hasor.meteor.registry.admin.description.MetServiceDescription;
 
 /** Console 间的注册中心管理通道，直接对应 RegistryAdmin 的基础管理能力。 */
-@MetService(name = "meteor.console.Management", group = "meteor-console", version = "2", serializeType = "Json")
+@MetService(name = "meteor.console.Management", group = "meteor-console", version = "3", serializeType = "Json")
 public interface RpcManagement {
     /** 管理凭据在 RPC 调用选项中的键。 */
     String CREDENTIAL_OPTION = "console.management.token";

@@ -22,10 +22,13 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.List;
+import net.hasor.cobble.StringUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.boot.BootApplication;
 import net.hasor.boot.web.WebServer;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.console.model.fo.ClusterProfile;
 import net.hasor.meteor.console.utils.JsonUtils;
 import net.hasor.meteor.registry.RegistryConfiguration;
 import net.hasor.meteor.registry.jdbc.JdbcRegistryConfiguration;
@@ -90,6 +93,25 @@ final class ConsoleTestSupport {
         Files.createDirectories(directory);
         Files.writeString(configuration, content, StandardCharsets.UTF_8);
         return configuration.toUri().toString();
+    }
+
+    /** 预存远端 Console 的集群，使用与页面相同的本地持久化格式。 */
+    static void savedCluster(Path directory, String type, String address, String token) throws IOException {
+        ClusterProfile profile = new ClusterProfile();
+        profile.setId("saved-registry");
+        profile.setName("已保存的注册中心");
+        profile.setType(type);
+        profile.setAddress(address);
+        if (StringUtils.equals("remote", type)) {
+            profile.setRemoteClusterId("saved-registry");
+            profile.setManagementToken(token);
+        } else {
+            profile.setDatabase("h2");
+            profile.setUsername("sa");
+        }
+        profile.validate();
+        Files.createDirectories(directory);
+        JsonUtils.writePrettyValue(directory.resolve("clusters.json").toFile(), List.of(profile));
     }
 
     static Map<String, Object> profile(String name, String url) {

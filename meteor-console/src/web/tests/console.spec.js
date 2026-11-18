@@ -144,6 +144,26 @@ test('login, first connection, persistence and compact cluster switching', async
   await expect(page.locator('.cluster-select')).toContainText('所有集群');
   await expect(page.locator('.cluster-cards .card')).toHaveCount(1);
   await page.screenshot({ path: 'test-results/clusters.png', fullPage: true });
+
+  // 集群卡片直接复制其本机 ID，可用于配置另一台 Console 的 Remote 连接。
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  const [saved] = await (await page.request.get('/api/clusters')).json();
+  await page.getByRole('button', { name: '复制集群 ID' }).click();
+  await expect(page.getByRole('status')).toHaveText('集群 ID 已复制');
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(saved.id);
+  await expect(page.getByRole('heading', { name: '集群连接' })).toBeVisible();
+});
+
+test('cluster ID copies when the Clipboard API is unavailable', async ({ page }) => {
+  await enter(page);
+  const clusterId = new URLSearchParams(new URL(page.url()).hash.slice(1)).get('clusterId');
+  await page.goto('/#view=clusters');
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.evaluate(() => Object.defineProperty(navigator.clipboard, 'writeText', { value: undefined }));
+  const card = page.getByRole('article').filter({ hasText: clusterProfile.name });
+  await card.getByRole('button', { name: '复制集群 ID' }).click();
+  await expect(page.getByRole('status')).toHaveText('集群 ID 已复制');
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(clusterId);
 });
 
 test('all console table headers match the rule panel title height and reference styles', async ({
@@ -2993,6 +3013,7 @@ test('Remote connects through authenticated RPC and hides storage credentials', 
   await expect(page.getByLabel('管理凭据', { exact: true })).toBeVisible();
   await page.getByLabel('连接名称').fill('Remote 管理');
   await page.getByLabel('RPC 地址').fill('rsf://127.0.0.1:18768');
+  await page.getByLabel('远端集群 ID').fill('saved-registry');
   await page.getByLabel('管理凭据', { exact: true }).fill('wrong-secret');
   await page.getByRole('button', { name: '测试连接', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('authentication failed');
@@ -3282,6 +3303,7 @@ test('persistent method catalogue is available through console RPC cascading', a
       name: '方法目录 Remote',
       type: 'remote',
       address: 'rsf://127.0.0.1:18768',
+      remoteClusterId: 'saved-registry',
       managementToken: 'browser-remote-secret'
     }
   });

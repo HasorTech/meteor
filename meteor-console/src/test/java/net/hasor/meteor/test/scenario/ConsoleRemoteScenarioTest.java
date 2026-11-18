@@ -36,7 +36,7 @@ import net.hasor.meteor.console.component.provider.ProviderFactories;
 import net.hasor.meteor.console.component.provider.remote.RemoteProviderFactory;
 import net.hasor.meteor.console.component.rpc.RpcManagement;
 import net.hasor.meteor.console.component.rpc.RpcManagementFilter;
-import net.hasor.meteor.console.component.rpc.RpcManagementImpl;
+import net.hasor.meteor.test.component.rpc.RegistryRpcFixture;
 import net.hasor.meteor.console.component.rpc.RpcTarget;
 import net.hasor.meteor.console.dao.ClusterDao;
 import net.hasor.meteor.console.global.MeteorConfig;
@@ -82,6 +82,7 @@ public class ConsoleRemoteScenarioTest {
         profile.setId(UUID.randomUUID().toString());
         profile.setName("Remote Console");
         profile.setType("remote");
+        profile.setRemoteClusterId("saved-registry");
         profile.setAddress(server.getListenAddress("rsf").toString());
         profile.setManagementToken(token);
         return profile;
@@ -130,7 +131,7 @@ public class ConsoleRemoteScenarioTest {
              MetContext server = serverConfiguration().buildContext()) {
             CommandDispatcher dispatcher = commandContainer.getInstance(CommandDispatcher.class);
             JsonUtils.configureRpc(server);
-            server.publisher().rsfService(RpcManagement.class, new RpcManagementImpl(connection))//
+            server.publisher().rsfService(RpcManagement.class, RegistryRpcFixture.management(connection))//
                     .bindFilter("console-auth", new RpcManagementFilter(() -> "secret"))//
                     .asShadow().asDistributedCall().register();
             server.start();
@@ -199,7 +200,7 @@ public class ConsoleRemoteScenarioTest {
              MetContext server = serverConfiguration().buildContext()) {
             CommandDispatcher dispatcher = commandContainer.getInstance(CommandDispatcher.class);
             JsonUtils.configureRpc(server);
-            server.publisher().rsfService(RpcManagement.class, new RpcManagementImpl(connection)) //
+            server.publisher().rsfService(RpcManagement.class, RegistryRpcFixture.management(connection)) //
                     .bindFilter("console-auth", new RpcManagementFilter(() -> "secret")) //
                     .asShadow().asDistributedCall().register();
             server.start();
@@ -243,7 +244,7 @@ public class ConsoleRemoteScenarioTest {
             String serviceId = business.publisher().rsfService(Echo.class, value -> value).register().getBindID();
             business.start();
             business.getExtension(RegistryClient.class).pushSync().get(5, TimeUnit.SECONDS);
-            server.publisher().rsfService(RpcManagement.class, new RpcManagementImpl(connection))//
+            server.publisher().rsfService(RpcManagement.class, RegistryRpcFixture.management(connection))//
                     .bindFilter("console-auth", new RpcManagementFilter(() -> "secret"))//
                     .asShadow().asDistributedCall().register();
             server.start();
@@ -304,7 +305,7 @@ public class ConsoleRemoteScenarioTest {
             first.getExtension(RegistryClient.class).pushSync().get(5, TimeUnit.SECONDS);
             second.getExtension(RegistryClient.class).pushSync().get(5, TimeUnit.SECONDS);
             otherUnit.getExtension(RegistryClient.class).pushSync().get(5, TimeUnit.SECONDS);
-            server.publisher().rsfService(RpcManagement.class, new RpcManagementImpl(connection))//
+            server.publisher().rsfService(RpcManagement.class, RegistryRpcFixture.management(connection))//
                     .bindFilter("console-auth", new RpcManagementFilter(() -> "secret"))//
                     .asShadow().asDistributedCall().register();
             server.start();
@@ -343,7 +344,7 @@ public class ConsoleRemoteScenarioTest {
              AppContext commandContainer = commandBuilder.build(); //
              MetContext server = serverConfiguration().buildContext()) {
             CommandDispatcher dispatcher = commandContainer.getInstance(CommandDispatcher.class);
-            server.publisher().rsfService(RpcManagement.class, new RpcManagementImpl(connection))//
+            server.publisher().rsfService(RpcManagement.class, RegistryRpcFixture.management(connection))//
                     .bindFilter("console-auth", new RpcManagementFilter(() -> "secret"))//
                     .asShadow().asDistributedCall().register();
             server.start();
@@ -371,7 +372,7 @@ public class ConsoleRemoteScenarioTest {
              AppContext commandContainer = commandBuilder.build(); //
              MetContext server = serverConfiguration().buildContext()) {
             CommandDispatcher dispatcher = commandContainer.getInstance(CommandDispatcher.class);
-            server.publisher().rsfService(RpcManagement.class, new RpcManagementImpl(connection))//
+            server.publisher().rsfService(RpcManagement.class, RegistryRpcFixture.management(connection))//
                     .bindFilter("console-auth", new RpcManagementFilter(expected::get))//
                     .asShadow().asDistributedCall().register();
             server.start();
@@ -402,7 +403,7 @@ public class ConsoleRemoteScenarioTest {
              AppContext commandContainer = commandBuilder.build(); //
              MetContext server = serverConfiguration().buildContext()) {
             CommandDispatcher dispatcher = commandContainer.getInstance(CommandDispatcher.class);
-            server.publisher().rsfService(RpcManagement.class, new RpcManagementImpl(connection))//
+            server.publisher().rsfService(RpcManagement.class, RegistryRpcFixture.management(connection))//
                     .bindFilter("console-auth", new RpcManagementFilter(() -> "secret"))//
                     .asShadow().asDistributedCall().register();
             server.start();
@@ -438,7 +439,7 @@ public class ConsoleRemoteScenarioTest {
         try (ProviderConnection connection = ProviderConnection.registry(local); //
              MetContext server = serverConfiguration().buildContext(); //
              MetContext raw = rawConfiguration.buildContext()) {
-            server.publisher().rsfService(RpcManagement.class, new RpcManagementImpl(connection))//
+            server.publisher().rsfService(RpcManagement.class, RegistryRpcFixture.management(connection))//
                     .bindFilter("console-auth", new RpcManagementFilter(() -> "secret"))//
                     .asShadow().asDistributedCall().register();
             server.start();
@@ -446,7 +447,7 @@ public class ConsoleRemoteScenarioTest {
             raw.start();
             RpcManagement rpc = raw.getRsfClient(server.getListenAddress("rsf")).wrapper(RpcManagement.class);
             Throwable failure = assertThrows(Exception.class, () -> {
-                rpc.putMeta(RpcTarget.cluster(), Map.of("bypass", true));
+                rpc.putMeta(RpcTarget.cluster("saved-registry"), Map.of("bypass", true));
             });
             MetException denied = assertInstanceOf(MetException.class, ExceptionUtils.getRootCause(failure));
             assertEquals(401, denied.getStatus());
@@ -464,7 +465,7 @@ public class ConsoleRemoteScenarioTest {
              AppContext commandContainer = commandBuilder.build(); //
              MetContext server = serverConfiguration().buildContext()) {
             CommandDispatcher dispatcher = commandContainer.getInstance(CommandDispatcher.class);
-            server.publisher().rsfService(RpcManagement.class, new RpcManagementImpl(connection))//
+            server.publisher().rsfService(RpcManagement.class, RegistryRpcFixture.management(connection))//
                     .bindFilter("console-auth", new RpcManagementFilter(() -> "secret"))//
                     .asShadow().asDistributedCall().register();
             server.start();
@@ -493,7 +494,7 @@ public class ConsoleRemoteScenarioTest {
         try (ProviderConnection connection = ProviderConnection.registry(local); //
              MetContext server = serverConfiguration().buildContext(); //
              MetContext raw = rawConfiguration.buildContext()) {
-            server.publisher().rsfService(RpcManagement.class, new RpcManagementImpl(connection))//
+            server.publisher().rsfService(RpcManagement.class, RegistryRpcFixture.management(connection))//
                     .bindFilter("console-auth", new RpcManagementFilter(() -> "secret"))//
                     .asShadow().asDistributedCall().register();
             server.start();
@@ -523,7 +524,7 @@ public class ConsoleRemoteScenarioTest {
              AppContext commandContainer = commandBuilder.build(); //
              MetContext server = serverConfiguration().buildContext()) {
             CommandDispatcher dispatcher = commandContainer.getInstance(CommandDispatcher.class);
-            server.publisher().rsfService(RpcManagement.class, new RpcManagementImpl(connection))//
+            server.publisher().rsfService(RpcManagement.class, RegistryRpcFixture.management(connection))//
                     .bindFilter("console-auth", new RpcManagementFilter(() -> "secret"))//
                     .asShadow().asDistributedCall().register();
             server.start();
@@ -551,10 +552,10 @@ public class ConsoleRemoteScenarioTest {
              AppContext application = commandBuilder.build(); //
              MetContext firstServer = serverConfiguration().buildContext(); //
              MetContext secondServer = serverConfiguration().buildContext()) {
-            firstServer.publisher().rsfService(RpcManagement.class, new RpcManagementImpl(firstLocal))//
+            firstServer.publisher().rsfService(RpcManagement.class, RegistryRpcFixture.management(firstLocal))//
                     .bindFilter("console-auth", new RpcManagementFilter(() -> "first-secret"))//
                     .asShadow().asDistributedCall().register();
-            secondServer.publisher().rsfService(RpcManagement.class, new RpcManagementImpl(secondLocal))//
+            secondServer.publisher().rsfService(RpcManagement.class, RegistryRpcFixture.management(secondLocal))//
                     .bindFilter("console-auth", new RpcManagementFilter(() -> "second-secret"))//
                     .asShadow().asDistributedCall().register();
             firstServer.start();
@@ -603,7 +604,7 @@ public class ConsoleRemoteScenarioTest {
         try (ProviderConnection local = ProviderConnection.registry(storage.buildAdmin()); //
              AppContext application = commandBuilder.build(); //
              MetContext server = serverConfiguration().buildContext()) {
-            server.publisher().rsfService(RpcManagement.class, new RpcManagementImpl(local))//
+            server.publisher().rsfService(RpcManagement.class, RegistryRpcFixture.management(local))//
                     .bindFilter("console-auth", new RpcManagementFilter(() -> "secret"))//
                     .asShadow().asDistributedCall().register();
             server.start();

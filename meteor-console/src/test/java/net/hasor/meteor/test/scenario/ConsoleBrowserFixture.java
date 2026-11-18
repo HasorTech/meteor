@@ -66,7 +66,8 @@ public final class ConsoleBrowserFixture {
                 "hasor.boot.web.connectors.http.port", "18766", //
                 "meteor.web.auth.enabled", "false"));
         var remoteSettings = Files.createDirectories(configDirectory.resolve("remote")).resolve("meteor.properties");
-        Files.writeString(remoteSettings, "hasor.boot.web.connectors.http.enabled=false\nmeteor.rpc.host=127.0.0.1\nmeteor.rpc.port=18768\nmeteor.rpc.auth.token=browser-remote-secret\n" + "meteor.storage.type=jdbc\nmeteor.storage.database=h2\nmeteor.storage.username=sa\n" + "meteor.data.directory=" + configDirectory.resolve("remote") + "\n" + "meteor.storage.address=jdbc:h2:mem:console-browser;DB_CLOSE_DELAY=-1\n");
+        Files.writeString(remoteSettings, "hasor.boot.web.connectors.http.enabled=false\nmeteor.rpc.enabled=true\nmeteor.rpc.host=127.0.0.1\nmeteor.rpc.port=18768\nmeteor.rpc.token=browser-remote-secret\n" + "meteor.data.directory=" + remoteSettings.getParent() + "\n");
+        savedCluster(remoteSettings.getParent(), "jdbc", "jdbc:h2:mem:console-browser;DB_CLOSE_DELAY=-1", "");
         Boot remoteBoot = new Boot()//
                 .sources(ConsoleMain.class)//
                 .hconfigFile(remoteSettings.toUri().toString());

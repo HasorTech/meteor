@@ -13,6 +13,7 @@ import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.console.component.provider.ProviderConnection;
 import net.hasor.meteor.console.component.provider.ProviderFactories;
@@ -59,17 +60,27 @@ public final class CommandContext implements AutoCloseable {
     }
 
     synchronized <R> R execute(CommandRequest<R> request, RegistryCommand<CommandRequest<R>, R> command) {
+        return this.execute(() -> {
+            if (request.getTarget().isDirect() && this.direct == null) {
+                throw new IllegalArgumentException("直连实例操作需要独立直连入口");
+            }
+            return command.execute(this, request);
+        });
+    }
+
+    synchronized <R> R withRegistry(Function<RegistryAdmin, R> operation) {
+        return this.execute(() -> operation.apply(this.registry()));
+    }
+
+    private <R> R execute(Callable<R> operation) {
         if (this.closed) {
             throw new ConcurrentModificationException("连接配置已更改，请刷新后重试");
-        }
-        if (request.getTarget().isDirect() && this.direct == null) {
-            throw new IllegalArgumentException("直连实例操作需要独立直连入口");
         }
         try {
             if (this.connection == null && this.opener != null) {
                 this.connection = this.opener.call();
             }
-            return command.execute(this, request);
+            return operation.call();
         } catch (Exception failure) {
             throw this.redact(failure);
         }

@@ -132,11 +132,9 @@ public class ConsoleIntegrationTest {
     @Test
     public void httpDisabledStartsRpcWithoutHttpListener() throws Exception {
         // 占用 HTTP 端口，验证模块正常加载，但原生 HTTP 开关阻止创建监听端点。
-        String url = "jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1";
-        registry(url);
         Path settings = this.directory.resolve("meteor.properties");
         try (ServerSocket occupied = new ServerSocket(0)) {
-            Files.writeString(settings, "hasor.boot.web.connectors.http.enabled=false\nmeteor.rpc.port=0\nmeteor.rpc.auth.token=remote-secret\n" + "meteor.data.directory=" + this.directory.resolve("remote") + "\n" + "meteor.storage.type=jdbc\nmeteor.storage.database=h2\nmeteor.storage.username=sa\nmeteor.storage.address=" + url + "\n" + "hasor.boot.web.connectors.http.port=" + occupied.getLocalPort() + "\n" + "meteor.web.auth.enabled=false\n");
+            Files.writeString(settings, "hasor.boot.web.connectors.http.enabled=false\nmeteor.rpc.enabled=true\nmeteor.rpc.port=0\nmeteor.rpc.token=remote-secret\n" + "meteor.data.directory=" + this.directory.resolve("remote") + "\n" + "hasor.boot.web.connectors.http.port=" + occupied.getLocalPort() + "\n" + "meteor.web.auth.enabled=false\n");
             Boot boot = new Boot()//
                     .sources(ConsoleMain.class)//
                     .hconfigFile(settings.toUri().toString());
@@ -152,10 +150,8 @@ public class ConsoleIntegrationTest {
     @Test
     public void closingHeadlessApplicationReleasesRpcListener() throws Exception {
         // 从统一入口启动，再关闭整个应用，RPC 端口应随应用释放。
-        String url = "jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1";
-        registry(url);
         Path settings = this.directory.resolve("meteor.properties");
-        Files.writeString(settings, "hasor.boot.web.connectors.http.enabled=false\nmeteor.rpc.port=0\nmeteor.rpc.auth.token=remote-secret\n" + "meteor.data.directory=" + this.directory.resolve("remote") + "\n" + "meteor.storage.type=jdbc\nmeteor.storage.database=h2\nmeteor.storage.username=sa\nmeteor.storage.address=" + url + "\n");
+        Files.writeString(settings, "hasor.boot.web.connectors.http.enabled=false\nmeteor.rpc.enabled=true\nmeteor.rpc.port=0\nmeteor.rpc.token=remote-secret\n" + "meteor.data.directory=" + this.directory.resolve("remote") + "\n");
         int port;
         Boot boot = new Boot()//
                 .sources(ConsoleMain.class)//
@@ -172,9 +168,7 @@ public class ConsoleIntegrationTest {
     @Test
     public void registryRpcAndHttpCanRunTogether() throws Exception {
         // 注册中心 RPC 独立于 HTTP 开关；同一次标准 Boot 启动可同时提供两种入口。
-        String url = "jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1";
-        registry(url);
-        String settings = console(this.directory, Map.of("hasor.boot.web.connectors.http.enabled", "true", "meteor.storage.type", "jdbc", "meteor.storage.database", "h2", "meteor.storage.username", "sa", "meteor.storage.address", url, "meteor.rpc.port", "0", "meteor.rpc.auth.token", "remote-secret"));
+        String settings = console(this.directory, Map.of("hasor.boot.web.connectors.http.enabled", "true", "meteor.rpc.enabled", "true", "meteor.rpc.port", "0", "meteor.rpc.token", "remote-secret"));
         Boot boot = new Boot()//
                 .sources(ConsoleMain.class)//
                 .hconfigFile(settings);
@@ -193,7 +187,7 @@ public class ConsoleIntegrationTest {
         try (ServerSocket available = new ServerSocket(0)) {
             httpPort = available.getLocalPort();
         }
-        String settings = console(this.directory, Map.of("hasor.boot.web.connectors.http.port", String.valueOf(httpPort), "meteor.storage.type", "unsupported", "meteor.storage.address", "unused", "meteor.rpc.auth.token", "remote-secret"));
+        String settings = console(this.directory, Map.of("hasor.boot.web.connectors.http.port", String.valueOf(httpPort), "meteor.rpc.enabled", "true", "meteor.rpc.token", ""));
         Boot boot = new Boot()//
                 .sources(ConsoleMain.class)//
                 .hconfigFile(settings);
@@ -205,12 +199,50 @@ public class ConsoleIntegrationTest {
     }
 
     @Test
+    public void remoteManagementUsesTheSelectedSavedClusterUntilItIsRemoved() throws Exception {
+        // 两个实际注册中心在 RPC 启动后通过被连接端的页面 API 保存。
+        String firstUrl = "jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1";
+        String secondUrl = "jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1";
+        var firstRegistry = registry(firstUrl);
+        var secondRegistry = registry(secondUrl);
+        String remoteSettings = console(this.directory.resolve("rpc-target"), Map.of("meteor.rpc.enabled", "true", "meteor.rpc.port", "0", "meteor.rpc.token", "remote-secret"));
+        String clientSettings = console(this.directory.resolve("rpc-client"));
+        try (BootApplication remote = new Boot().sources(ConsoleMain.class).hconfigFile(remoteSettings).start(); //
+             BootApplication client = new Boot().sources(ConsoleMain.class).hconfigFile(clientSettings).start(); //
+             var first = firstRegistry.buildAdmin(); //
+             var second = secondRegistry.buildAdmin()) {
+            Api local = new Api(remote);
+            local.login();
+            String firstId = local.ok("clusters", "POST", ConsoleTestSupport.profile("first", firstUrl)).get("id").asText();
+            String secondId = local.ok("clusters", "POST", ConsoleTestSupport.profile("second", secondUrl)).get("id").asText();
+            assertNotEquals(firstId, secondId);
+
+            // 管理端指定第二个集群，写入只到达对应的后端。
+            Api manager = new Api(client);
+            manager.login();
+            String address = remote.getAppContext().getInstance(RpcServer.class).getAddress();
+            var connection = Map.of("name", "远端第二个集群", "type", "remote", "address", address, "remoteClusterId", secondId, "managementToken", "remote-secret");
+            String link = manager.ok("clusters", "POST", connection).get("id").asText();
+            String query = "metadata?mode=registry&clusterId=" + link + "&scope=cluster";
+            manager.ok(query, "PUT", Map.of("values", Map.of("owner", "second")));
+            assertFalse(first.getClusterAdmin().fetchMeta().containsKey("owner"));
+            assertEquals("second", second.getClusterAdmin().fetchMeta().get("owner"));
+
+            // 移除后，使用已经建立的调用端连接也不能再访问旧 ID。
+            local.ok("clusters?id=" + secondId, "DELETE", null);
+            HttpResponse<String> missing = manager.send(query, "GET", null);
+            assertEquals(404, missing.statusCode(), missing.body());
+        }
+    }
+
+    @Test
     public void remoteConnectionAuthenticatesWithoutExposingStorageCredentials() throws Exception {
         // 启动独立的正式管理服务，控制台只持有 RPC 地址和管理凭据。
         String url = "jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1";
         registry(url);
         Path settings = this.directory.resolve("meteor.properties");
-        Files.writeString(settings, "hasor.boot.web.connectors.http.enabled=false\nmeteor.rpc.host=127.0.0.1\nmeteor.rpc.port=0\nmeteor.rpc.auth.token=remote-secret\n" + "meteor.data.directory=" + this.directory.resolve("remote") + "\n" + "meteor.storage.type=jdbc\nmeteor.storage.database=h2\nmeteor.storage.username=sa\nmeteor.storage.address=" + url + "\n");
+        Files.writeString(settings, "hasor.boot.web.connectors.http.enabled=false\nmeteor.rpc.host=127.0.0.1\nmeteor.rpc.enabled=true\nmeteor.rpc.port=0\nmeteor.rpc.token=remote-secret\n" + "meteor.data.directory=" + this.directory.resolve("remote") + "\n");
+        ConsoleTestSupport.savedCluster(this.directory.resolve("remote"), "jdbc", url, "");
         Boot bootA = new Boot()//
                 .sources(ConsoleMain.class)//
                 .hconfigFile(settings.toUri().toString());
@@ -226,6 +258,7 @@ public class ConsoleIntegrationTest {
             Map<String, Object> profile = new LinkedHashMap<>();
             profile.put("name", "Remote 集群");
             profile.put("type", "remote");
+            profile.put("remoteClusterId", "saved-registry");
             profile.put("address", remote.getAppContext().getInstance(RpcServer.class).getAddress());
             profile.put("managementToken", "wrong-secret");
             HttpResponse<String> denied = api.send("clusters/test", "POST", profile);

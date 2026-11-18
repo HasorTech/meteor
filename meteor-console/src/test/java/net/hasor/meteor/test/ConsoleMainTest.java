@@ -192,7 +192,7 @@ public class ConsoleMainTest {
             assertEquals(300000, config.getCommandContextTtl());
             assertFalse(config.isSecurityEnabled());
             assertFalse(config.isSecureCookie());
-            assertFalse(config.isRegistryEnabled());
+            assertFalse(config.isRpcEnabled());
 
             // 显式 JSON 渲染器接管默认渲染，正常响应也复用控制台 JSON 工具。
             RenderDef json = application.getAppContext().findBindingBean("json", RenderDef.class);

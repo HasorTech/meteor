@@ -8,11 +8,40 @@ const navigate = inject('navigate');
 const api = inject('api');
 const query = ref('');
 const removal = ref(null);
-const { busy, error, run } = useFeedback();
+const { busy, error, success, run } = useFeedback();
 const types = { remote: 'Remote', nacos: 'Nacos', jdbc: 'JDBC', zookeeper: 'ZooKeeper' };
 const filtered = computed(() =>
   props.clusters.filter((c) => `${c.name} ${c.address}`.toLowerCase().includes(query.value.toLowerCase()))
 );
+function copyWithSelection(id) {
+  const focused = document.activeElement;
+  const text = document.createElement('textarea');
+  text.value = id;
+  text.readOnly = true;
+  text.style.position = 'fixed';
+  text.style.opacity = '0';
+  document.body.appendChild(text);
+  text.select();
+  try {
+    return document.execCommand('copy');
+  } catch {
+    return false;
+  } finally {
+    text.remove();
+    focused?.focus();
+  }
+}
+function copyClusterId(id) {
+  run(async () => {
+    try {
+      await navigator.clipboard.writeText(id);
+    } catch {
+      if (!copyWithSelection(id)) {
+        throw new Error(`无法自动复制，请手动复制集群 ID：${id}`);
+      }
+    }
+  }, '集群 ID 已复制');
+}
 function remove() {
   run(async () => {
     await api('clusters', { id: removal.value.id }, 'DELETE');
@@ -40,7 +69,10 @@ function remove() {
       </button>
     </div>
   </div>
-  <Feedback :error="error" />
+  <Feedback
+    :error="error"
+    :success="success"
+  />
   <div
     v-if="!clusters.length"
     class="empty-state"
@@ -89,6 +121,14 @@ function remove() {
         }}
       </p>
       <div class="card-actions">
+        <button
+          class="text-button"
+          type="button"
+          :disabled="busy"
+          @click="copyClusterId(cluster.id)"
+        >
+          复制集群 ID
+        </button>
         <button
           class="text-button"
           @click="navigate({ view: 'connection', id: cluster.id })"
