@@ -133,8 +133,8 @@ public final class ServiceScannerConfigurer extends ClassPathScanningCandidateCo
                 providers.put(type, names[0]);
             } else {
                 AbstractBeanDefinition consumer = BeanDefinitionBuilder.genericBeanDefinition(ServiceBean.class)//
-                        .addConstructorArgValue(type) // Interface FactoryBean, same registration pattern as MapperBean.
-                        .addConstructorArgReference("meteorContext").getBeanDefinition();
+                        .addPropertyValue("serviceInterface", type) //
+                        .addPropertyReference("context", "meteorContext").getBeanDefinition();
                 consumer.setAttribute(FactoryBean.OBJECT_TYPE_ATTRIBUTE, type);
                 if (registry.containsBeanDefinition(type.getName())) {
                     throw new IllegalStateException("Consumer Bean name already in use: " + type.getName());

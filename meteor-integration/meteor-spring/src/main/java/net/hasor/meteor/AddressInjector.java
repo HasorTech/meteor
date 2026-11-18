@@ -9,7 +9,6 @@ package net.hasor.meteor;
 import java.lang.reflect.Modifier;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.annotation.MetAddress;
-import net.hasor.meteor.domain.warp.MetBindInfoWrap;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.PropertyValues;
 import org.springframework.beans.factory.BeanFactory;
@@ -72,14 +71,7 @@ final class AddressInjector implements InstantiationAwareBeanPostProcessor, Bean
         if (service == null) {
             throw new IllegalArgumentException("Undefined @MetAddress service: " + type.getName());
         }
-        // Force RPC for this reference only; ordinary injection retains local-provider preference.
-        MetBindInfo<T> reference = new MetBindInfoWrap<T>(service) {
-            @Override
-            public boolean isDistributedCall() {
-                return true;
-            }
-        };
-        return client.getRemote(reference);
-    }
 
+        return ServiceBean.directProxy(client, service);
+    }
 }
