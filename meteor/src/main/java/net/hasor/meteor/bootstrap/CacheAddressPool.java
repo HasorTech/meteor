@@ -12,7 +12,6 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import net.hasor.cobble.concurrent.future.Cancellable;
 import net.hasor.meteor.MetSettings;
-import net.hasor.meteor.MetUpdater;
 import net.hasor.meteor.address.AddressPool;
 import net.hasor.meteor.address.DiskCache;
 import net.hasor.meteor.address.InterAddress;
@@ -23,7 +22,7 @@ import net.hasor.meteor.connector.ConnectorConfig;
 import net.hasor.meteor.domain.ProtocolConfig;
 
 /** Composes the independent address pool, disk cache and providers using RSF settings. */
-public class CacheAddressPool extends AddressPool implements MetUpdater, AutoCloseable {
+public class CacheAddressPool extends AddressPool implements AutoCloseable {
     private final    MetSettings                             settings;
     private final    PoolAddressProvider                     provider;
     private volatile State                                   state = State.NEW;

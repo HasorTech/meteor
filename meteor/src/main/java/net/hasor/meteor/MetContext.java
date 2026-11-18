@@ -99,7 +99,7 @@ public interface MetContext extends OnlineStatus, AutoCloseable {
     /**获取当前实例的序列化器，未注册的名称返回 null。*/
     SerializeCoder getSerializeCoder(String name);
 
-    /**获取地址路由更新接口。*/
+    /** 获取当前上下文的服务状态、实例阻断、地址、路由与流控更新接口。 */
     MetUpdater getUpdater();
 
     /**获取类加载器。*/

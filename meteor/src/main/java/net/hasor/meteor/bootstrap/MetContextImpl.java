@@ -27,13 +27,14 @@ import net.hasor.meteor.connector.MetChannel;
 import net.hasor.meteor.container.MetContainer;
 import net.hasor.meteor.domain.MetException;
 import net.hasor.meteor.domain.ProtocolStatus;
+import net.hasor.meteor.domain.ServiceDomain;
 import net.hasor.meteor.rpc.MetCaller;
 import net.hasor.meteor.rpc.MetClientImpl;
 import net.hasor.meteor.serialize.SerializeCoder;
 import net.hasor.meteor.serialize.SerializeFactory;
 
 /** Composes RSF components and owns their lifecycle without requiring a container or subclass. */
-public final class MetContextImpl implements MetContext {
+public final class MetContextImpl implements MetContext, MetUpdater {
     private static final Logger                   LOGGER          = LoggerFactory.getLogger(MetContextImpl.class);
     private final        List<MetContextListener> listeners       = new CopyOnWriteArrayList<>();
     private final        MetSettings              settings;
@@ -49,6 +50,7 @@ public final class MetContextImpl implements MetContext {
     private final        ReentrantLock            lifecycleLock   = new ReentrantLock();
     private final        Queue<LifecycleDelivery> lifecycleEvents = new ArrayDeque<>();
     private              Thread                   lifecycleEventThread;
+    private volatile     boolean                  blocked;
     private volatile     State                    state           = State.NEW;
 
     private enum State {
@@ -111,6 +113,8 @@ public final class MetContextImpl implements MetContext {
     /** 构建入口在返回上下文前完成初始化；监听仍由 start() 开启。 */
     void init(List<MetExtensionFactory> extensionFactory) {
         this.installFilters();
+        // 保持默认过滤器在前，沿用管理 RPC 原有的治理过滤器安装顺序。
+        this.publisher.bindFilter(MetFilter.GOVERNANCE_FILTER_ID, this::filterGovernance);
 
         // Context 持有连接管理器，连接失败时同步反馈给地址池。
         ContextConnectorManager connectorManager = new ContextConnectorManager();
@@ -527,7 +531,175 @@ public final class MetContextImpl implements MetContext {
 
     @Override
     public MetUpdater getUpdater() {
-        return this.addresses;
+        return this;
+    }
+
+    @Override
+    public boolean isBlock() {
+        return this.blocked;
+    }
+
+    @Override
+    public void setBlock(boolean block) {
+        this.blocked = block;
+    }
+
+    @Override
+    public boolean isServiceEnabled(String serviceID) {
+        return this.requireService(serviceID).isEnabled();
+    }
+
+    @Override
+    public void setServiceEnabled(String serviceID, boolean enabled) {
+        this.requireService(serviceID).setEnabled(enabled);
+    }
+
+    private void filterGovernance(MetRequest request, MetResponse response, MetFilterChain chain) throws Throwable {
+        MetBindInfo<?> service = request.getBindInfo();
+        boolean instanceBlocked = this.blocked;
+        if (!service.isShadow() && (instanceBlocked || this.isRegisteredServiceDisabled(service.getBindID()))) {
+            String reason = instanceBlocked ? "Instance is blocked by governance" : "Service is disabled by governance";
+            response.sendStatus(ProtocolStatus.Forbidden, reason);
+            return;
+        }
+        chain.doFilter(request, response);
+    }
+
+    private boolean isRegisteredServiceDisabled(String serviceID) {
+        // 出站调用允许传入外部绑定，治理以当前上下文登记的服务为准。
+        return this.rsfContainer.getRsfBindInfo(serviceID) instanceof ServiceDomain<?> service && !service.isEnabled();
+    }
+
+    private ServiceDomain<?> requireService(String serviceID) {
+        if (this.rsfContainer.getRsfBindInfo(serviceID) instanceof ServiceDomain<?> service && !service.isShadow()) {
+            return service;
+        }
+        throw new IllegalArgumentException("Service is not registered: " + serviceID);
+    }
+
+    @Override
+    public void loadAddressBook(ClassLoader classLoader, String location) throws IOException {
+        this.addresses.loadAddressBook(classLoader, location);
+    }
+
+    @Override
+    public Set<String> getSupportedProtocols(String serviceID) {
+        return this.addresses.getSupportedProtocols(serviceID);
+    }
+
+    @Override
+    public boolean updateServiceRoute(String serviceID, String scriptBody) {
+        return this.addresses.updateServiceRoute(serviceID, scriptBody);
+    }
+
+    @Override
+    public String serviceRoute(String serviceID) {
+        return this.addresses.serviceRoute(serviceID);
+    }
+
+    @Override
+    public boolean updateMethodRoute(String serviceID, String scriptBody) {
+        return this.addresses.updateMethodRoute(serviceID, scriptBody);
+    }
+
+    @Override
+    public String methodRoute(String serviceID) {
+        return this.addresses.methodRoute(serviceID);
+    }
+
+    @Override
+    public boolean updateArgsRoute(String serviceID, String scriptBody) {
+        return this.addresses.updateArgsRoute(serviceID, scriptBody);
+    }
+
+    @Override
+    public String argsRoute(String serviceID) {
+        return this.addresses.argsRoute(serviceID);
+    }
+
+    @Override
+    public boolean updateFlowControl(String serviceID, String flowControl) {
+        return this.addresses.updateFlowControl(serviceID, flowControl);
+    }
+
+    @Override
+    public String flowControl(String serviceID) {
+        return this.addresses.flowControl(serviceID);
+    }
+
+    @Override
+    public List<InterAddress> queryAllAddresses(String serviceID) {
+        return this.addresses.queryAllAddresses(serviceID);
+    }
+
+    @Override
+    public List<InterAddress> queryAvailableAddresses(String serviceID) {
+        return this.addresses.queryAvailableAddresses(serviceID);
+    }
+
+    @Override
+    public List<InterAddress> queryInvalidAddresses(String serviceID) {
+        return this.addresses.queryInvalidAddresses(serviceID);
+    }
+
+    @Override
+    public List<InterAddress> queryLocalUnitAddresses(String serviceID) {
+        return this.addresses.queryLocalUnitAddresses(serviceID);
+    }
+
+    @Override
+    public void appendAddress(String serviceID, Collection<InterAddress> newHostSet) {
+        this.addresses.appendAddress(serviceID, newHostSet);
+    }
+
+    @Override
+    public void appendStaticAddress(String serviceID, Collection<InterAddress> newHostSet) {
+        this.addresses.appendStaticAddress(serviceID, newHostSet);
+    }
+
+    @Override
+    public void appendAddress(String serviceID, Map<String, List<InterAddress>> units) {
+        this.addresses.appendAddress(serviceID, units);
+    }
+
+    @Override
+    public void appendStaticAddress(String serviceID, Map<String, List<InterAddress>> units) {
+        this.addresses.appendStaticAddress(serviceID, units);
+    }
+
+    @Override
+    public void refreshAddress(String serviceID, List<InterAddress> addressList) {
+        this.addresses.refreshAddress(serviceID, addressList);
+    }
+
+    @Override
+    public void refreshAddress(String serviceID, Map<String, List<InterAddress>> units) {
+        this.addresses.refreshAddress(serviceID, units);
+    }
+
+    @Override
+    public Map<String, List<InterAddress>> queryAddressesByUnit(String serviceID) {
+        return this.addresses.queryAddressesByUnit(serviceID);
+    }
+
+    @Override
+    public void refreshAddressCache() {
+        this.addresses.refreshAddressCache();
+    }
+
+    @Override
+    public void removeAddress(String serviceID, InterAddress invalidAddress) {
+        this.addresses.removeAddress(serviceID, invalidAddress);
+    }
+
+    @Override
+    public void removeAddress(String serviceID, Collection<InterAddress> invalidAddressSet) {
+        this.addresses.removeAddress(serviceID, invalidAddressSet);
+    }
+
+    @Override
+    public void removeAddress(InterAddress address) {
+        this.addresses.removeAddress(address);
     }
 
     @Override

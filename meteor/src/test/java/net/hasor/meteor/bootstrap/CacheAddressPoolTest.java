@@ -12,7 +12,6 @@ import java.util.concurrent.*;
 import java.util.function.BiFunction;
 import net.hasor.cobble.concurrent.future.Cancellable;
 import net.hasor.meteor.MetContext;
-import net.hasor.meteor.MetUpdater;
 import net.hasor.meteor.address.DiskCache;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.address.dsl.RouteContext;
@@ -45,15 +44,14 @@ public class CacheAddressPoolTest {
     }
 
     @Test
-    public void poolUpdaterAndProvidersShareAddressChangesBeforeStart() throws Exception {
-        // 启动前通过更新器准备动态地址，固定地址提供器独立于服务桶。
+    public void poolAndProvidersShareAddressChangesBeforeStart() throws Exception {
+        // 启动前在地址池准备动态地址，固定地址提供器独立于服务桶。
         MetConfiguration configuration = this.settings();
         try (CacheAddressPool pool = new CacheAddressPool(this.snapshot(configuration))) {
-            MetUpdater updater = pool;
             AddressProvider provider = pool.getProvider();
             InterAddress pooled = new InterAddress("rsf://127.0.0.1:2111");
             InterAddress fixed = new InterAddress("rsf://127.0.0.1:2112");
-            updater.appendAddress("service", Collections.singletonList(pooled));
+            pool.appendAddress("service", Collections.singletonList(pooled));
             assertTrue(provider.isDistributed());
             RouteContext request = new RouteContext("service", "echo", new Object[0]);
             assertEquals(pooled, provider.get(request));

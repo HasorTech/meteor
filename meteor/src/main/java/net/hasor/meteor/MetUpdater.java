@@ -19,6 +19,18 @@ import net.hasor.meteor.address.InterAddress;
  * @author 赵永春 (zyc@hasor.net)
  */
 public interface MetUpdater {
+    /** 当前实例是否阻断业务请求；不改变监听器在线状态。 */
+    boolean isBlock();
+
+    /** 阻断或恢复当前实例的业务请求，管理服务不受影响。 */
+    void setBlock(boolean block);
+
+    /** 当前上下文中服务的启用状态；未知服务抛出 IllegalArgumentException。 */
+    boolean isServiceEnabled(String serviceID);
+
+    /** 启用或停用当前上下文中已登记的服务，不改变发布关系。 */
+    void setServiceEnabled(String serviceID, boolean enabled);
+
     /** 加载消费端 XML 静态地址本，仅作用于已有服务。 */
     void loadAddressBook(ClassLoader classLoader, String location) throws IOException;
 

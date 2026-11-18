@@ -36,11 +36,22 @@ public class ServiceDomain<T> implements MetBindInfo<T> {
     private final    Set<String>               bindProtocols      = new HashSet<>();        // 服务指定的协议类型
     private final    Map<String, Object>       metadata           = new ConcurrentHashMap<>();
     private volatile Map<String, ProtocolMeta> protocols          = Map.of();
+    private volatile boolean                   enabled            = true;
     private final    ServiceMeta               serviceMeta;
 
     public ServiceDomain(Class<T> bindType) {
         this.bindType = bindType;
         this.serviceMeta = ServiceMetaParser.parse(bindType);
+    }
+
+    /** 当前注册实例的启用状态，默认启用。 */
+    public boolean isEnabled() {
+        return this.enabled;
+    }
+
+    /** 设置当前注册实例的启用状态。 */
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
     /** Java 公共声明，不包含端点选项或协议编译结果。 */
