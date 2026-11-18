@@ -58,7 +58,7 @@ public class RegistryConfiguration implements MetExtensionFactory {
         // 离线模式直接复用上下文的 RPC 能力。
         if (!this.online) {
             new ManagementRPCImpl(context, connectors, this.publishHost, this.tokenProvider, this.managementProtocols);
-            return new RegistryExtension(context, null, null, this.tokenProvider);
+            return new RegistryExtension(context, null, null, this.tokenProvider, null);
         }
 
         // 在线模式才创建存储客户端，实际连接留到启动阶段。
@@ -70,7 +70,7 @@ public class RegistryConfiguration implements MetExtensionFactory {
         RegistryImpl admin = new RegistryImpl(opener, this.describeStorage(), this.tokenProvider);
         DefaultRegistryClient client = new DefaultRegistryClient(context, connectors, opener, this.refreshMillis, //
                 this.publishHost, this.tokenProvider, this.managementProtocols);
-        return new RegistryExtension(context, admin, client, this.tokenProvider);
+        return new RegistryExtension(context, admin, client, this.tokenProvider, this.getProvider());
     }
 
     /** 打开独立管理会话，调用方负责关闭；管理凭据不传给存储。 */

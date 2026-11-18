@@ -11,10 +11,7 @@ import java.util.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.hasor.cobble.StringUtils;
-import net.hasor.meteor.MetBindInfo;
-import net.hasor.meteor.MetContext;
-import net.hasor.meteor.MetPublisher;
-import net.hasor.meteor.MetUpdater;
+import net.hasor.meteor.*;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.connector.ConnectorConfig;
 import net.hasor.meteor.connector.ConnectorManager;
@@ -39,29 +36,30 @@ public final class ManagementRPCImpl implements ManagementRPC {
     private final ConnectorManager           connectors;
     private final String                     publishHost;
     private final MetBindInfo<ManagementRPC> managementService;
-    private final GovernanceFilter           governance = new GovernanceFilter();
+    private final MetUpdater                 updater;
 
     ////////////////////////////////////////////////////////////////////////////////////////
     // 本地运行服务与管理 RPC 生命周期
 
-    /** 安装扩展时发布管理 RPC 和过滤器，生命周期与上下文一致。 */
+    /** 发布管理 RPC，并通过服务级过滤器保留业务阻断后的恢复入口。 */
     public ManagementRPCImpl(MetContext context, ConnectorManager connectors, String publishHost, //
             RegistryTokenProvider tokenProvider, List<String> managementProtocols) {
         this.context = context;
         this.connectors = connectors;
         this.publishHost = publishHost;
+        this.updater = context.getUpdater();
         if (this.context.getServiceInfo(ManagementRPC.class) != null) {
             throw new IllegalStateException("Management RPC is already registered on this Meteor context");
         }
 
         MetPublisher publisher = this.context.publisher();
-        publisher.bindFilter(GovernanceFilter.FILTER_ID, this.governance);
         var management = publisher.rsfService(ManagementRPC.class, this);
         for (String protocol : managementProtocols) {
             management.protocol(protocol);
         }
         this.managementService = management //
                 .bindFilter("management-authentication", new ManagementAuthentication(tokenProvider))//
+                .bindFilter(MetFilter.GOVERNANCE_FILTER_ID, (request, response, chain) -> chain.doFilter(request, response))//
                 .asDistributedCall()//
                 .register();
     }
@@ -85,18 +83,16 @@ public final class ManagementRPCImpl implements ManagementRPC {
         }
     }
 
-    /** 获取业务服务，并移除已经注销服务的过滤器状态。 */
+    /** 获取当前已登记的业务服务。 */
     List<String> serviceIds() {
         List<MetBindInfo<?>> services = this.bindings();
-        List<String> ids = services.stream().map(MetBindInfo::getBindID).toList();
-        this.governance.retainServices(ids);
-        return ids;
+        return services.stream().map(MetBindInfo::getBindID).toList();
     }
 
     /** 直接应用实例阻断治理，不修改应用运行选项。 */
     Exception applyInstance(EntConfigurationData configuration) {
         try {
-            this.governance.setBlock(Boolean.TRUE.equals(configuration.getBlock()));
+            this.updater.setBlock(Boolean.TRUE.equals(configuration.getBlock()));
             return null;
         } catch (Exception failure) {
             return failure;
@@ -130,7 +126,7 @@ public final class ManagementRPCImpl implements ManagementRPC {
             registration.setName(service.getBindName());
             registration.setVersion(service.getBindVersion());
             registration.setRole(service.getServiceType());
-            registration.setEnabled(this.governance.isServiceEnabled(id));
+            registration.setEnabled(this.updater.isServiceEnabled(id));
             ServiceEndpointData[] selected = this.endpoints(service, publications);
             RefProtocolMountData[] endpoints = RegistryJson.copy(selected, RefProtocolMountData[].class);
             registration.setEndpoints(endpoints);
@@ -139,7 +135,7 @@ public final class ManagementRPCImpl implements ManagementRPC {
             boolean provider = service.getServiceType() == MetServiceType.Provider;
 
             // 已禁用、阻断或离线的提供者保留登记，但不向发现方提供地址。
-            boolean available = this.context.isOnline() && !this.governance.isBlock() && registration.isEnabled();
+            boolean available = this.context.isOnline() && !this.updater.isBlock() && registration.isEnabled();
             Set<String> published = new TreeSet<>();
             if (provider && available) {
                 for (RefProtocolMountData endpoint : endpoints) {
@@ -205,7 +201,7 @@ public final class ManagementRPCImpl implements ManagementRPC {
         result.setProcessId(ProcessHandle.current().pid());
         result.setApplicationName(this.context.getApplicationName());
         result.setUnitName(this.context.getSettings().getUnitName());
-        result.setBlock(this.governance.isBlock());
+        result.setBlock(this.updater.isBlock());
         List<InstanceEndpointData> endpoints = new ArrayList<>();
         Map<String, ProtocolMeta> managementPublications = MetBindInfoWrap.unwrap(this.managementService).getProtocolMetas();
         for (ConnectorConfig connector : this.context.getSettings().getConnectorConfigs()) {
@@ -350,30 +346,30 @@ public final class ManagementRPCImpl implements ManagementRPC {
         member.setEndpoints(endpoints);
         member.setUsedProtocols(usedProtocols);
         member.setDescription(this.description(service));
-        member.setEnabled(this.governance.isServiceEnabled(serviceId));
+        member.setEnabled(this.updater.isServiceEnabled(serviceId));
         return member;
     }
 
     @Override
     public boolean isServiceEnabled(String token, String serviceId) {
         this.requireService(serviceId);
-        return this.governance.isServiceEnabled(serviceId);
+        return this.updater.isServiceEnabled(serviceId);
     }
 
     @Override
     public void setServiceEnabled(String token, String serviceId, boolean enabled) {
         this.requireService(serviceId);
-        this.governance.setServiceEnabled(serviceId, enabled);
+        this.updater.setServiceEnabled(serviceId, enabled);
     }
 
     @Override
     public boolean isBlock(String token) {
-        return this.governance.isBlock();
+        return this.updater.isBlock();
     }
 
     @Override
     public void setBlock(String token, boolean block) {
-        this.governance.setBlock(block);
+        this.updater.setBlock(block);
     }
 
     @Override
@@ -482,33 +478,28 @@ public final class ManagementRPCImpl implements ManagementRPC {
         }
 
         this.applyMetadata(service, config.getMetadata());
-        this.governance.setServiceEnabled(id, Boolean.TRUE.equals(config.getEnabled()));
+        this.updater.setServiceEnabled(id, Boolean.TRUE.equals(config.getEnabled()));
     }
 
     private String readRule(String id, RuleTypeData type) {
-        MetUpdater updater = this.context.getUpdater();
         return switch (type) {
-            case SERVICE_ROUTE -> updater.serviceRoute(id);
-            case METHOD_ROUTE -> updater.methodRoute(id);
-            case ARGS_ROUTE -> updater.argsRoute(id);
-            case FLOW_CONTROL -> updater.flowControl(id);
+            case SERVICE_ROUTE -> this.updater.serviceRoute(id);
+            case METHOD_ROUTE -> this.updater.methodRoute(id);
+            case ARGS_ROUTE -> this.updater.argsRoute(id);
+            case FLOW_CONTROL -> this.updater.flowControl(id);
         };
     }
 
     private void applyRule(String id, RuleTypeData type, String value) {
-        MetUpdater updater = this.context.getUpdater();
-        boolean sameBody = StringUtils.equals(normalize(this.readRule(id, type)), normalize(value));
-        if (sameBody) {
+        if (StringUtils.equals(StringUtils.defaultIfBlank(this.readRule(id, type), ""), StringUtils.defaultIfBlank(value, ""))) {
             return;
         }
-
         boolean applied = switch (type) {
-            case SERVICE_ROUTE -> updater.updateServiceRoute(id, value);
-            case METHOD_ROUTE -> updater.updateMethodRoute(id, value);
-            case ARGS_ROUTE -> updater.updateArgsRoute(id, value);
-            case FLOW_CONTROL -> updater.updateFlowControl(id, value);
+            case SERVICE_ROUTE -> this.updater.updateServiceRoute(id, value);
+            case METHOD_ROUTE -> this.updater.updateMethodRoute(id, value);
+            case ARGS_ROUTE -> this.updater.updateArgsRoute(id, value);
+            case FLOW_CONTROL -> this.updater.updateFlowControl(id, value);
         };
-
         if (!applied) {
             throw new IllegalArgumentException("Cannot apply " + type + " to " + id);
         }

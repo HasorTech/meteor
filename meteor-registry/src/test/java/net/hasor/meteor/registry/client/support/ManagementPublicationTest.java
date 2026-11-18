@@ -9,6 +9,8 @@ package net.hasor.meteor.registry.client.support;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
+import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -16,12 +18,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.cobble.concurrent.future.Future;
-import net.hasor.meteor.MetBindInfo;
-import net.hasor.meteor.MetClient;
-import net.hasor.meteor.MetContext;
+import net.hasor.meteor.*;
 import net.hasor.meteor.MetPublisher.ConfigurationBuilder;
-import net.hasor.meteor.MetSettings;
-import net.hasor.meteor.address.AddressPool;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.annotation.MetIgnore;
 import net.hasor.meteor.annotation.MetService;
@@ -227,7 +225,7 @@ public class ManagementPublicationTest {
         MetConfiguration application = createConfiguration();
         application.addExtension(context -> {
             // 扩展安装前制造已有过滤器，验证真实 buildContext 的失败路径。
-            context.publisher().bindFilter(GovernanceFilter.FILTER_ID, (request, response, chain) -> {
+            context.publisher().bindFilter(MetFilter.GOVERNANCE_FILTER_ID, (request, response, chain) -> {
                 chain.doFilter(request, response);
             });
             return registry.create(context);
@@ -878,12 +876,16 @@ public class ManagementPublicationTest {
             context.start();
             RegistryClient client = context.getExtension(RegistryClient.class);
             InterAddress fixed = new InterAddress("rsf://127.0.0.1:2181");
-            InterAddress discovered = new InterAddress("rsf://127.0.0.1:2182");
+            InterAddress discovered;
+            try (ServerSocket unused = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+                discovered = new InterAddress("rsf://127.0.0.1:" + unused.getLocalPort());
+            }
             context.getUpdater().appendStaticAddress(id, List.of(fixed));
             publishAddresses(storage, id, discovered.toString());
             client.pullSync(id).get(5, TimeUnit.SECONDS);
-            AddressPool pool = (AddressPool) context.getUpdater();
-            pool.invalidAddress(discovered);
+            // 通过真实连接失败标记失效，不把公共更新器强转成地址池实现。
+            var connectors = ((MetContextImpl) context).getConnectorManager();
+            assertThrows(ExecutionException.class, () -> connectors.connect(discovered).get(5, TimeUnit.SECONDS));
 
             // 上下线事件触发自动核对；后续 push 在同一工作队列中等待核对完成。
             context.offline();
@@ -900,7 +902,7 @@ public class ManagementPublicationTest {
             assertTrue(context.getUpdater().queryAvailableAddresses(id).contains(discovered));
 
             // 主动拉取则会强制重新应用发现结果，可以恢复同一条失效地址。
-            pool.invalidAddress(discovered);
+            assertThrows(ExecutionException.class, () -> connectors.connect(discovered).get(5, TimeUnit.SECONDS));
             client.pullSync(id).get(5, TimeUnit.SECONDS);
             assertTrue(context.getUpdater().queryAvailableAddresses(id).contains(discovered));
 

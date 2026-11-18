@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor.registry.client.support;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.RejectedExecutionException;
@@ -21,6 +22,7 @@ import net.hasor.cobble.logging.LoggerFactory;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetContextEvent;
 import net.hasor.meteor.connector.ConnectorManager;
+import net.hasor.meteor.registry.RegistryStatus;
 import net.hasor.meteor.registry.RegistryTokenProvider;
 import net.hasor.meteor.registry.client.RegistryClient;
 import net.hasor.meteor.registry.shared.rpc.ConfigurationData;
@@ -39,6 +41,7 @@ public final class DefaultRegistryClient implements RegistryClient, AutoCloseabl
     private final        AtomicBoolean                  queued         = new AtomicBoolean();
     private volatile     ScheduledThreadPoolExecutor    worker;
     private volatile     boolean                        running;
+    private volatile     RegistryStatus                 syncStatus     = new RegistryStatus(null, "STARTING", null, null, null);
     private              StorageAccess                  storage;
     private              RegistrationService            registrationService;
 
@@ -68,12 +71,12 @@ public final class DefaultRegistryClient implements RegistryClient, AutoCloseabl
         // 监听开启前先应用治理；此时不能登记尚未就绪的地址。
         String instanceId = this.context.getInstanceID();
         this.watches.addAll(this.registrationService.watchInstance(instanceId, this::requestRefresh));
-        this.pullConfiguration(null, false);
+        this.observeSync(() -> this.pullConfiguration(null, false));
     }
 
     public synchronized void afterStart() throws Exception {
         // 首次发布同步完成，不额外投递一次全量拉取干扰启动后的主动操作。
-        this.reconcile();
+        this.observeSync(this::reconcile);
 
         // 订阅处理后续变更，周期核对补偿丢失通知和临时记录。
         this.worker.scheduleWithFixedDelay(this::requestRefresh, this.refreshMillis, this.refreshMillis, TimeUnit.MILLISECONDS);
@@ -113,10 +116,35 @@ public final class DefaultRegistryClient implements RegistryClient, AutoCloseabl
         }
 
         try {
-            this.reconcile();
+            this.observeSync(this::reconcile);
         } catch (Exception failure) {
             LOGGER.warn("Registry synchronization failed; retaining last known addresses and configuration", failure);
         }
+    }
+
+    /** 查询独立快照；类型由扩展配置提供，避免从存储地址泄露凭据。 */
+    public RegistryStatus status(String provider) {
+        RegistryStatus current = this.syncStatus;
+        String connection = current.getConnection();
+        if (!this.running && StringUtils.equals(connection, "CONNECTED")) {
+            connection = "STARTING";
+        }
+        return new RegistryStatus(provider, connection, current.getLastAttempt(), current.getLastSuccess(), current.getError());
+    }
+
+    private void observeSync(SyncOperation operation) throws Exception {
+        Instant attempt = Instant.now();
+        try {
+            operation.run();
+            this.syncStatus = new RegistryStatus(null, "CONNECTED", attempt, Instant.now(), null);
+        } catch (Exception failure) {
+            this.syncStatus = new RegistryStatus(null, "ERROR", attempt, this.syncStatus.getLastSuccess(), failure.getClass().getSimpleName());
+            throw failure;
+        }
+    }
+
+    private interface SyncOperation {
+        void run() throws Exception;
     }
 
     private void watchServices(List<String> ids) {
@@ -176,7 +204,7 @@ public final class DefaultRegistryClient implements RegistryClient, AutoCloseabl
             // 与自动同步共用串行队列，完成同步后再通知调用方。
             this.worker.execute(() -> {
                 try {
-                    this.syncLocal(pull, serviceId);
+                    this.observeSync(() -> this.syncLocal(pull, serviceId));
                     result.completed(null);
                 } catch (Exception failure) {
                     result.failed(failure);
@@ -269,6 +297,8 @@ public final class DefaultRegistryClient implements RegistryClient, AutoCloseabl
     @Override
     public synchronized void close() throws Exception {
         this.running = false;
+        RegistryStatus previous = this.syncStatus;
+        this.syncStatus = new RegistryStatus(null, "CLOSED", previous.getLastAttempt(), previous.getLastSuccess(), previous.getError());
 
         // 每个资源均尝试释放，某个订阅失败不能阻止存储会话关闭。
         List<AutoCloseable> resources = new ArrayList<>();

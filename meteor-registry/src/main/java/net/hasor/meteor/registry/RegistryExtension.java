@@ -14,11 +14,13 @@ import net.hasor.meteor.registry.client.support.DefaultRegistryClient;
 
 /** 统一管理在线与离线模式；仅在线模式持有注册中心管理端与客户端。 */
 final class RegistryExtension implements MetExtension {
+    private final String                provider;
     private final TargetAdmin           targetAdmin;
     private final RegistryAdmin         admin;
     private final DefaultRegistryClient client;
 
-    RegistryExtension(MetContext context, RegistryAdmin admin, DefaultRegistryClient client, RegistryTokenProvider tokenProvider) {
+    RegistryExtension(MetContext context, RegistryAdmin admin, DefaultRegistryClient client, RegistryTokenProvider tokenProvider, String provider) {
+        this.provider = provider;
         this.targetAdmin = new TargetAdminImpl(context, tokenProvider);
         this.admin = admin;
         this.client = client;
@@ -26,6 +28,9 @@ final class RegistryExtension implements MetExtension {
 
     @Override
     public <T> T getService(Class<T> type) {
+        if (type == RegistryStatus.class) {
+            return type.cast(this.client == null ? new RegistryStatus(this.provider, "NONE", null, null, null) : this.client.status(this.provider));
+        }
         if (type == TargetAdmin.class) {
             return type.cast(this.targetAdmin);
         }
