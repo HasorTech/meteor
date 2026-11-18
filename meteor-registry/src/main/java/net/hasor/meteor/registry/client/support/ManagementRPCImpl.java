@@ -58,7 +58,7 @@ public final class ManagementRPCImpl implements ManagementRPC {
             management.protocol(protocol);
         }
         this.managementService = management //
-                .bindFilter("management-authentication", new ManagementAuthentication(tokenProvider))//
+                .bindFilter(ManagementAuthentication.class.getName(), new ManagementAuthentication(tokenProvider))//
                 .asDistributedCall()//
                 .register();
         context.getExtension(MetAccessPolicy.class).allow(this.managementService, MetAccessEnum.values());
