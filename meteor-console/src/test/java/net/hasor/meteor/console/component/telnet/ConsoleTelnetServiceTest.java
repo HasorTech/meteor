@@ -207,7 +207,7 @@ public class ConsoleTelnetServiceTest {
     @Test
     public void noWebAndNoManagementListenerIsRejected() throws Exception {
         Path config = this.configuration(false, 0);
-        String content = Files.readString(config).replace("telnet.enabled=true", "telnet.enabled=false");
+        String content = Files.readString(config).replace("meteor.telnet.enabled=true", "meteor.telnet.enabled=false");
         Files.writeString(config, content);
         assertThrows(IllegalArgumentException.class, () -> ConsoleMain.start("--config=" + config));
     }
@@ -216,7 +216,7 @@ public class ConsoleTelnetServiceTest {
     public void remoteClusterUsesSavedManagementTokenWithoutBrowserSession() throws Exception {
         ClusterProfile registry = this.profile("source");
         Path remoteConfig = this.configuration(false, 0);
-        Files.writeString(remoteConfig, Files.readString(remoteConfig) + "\nstorage.type=jdbc\nstorage.database=h2\nstorage.username=sa\n" + "storage.address=" + registry.getAddress() + "\n" + "storage.password=" + registry.getPassword() + "\n" + "management.token=remote-management-secret\nrpc.port=0\n");
+        Files.writeString(remoteConfig, Files.readString(remoteConfig) + "\nmeteor.storage.type=jdbc\nmeteor.storage.database=h2\nmeteor.storage.username=sa\n" + "meteor.storage.address=" + registry.getAddress() + "\n" + "meteor.storage.password=" + registry.getPassword() + "\n" + "meteor.rpc.auth.token=remote-management-secret\nmeteor.rpc.port=0\n");
         try (MetContext provider = this.provider(registry, "remote-provider").buildContext(); BootApplication remote = ConsoleMain.start("--config=" + remoteConfig); BootApplication application = ConsoleMain.start("--config=" + this.configuration(false, 0)); TelClient client = new TelClient()) {
             provider.publisher().rsfService(Echo.class, text -> text).register();
             provider.start();
@@ -243,7 +243,7 @@ public class ConsoleTelnetServiceTest {
     @Test
     public void nonLoopbackWithoutPasswordIsRejected() throws Exception {
         Path config = this.configuration(false, 0);
-        String content = Files.readString(config).replace("telnet.password=telnet-secret", "telnet.host=0.0.0.0");
+        String content = Files.readString(config).replace("meteor.telnet.auth.password=telnet-secret", "meteor.telnet.host=0.0.0.0");
         Files.writeString(config, content);
         assertThrows(RuntimeException.class, () -> ConsoleMain.start("--config=" + config));
     }
@@ -252,12 +252,12 @@ public class ConsoleTelnetServiceTest {
         Path root = Files.createDirectories(this.directory.resolve(UUID.randomUUID().toString()));
         Path path = root.resolve("meteor.properties");
         Properties settings = new Properties();
-        settings.setProperty("console.web.enabled", Boolean.toString(web));
+        settings.setProperty("meteor.web.enabled", Boolean.toString(web));
         settings.setProperty("hasor.boot.web.connectors.http.port", Integer.toString(httpPort));
-        settings.setProperty("data.directory", root.resolve("data").toString());
-        settings.setProperty("telnet.enabled", "true");
-        settings.setProperty("telnet.port", "0");
-        settings.setProperty("telnet.password", "telnet-secret");
+        settings.setProperty("meteor.data.directory", root.resolve("data").toString());
+        settings.setProperty("meteor.telnet.enabled", "true");
+        settings.setProperty("meteor.telnet.port", "0");
+        settings.setProperty("meteor.telnet.auth.password", "telnet-secret");
         try (Writer writer = Files.newBufferedWriter(path)) {
             settings.store(writer, null);
         }

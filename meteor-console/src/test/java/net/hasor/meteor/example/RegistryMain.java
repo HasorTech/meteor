@@ -39,7 +39,7 @@ public final class RegistryMain {
             Boot boot = new Boot().arguments(arguments)//
                     .hconfigFile(configuration)//
                     .sources(ConsoleMain.class)//
-                    .property("storage.address", address);
+                    .property("meteor.storage.address", address);
             try (BootApplication application = boot.start()) {
                 System.out.println("H2 注册存储：" + address);
                 System.out.println("Remote 管理服务：" + application.getAppContext().getInstance(RpcServer.class).getAddress());

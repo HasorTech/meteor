@@ -141,8 +141,8 @@ public class ConsoleSettingsTest {
         Path file = directory.resolve("console.properties");
         Files.writeString(file, "hasor.boot.web.connectors.http.host=127.0.0.1\n" //
                 + "hasor.boot.web.connectors.http.port=0\nhasor.boot.web.health.enabled=false\n" //
-                + "meteor.unit=settings-unit\nsecurity.enable=true\nsecurity.account=admin:settings-test-password\n" //
-                + "data.directory=" + directory.toAbsolutePath().toString().replace('\\', '/') + "\n");
+                + "meteor.client.unit=settings-unit\nmeteor.web.auth.enabled=true\nmeteor.web.auth.account=admin:settings-test-password\n" //
+                + "meteor.data.directory=" + directory.toAbsolutePath().toString().replace('\\', '/') + "\n");
         return file.toUri().toString();
     }
 

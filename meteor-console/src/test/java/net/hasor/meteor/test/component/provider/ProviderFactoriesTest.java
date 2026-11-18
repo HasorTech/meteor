@@ -58,7 +58,7 @@ public class ProviderFactoriesTest {
             Boot boot = new Boot()//
                     .sources(ConsoleMain.class)//
                     .property("hasor.boot.web.connectors.http.enabled", false)//
-                    .property("data.directory", this.temporary.resolve("console-data").toString());
+                    .property("meteor.data.directory", this.temporary.resolve("console-data").toString());
             try (BootApplication application = boot.start()) {
                 AppContext app = application.getAppContext();
                 assertNotNull(app.getBindInfo(JdbcProviderFactory.class));

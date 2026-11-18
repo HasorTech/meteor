@@ -32,28 +32,24 @@ import net.hasor.core.AppContext;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.console.ConsoleMain;
+import net.hasor.meteor.console.component.commands.dto.service.ExampleTarget;
 import net.hasor.meteor.console.component.debug.DebugContract;
 import net.hasor.meteor.console.component.debug.DebugInvoker;
-import net.hasor.meteor.console.component.commands.dto.service.ExampleTarget;
-import net.hasor.meteor.console.component.provider.ProviderFactory;
 import net.hasor.meteor.console.component.provider.ProviderConnection;
-import net.hasor.meteor.console.component.rpc.RpcServer;
-import net.hasor.meteor.console.model.fo.ClusterProfile;
+import net.hasor.meteor.console.component.provider.ProviderFactory;
 import net.hasor.meteor.console.component.provider.jdbc.JdbcProviderFactory;
 import net.hasor.meteor.console.component.provider.nacos.NacosProviderFactory;
 import net.hasor.meteor.console.component.provider.remote.RemoteProviderFactory;
 import net.hasor.meteor.console.component.provider.zk.ZookeeperProviderFactory;
+import net.hasor.meteor.console.component.rpc.RpcServer;
+import net.hasor.meteor.console.model.fo.ClusterProfile;
 import net.hasor.meteor.console.utils.JsonUtils;
 import net.hasor.meteor.domain.MetServiceType;
 import net.hasor.meteor.example.Consumer1Main;
 import net.hasor.meteor.example.Consumer2Main;
 import net.hasor.meteor.example.Provider1Main;
 import net.hasor.meteor.example.Provider2Main;
-import net.hasor.meteor.example.api.CalculatorService;
-import net.hasor.meteor.example.api.EchoService;
-import net.hasor.meteor.example.api.DebugMessage;
-import net.hasor.meteor.example.api.StatusService;
-import net.hasor.meteor.example.api.ParameterService;
+import net.hasor.meteor.example.api.*;
 import net.hasor.meteor.example.consumer.ServiceConsumer;
 import net.hasor.meteor.example.provider.CalculatorServiceImpl;
 import net.hasor.meteor.example.provider.EchoServiceImpl;
@@ -73,14 +69,11 @@ public class ConsoleExampleTest {
     @TempDir
     public Path temporary;
 
-    private static final Set<String> PROTOCOLS = Set.of("rsf", "dubbo", "thrift", "thrift-http", "oncrpc", "oncrpc-udp", "hprose", "jsonrpc", "xmlrpc", "hessian",
-            "soap", "grpc", "grpc-web", "connect", "triple");
-    private static final Set<Class<? extends ProviderFactory>> FACTORIES = Set.of(JdbcProviderFactory.class,
-            NacosProviderFactory.class, RemoteProviderFactory.class, ZookeeperProviderFactory.class);
+    private static final Set<String>                           PROTOCOLS = Set.of("rsf", "dubbo", "thrift", "thrift-http", "oncrpc", "oncrpc-udp", "hprose", "jsonrpc", "xmlrpc", "hessian", "soap", "grpc", "grpc-web", "connect", "triple");
+    private static final Set<Class<? extends ProviderFactory>> FACTORIES = Set.of(JdbcProviderFactory.class, NacosProviderFactory.class, RemoteProviderFactory.class, ZookeeperProviderFactory.class);
 
     @ParameterizedTest(name = "Boot 提供者 → JDBC 注册中心 → 注入消费者：{0}")
-    @ValueSource(strings = { "rsf", "dubbo", "thrift", "thrift-http", "oncrpc", "oncrpc-udp", "hprose", "jsonrpc", "xmlrpc", "hessian",
-            "soap", "grpc", "grpc-web", "connect", "triple" })
+    @ValueSource(strings = { "rsf", "dubbo", "thrift", "thrift-http", "oncrpc", "oncrpc-udp", "hprose", "jsonrpc", "xmlrpc", "hessian", "soap", "grpc", "grpc-web", "connect", "triple" })
     public void bootExamplesDiscoverAndCallAllServices(String protocol) throws Exception {
         // 每个协议场景使用独立 H2 存储；保留连接直到两个应用退出，避免跨场景残留。
         String database = "console_example_" + UUID.randomUUID().toString().replace("-", "");
@@ -187,8 +180,7 @@ public class ConsoleExampleTest {
                     MetBindInfo<?> parameters = server.getServiceInfo(ParameterService.class);
                     Set<String> parameterProtocols = new HashSet<>(PROTOCOLS);
                     parameterProtocols.removeAll(Set.of("grpc", "grpc-web", "connect"));
-                    assertEquals(parameterProtocols, Set.of(registryAdmin.getServiceAdmin(parameters.getBindID(), instanceId)
-                            .info().getProtocols()));
+                    assertEquals(parameterProtocols, Set.of(registryAdmin.getServiceAdmin(parameters.getBindID(), instanceId).info().getProtocols()));
                     if (parameterProtocols.contains(protocol)) {
                         ParameterService parameter = consumerApp.getInstance(ParameterService.class);
                         assertEquals("pong", parameter.ping());
@@ -229,12 +221,7 @@ public class ConsoleExampleTest {
                     target.setDescription(admin.descriptions().get(instanceId));
                     var contract = new DebugContract(target.getDescription());
                     assertNotSame(EchoService.class, contract.serviceType());
-                    Object debug = new DebugInvoker().invoke(target,
-                            target.getDescription().getMethods().stream()
-                                    .filter(method -> StringUtils.equals("echo", method.getJavaName()))
-                                    .findFirst().orElseThrow().getJavaSignature(),
-                            JsonUtils.readTree("[{\"value\":\"console-debug\",\"left\":20,\"right\":22}]"),
-                            5000, this.temporary.resolve("debug"));
+                    Object debug = new DebugInvoker().invoke(target, target.getDescription().getMethods().stream().filter(method -> StringUtils.equals("echo", method.getJavaName())).findFirst().orElseThrow().getJavaSignature(), JsonUtils.readTree("[{\"value\":\"console-debug\",\"left\":20,\"right\":22}]"), 5000, this.temporary.resolve("debug"));
                     assertTrue(JsonUtils.writeValueAsString(debug).contains(":console-debug"));
                     if (StringUtils.equals("rsf", protocol)) {
                         // 调试器根据上报契约创建代理，验证零参数和多个独立输入的组装。
@@ -243,17 +230,13 @@ public class ConsoleExampleTest {
                         target.setServiceId(parameters.getBindID());
                         target.setService(parameterMember.getService());
                         target.setDescription(parameterAdmin.descriptions().get(instanceId));
-                        target.setEndpoint(Arrays.stream(parameterMember.getEndpoints())
-                                .filter(item -> StringUtils.equals(protocol, item.getProtocolName())).findFirst().orElseThrow());
+                        target.setEndpoint(Arrays.stream(parameterMember.getEndpoints()).filter(item -> StringUtils.equals(protocol, item.getProtocolName())).findFirst().orElseThrow());
                         target.setAddress(target.getEndpoint().getPublishedAddress());
-                        var inputs = java.util.Map.of("ping", "[]", "sum", "[20,22]", "merge",
-                                "[{\"value\":\"a\",\"left\":10},{\"value\":\"b\",\"right\":20}]");
+                        var inputs = java.util.Map.of("ping", "[]", "sum", "[20,22]", "merge", "[{\"value\":\"a\",\"left\":10},{\"value\":\"b\",\"right\":20}]");
                         for (var input : inputs.entrySet()) {
                             String methodName = input.getKey();
-                            var method = target.getDescription().getMethods().stream()
-                                    .filter(item -> StringUtils.equals(methodName, item.getJavaName())).findFirst().orElseThrow();
-                            var result = JsonUtils.valueToTree(new DebugInvoker().invoke(target, method.getJavaSignature(),
-                                    JsonUtils.readTree(input.getValue()), 5000, this.temporary.resolve("parameter-debug")));
+                            var method = target.getDescription().getMethods().stream().filter(item -> StringUtils.equals(methodName, item.getJavaName())).findFirst().orElseThrow();
+                            var result = JsonUtils.valueToTree(new DebugInvoker().invoke(target, method.getJavaSignature(), JsonUtils.readTree(input.getValue()), 5000, this.temporary.resolve("parameter-debug")));
                             if (StringUtils.equals("ping", methodName)) {
                                 assertEquals("pong", result.asText());
                             } else if (StringUtils.equals("sum", methodName)) {
@@ -284,9 +267,9 @@ public class ConsoleExampleTest {
             RunScript.execute(connection, script);
             Boot boot = new Boot().sources(ConsoleMain.class) //
                     .hconfigFile("example-registry.properties") //
-                    .property("storage.address", source.getURL()) //
-                    .property("rpc.port", 0) //
-                    .property("data.directory", this.temporary.resolve("registry").toString());
+                    .property("meteor.storage.address", source.getURL()) //
+                    .property("meteor.rpc.port", 0) //
+                    .property("meteor.data.directory", this.temporary.resolve("registry").toString());
             try (BootApplication application = boot.start()) {
                 AppContext app = application.getAppContext();
 
@@ -319,7 +302,7 @@ public class ConsoleExampleTest {
         Boot boot = new Boot().sources(ConsoleMain.class)//
                 .hconfigFile("meteor.properties")//
                 .property("hasor.boot.web.connectors.http.port", 0)//
-                .property("data.directory", this.temporary.resolve("console").toString());
+                .property("meteor.data.directory", this.temporary.resolve("console").toString());
         try (BootApplication application = boot.start()) {
             AppContext app = application.getAppContext();
             assertEquals("net.hasor.meteor.console", app.getSettings().getString("hasor.loadPackages"));
@@ -358,8 +341,7 @@ public class ConsoleExampleTest {
         }
     }
 
-    private Boot application(Class<?> source, String configuration, String jdbcUrl, Set<Integer> ports)
-            throws Exception {
+    private Boot application(Class<?> source, String configuration, String jdbcUrl, Set<Integer> ports) throws Exception {
         Boot boot = new Boot().sources(source)//
                 .hconfigFile(configuration)//
                 .property("example.jdbc.url", jdbcUrl)//
@@ -384,7 +366,8 @@ public class ConsoleExampleTest {
         // 避开客户端临时端口段，避免启动中的注册连接抢占稍后才绑定的测试监听端口。
         for (int attempt = 0; attempt < 1000; attempt++) {
             int port = ThreadLocalRandom.current().nextInt(10000, 30000);
-            if (used.contains(port)) continue;
+            if (used.contains(port))
+                continue;
             try (ServerSocket socket = new ServerSocket(port, 1, InetAddress.getByName("127.0.0.1"))) {
                 used.add(port);
                 return port;

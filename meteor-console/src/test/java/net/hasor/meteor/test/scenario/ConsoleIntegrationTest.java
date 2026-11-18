@@ -75,7 +75,7 @@ public class ConsoleIntegrationTest {
     public void injectedSettingsKeepUtf8AccountsAndPasswordColons() throws Exception {
         // 各 Bean 分别接收配置，并通过实际登录验证 UTF-8 账号、冒号密码和 Cookie 属性。
         Path dataDirectory = this.directory.resolve("connections");
-        String settings = console(this.directory, Map.of("data.directory", dataDirectory.toString(), "meteor.unit", "east", "session.secureCookie", "true", "security.account", "运维:deployment:password"));
+        String settings = console(this.directory, Map.of("meteor.data.directory", dataDirectory.toString(), "meteor.client.unit", "east", "meteor.web.session.secure-cookie", "true", "meteor.web.auth.account", "运维:deployment:password"));
         Boot boot = new Boot()//
                 .sources(ConsoleMain.class)//
                 .hconfigFile(settings);
@@ -93,9 +93,9 @@ public class ConsoleIntegrationTest {
 
     @Test
     public void securityIsDisabledByDefaultAndIgnoresUnusedAccount() throws Exception {
-        // 不设置 security.enable，保留无效账号文本；默认关闭登录时不解析账号。
+        // 不设置 meteor.web.auth.enabled，保留无效账号文本；默认关闭登录时不解析账号。
         Path settings = this.directory.resolve("meteor.properties");
-        Files.writeString(settings, "hasor.boot.web.connectors.http.port=0\nsecurity.account=unused\n" + "data.directory=" + this.directory.resolve("connections") + "\n");
+        Files.writeString(settings, "hasor.boot.web.connectors.http.port=0\nmeteor.web.auth.account=unused\n" + "meteor.data.directory=" + this.directory.resolve("connections") + "\n");
         Boot boot = new Boot()//
                 .sources(ConsoleMain.class)//
                 .hconfigFile(settings.toUri().toString());
@@ -110,7 +110,7 @@ public class ConsoleIntegrationTest {
     @ValueSource(strings = { "admin:", "missing-separator", ":password" })
     public void enabledSecurityRejectsInvalidInjectedAccounts(String account) throws Exception {
         // 账号校验由 SessionService 初始化完成，错误配置必须阻止容器启动。
-        String settings = console(this.directory, Map.of("security.account", account));
+        String settings = console(this.directory, Map.of("meteor.web.auth.account", account));
         Boot boot = new Boot()//
                 .sources(ConsoleMain.class)//
                 .hconfigFile(settings);
@@ -121,7 +121,7 @@ public class ConsoleIntegrationTest {
     @Test
     public void invalidInjectedSecurityFlagDoesNotDisableAuthentication() throws Exception {
         // 注入字符串后严格校验开关，拼写错误不能静默关闭登录。
-        String settings = console(this.directory, Map.of("security.enable", "flase"));
+        String settings = console(this.directory, Map.of("meteor.web.auth.enabled", "flase"));
         Boot boot = new Boot()//
                 .sources(ConsoleMain.class)//
                 .hconfigFile(settings);
@@ -136,7 +136,7 @@ public class ConsoleIntegrationTest {
         registry(url);
         Path settings = this.directory.resolve("meteor.properties");
         try (ServerSocket occupied = new ServerSocket(0)) {
-            Files.writeString(settings, "hasor.boot.web.connectors.http.enabled=false\nrpc.port=0\nmanagement.token=remote-secret\n" + "data.directory=" + this.directory.resolve("remote") + "\n" + "storage.type=jdbc\nstorage.database=h2\nstorage.username=sa\nstorage.address=" + url + "\n" + "hasor.boot.web.connectors.http.port=" + occupied.getLocalPort() + "\n" + "security.enable=false\n");
+            Files.writeString(settings, "hasor.boot.web.connectors.http.enabled=false\nmeteor.rpc.port=0\nmeteor.rpc.auth.token=remote-secret\n" + "meteor.data.directory=" + this.directory.resolve("remote") + "\n" + "meteor.storage.type=jdbc\nmeteor.storage.database=h2\nmeteor.storage.username=sa\nmeteor.storage.address=" + url + "\n" + "hasor.boot.web.connectors.http.port=" + occupied.getLocalPort() + "\n" + "meteor.web.auth.enabled=false\n");
             Boot boot = new Boot()//
                     .sources(ConsoleMain.class)//
                     .hconfigFile(settings.toUri().toString());
@@ -155,7 +155,7 @@ public class ConsoleIntegrationTest {
         String url = "jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1";
         registry(url);
         Path settings = this.directory.resolve("meteor.properties");
-        Files.writeString(settings, "hasor.boot.web.connectors.http.enabled=false\nrpc.port=0\nmanagement.token=remote-secret\n" + "data.directory=" + this.directory.resolve("remote") + "\n" + "storage.type=jdbc\nstorage.database=h2\nstorage.username=sa\nstorage.address=" + url + "\n");
+        Files.writeString(settings, "hasor.boot.web.connectors.http.enabled=false\nmeteor.rpc.port=0\nmeteor.rpc.auth.token=remote-secret\n" + "meteor.data.directory=" + this.directory.resolve("remote") + "\n" + "meteor.storage.type=jdbc\nmeteor.storage.database=h2\nmeteor.storage.username=sa\nmeteor.storage.address=" + url + "\n");
         int port;
         Boot boot = new Boot()//
                 .sources(ConsoleMain.class)//
@@ -174,7 +174,7 @@ public class ConsoleIntegrationTest {
         // 注册中心 RPC 独立于 HTTP 开关；同一次标准 Boot 启动可同时提供两种入口。
         String url = "jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1";
         registry(url);
-        String settings = console(this.directory, Map.of("hasor.boot.web.connectors.http.enabled", "true", "storage.type", "jdbc", "storage.database", "h2", "storage.username", "sa", "storage.address", url, "rpc.port", "0", "management.token", "remote-secret"));
+        String settings = console(this.directory, Map.of("hasor.boot.web.connectors.http.enabled", "true", "meteor.storage.type", "jdbc", "meteor.storage.database", "h2", "meteor.storage.username", "sa", "meteor.storage.address", url, "meteor.rpc.port", "0", "meteor.rpc.auth.token", "remote-secret"));
         Boot boot = new Boot()//
                 .sources(ConsoleMain.class)//
                 .hconfigFile(settings);
@@ -193,7 +193,7 @@ public class ConsoleIntegrationTest {
         try (ServerSocket available = new ServerSocket(0)) {
             httpPort = available.getLocalPort();
         }
-        String settings = console(this.directory, Map.of("hasor.boot.web.connectors.http.port", String.valueOf(httpPort), "storage.type", "unsupported", "storage.address", "unused", "management.token", "remote-secret"));
+        String settings = console(this.directory, Map.of("hasor.boot.web.connectors.http.port", String.valueOf(httpPort), "meteor.storage.type", "unsupported", "meteor.storage.address", "unused", "meteor.rpc.auth.token", "remote-secret"));
         Boot boot = new Boot()//
                 .sources(ConsoleMain.class)//
                 .hconfigFile(settings);
@@ -210,7 +210,7 @@ public class ConsoleIntegrationTest {
         String url = "jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1";
         registry(url);
         Path settings = this.directory.resolve("meteor.properties");
-        Files.writeString(settings, "hasor.boot.web.connectors.http.enabled=false\nrpc.host=127.0.0.1\nrpc.port=0\nmanagement.token=remote-secret\n" + "data.directory=" + this.directory.resolve("remote") + "\n" + "storage.type=jdbc\nstorage.database=h2\nstorage.username=sa\nstorage.address=" + url + "\n");
+        Files.writeString(settings, "hasor.boot.web.connectors.http.enabled=false\nmeteor.rpc.host=127.0.0.1\nmeteor.rpc.port=0\nmeteor.rpc.auth.token=remote-secret\n" + "meteor.data.directory=" + this.directory.resolve("remote") + "\n" + "meteor.storage.type=jdbc\nmeteor.storage.database=h2\nmeteor.storage.username=sa\nmeteor.storage.address=" + url + "\n");
         Boot bootA = new Boot()//
                 .sources(ConsoleMain.class)//
                 .hconfigFile(settings.toUri().toString());

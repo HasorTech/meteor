@@ -1,0 +1,9 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd">
+    <bean id="echoService" class="net.hasor.example.spring.provider.EchoServiceImpl"/>
+    <bean id="meteorConfiguration" class="net.hasor.example.spring.XmlProviderMain" factory-method="configuration">
+        <constructor-arg value="29879"/>
+    </bean>
+    <bean id="meteorContext" factory-bean="meteorConfiguration" factory-method="buildContext" destroy-method="close"/>
+</beans>

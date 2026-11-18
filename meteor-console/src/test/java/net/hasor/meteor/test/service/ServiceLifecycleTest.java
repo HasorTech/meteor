@@ -176,8 +176,8 @@ public class ServiceLifecycleTest {
             binder.bindType(ClusterService.class);
         });
         hasor.addSettings(Settings.DefaultNameSpace, "hasor.boot.web.connectors.http.enabled", false);
-        hasor.addSettings(Settings.DefaultNameSpace, "data.directory", this.temporary.toString());
-        hasor.addSettings(Settings.DefaultNameSpace, "security.enable", false);
+        hasor.addSettings(Settings.DefaultNameSpace, "meteor.data.directory", this.temporary.toString());
+        hasor.addSettings(Settings.DefaultNameSpace, "meteor.web.auth.enabled", false);
         return hasor;
     }
 }

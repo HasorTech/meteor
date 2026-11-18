@@ -1,0 +1,10 @@
+plugins {
+    id 'java'
+}
+
+description = 'Metro JAX-WS SDK examples'
+
+dependencies {
+    implementation project(':java:contracts')
+    implementation 'com.sun.xml.ws:jaxws-rt:4.0.5'
+}

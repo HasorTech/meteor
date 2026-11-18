@@ -11,6 +11,7 @@ import net.hasor.cobble.StringUtils;
 import net.hasor.core.AppContext;
 import net.hasor.core.Inject;
 import net.hasor.core.Singleton;
+import net.hasor.meteor.console.global.MeteorConfig;
 import net.hasor.meteor.console.global.auth.SessionService;
 import net.hasor.meteor.registry.RegistryTokenProvider;
 
@@ -19,6 +20,8 @@ import net.hasor.meteor.registry.RegistryTokenProvider;
 public final class CommandCredentials implements RegistryTokenProvider {
     @Inject
     private       AppContext          appContext;
+    @Inject
+    private       MeteorConfig        config;
     private final ThreadLocal<String> token = new ThreadLocal<>();
 
     public <T> T withToken(String value, Callable<T> operation) throws Exception {
@@ -44,7 +47,7 @@ public final class CommandCredentials implements RegistryTokenProvider {
         if (current != null) {
             return current;
         }
-        if (!this.appContext.getSettings().getBoolean("console.web.enabled", true)) {
+        if (!this.config.isWebEnabled()) {
             throw new IllegalStateException("No management credentials in current call");
         }
         return this.appContext.getInstance(SessionService.class).getToken();

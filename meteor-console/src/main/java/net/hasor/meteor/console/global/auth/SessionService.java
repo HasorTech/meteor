@@ -63,12 +63,13 @@ public final class SessionService implements RegistryTokenProvider {
         String account = this.config.getSecurityAccount();
         int separator = account == null ? -1 : account.indexOf(':');
         if (separator < 0) {
-            throw new IllegalArgumentException("security.account 格式必须为 账号:密码");
+            throw new IllegalArgumentException("meteor.web.auth.account 格式必须为 账号:密码");
         }
+
         this.username = account.substring(0, separator).trim();
         this.password = account.substring(separator + 1);
         if (StringUtils.isBlank(this.username) || StringUtils.isBlank(this.password)) {
-            throw new IllegalArgumentException("请配置 security.account=账号:密码；无需登录时设置 security.enable=false");
+            throw new IllegalArgumentException("请配置 meteor.web.auth.account=账号:密码；无需登录时设置 meteor.web.auth.enabled=false");
         }
     }
 
@@ -86,7 +87,7 @@ public final class SessionService implements RegistryTokenProvider {
         String token = this.cookies.token(invoker.getHttpRequest());
         this.authenticate(token);
         // 只有用户显式关闭登录认证时，才允许匿名管理。
-        return this.config.isSecurityEnabled() ? token : "security.enable=false";
+        return this.config.isSecurityEnabled() ? token : "anonymous-console-session";
     }
 
     public String login(String previousToken, String username, String password) {

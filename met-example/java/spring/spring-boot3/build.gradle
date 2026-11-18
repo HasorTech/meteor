@@ -1,0 +1,25 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.14'
+}
+
+description = 'Meteor Spring Boot 3 Echo example'
+
+springBoot {
+    mainClass = providers.gradleProperty('mainClass').orElse('net.hasor.example.integration.ProviderMain')
+}
+
+dependencies {
+    implementation platform(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation "net.hasor:meteor-spring-starter:${version}"
+}
+
+tasks.named('bootJar') {
+    archiveClassifier.set(springBoot.mainClass.map { entry ->
+        if (entry.endsWith('ConsumerMain')) {
+            return 'consumer'
+        }
+        return 'provider'
+    })
+}

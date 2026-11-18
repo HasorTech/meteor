@@ -113,8 +113,8 @@ public class ConsoleRemoteScenarioTest {
                     binder.bindType(RemoteProviderFactory.class);
                     binder.bindType(CommandDispatcher.class);
                 }).addSettings(Settings.DefaultNameSpace, "hasor.boot.web.connectors.http.enabled", false) //
-                .addSettings(Settings.DefaultNameSpace, "data.directory", this.temporary.toString()) //
-                .addSettings(Settings.DefaultNameSpace, "security.enable", false);
+                .addSettings(Settings.DefaultNameSpace, "meteor.data.directory", this.temporary.toString()) //
+                .addSettings(Settings.DefaultNameSpace, "meteor.web.auth.enabled", false);
     }
 
     @Test

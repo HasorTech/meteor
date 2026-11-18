@@ -9,9 +9,9 @@ package net.hasor.meteor.test.scenario;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
-import net.hasor.cobble.StringUtils;
 import net.hasor.boot.Boot;
 import net.hasor.boot.BootApplication;
+import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.annotation.MetService;
 import net.hasor.meteor.bootstrap.MetConfiguration;
@@ -64,9 +64,9 @@ public final class ConsoleBrowserFixture {
         var anonymousDirectory = Files.createDirectories(fixtureDirectory.resolve("anonymous"));
         var anonymous = console(anonymousDirectory, Map.of(//
                 "hasor.boot.web.connectors.http.port", "18766", //
-                "security.enable", "false"));
+                "meteor.web.auth.enabled", "false"));
         var remoteSettings = Files.createDirectories(configDirectory.resolve("remote")).resolve("meteor.properties");
-        Files.writeString(remoteSettings, "hasor.boot.web.connectors.http.enabled=false\nrpc.host=127.0.0.1\nrpc.port=18768\nmanagement.token=browser-remote-secret\n" + "storage.type=jdbc\nstorage.database=h2\nstorage.username=sa\n" + "data.directory=" + configDirectory.resolve("remote") + "\n" + "storage.address=jdbc:h2:mem:console-browser;DB_CLOSE_DELAY=-1\n");
+        Files.writeString(remoteSettings, "hasor.boot.web.connectors.http.enabled=false\nmeteor.rpc.host=127.0.0.1\nmeteor.rpc.port=18768\nmeteor.rpc.auth.token=browser-remote-secret\n" + "meteor.storage.type=jdbc\nmeteor.storage.database=h2\nmeteor.storage.username=sa\n" + "meteor.data.directory=" + configDirectory.resolve("remote") + "\n" + "meteor.storage.address=jdbc:h2:mem:console-browser;DB_CLOSE_DELAY=-1\n");
         Boot remoteBoot = new Boot()//
                 .sources(ConsoleMain.class)//
                 .hconfigFile(remoteSettings.toUri().toString());
@@ -84,7 +84,8 @@ public final class ConsoleBrowserFixture {
              BootApplication server = consoleBoot.start(); //
              BootApplication publicServer = publicConsoleBoot.start()) {
             a.publisher().rsfService(OrderService.class, id -> {
-                if (StringUtils.equals(id, "debug-fail")) throw new IllegalArgumentException("debug-fail: provider rejected request");
+                if (StringUtils.equals(id, "debug-fail"))
+                    throw new IllegalArgumentException("debug-fail: provider rejected request");
                 return "order:" + id;
             }).register();
             a.publisher().rsfService(InventoryService.class, id -> 12).register();

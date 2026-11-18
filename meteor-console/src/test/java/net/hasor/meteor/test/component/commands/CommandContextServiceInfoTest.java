@@ -73,8 +73,8 @@ class CommandContextServiceInfoTest {
             binder.bindType(ProviderFactory.class).toInstance(factory);
         });
         hasor.addSettings(Settings.DefaultNameSpace, "hasor.boot.web.connectors.http.enabled", false);
-        hasor.addSettings(Settings.DefaultNameSpace, "data.directory", this.temporary.toString());
-        hasor.addSettings(Settings.DefaultNameSpace, "security.enable", false);
+        hasor.addSettings(Settings.DefaultNameSpace, "meteor.data.directory", this.temporary.toString());
+        hasor.addSettings(Settings.DefaultNameSpace, "meteor.web.auth.enabled", false);
 
         // 通过容器中的命令入口查询；没有实例范围时不访问任何实例清单。
         try (AppContext app = hasor.build()) {

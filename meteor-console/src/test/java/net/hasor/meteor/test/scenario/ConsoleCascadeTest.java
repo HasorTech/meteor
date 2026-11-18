@@ -247,14 +247,14 @@ public class ConsoleCascadeTest {
     private String configuration(String name, String type, String address, String token, String downstreamToken) throws Exception {
         Map<String, String> overrides = new LinkedHashMap<>();
         overrides.put("hasor.boot.web.connectors.http.enabled", "false");
-        overrides.put("rpc.host", "127.0.0.1");
-        overrides.put("rpc.port", "0");
-        overrides.put("management.token", token);
-        overrides.put("storage.type", type);
-        overrides.put("storage.address", address);
-        overrides.put("storage.database", "h2");
-        overrides.put("storage.username", "sa");
-        overrides.put("storage.managementToken", downstreamToken);
+        overrides.put("meteor.rpc.host", "127.0.0.1");
+        overrides.put("meteor.rpc.port", "0");
+        overrides.put("meteor.rpc.auth.token", token);
+        overrides.put("meteor.storage.type", type);
+        overrides.put("meteor.storage.address", address);
+        overrides.put("meteor.storage.database", "h2");
+        overrides.put("meteor.storage.username", "sa");
+        overrides.put("meteor.storage.management-token", downstreamToken);
         return console(this.directory.resolve(name), overrides);
     }
 

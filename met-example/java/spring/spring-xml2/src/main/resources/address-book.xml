@@ -1,0 +1,5 @@
+<address-book xmlns="https://www.hasor.net/schema/meteor-address-book">
+    <service group="default" name="EchoService" version="1.0.0">
+        <address unit="default">rsf://127.0.0.1:29880</address>
+    </service>
+</address-book>

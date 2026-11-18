@@ -58,11 +58,11 @@ public class ConsoleMain implements Module {
         String config = configuration(arguments).toUri().toString();
         Hasor hasor = Hasor.create().mainSettingWith(config).bindArguments(arguments);
         Settings settings = hasor.buildSettings();
-        if (settings.getBoolean("console.web.enabled", true)) {
+        if (settings.getBoolean(MeteorConfig.WEB_ENABLED_KEY, true)) {
             return new Boot().arguments(arguments).sources(ConsoleMain.class).hconfigFile(config).start();
         }
 
-        if (!settings.getBoolean("telnet.enabled", false) && StringUtils.isBlank(settings.getString("storage.address"))) {
+        if (!settings.getBoolean(MeteorConfig.TELNET_ENABLED_KEY, false) && StringUtils.isBlank(settings.getString(MeteorConfig.REGISTRY_ADDRESS_KEY))) {
             throw new IllegalArgumentException("Headless Console requires Telnet or a registry management listener");
         }
 

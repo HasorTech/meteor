@@ -40,7 +40,7 @@ public class ConsoleSecurityTest {
     @Test
     public void jwtCookieRejectsTamperingAndRevokesOnlyCurrentSession() throws Exception {
         Path rootDirectory = this.temporary;
-        String configuration = console(rootDirectory, Map.of("session.secureCookie", "true"));
+        String configuration = console(rootDirectory, Map.of("meteor.web.session.secure-cookie", "true"));
         Boot boot = new Boot()//
                 .sources(ConsoleMain.class)//
                 .hconfigFile(configuration);
@@ -148,7 +148,7 @@ public class ConsoleSecurityTest {
         // 控制台允许免登录，但目标实例的管理 RPC 仍要求独立凭据。
         RegistryConfiguration registry = new RegistryConfiguration().setOnline(false).setManagementToken("target-secret");
         var configuration = application(this.temporary.resolve("target"), registry, "secured-target", "default", true);
-        String console = console(this.temporary, Map.of("security.enable", "false"));
+        String console = console(this.temporary, Map.of("meteor.web.auth.enabled", "false"));
         Boot boot = new Boot()//
                 .sources(ConsoleMain.class)//
                 .hconfigFile(console);
@@ -195,8 +195,8 @@ public class ConsoleSecurityTest {
         Path rootDirectory = this.temporary;
         Path configuration = rootDirectory.resolve("meteor.properties");
         String content = "hasor.boot.web.connectors.http.port=0\n" + //
-                "data.directory=" + rootDirectory.toAbsolutePath().normalize() + "\n" + //
-                "security.enable=false\n";
+                "meteor.data.directory=" + rootDirectory.toAbsolutePath().normalize() + "\n" + //
+                "meteor.web.auth.enabled=false\n";
         Files.writeString(configuration, content, StandardCharsets.UTF_8);
         String url = "jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1";
         registry(url);

@@ -43,8 +43,9 @@ public final class ConsoleTelnetService implements AutoCloseable {
         InetAddress host = InetAddress.getByName(this.config.getTelnetHost());
         String password = this.config.getTelnetPassword();
         if (!host.isLoopbackAddress() && StringUtils.isBlank(password)) {
-            throw new IllegalArgumentException("Non-loopback Telnet requires telnet.password or METEOR_TELNET_PASSWORD");
+            throw new IllegalArgumentException("Non-loopback Telnet requires meteor.telnet.auth.password or METEOR_TELNET_PASSWORD");
         }
+
         this.server = new ConsoleTelnetServer(this.configuration());
         this.server.addCommand("status", new StatusCommand(this.config));
         this.server.addCommand("clusters", new ClustersCommand(this.clusters));

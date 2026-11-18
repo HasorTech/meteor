@@ -1,0 +1,12 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd">
+    <bean id="meteorConfiguration" class="net.hasor.example.spring.XmlConsumerMain" factory-method="configuration"/>
+    <bean id="meteorContext" factory-bean="meteorConfiguration" factory-method="buildContext"
+          init-method="start" destroy-method="close"/>
+    <bean id="echoService" class="net.hasor.meteor.ServiceBean">
+        <property name="context" ref="meteorContext"/>
+        <property name="serviceInterface" value="net.hasor.example.spring.api.EchoService"/>
+        <property name="address" value="rsf://127.0.0.1:29879"/>
+    </bean>
+</beans>

@@ -265,7 +265,7 @@ public class CommandDispatcherTest {
         try (AppContext app = hasor.build()) {
             CommandDispatcher dispatcher = app.getInstance(CommandDispatcher.class);
             ClusterInfoRequest request = new ClusterInfoRequest(clusterTarget());
-            assertThrows(IllegalArgumentException.class, () -> dispatcher.execute((String) null, request));
+            assertThrows(IllegalArgumentException.class, () -> dispatcher.execute(null, request));
             assertEquals(0, opened.get());
         }
     }
@@ -365,8 +365,8 @@ public class CommandDispatcherTest {
             binder.bindType(ProviderFactory.class).toInstance(factory);
         });
         hasor.addSettings(Settings.DefaultNameSpace, "hasor.boot.web.connectors.http.enabled", false);
-        hasor.addSettings(Settings.DefaultNameSpace, "data.directory", this.temporary.toString());
-        hasor.addSettings(Settings.DefaultNameSpace, "security.enable", false);
+        hasor.addSettings(Settings.DefaultNameSpace, "meteor.data.directory", this.temporary.toString());
+        hasor.addSettings(Settings.DefaultNameSpace, "meteor.web.auth.enabled", false);
         return hasor;
     }
 

@@ -1,0 +1,18 @@
+plugins {
+    id 'application'
+}
+
+description = 'Meteor Spring Boot 2 Echo example'
+
+application {
+    mainClass = providers.gradleProperty('mainClass').orElse('net.hasor.example.integration.ProviderMain')
+}
+
+dependencies {
+    implementation platform('org.springframework.boot:spring-boot-dependencies:2.7.18')
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation("net.hasor:meteor-spring-starter:${version}") {
+        exclude group: 'org.springframework.boot'
+        exclude group: 'org.springframework'
+    }
+}

@@ -1,0 +1,11 @@
+plugins {
+    id 'application'
+}
+
+application {
+    mainClass = providers.gradleProperty('mainClass').orElse('net.hasor.example.basic.EchoMain')
+}
+
+dependencies {
+    implementation "net.hasor:meteor:${version}"
+}

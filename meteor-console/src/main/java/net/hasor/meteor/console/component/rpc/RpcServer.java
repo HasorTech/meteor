@@ -34,7 +34,7 @@ public final class RpcServer implements AutoCloseable {
         }
         String token = this.config.getManagementToken();
         if (StringUtils.isBlank(token)) {
-            throw new IllegalArgumentException("Set METEOR_REGISTRY_MANAGEMENT_TOKEN or management.token");
+            throw new IllegalArgumentException("Set METEOR_REGISTRY_MANAGEMENT_TOKEN or meteor.rpc.auth.token");
         }
 
         ClusterProfile profile = new ClusterProfile();

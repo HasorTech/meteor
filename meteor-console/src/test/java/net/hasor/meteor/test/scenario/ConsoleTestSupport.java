@@ -77,11 +77,11 @@ final class ConsoleTestSupport {
         properties.put("hasor.boot.web.connectors.http.host", "127.0.0.1");
         properties.put("hasor.boot.web.connectors.http.port", "0");
         properties.put("hasor.boot.web.health.enabled", "false");
-        properties.put("data.directory", directory.toAbsolutePath().normalize().toString());
-        properties.put("meteor.unit", "default");
-        properties.put("session.secureCookie", "false");
-        properties.put("security.enable", "true");
-        properties.put("security.account", "admin:test-password");
+        properties.put("meteor.data.directory", directory.toAbsolutePath().normalize().toString());
+        properties.put("meteor.client.unit", "default");
+        properties.put("meteor.web.session.secure-cookie", "false");
+        properties.put("meteor.web.auth.enabled", "true");
+        properties.put("meteor.web.auth.account", "admin:test-password");
         properties.putAll(overrides);
 
         StringBuilder content = new StringBuilder();

@@ -51,8 +51,9 @@ public final class CommandDispatcher implements AutoCloseable {
     public void init() {
         long lifetime = this.config.getCommandContextTtl();
         if (lifetime <= 0) {
-            throw new IllegalArgumentException("commands.context.ttl 必须大于 0，单位为毫秒");
+            throw new IllegalArgumentException("meteor.commands.context.ttl-millis 必须大于 0，单位为毫秒");
         }
+
         this.lifetimeNanos = TimeUnit.MILLISECONDS.toNanos(lifetime);
         for (CommandType type : CommandType.values()) {
             this.commands.put(type, this.appContext.getInstance(type.getCommandType()));

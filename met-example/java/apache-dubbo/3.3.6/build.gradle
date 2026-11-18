@@ -1,0 +1,12 @@
+plugins {
+    id 'java'
+}
+
+description = 'Apache Dubbo 3.3 SDK examples'
+
+dependencies {
+    implementation project(':java:contracts')
+    implementation 'org.apache.dubbo:dubbo:3.3.6'
+    implementation 'org.apache.curator:curator-recipes:5.2.0'
+    implementation 'org.apache.curator:curator-x-discovery:5.2.0'
+}

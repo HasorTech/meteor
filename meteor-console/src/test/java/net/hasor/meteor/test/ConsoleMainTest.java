@@ -27,18 +27,18 @@ import net.hasor.boot.web.WebServerConfig;
 import net.hasor.cobble.setting.Settings;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.console.ConsoleMain;
-import net.hasor.meteor.example.ConsoleLauncher;
 import net.hasor.meteor.console.dao.ClusterDao;
 import net.hasor.meteor.console.global.MeteorConfig;
 import net.hasor.meteor.console.global.auth.SessionService;
 import net.hasor.meteor.console.global.http.ConsoleJsonRender;
 import net.hasor.meteor.console.utils.JsonUtils;
+import net.hasor.meteor.example.ConsoleLauncher;
 import net.hasor.web.binder.RenderDef;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.function.ThrowingConsumer;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.parallel.ResourceLock;
 import org.junit.jupiter.api.parallel.Resources;
 import static org.junit.jupiter.api.Assertions.*;
@@ -200,10 +200,31 @@ public class ConsoleMainTest {
             var renderer = assertDoesNotThrow(() -> json.newEngine(application.getAppContext()));
             assertInstanceOf(ConsoleJsonRender.class, renderer);
 
-            // 默认 data.directory 经注入生效，配置文件本身仍保持缺失。
+            // 默认 meteor.data.directory 经注入生效，配置文件本身仍保持缺失。
             assertNotNull(application.getAppContext().getInstance(ClusterDao.class));
             assertTrue(Files.isDirectory(this.temporary.resolve(".meteor/data")));
             assertFalse(Files.exists(configuration));
+        }
+    }
+
+    @Test
+    public void legacyConsoleConfigurationKeysAreIgnored() throws Exception {
+        // 文件仅含旧版控制台 key，启动和认证应使用新版缺省值。
+        Path configuration = this.temporary.resolve("legacy.properties");
+        Files.writeString(configuration, """
+                hasor.boot.web.connectors.http.port=0
+                console.web.enabled=false
+                console.web.auth.enabled=true
+                meteor.console.web.enabled=false
+                meteor.console.web.auth.enabled=true
+                security.enable=true
+                meteor.unit=core-unit
+                """);
+
+        try (BootApplication application = ConsoleMain.start("--config=" + configuration)) {
+            SessionService sessions = application.getAppContext().getInstance(SessionService.class);
+            assertFalse(sessions.isSecurityEnabled());
+            assertEquals("default", application.getAppContext().getInstance(MeteorConfig.class).getUnit());
         }
     }
 
@@ -214,10 +235,10 @@ public class ConsoleMainTest {
         Path configuration = this.temporary.resolve("meteor.properties");
         Properties properties = new Properties();
         properties.setProperty("hasor.boot.web.connectors.http.enabled", "false");
-        properties.setProperty("data.directory", directory.toString());
-        properties.setProperty("meteor.unit", "east");
-        properties.setProperty("security.enable", "true");
-        properties.setProperty("security.account", "operator:test-password");
+        properties.setProperty("meteor.data.directory", directory.toString());
+        properties.setProperty("meteor.client.unit", "east");
+        properties.setProperty("meteor.web.auth.enabled", "true");
+        properties.setProperty("meteor.web.auth.account", "operator:test-password");
         try (Writer writer = Files.newBufferedWriter(configuration)) {
             properties.store(writer, null);
         }
@@ -252,7 +273,7 @@ public class ConsoleMainTest {
         }
         Properties properties = new Properties();
         properties.setProperty("hasor.boot.web.connectors.http.port", Integer.toString(port));
-        properties.setProperty("meteor.unit", unit);
+        properties.setProperty("meteor.client.unit", unit);
         try (Writer writer = Files.newBufferedWriter(configuration)) {
             properties.store(writer, null);
         }

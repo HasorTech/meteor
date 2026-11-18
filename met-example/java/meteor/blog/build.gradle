@@ -1,0 +1,14 @@
+plugins {
+    id 'application'
+}
+
+application {
+    mainClass = providers.gradleProperty('mainClass').orElse('net.hasor.example.blog.DiscoveryMain')
+}
+
+dependencies {
+    implementation "net.hasor:meteor:${version}"
+    implementation "net.hasor:meteor-registry:${version}"
+    runtimeOnly "net.hasor:meteor-protocol-jsonrpc:${version}"
+    runtimeOnly "net.hasor:meteor-protocol-hprose:${version}"
+}

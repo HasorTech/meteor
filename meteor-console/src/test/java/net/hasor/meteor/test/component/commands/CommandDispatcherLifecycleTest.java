@@ -50,7 +50,7 @@ public class CommandDispatcherLifecycleTest {
         RuntimeException failure = assertThrows(RuntimeException.class, hasor::build);
         Throwable cause = ExceptionUtils.getRootCause(failure);
         assertInstanceOf(IllegalArgumentException.class, cause);
-        assertTrue(cause.getMessage().contains("commands.context.ttl"));
+        assertTrue(cause.getMessage().contains("meteor.commands.context.ttl-millis"));
         assertEquals(0, factory.opened.get());
     }
 
@@ -207,9 +207,9 @@ public class CommandDispatcherLifecycleTest {
             binder.bindType(CommandDispatcher.class).asEagerSingleton();
         });
         hasor.addSettings(Settings.DefaultNameSpace, "hasor.boot.web.connectors.http.enabled", false);
-        hasor.addSettings(Settings.DefaultNameSpace, "data.directory", this.temporary.toString());
-        hasor.addSettings(Settings.DefaultNameSpace, "security.enable", false);
-        hasor.addSettings(Settings.DefaultNameSpace, "commands.context.ttl", lifetime);
+        hasor.addSettings(Settings.DefaultNameSpace, "meteor.data.directory", this.temporary.toString());
+        hasor.addSettings(Settings.DefaultNameSpace, "meteor.web.auth.enabled", false);
+        hasor.addSettings(Settings.DefaultNameSpace, "meteor.commands.context.ttl-millis", lifetime);
         return hasor;
     }
 

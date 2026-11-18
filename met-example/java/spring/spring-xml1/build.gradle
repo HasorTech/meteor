@@ -1,0 +1,13 @@
+plugins {
+    id 'application'
+}
+
+description = 'Meteor Spring XML explicit Bean example'
+
+application {
+    mainClass = providers.gradleProperty('mainClass').orElse('net.hasor.example.spring.XmlProviderMain')
+}
+
+dependencies {
+    implementation "net.hasor:meteor-spring:${version}"
+}
