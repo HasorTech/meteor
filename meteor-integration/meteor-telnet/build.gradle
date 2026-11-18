@@ -1,0 +1,30 @@
+/*
+ * Copyright 2015-2026 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0.
+ * See the LICENSE.txt file for the full license.
+ * https://www.apache.org/licenses/LICENSE-2.0
+ */
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
+
+ext.pomName = 'Meteor Telnet'
+description = 'Embedded local Telnet operations and governance for Meteor.'
+
+dependencies {
+    api project(':meteor')
+    api "net.hasor:tconsole:${property('lib.neta')}"
+    compileOnly project(':meteor-registry')
+
+    testImplementation project(':meteor-registry')
+    testImplementation "ognl:ognl:${property('lib.ognl')}"
+}
+
+// 隔离测试使用 Gradle 实际解析的运行类路径，不手工维护依赖列表。
+tasks.named('test') {
+    doFirst {
+        systemProperty 'tconsole.test.classpath', sourceSets.test.runtimeClasspath.asPath
+    }
+}
