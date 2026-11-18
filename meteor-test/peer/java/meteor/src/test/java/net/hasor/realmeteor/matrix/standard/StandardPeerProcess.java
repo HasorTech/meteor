@@ -59,6 +59,10 @@ final class StandardPeerProcess implements AutoCloseable {
             builder.environment().put("METEOR_NXN_ORDER_DESCRIPTION", request.required("description").textValue());
             builder.environment().put("METEOR_NXN_ORDER_ATTACHMENT", request.required("attachment").textValue());
         }
+        String tls = variables.get("${tls}");
+        if (tls != null) {
+            builder.environment().put("METEOR_ORDER_TLS", tls);
+        }
         builder.environment().put("METEOR_ORDER_BIND_HOST", "0.0.0.0");
         builder.environment().put("METEOR_ORDER_PORT", "0");
         builder.environment().remove("METEOR_ORDER_TARGET");

@@ -33,7 +33,8 @@
             "direct"
           ],
           "runtimeProfile": "connectServer",
-          "entry": "connect"
+          "entry": "connect",
+          "networkPaths": ["direct", "nginx-clear"]
         }
       ]
     }

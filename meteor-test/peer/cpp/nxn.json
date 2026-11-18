@@ -12,12 +12,14 @@
         {
           "id": "current", "api": "order-v1", "protocol": "oncrpc", "protocolVersion": "2",
           "wire": "oncrpc-xdr-tcp-clear", "roles": ["provider", "consumer"],
-          "discoveries": ["direct"], "runtimeProfile": "cppOncrpc"
+          "discoveries": ["direct"], "runtimeProfile": "cppOncrpc",
+          "networkPaths": ["direct", "nginx-clear"]
         },
         {
           "id": "latest", "api": "order-v1", "protocol": "oncrpc", "protocolVersion": "2",
           "wire": "oncrpc-xdr-tcp-clear", "roles": ["provider", "consumer"],
-          "discoveries": ["direct"], "runtimeProfile": "cppOncrpcLatest"
+          "discoveries": ["direct"], "runtimeProfile": "cppOncrpcLatest",
+          "networkPaths": ["direct", "nginx-clear"]
         }
       ]
     },
@@ -31,11 +33,13 @@
       "capabilities": [
         {
           "id": "current", "api": "order-v1", "protocol": "grpc", "wire": "grpc-protobuf-http2-clear",
-          "roles": ["provider", "consumer"], "discoveries": ["direct"], "runtimeProfile": "grpcCurrent"
+          "roles": ["provider", "consumer"], "discoveries": ["direct"], "runtimeProfile": "grpcCurrent",
+          "networkPaths": ["direct", "nginx-clear"]
         },
         {
           "id": "latest", "api": "order-v1", "protocol": "grpc", "wire": "grpc-protobuf-http2-clear",
-          "roles": ["provider", "consumer"], "discoveries": ["direct"], "runtimeProfile": "grpcLatest"
+          "roles": ["provider", "consumer"], "discoveries": ["direct"], "runtimeProfile": "grpcLatest",
+          "networkPaths": ["direct", "nginx-clear"]
         }
       ]
     },
@@ -49,11 +53,13 @@
       "capabilities": [
         {
           "id": "current", "api": "order-v1", "protocol": "thrift", "wire": "thrift-binary-framed-tcp-clear",
-          "roles": ["provider", "consumer"], "discoveries": ["direct"], "runtimeProfile": "thriftCurrent"
+          "roles": ["provider", "consumer"], "discoveries": ["direct"], "runtimeProfile": "thriftCurrent",
+          "networkPaths": ["direct", "nginx-clear"]
         },
         {
           "id": "latest", "api": "order-v1", "protocol": "thrift", "wire": "thrift-binary-framed-tcp-clear",
-          "roles": ["provider", "consumer"], "discoveries": ["direct"], "runtimeProfile": "thriftLatest"
+          "roles": ["provider", "consumer"], "discoveries": ["direct"], "runtimeProfile": "thriftLatest",
+          "networkPaths": ["direct", "nginx-clear"]
         }
       ]
     }

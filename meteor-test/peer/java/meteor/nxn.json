@@ -25,19 +25,20 @@
         }
       },
       "capabilities": [
-        { "id": "rsf", "api": "order-v1", "protocol": "rsf", "protocolVersion": "1", "wire": "rsf-java-tcp-clear", "roles": ["provider", "consumer"], "discoveries": ["direct"] },
-        { "id": "grpc", "api": "order-v1", "protocol": "grpc", "wire": "grpc-protobuf-http2-clear", "roles": ["provider", "consumer"], "discoveries": ["direct"] },
-        { "id": "grpc-web", "api": "order-v1", "protocol": "grpc-web", "entry": "grpcweb", "wire": "grpc-web-protobuf-http1-clear", "roles": ["provider", "consumer"], "discoveries": ["direct"] },
-        { "id": "connect", "api": "order-v1", "protocol": "connect", "protocolVersion": "1", "wire": "connect-protobuf-http1-clear", "roles": ["provider", "consumer"], "discoveries": ["direct"] },
-        { "id": "dubbo", "api": "order-v1", "protocol": "dubbo", "wire": "dubbo-hessian2-tcp-clear", "roles": ["provider", "consumer"], "discoveries": ["direct"] },
-        { "id": "triple", "api": "order-v1", "protocol": "triple", "wire": "triple-protobuf-http2-clear", "roles": ["provider", "consumer"], "discoveries": ["direct"] },
-        { "id": "thrift", "api": "order-v1", "protocol": "thrift", "wire": "thrift-binary-framed-tcp-clear", "roles": ["provider", "consumer"], "discoveries": ["direct"] },
-        { "id": "hprose", "api": "order-v1", "protocol": "hprose", "wire": "hprose-hprose-http1-clear", "roles": ["provider", "consumer"], "discoveries": ["direct"] },
-        { "id": "soap", "api": "order-v1", "protocol": "soap", "protocolVersion": "1.1", "wire": "soap11-xml-http1-clear", "roles": ["provider", "consumer"], "discoveries": ["direct"] },
-        { "id": "hessian", "api": "order-v1", "protocol": "hessian", "protocolVersion": "2", "wire": "hessian2-http1-clear", "roles": ["provider", "consumer"], "discoveries": ["direct"] },
-        { "id": "jsonrpc", "api": "order-v1", "protocol": "jsonrpc", "protocolVersion": "2.0", "wire": "jsonrpc2-json-http1-clear", "roles": ["provider", "consumer"], "discoveries": ["direct"] },
-        { "id": "xmlrpc", "api": "order-v1", "protocol": "xmlrpc", "wire": "xmlrpc-xml-http1-clear", "roles": ["provider", "consumer"], "discoveries": ["direct"] },
-        { "id": "oncrpc", "api": "order-v1", "protocol": "oncrpc", "protocolVersion": "2", "wire": "oncrpc-xdr-tcp-clear", "roles": ["provider", "consumer"], "discoveries": ["direct"] }
+        { "id": "rsf", "api": "order-v1", "protocol": "rsf", "protocolVersion": "1", "wire": "rsf-java-tcp-clear", "roles": ["provider", "consumer"], "discoveries": ["direct"], "networkPaths": ["direct", "nginx-clear", "nginx-tls-pass", "nginx-tls-edge", "nginx-tls-bridge"] },
+        { "id": "grpc", "api": "order-v1", "protocol": "grpc", "wire": "grpc-protobuf-http2-clear", "roles": ["provider", "consumer"], "discoveries": ["direct"], "networkPaths": ["direct", "nginx-clear", "nginx-tls-pass", "nginx-tls-edge", "nginx-tls-bridge"] },
+        { "id": "grpc-web", "api": "order-v1", "protocol": "grpc-web", "entry": "grpcweb", "wire": "grpc-web-protobuf-http1-clear", "roles": ["provider", "consumer"], "discoveries": ["direct"], "networkPaths": ["direct", "nginx-clear", "nginx-tls-pass", "nginx-tls-edge", "nginx-tls-bridge"] },
+        { "id": "connect", "api": "order-v1", "protocol": "connect", "protocolVersion": "1", "wire": "connect-protobuf-http1-clear", "roles": ["provider", "consumer"], "discoveries": ["direct"], "networkPaths": ["direct", "nginx-clear", "nginx-tls-pass", "nginx-tls-edge", "nginx-tls-bridge"] },
+        { "id": "dubbo", "api": "order-v1", "protocol": "dubbo", "wire": "dubbo-hessian2-tcp-clear", "roles": ["provider", "consumer"], "discoveries": ["direct"], "networkPaths": ["direct", "nginx-clear", "nginx-tls-pass", "nginx-tls-edge", "nginx-tls-bridge"] },
+        { "id": "triple", "api": "order-v1", "protocol": "triple", "wire": "triple-protobuf-http2-clear", "roles": ["provider", "consumer"], "discoveries": ["direct"], "networkPaths": ["direct", "nginx-clear", "nginx-tls-pass", "nginx-tls-edge", "nginx-tls-bridge"] },
+        { "id": "thrift", "api": "order-v1", "protocol": "thrift", "wire": "thrift-binary-framed-tcp-clear", "roles": ["provider", "consumer"], "discoveries": ["direct"], "networkPaths": ["direct", "nginx-clear", "nginx-tls-pass", "nginx-tls-edge", "nginx-tls-bridge"] },
+        { "id": "hprose", "api": "order-v1", "protocol": "hprose", "wire": "hprose-hprose-http1-clear", "roles": ["provider", "consumer"], "discoveries": ["direct"], "networkPaths": ["direct", "nginx-clear", "nginx-tls-pass", "nginx-tls-edge", "nginx-tls-bridge"] },
+        { "id": "soap", "api": "order-v1", "protocol": "soap", "protocolVersion": "1.1", "wire": "soap11-xml-http1-clear", "roles": ["provider", "consumer"], "discoveries": ["direct"], "networkPaths": ["direct", "nginx-clear", "nginx-tls-pass", "nginx-tls-edge", "nginx-tls-bridge"] },
+        { "id": "hessian", "api": "order-v1", "protocol": "hessian", "protocolVersion": "2", "wire": "hessian2-http1-clear", "roles": ["provider", "consumer"], "discoveries": ["direct"], "networkPaths": ["direct", "nginx-clear", "nginx-tls-pass", "nginx-tls-edge", "nginx-tls-bridge"] },
+        { "id": "jsonrpc", "api": "order-v1", "protocol": "jsonrpc", "protocolVersion": "2.0", "wire": "jsonrpc2-json-http1-clear", "roles": ["provider", "consumer"], "discoveries": ["direct"], "networkPaths": ["direct", "nginx-clear", "nginx-tls-pass", "nginx-tls-edge", "nginx-tls-bridge"] },
+        { "id": "xmlrpc", "api": "order-v1", "protocol": "xmlrpc", "wire": "xmlrpc-xml-http1-clear", "roles": ["provider", "consumer"], "discoveries": ["direct"], "networkPaths": ["direct", "nginx-clear", "nginx-tls-pass", "nginx-tls-edge", "nginx-tls-bridge"] },
+        { "id": "oncrpc", "api": "order-v1", "protocol": "oncrpc", "protocolVersion": "2", "wire": "oncrpc-xdr-tcp-clear", "roles": ["provider", "consumer"], "discoveries": ["direct"], "networkPaths": ["direct", "nginx-clear", "nginx-tls-pass", "nginx-tls-edge", "nginx-tls-bridge"] },
+        {"id": "oncrpc-udp", "api": "order-v1", "protocol": "oncrpc", "entry": "oncrpc-udp", "protocolVersion": "2", "wire": "oncrpc-xdr-udp-clear", "roles": ["provider", "consumer"], "discoveries": ["direct"], "networkPaths": ["direct", "nginx-clear", "nginx-dtls-pass"]}
       ]
     }
   ]

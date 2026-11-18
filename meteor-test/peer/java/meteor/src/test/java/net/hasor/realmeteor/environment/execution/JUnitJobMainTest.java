@@ -796,6 +796,7 @@ public class JUnitJobMainTest {
         Map<String, Object> selection = selection(ParameterCase.class, List.of());
         Map<String, Object> matrix = matrixCase(caseId, "甲");
         matrix.put("protocolVersions", List.of("1.1", "1.2"));
+        matrix.put("networkPath", "nginx-tls-pass");
         selection.put("matrixCases", List.of(matrix));
         assertEquals(0, JUnitJobMain.execute(output, selection));
 
@@ -805,6 +806,7 @@ public class JUnitJobMainTest {
         assertEquals("甲", result.path("matrix").path("id").asText());
         JsonNode versions = result.path("matrix").path("protocolVersions");
         assertEquals(JSON.valueToTree(List.of("1.1", "1.2")), versions);
+        assertEquals("nginx-tls-pass", result.path("matrix").path("networkPath").asText());
         assertEquals("java", result.path("matrix").path("provider").path("language").asText());
         assertEquals("javaCurrent", result.path("matrix").path("consumer").path("runtimeProfile").asText());
         assertFalse(result.path("matrix").has("request"));

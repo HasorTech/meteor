@@ -141,7 +141,7 @@ final class JUnitJobReport implements TestExecutionListener, AutoCloseable {
                 throw new IllegalArgumentException("Matrix testcase requires a caseId");
             }
             Map<String, Object> matrix = new LinkedHashMap<>();
-            for (String key : List.of("id", "api", "scenario", "protocol", "protocolVersion", "wire", "discovery")) {
+            for (String key : List.of("id", "api", "scenario", "protocol", "protocolVersion", "wire", "discovery", "networkPath")) {
                 if (entry.containsKey(key)) {
                     matrix.put(key, entry.get(key));
                 }

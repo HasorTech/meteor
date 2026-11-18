@@ -15,6 +15,39 @@ public class NxnMatrixTest {
     public Path temporary;
 
     @Test
+    public void expandsOnlySharedNetworkPathsAndPreservesDirectIds() throws Exception {
+        catalog(List.of(scenario("save-find")));
+        Map<String, Object> meteor = endpoint("meteor", "java", "", "orders-tcp-clear", List.of("direct", "nacos"));
+        object(meteor.get("capabilities"), 0).put("networkPaths", List.of("direct", "nginx-clear", "nginx-tls-pass"));
+        Map<String, Object> sdk = endpoint("sdk", "python", "", "orders-tcp-clear", List.of("direct"));
+        object(sdk.get("capabilities"), 0).put("networkPaths", List.of("direct", "nginx-clear"));
+        manifest("peer/java/nxn.json", List.of(meteor));
+        manifest("peer/python/nxn.json", List.of(sdk));
+
+        List<Map<String, Object>> cases = objects(NxnMatrix.collect(this.temporary, Map.of()).get("cases"));
+
+        assertEquals(10, cases.size()); // 5 existing direct/discovery + 4 clear proxy + 1 TLS proxy.
+        assertEquals(1, cases.stream().filter(c -> StringUtils.equals("nginx-tls-pass", c.get("networkPath").toString())).count());
+        assertTrue(cases.stream().filter(c -> StringUtils.equals("nginx-tls-pass", c.get("networkPath").toString()))
+                .allMatch(c -> StringUtils.equals("orders-tcp-tls", c.get("wire").toString())));
+        assertTrue(cases.stream().filter(c -> StringUtils.equals("nacos", c.get("discovery").toString()))
+                .allMatch(c -> StringUtils.equals("direct", c.get("networkPath").toString())));
+        assertTrue(cases.stream().filter(c -> StringUtils.equals("direct", c.get("networkPath").toString()))
+                .noneMatch(c -> c.get("id").toString().endsWith("/nginx-clear")));
+    }
+
+    @Test
+    public void rejectsDtlsOnTcpBeforeStartingProcesses() throws Exception {
+        catalog(List.of(scenario("save-find")));
+        Map<String, Object> peer = endpoint("meteor", "java", "", "orders-tcp-clear", List.of("direct"));
+        object(peer.get("capabilities"), 0).put("networkPaths", List.of("nginx-dtls-pass"));
+        manifest("peer/java/nxn.json", List.of(peer));
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> NxnMatrix.collect(this.temporary, Map.of()));
+        assertTrue(error.getMessage().contains("TLS/DTLS networkPath"));
+    }
+
+    @Test
     public void enumeratesEveryCompatibleDirectionAndScenarioBeforeExecution() throws Exception {
         // 两端支持相同契约和线上协议，各自声明直连及注册发现。
         catalog(List.of(scenario("save-find"), scenario("unicode")));

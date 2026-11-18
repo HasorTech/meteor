@@ -45,7 +45,8 @@
             "direct"
           ],
           "runtimeProfile": "grpcCurrent",
-          "entry": "grpc"
+          "entry": "grpc",
+          "networkPaths": ["direct", "nginx-clear"]
         }
       ]
     }

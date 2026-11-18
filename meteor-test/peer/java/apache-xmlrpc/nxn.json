@@ -45,7 +45,8 @@
             "direct"
           ],
           "runtimeProfile": "xmlrpc",
-          "entry": "xmlrpc"
+          "entry": "xmlrpc",
+          "networkPaths": ["direct", "nginx-clear"]
         }
       ]
     }

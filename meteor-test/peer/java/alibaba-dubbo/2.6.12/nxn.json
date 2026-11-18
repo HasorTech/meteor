@@ -45,7 +45,8 @@
             "direct"
           ],
           "runtimeProfile": "dubboClassic",
-          "entry": "dubbo"
+          "entry": "dubbo",
+          "networkPaths": ["direct", "nginx-clear"]
         }
       ]
     }

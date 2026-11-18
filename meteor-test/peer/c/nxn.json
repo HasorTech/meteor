@@ -14,12 +14,14 @@
         {
           "id": "current", "api": "order-v1", "protocol": "oncrpc", "protocolVersion": "2",
           "wire": "oncrpc-xdr-tcp-clear", "roles": ["provider", "consumer"],
-          "discoveries": ["direct"], "runtimeProfile": "cOncrpc"
+          "discoveries": ["direct"], "runtimeProfile": "cOncrpc",
+          "networkPaths": ["direct", "nginx-clear"]
         },
         {
           "id": "latest", "api": "order-v1", "protocol": "oncrpc", "protocolVersion": "2",
           "wire": "oncrpc-xdr-tcp-clear", "roles": ["provider", "consumer"],
-          "discoveries": ["direct"], "runtimeProfile": "cOncrpcLatest"
+          "discoveries": ["direct"], "runtimeProfile": "cOncrpcLatest",
+          "networkPaths": ["direct", "nginx-clear"]
         }
       ]
     }

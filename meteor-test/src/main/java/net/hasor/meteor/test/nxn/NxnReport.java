@@ -265,15 +265,17 @@ public final class NxnReport {
     private static Map<String, Object> matrixMetadata(Map<String, Object> testCase) {
         // 结果只关联矩阵身份与双方能力，不复制启动命令、环境、请求或凭据。
         Map<String, Object> metadata = new LinkedHashMap<>();
-        for (String name : List.of("id", "api", "scenario", "protocol", "protocolVersion", "wire", "discovery")) {
+        for (String name : List.of("id", "api", "scenario", "protocol", "protocolVersion", "wire", "discovery", "networkPath")) {
             if (testCase.containsKey(name)) {
                 metadata.put(name, string(testCase.get(name)));
             }
         }
+
         if (testCase.containsKey("protocolVersions")) {
             if (!(testCase.get("protocolVersions") instanceof List<?> values)) {
                 throw new IllegalArgumentException("Matrix protocolVersions must be a string array");
             }
+
             List<String> versions = new ArrayList<>();
             for (Object value : values) {
                 if (!(value instanceof String version)) {
@@ -283,6 +285,7 @@ public final class NxnReport {
             }
             metadata.put("protocolVersions", versions);
         }
+
         for (String role : List.of("provider", "consumer")) {
             Map<String, Object> source = object(testCase.getOrDefault(role, Map.of()));
             Map<String, Object> endpoint = new LinkedHashMap<>();
@@ -293,6 +296,7 @@ public final class NxnReport {
             }
             metadata.put(role, endpoint);
         }
+
         return metadata;
     }
 
@@ -304,6 +308,7 @@ public final class NxnReport {
                 errors.add("Matrix case identities must be present and unique: " + caseId);
             }
         }
+
         List<String> assigned = new ArrayList<>();
         for (Map<String, Object> group : objects(manifest.get("groups"))) {
             for (Map<String, Object> testCase : matrixPlan(group.get("matrixCases"))) {
@@ -318,6 +323,7 @@ public final class NxnReport {
                 }
             }
         }
+
         if (!counts(assigned).equals(counts(new ArrayList<>(expected.keySet())))) {
             errors.add("Matrix group assignments must cover selected cases exactly once");
         }
@@ -328,6 +334,7 @@ public final class NxnReport {
         for (Map<String, Object> testCase : matrixPlan(group.get("matrixCases"))) {
             matrix.put(string(testCase.get("caseId")), matrixMetadata(testCase));
         }
+
         Map<String, Map<String, Object>> reportedCases = new LinkedHashMap<>();
         reported.forEach(testCase -> reportedCases.put(string(testCase.get("caseId")), testCase));
         for (Map<String, Object> testCase : cases) {
@@ -338,6 +345,7 @@ public final class NxnReport {
             if (phase.isBlank()) {
                 phase = string(testCase.get("scenario")).startsWith("initializationError") ? "preparing" : "testing";
             }
+
             testCase.put("phase", phase);
             Map<String, Object> logs = caseLogs(className);
             logs.putAll(logPaths(testCase.get("logs")));
@@ -446,6 +454,7 @@ public final class NxnReport {
         Map<String, Object> summary = matrixCounts();
         Map<String, Map<String, Object>> byRpc = new TreeMap<>();
         Map<String, Map<String, Object>> byLanguage = new TreeMap<>();
+        Map<String, Map<String, Object>> byNetworkPath = new TreeMap<>();
         for (Map<String, Object> result : results) {
             Map<String, Object> matrix = object(result.get("matrix"));
             String protocol = string(matrix.get("protocol"));
@@ -467,12 +476,20 @@ public final class NxnReport {
                 entry.put("consumerLanguage", consumer);
                 return entry;
             });
+            String networkPath = string(matrix.getOrDefault("networkPath", "direct"));
+            Map<String, Object> path = byNetworkPath.computeIfAbsent(networkPath, ignored -> {
+                Map<String, Object> entry = matrixCounts();
+                entry.put("networkPath", networkPath);
+                return entry;
+            });
+            addMatrixCount(path, string(result.get("status")));
             addMatrixCount(summary, string(result.get("status")));
             addMatrixCount(rpc, string(result.get("status")));
             addMatrixCount(languages, string(result.get("status")));
         }
         summary.put("byRpc", new ArrayList<>(byRpc.values()));
         summary.put("byLanguage", new ArrayList<>(byLanguage.values()));
+        summary.put("byNetworkPath", new ArrayList<>(byNetworkPath.values()));
         return summary;
     }
 
@@ -551,6 +568,12 @@ public final class NxnReport {
                 }
                 markdown.append("：计划 ").append(rpc.get("planned"));
                 markdown.append("，通过 ").append(rpc.get("passed")).append("。\n");
+            }
+            markdown.append('\n');
+            for (Map<String, Object> path : objects(matrix.get("byNetworkPath"))) {
+                markdown.append("- 连接路径 `").append(path.get("networkPath"));
+                markdown.append("`：计划 ").append(path.get("planned"));
+                markdown.append("，通过 ").append(path.get("passed")).append("。\n");
             }
             markdown.append('\n');
             for (Map<String, Object> languages : objects(matrix.get("byLanguage"))) {
@@ -642,7 +665,8 @@ public final class NxnReport {
             markdown.append("；消费者：").append(endpointLabel(object(matrix.get("consumer"))));
             markdown.append("；RPC：`").append(matrix.get("protocol"));
             markdown.append("`；传输：`").append(matrix.get("wire"));
-            markdown.append("`；发现：`").append(matrix.get("discovery")).append("`。\n\n");
+            markdown.append("`；发现：`").append(matrix.get("discovery"));
+            markdown.append("`；代理路径：`").append(matrix.getOrDefault("networkPath", "direct")).append("`。\n\n");
         }
         if (present(testCase.get("phase"))) {
             markdown.append("  阶段：`").append(testCase.get("phase")).append("`。\n\n");

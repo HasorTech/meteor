@@ -18,3 +18,10 @@ COPY --from=process-builder /peer-process /opt/meteor-test/peer-process
 WORKDIR /workspace/meteor
 ENTRYPOINT []
 CMD ["sleep", "infinity"]
+
+FROM nginx:1.28.0@sha256:552e7481ca93ffccd046aa658dbbed22caefbc09c66fa7cd247cbb90b8a5c609 AS nginx
+RUN apt-get update && apt-get install -y --no-install-recommends python3 && rm -rf /var/lib/apt/lists/*
+COPY --from=process-builder /peer-process /opt/meteor-test/peer-process
+WORKDIR /workspace/meteor/meteor-test
+ENTRYPOINT []
+CMD ["sleep", "infinity"]

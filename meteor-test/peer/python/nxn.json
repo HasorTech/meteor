@@ -34,7 +34,8 @@
           ],
           "discoveries": [
             "direct"
-          ]
+          ],
+          "networkPaths": ["direct", "nginx-clear"]
         }
       ]
     },
@@ -71,7 +72,8 @@
           ],
           "discoveries": [
             "direct"
-          ]
+          ],
+          "networkPaths": ["direct", "nginx-clear"]
         }
       ]
     },
@@ -108,7 +110,8 @@
           ],
           "discoveries": [
             "direct"
-          ]
+          ],
+          "networkPaths": ["direct", "nginx-clear"]
         }
       ]
     },
@@ -145,7 +148,8 @@
           ],
           "discoveries": [
             "direct"
-          ]
+          ],
+          "networkPaths": ["direct", "nginx-clear"]
         }
       ]
     },
@@ -182,7 +186,8 @@
           ],
           "discoveries": [
             "direct"
-          ]
+          ],
+          "networkPaths": ["direct", "nginx-clear"]
         }
       ]
     },
@@ -229,7 +234,8 @@
           ],
           "discoveries": [
             "direct"
-          ]
+          ],
+          "networkPaths": ["direct", "nginx-clear"]
         },
         {
           "id": "grpc-web-default",
@@ -243,7 +249,8 @@
           ],
           "discoveries": [
             "direct"
-          ]
+          ],
+          "networkPaths": ["direct", "nginx-clear"]
         }
       ]
     }

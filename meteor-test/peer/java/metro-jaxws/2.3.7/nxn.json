@@ -45,7 +45,8 @@
             "direct"
           ],
           "runtimeProfile": "soapJavax",
-          "entry": "soap"
+          "entry": "soap",
+          "networkPaths": ["direct", "nginx-clear"]
         }
       ]
     }

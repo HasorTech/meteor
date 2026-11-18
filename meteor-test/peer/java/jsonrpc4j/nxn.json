@@ -45,7 +45,8 @@
             "direct"
           ],
           "runtimeProfile": "jsonrpc",
-          "entry": "jsonrpc"
+          "entry": "jsonrpc",
+          "networkPaths": ["direct", "nginx-clear"]
         }
       ]
     }

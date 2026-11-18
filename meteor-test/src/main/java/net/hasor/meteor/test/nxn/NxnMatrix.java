@@ -97,12 +97,21 @@ public final class NxnMatrix {
                 Map<String, Object> api = apis.get(text(provider.get("api")));
                 for (Map<String, Object> scenario : objects(api.get("scenarios"), "API scenarios")) {
                     for (String discovery : discoveries) {
-                        Map<String, Object> testCase = testCase(provider, consumer, scenario, discovery);
-                        String caseId = text(testCase.get("id"));
-                        if (!caseIds.add(caseId)) {
-                            throw new IllegalArgumentException("Duplicate generated matrix case: " + caseId);
+                        Set<String> paths = new TreeSet<>(strings(provider.get("networkPaths"), "networkPaths"));
+                        paths.retainAll(strings(consumer.get("networkPaths"), "networkPaths"));
+                        for (String networkPath : paths) {
+                            // 代理只改直连目标，不将注册中心发现结果绕过为静态地址。
+                            if (!StringUtils.equals(discovery, "direct") && !StringUtils.equals(networkPath, "direct")) {
+                                continue;
+                            }
+
+                            Map<String, Object> testCase = testCase(provider, consumer, scenario, discovery, networkPath);
+                            String caseId = text(testCase.get("id"));
+                            if (!caseIds.add(caseId)) {
+                                throw new IllegalArgumentException("Duplicate generated matrix case: " + caseId);
+                            }
+                            cases.add(testCase);
                         }
-                        cases.add(testCase);
                     }
                 }
             }
@@ -291,6 +300,21 @@ public final class NxnMatrix {
             expanded.put("serialGroup", serialGroup);
             expanded.put("roles", roles);
             expanded.put("discoveries", discoveries);
+            List<String> networkPaths = nonEmptyStrings(capability.getOrDefault("networkPaths", List.of("direct")), id + " networkPaths");
+            Set<String> supportedPaths = Set.of("direct", "nginx-clear", "nginx-tls-pass", "nginx-tls-edge", "nginx-tls-bridge", "nginx-dtls-pass");
+            if (!supportedPaths.containsAll(networkPaths) || new HashSet<>(networkPaths).size() != networkPaths.size()) {
+                throw invalid(manifest, "Unknown or duplicate networkPaths in " + id);
+            }
+            for (String networkPath : networkPaths) {
+                boolean proxy = !StringUtils.equals(networkPath, "direct");
+                if (proxy && !StringUtils.equals(api, "order-v1")) {
+                    throw invalid(manifest, "Proxy networkPaths require order-v1: " + id);
+                }
+                if ((StringUtils.equals(networkPath, "nginx-dtls-pass") && !wire.contains("-udp-")) || (networkPath.startsWith("nginx-tls-") && wire.contains("-udp-"))) {
+                    throw invalid(manifest, "TLS/DTLS networkPath does not match wire in " + id);
+                }
+            }
+            expanded.put("networkPaths", networkPaths);
             expanded.put("source", manifest.toString());
             expanded.put("runtimeProfile", substitutions.get("runtimeProfile"));
             Map<String, Object> commands = new LinkedHashMap<>();
@@ -432,7 +456,7 @@ public final class NxnMatrix {
         return "";
     }
 
-    private static Map<String, Object> testCase(Map<String, Object> provider, Map<String, Object> consumer, Map<String, Object> scenario, String discovery) {
+    private static Map<String, Object> testCase(Map<String, Object> provider, Map<String, Object> consumer, Map<String, Object> scenario, String discovery, String networkPath) {
         String api = text(provider.get("api"));
         String protocol = text(provider.get("protocol"));
         String wire = text(provider.get("wire"));
@@ -440,6 +464,9 @@ public final class NxnMatrix {
         String className = text(scenario.getOrDefault("class", STANDARD_CLASS));
         String method = text(scenario.get("method"));
         String id = segment(api) + "/" + segment(scenarioId) + "/consumer=" + segment(consumer.get("id")) + "/provider=" + segment(provider.get("id")) + "/" + segment(wire) + "/" + segment(discovery);
+        if (!StringUtils.equals(networkPath, "direct")) {
+            id += "/" + segment(networkPath);
+        }
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("id", id);
         result.put("caseId", className + "#" + method + "[" + id + "]");
@@ -457,8 +484,15 @@ public final class NxnMatrix {
         }
         result.put("protocolVersions", new ArrayList<>(versions));
         result.put("protocolVersion", String.join("/", versions));
-        result.put("wire", wire);
+        String externalWire = wire;
+        if (networkPath.startsWith("nginx-tls-")) {
+            externalWire = wire.replace("-clear", "-tls");
+        } else if (StringUtils.equals(networkPath, "nginx-dtls-pass")) {
+            externalWire = wire.replace("-clear", "-dtls");
+        }
+        result.put("wire", externalWire);
         result.put("discovery", discovery);
+        result.put("networkPath", networkPath);
         String providerGroup = text(provider.get("serialGroup"));
         String consumerGroup = text(consumer.get("serialGroup"));
         if (!providerGroup.isEmpty() && !consumerGroup.isEmpty() && !StringUtils.equals(providerGroup, consumerGroup)) {

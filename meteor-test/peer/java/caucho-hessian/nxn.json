@@ -45,7 +45,8 @@
             "direct"
           ],
           "runtimeProfile": "hessianLegacy",
-          "entry": "hessian"
+          "entry": "hessian",
+          "networkPaths": ["direct", "nginx-clear"]
         },
         {
           "id": "java-sdk-hessian-recent",
@@ -61,7 +62,8 @@
             "direct"
           ],
           "runtimeProfile": "hessianRecent",
-          "entry": "hessian"
+          "entry": "hessian",
+          "networkPaths": ["direct", "nginx-clear"]
         }
       ]
     }

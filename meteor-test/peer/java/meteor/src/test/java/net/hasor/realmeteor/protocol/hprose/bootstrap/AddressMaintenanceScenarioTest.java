@@ -11,21 +11,23 @@ import java.nio.file.Files;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutionException;
 import net.hasor.example.protocol.hprose.Echo;
 import net.hasor.example.protocol.hprose.EchoService;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetUpdater;
+import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.address.AddressPool;
 import net.hasor.meteor.address.DiskCache;
-import net.hasor.meteor.address.InterAddress;
-import net.hasor.meteor.bootstrap.CacheAddressPool;
+import net.hasor.meteor.bootstrap.MetContextImpl;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.protocol.hprose.support.BootstrapTestSupport;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @NxnRpc(name = "rsf", version = "1")
 public class AddressMaintenanceScenarioTest extends BootstrapTestSupport {
@@ -36,20 +38,22 @@ public class AddressMaintenanceScenarioTest extends BootstrapTestSupport {
         MetConfiguration configuration = this.configuration();
         configuration.setDataHome(home.toPath());
         configuration.setRefreshCacheTime(20);
+        configuration.setInvalidWaitTime(30000);
         try (MetContext client = configuration.buildContext()) {
             MetBindInfo<Echo> service = client.publisher().rsfService(Echo.class).register();
-            InterAddress address = new InterAddress("rsf://127.0.0.1:2111");
+            InterAddress address = new InterAddress("rsf://127.0.0.1:" + this.port());
             MetUpdater updater = client.getUpdater();
             updater.appendAddress(service.getBindID(), Collections.singletonList(address));
             String serviceId = service.getBindID();
-            CacheAddressPool pool = (CacheAddressPool) updater;
-            pool.getBucket(serviceId).invalidAddress(address, 300);
+            // 真实连接失败由上下文标记地址失效，维护任务使用配置的失效期限。
+            client.start();
+            var connectors = ((MetContextImpl) client).getConnectorManager();
+            assertThrows(ExecutionException.class, () -> connectors.connect(address).get(5, TimeUnit.SECONDS));
             List<InterAddress> expected = Collections.singletonList(address);
             assertEquals(expected, updater.queryInvalidAddresses(serviceId));
 
-            // 启动维护任务并有界等待地址自动恢复。
-            client.start();
-            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+            // 地址池的失效期限最短为 30 秒，按正式配置等待维护任务恢复。
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(35);
             while (updater.queryAvailableAddresses(serviceId).isEmpty() && System.nanoTime() < deadline) {
                 Thread.sleep(10);
             }
@@ -74,9 +78,13 @@ public class AddressMaintenanceScenarioTest extends BootstrapTestSupport {
             MetConfiguration seedConfiguration = this.configuration();
             try (MetContext seed = seedConfiguration.buildContext()) {
                 MetBindInfo<Echo> seedService = seed.publisher().rsfService(Echo.class).register();
-                seed.getUpdater().appendAddress(seedService.getBindID(), addresses);
-                AddressPool seedPool = (AddressPool) seed.getUpdater();
-                try (DiskCache cache = new DiskCache(seedPool, home, 60000, 3600000)) {
+                String serviceId = seedService.getBindID();
+                seed.getUpdater().appendAddress(serviceId, addresses);
+
+                // 用缓存组件写入公开地址快照，不依赖更新器的具体实现。
+                AddressPool snapshotPool = new AddressPool(seed.getSettings().getUnitName(), 30000);
+                snapshotPool.appendAddress(serviceId, seed.getUpdater().queryAddressesByUnit(serviceId));
+                try (DiskCache cache = new DiskCache(snapshotPool, home, 60000, 3600000)) {
                     cache.storeConfig();
                 }
             }
@@ -107,8 +115,9 @@ public class AddressMaintenanceScenarioTest extends BootstrapTestSupport {
             serviceId = service.getBindID();
             InterAddress address = new InterAddress("rsf://127.0.0.1:2211");
             runtime.getUpdater().appendAddress(serviceId, Collections.singletonList(address));
-            AddressPool seed = (AddressPool) runtime.getUpdater();
-            try (DiskCache cache = new DiskCache(seed, home, 60000, 3600000)) {
+            AddressPool snapshotPool = new AddressPool(runtime.getSettings().getUnitName(), 30000);
+            snapshotPool.appendAddress(serviceId, runtime.getUpdater().queryAddressesByUnit(serviceId));
+            try (DiskCache cache = new DiskCache(snapshotPool, home, 60000, 3600000)) {
                 cache.storeConfig();
             }
         }

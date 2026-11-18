@@ -45,7 +45,8 @@
             "direct"
           ],
           "runtimeProfile": "thriftClassic",
-          "entry": "thrift"
+          "entry": "thrift",
+          "networkPaths": ["direct", "nginx-clear"]
         },
         {
           "id": "java-sdk-thrift-pre-layered",
@@ -61,7 +62,8 @@
             "direct"
           ],
           "runtimeProfile": "thriftPreLayered",
-          "entry": "thrift"
+          "entry": "thrift",
+          "networkPaths": ["direct", "nginx-clear"]
         }
       ]
     }

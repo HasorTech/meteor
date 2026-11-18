@@ -60,6 +60,8 @@ public class StandardMatrixTest {
         JsonNode providerEndpoint = this.testCase.required("provider");
         JsonNode consumerEndpoint = this.testCase.required("consumer");
         String discovery = this.testCase.required("discovery").textValue();
+        String networkPath = this.testCase.path("networkPath").asText("direct");
+        boolean proxied = !StringUtils.equals(networkPath, "direct");
 
         // 注册场景只传连接配置；提供者的业务地址仅用于直连场景。
         FrameworkRegistry environment = null;
@@ -69,6 +71,9 @@ public class StandardMatrixTest {
         try (FrameworkRegistry registry = environment) {
             Map<String, String> providerVariables = variables( //
                     directory, requestFile, providerEndpoint, registry, "provider");
+            if (proxied) {
+                providerVariables.put("${tls}", String.valueOf(List.of("nginx-tls-pass", "nginx-tls-bridge", "nginx-dtls-pass").contains(networkPath)));
+            }
             try (StandardPeerProcess provider = StandardPeerProcess.start( //
                     providerEndpoint, directory.resolve("provider"), requestFile, request, providerVariables)) {
                 JsonNode ready = provider.awaitReady();
@@ -84,17 +89,30 @@ public class StandardMatrixTest {
                     consumerVariables.put("${target}", target);
                 }
 
-                // 每次执行只有一次保存与查询，结果必须来自真实对端的正常退出。
-                try (StandardPeerProcess consumer = StandardPeerProcess.start( //
-                        consumerEndpoint, directory.resolve("consumer"), requestFile, request, consumerVariables)) {
-                    JUnitJobCondition.phase(caseId, "testing");
-                    JsonNode result = consumer.awaitResult();
-                    assertFrameworkIdentity(consumerEndpoint, result, "Consumer");
-                    assertOrder(request, result.required("saved"));
-                    assertOrder(request, result.required("order"));
-                    provider.assertRunning();
-                    // 仅成功路径进入清理阶段，调用失败后的次生关闭异常不覆盖原失败阶段。
-                    JUnitJobCondition.phase(caseId, "cleanup");
+                URI upstream = proxied ? URI.create(ready.required("target").textValue()) : null;
+                try (NginxPeerProcess proxy = proxied ? NginxPeerProcess.start(directory.resolve("nginx"), upstream,
+                        this.testCase.required("protocol").textValue(), this.testCase.required("wire").textValue(), networkPath) : null) {
+                    if (proxy != null) {
+                        boolean encrypted = !StringUtils.equals(networkPath, "nginx-clear");
+                        consumerVariables.put("${tls}", String.valueOf(encrypted));
+                        consumerVariables.put("${target}", proxy.target(upstream, encrypted).toString());
+                        JSON.writeValue(directory.resolve("connection.json").toFile(), consumerVariables);
+                    }
+                    // 每次执行只有一次保存与查询，结果必须来自真实对端的正常退出。
+                    try (StandardPeerProcess consumer = StandardPeerProcess.start( //
+                            consumerEndpoint, directory.resolve("consumer"), requestFile, request, consumerVariables)) {
+                        JUnitJobCondition.phase(caseId, "testing");
+                        JsonNode result = consumer.awaitResult();
+                        assertFrameworkIdentity(consumerEndpoint, result, "Consumer");
+                        assertOrder(request, result.required("saved"));
+                        assertOrder(request, result.required("order"));
+                        provider.assertRunning();
+                        if (proxy != null) {
+                            proxy.assertForwarded();
+                        }
+                        // 仅成功路径进入清理阶段，调用失败后的次生关闭异常不覆盖原失败阶段。
+                        JUnitJobCondition.phase(caseId, "cleanup");
+                    }
                 }
             }
         }

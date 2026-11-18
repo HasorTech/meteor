@@ -45,7 +45,8 @@
             "direct"
           ],
           "runtimeProfile": "oncrpc",
-          "entry": "oncrpc"
+          "entry": "oncrpc",
+          "networkPaths": ["direct", "nginx-clear"]
         }
       ]
     }

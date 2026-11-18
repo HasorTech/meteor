@@ -45,7 +45,8 @@
             "direct"
           ],
           "runtimeProfile": "hprose",
-          "entry": "hprose"
+          "entry": "hprose",
+          "networkPaths": ["direct", "nginx-clear"]
         }
       ]
     }

@@ -6,6 +6,7 @@
 package net.hasor.peer.application;
 import java.io.IOException;
 import java.net.URI;
+import java.net.DatagramSocket;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -68,7 +69,7 @@ public final class OrderApplicationMain {
                 InterAddress address = context.getListenAddress(protocol);
                 String host = publishHost();
                 String scheme = "http";
-                if (List.of("rsf", "dubbo", "thrift", "oncrpc").contains(protocol)) {
+                if (List.of("rsf", "dubbo", "thrift", "oncrpc", "oncrpc-udp").contains(protocol)) {
                     scheme = protocol;
                 }
                 String path = "";
@@ -122,19 +123,45 @@ public final class OrderApplicationMain {
         }
 
         // TCP 与 HTTP 分别组装，场景通过环境传入独立监听端口和可达的发布主机。
-        boolean tcp = List.of("rsf", "dubbo", "thrift", "oncrpc").contains(protocol);
+        boolean tcp = List.of("rsf", "dubbo", "thrift", "oncrpc", "oncrpc-udp").contains(protocol);
         String transport = "http";
         if (tcp) {
             transport = "tcp";
+        }
+        if (StringUtils.equals("oncrpc-udp", protocol)) {
+            transport = "udp";
         }
         var connector = configuration.connector(transport);
         if (provider) {
             String host = environment("METEOR_ORDER_BIND_HOST", "127.0.0.1");
             int port = Integer.parseInt(environment("METEOR_ORDER_PORT", "8080"));
+            // UDP 不接受监听端口 0；在当前提供者容器中选择可用端口。
+            if (StringUtils.equals(transport, "udp") && port == 0) {
+                try (DatagramSocket reservation = new DatagramSocket(0)) {
+                    port = reservation.getLocalPort();
+                }
+            }
             connector.bind(host, port);
         }
         if (StringUtils.equals("grpc", protocol) || StringUtils.equals("triple", protocol)) {
             connector.option("httpVersion", 2);
+        }
+        boolean tls = Boolean.parseBoolean(environment("METEOR_ORDER_TLS", "false"));
+        if (tls) {
+            connector.option("tlsEnabled", true)
+                    .option("tlsTrustStore", "classpath:/certs/acceptance/trust.p12")
+                    .option("tlsTrustStorePassword", "meteor-test");
+            if (provider) {
+                connector.option("tlsKeyStore", "classpath:/certs/acceptance/server.p12")
+                        .option("tlsKeyStorePassword", "meteor-test");
+            }
+            if (StringUtils.equals(transport, "udp")) {
+                connector.option("tlsProtocols", "DTLSv1.2");
+            }
+            if (!tcp) {
+                connector.option("tlsAlpn", List.of("grpc", "triple").contains(protocol) ? "h2" : "http/1.1")
+                        .option("httpScheme", "https");
+            }
         }
         var mount = connector.protocol(protocol);
         if (!tcp) {
@@ -178,7 +205,7 @@ public final class OrderApplicationMain {
 
     private static MetBindInfo<?> bind(MetContext context, String protocol, boolean provider, String discovery, String registryScope) throws IOException {
         // ONC RPC 使用标量查询签名，桥接到同一份测试订单实现。
-        if (StringUtils.equals("oncrpc", protocol)) {
+        if (protocol.startsWith("oncrpc")) {
             ConfigurationBuilder<OncRpcOrderService> builder;
             if (provider) {
                 var implementation = new OncRpcOrderBridge(new OrderDemoServiceImpl());
@@ -274,7 +301,7 @@ public final class OrderApplicationMain {
         Order order = OrderExampleUtils.newOrder(1001, orderProtocol);
 
         // 所有结果都来自独立提供者，ONC RPC 保留自己的查询参数形式。
-        if (StringUtils.equals("oncrpc", protocol)) {
+        if (protocol.startsWith("oncrpc")) {
             var orders = (OncRpcOrderService) remote;
             Order saved = orders.save(order);
             Order found = orders.find(order.getId());

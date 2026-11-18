@@ -83,6 +83,8 @@ public class NxnReportTest {
         assertEquals(1, entries(matrix, "byRpc").size());
         assertEquals(list("2", "3"), entries(matrix, "byRpc").get(0).get("protocolVersions"));
         assertEquals(2, entries(matrix, "byLanguage").size());
+        assertEquals("direct", entries(matrix, "byNetworkPath").get(0).get("networkPath"));
+        assertEquals(2, entries(matrix, "byNetworkPath").get(0).get("passed"));
         assertEquals("runtime", summary.get("legacyDiscovery"));
         List<Map<String, Object>> results = entries(summary, "matrixResults");
         Map<String, Object> provider = child(child(results.get(0), "matrix"), "provider");
