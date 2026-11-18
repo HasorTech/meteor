@@ -21,7 +21,6 @@ import net.hasor.meteor.console.component.commands.dto.directory.ServicesRequest
 import net.hasor.meteor.console.component.provider.ProviderFactories;
 import net.hasor.meteor.console.dao.ClusterDao;
 import net.hasor.meteor.console.global.MeteorConfig;
-import net.hasor.meteor.console.global.auth.SessionService;
 import net.hasor.meteor.console.model.fo.ClusterProfile;
 import net.hasor.meteor.console.model.fo.ManagementTarget;
 import net.hasor.meteor.registry.TargetAdmin;
@@ -37,7 +36,7 @@ public final class CommandDispatcher implements AutoCloseable {
     @Inject
     private              ProviderFactories                       providers;
     @Inject
-    private              SessionService                          sessions;
+    private              CommandCredentials                      credentials;
     @Inject
     private              MeteorConfig                            config;
     private final        Map<CommandType, RegistryCommand<?, ?>> commands  = new EnumMap<>(CommandType.class);
@@ -96,7 +95,7 @@ public final class CommandDispatcher implements AutoCloseable {
             } else {
                 ClusterProfile profile = this.clusters.get(clusterId);
                 entry = this.contexts.computeIfAbsent(clusterId, id -> {
-                    CommandContext context = CommandContext.open(profile, this.sessions, this.providers);
+                    CommandContext context = CommandContext.open(profile, this.credentials, this.providers);
                     return new ContextEntry(context);
                 });
             }
@@ -118,7 +117,7 @@ public final class CommandDispatcher implements AutoCloseable {
         CommandContext context;
         synchronized (this.contexts) {
             this.requireOpen();
-            context = CommandContext.open(profile, this.sessions, this.providers);
+            context = CommandContext.open(profile, this.credentials, this.providers);
             this.temporary.add(context);
         }
         try (context) {
