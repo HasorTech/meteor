@@ -12,19 +12,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.regex.Pattern;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaFileObject;
 import javax.tools.ToolProvider;
@@ -42,12 +36,12 @@ import net.hasor.meteor.example.api.EchoService;
 import net.hasor.meteor.registry.RegistryConfiguration;
 import net.hasor.meteor.test.scenario.api.InvocationEcho;
 import net.hasor.meteor.test.scenario.api.InvocationNestedApi;
+import org.h2.tools.Server;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.h2.tools.Server;
 import static net.hasor.meteor.test.scenario.ConsoleTestSupport.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -209,7 +203,7 @@ public class ConsoleInvocationExamplesTest {
     public void generatedHproseNodeClientUsesTheExistingInstalledSdk() throws Exception {
         String node = runtime("node");
         Path repository = repository();
-        Path dependencies = repository.resolve("met-example/peer/node/node_modules");
+        Path dependencies = repository.resolve("met-example/javascript/node_modules");
         assumeTrue(Files.isDirectory(dependencies.resolve("hprose")), "未安装可供验证的 Hprose Node.js SDK");
         MetConfiguration configuration = configuration(this.directory.resolve("provider"), "hprose");
         Boot boot = new Boot().sources(ConsoleMain.class).hconfigFile(console(this.directory));
@@ -274,16 +268,12 @@ public class ConsoleInvocationExamplesTest {
         MetConfiguration configuration = configuration(this.directory.resolve("provider"), protocol);
         if (StringUtils.equals(protocol, "dubbo")) {
             // Apache Dubbo 将回环地址替换为本机网卡地址，使用 SDK 实际连接的网卡进行验证。
-            String host = java.util.Collections.list(java.net.NetworkInterface.getNetworkInterfaces()).stream()
-                    .flatMap(item -> java.util.Collections.list(item.getInetAddresses()).stream())
-                    .filter(item -> item instanceof java.net.Inet4Address && !item.isLoopbackAddress())
-                    .findFirst().orElseThrow().getHostAddress();
+            String host = java.util.Collections.list(java.net.NetworkInterface.getNetworkInterfaces()).stream().flatMap(item -> java.util.Collections.list(item.getInetAddresses()).stream()).filter(item -> item instanceof java.net.Inet4Address && !item.isLoopbackAddress()).findFirst().orElseThrow().getHostAddress();
             configuration.getConnectors().get(configuration.getConnectors().size() - 1).bind(host, 0);
         }
         Boot boot = new Boot().sources(ConsoleMain.class).hconfigFile(console(this.directory));
         try (MetContext provider = configuration.buildContext(); BootApplication server = boot.start()) {
-            String id = provider.publisher().rsfService(EchoService.class, ConsoleInvocationExamplesTest.echoService())
-                    .protocol(protocol).register().getBindID();
+            String id = provider.publisher().rsfService(EchoService.class, ConsoleInvocationExamplesTest.echoService()).protocol(protocol).register().getBindID();
             provider.start();
             Api api = new Api(server);
             api.login();
@@ -307,8 +297,7 @@ public class ConsoleInvocationExamplesTest {
             Path classes = compile(files, dependencies);
             dependencies.add(classes);
             String java = Path.of(System.getProperty("java.home"), "bin", "java").toString();
-            String output = run(files, List.of(java, "--add-opens=java.base/java.io=ALL-UNNAMED",
-                    "-Djava.io.tmpdir=" + files, "-Duser.home=" + files, "-cp", classpath(dependencies), "ExampleMain"));
+            String output = run(files, List.of(java, "--add-opens=java.base/java.io=ALL-UNNAMED", "-Djava.io.tmpdir=" + files, "-Duser.home=" + files, "-cp", classpath(dependencies), "ExampleMain"));
             assertTrue(output.contains("actual:"), output);
         }
     }
@@ -632,8 +621,7 @@ public class ConsoleInvocationExamplesTest {
             canonicalLanguage = "javascript";
         }
         for (JsonNode document : result.path("documents")) {
-            if (StringUtils.equals(canonicalLanguage, document.path("language").asText())
-                    && StringUtils.equals(role, document.path("role").asText())) {
+            if (StringUtils.equals(canonicalLanguage, document.path("language").asText()) && StringUtils.equals(role, document.path("role").asText())) {
                 assertFalse(document.path("markdown").asText().isBlank(), result.toPrettyString());
                 assertFalse(document.has("files"), result.toPrettyString());
                 return document;
