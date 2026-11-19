@@ -12,7 +12,6 @@ import java.util.function.ObjLongConsumer;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
-import net.hasor.meteor.connector.ProtocolOperationBinder;
 import net.hasor.meteor.connector.ProtocolSession;
 import net.hasor.meteor.connector.ProtocolSessionContext;
 import net.hasor.meteor.connector.RouteMountIndex;
@@ -30,7 +29,7 @@ import net.hasor.meteor.protocol.triple.session.TripleMountRuntime;
 import net.hasor.meteor.protocol.triple.session.TripleSession;
 
 /** Triple SPI 入口；按挂载点组装编码规则和调用会话。 */
-public final class TripleProtocol implements HttpProtocolProvider, ProtocolOperationBinder {
+public final class TripleProtocol implements HttpProtocolProvider {
     @Override
     public Set<Integer> httpVersions(ProtocolConfig config) {
         return Set.of(1, 2);

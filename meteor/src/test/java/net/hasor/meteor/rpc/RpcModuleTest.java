@@ -19,7 +19,6 @@ import net.hasor.cobble.StringUtils;
 import net.hasor.cobble.concurrent.future.BasicFuture;
 import net.hasor.cobble.concurrent.future.Cancellable;
 import net.hasor.cobble.concurrent.future.FutureCallback;
-import net.hasor.meteor.*;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.address.dsl.RouteContext;
 import net.hasor.meteor.address.provider.AddressProvider;
@@ -28,7 +27,7 @@ import net.hasor.meteor.connector.ConnectorConfig;
 import net.hasor.meteor.connector.ConnectorManager;
 import net.hasor.meteor.connector.ConnectorSubscriber;
 import net.hasor.meteor.connector.MetChannel;
-import net.hasor.meteor.domain.*;
+import net.hasor.meteor.domain.MetException;
 import net.hasor.meteor.domain.payload.Payload;
 import net.hasor.meteor.domain.payload.RequestPayload;
 import net.hasor.meteor.domain.payload.ResponsePayload;
@@ -307,8 +306,8 @@ public class RpcModuleTest {
             };
 
             // 动态代理逐次选择地址，固定代理仍保持自身地址。
-            Echo routed = new MetClientImpl(host.caller, dynamic).getRemote(host.service);
-            Echo fixed = new MetClientImpl(host.caller, new InstanceAddressProvider(first)).getRemote(host.service);
+            Echo routed = new MetClientImpl(host.caller, dynamic, null).getRemote(host.service);
+            Echo fixed = new MetClientImpl(host.caller, new InstanceAddressProvider(first), null).getRemote(host.service);
             assertEquals("one", routed.echo("one"));
             selected.set(second);
             assertEquals("two", routed.echo("two"));
@@ -361,7 +360,7 @@ public class RpcModuleTest {
             ExecutionException failure = assertThrows(ExecutionException.class, () -> {
                 callback.result.get(2, TimeUnit.SECONDS);
             });
-            assertTrue(failure.getCause() instanceof MetException);
+            assertInstanceOf(MetException.class, failure.getCause());
             assertEquals(1, callback.notifications.get());
         }
     }
@@ -377,7 +376,7 @@ public class RpcModuleTest {
             // 数据回调通过实际发送链路接收取消造成的失败。
             Object[] arguments = { "data" };
             host.client.callbackInvoke(host.service, "echo", parameterTypes, arguments, data);
-            assertTrue(data.result.getCause() instanceof CancellationException);
+            assertInstanceOf(CancellationException.class, data.result.getCause());
             assertFalse(data.result.isCancelled());
             assertEquals(1, data.notifications.get());
             assertEquals(1, host.sent.size());
@@ -395,7 +394,7 @@ public class RpcModuleTest {
             // 完整响应回调采用与发送失败一致的通知方式。
             Object[] arguments = { "response" };
             host.client.callbackRequest(host.service, "echo", parameterTypes, arguments, response);
-            assertTrue(response.result.getCause() instanceof CancellationException);
+            assertInstanceOf(CancellationException.class, response.result.getCause());
             assertFalse(response.result.isCancelled());
             assertEquals(1, response.notifications.get());
             assertEquals(1, host.sent.size());
@@ -435,7 +434,7 @@ public class RpcModuleTest {
             // 调用器关闭后，旧客户端不能继续发送请求。
             host.caller.close();
             MetFuture rejected = host.invoke();
-            assertTrue(rejected.getCause() instanceof IllegalStateException);
+            assertInstanceOf(IllegalStateException.class, rejected.getCause());
             assertEquals(2, host.sent.size());
         }
     }
@@ -486,7 +485,7 @@ public class RpcModuleTest {
             ExecutionException failure = assertThrows(ExecutionException.class, () -> {
                 host.client.syncInvoke(host.service, "fail", parameterTypes, arguments);
             });
-            assertTrue(failure.getCause() instanceof MetException);
+            assertInstanceOf(MetException.class, failure.getCause());
         }
     }
 
@@ -662,7 +661,7 @@ public class RpcModuleTest {
             configured.set(Collections.singletonList(endpoint));
             this.server = new MetCaller(this.serverManager, filters);
             this.caller = new MetCaller(this.callerManager, filters);
-            this.client = new MetClientImpl(this.caller, new InstanceAddressProvider(peer));
+            this.client = new MetClientImpl(this.caller, new InstanceAddressProvider(peer), null);
         }
 
         private void deliverRequest(RequestPayload request) {

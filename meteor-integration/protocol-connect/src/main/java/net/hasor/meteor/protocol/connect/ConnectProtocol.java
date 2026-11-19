@@ -15,7 +15,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
-import net.hasor.meteor.connector.ProtocolOperationBinder;
 import net.hasor.meteor.connector.ProtocolSession;
 import net.hasor.meteor.connector.ProtocolSessionContext;
 import net.hasor.meteor.connector.RouteMountIndex;
@@ -34,7 +33,7 @@ import net.hasor.meteor.protocol.connect.session.ConnectSession;
 import net.hasor.meteor.protocol.grpc.binding.GrpcServiceBinding;
 
 /** Connect 协议的 SPI 入口，按挂载点组装消息转换与调用会话。 */
-public final class ConnectProtocol implements HttpProtocolProvider, ProtocolOperationBinder {
+public final class ConnectProtocol implements HttpProtocolProvider {
     @Override
     public Set<Integer> httpVersions(ProtocolConfig config) {
         return Set.of(1, 2);

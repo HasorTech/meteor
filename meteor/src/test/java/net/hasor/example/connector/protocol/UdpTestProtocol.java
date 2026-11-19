@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.function.ObjLongConsumer;
+import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.cobble.concurrent.future.BasicFuture;
 import net.hasor.cobble.concurrent.future.Future;
 import net.hasor.meteor.MetContext;
@@ -40,6 +41,10 @@ public final class UdpTestProtocol implements UdpProtocolProvider {
     @Override
     public String defaultSerialize() {
         return "Java";
+    }
+
+    @Override
+    public void prepareOperation(ProtocolConfig config, JsonNode contract, Target target, Binding<Object> binding) {
     }
 
     @Override

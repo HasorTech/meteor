@@ -6,7 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor.rpc;
-import net.hasor.meteor.connector.ProtocolOperationBinder.Target;
+import net.hasor.meteor.connector.ProtocolProvider.Target;
 import net.hasor.meteor.domain.payload.RequestPayload;
 
 /** Outbound target and prepared protocol binding owned by the RPC caller. */

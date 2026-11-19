@@ -24,7 +24,6 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
-import net.hasor.meteor.connector.ProtocolOperationBinder;
 import net.hasor.meteor.connector.ProtocolSession;
 import net.hasor.meteor.connector.ProtocolSessionContext;
 import net.hasor.meteor.connector.transport.NetworkChannel;
@@ -47,7 +46,7 @@ import net.hasor.meteor.protocol.soap.mapping.SoapXmlMapping;
 import net.hasor.meteor.protocol.soap.mapping.SoapXmlProperty;
 
 /** SOAP 1.1/1.2 协议入口及 Java 服务映射校验。 */
-public final class SoapProtocol implements HttpProtocolProvider, ProtocolOperationBinder {
+public final class SoapProtocol implements HttpProtocolProvider {
     @Override
     public void prepareOperation(ProtocolConfig config, JsonNode contract, Target target, Binding<Object> binding) {
         binding.bind(null, SoapCallBinding.published(contract, target));

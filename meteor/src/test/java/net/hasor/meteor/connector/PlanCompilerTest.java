@@ -10,12 +10,9 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.ObjLongConsumer;
+import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.connector.protocol.EndpointTestProtocols.DatagramWireA;
 import net.hasor.example.connector.protocol.EndpointTestProtocols.HttpA;
@@ -201,6 +198,11 @@ public class PlanCompilerTest {
         @Override
         public Class<byte[]> messageType() {
             return byte[].class;
+        }
+
+        @Override
+        public void prepareOperation(ProtocolConfig config, JsonNode contract, Target target, Binding<Object> binding) {
+            throw new AssertionError("Planning must not prepare operations");
         }
 
         @Override

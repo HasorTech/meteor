@@ -10,6 +10,7 @@ import java.lang.reflect.Method;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.ObjLongConsumer;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.connector.ProtocolSession;
@@ -34,6 +35,11 @@ public final class RsfProtocol implements TcpProtocolProvider {
     @Override
     public String defaultSerialize() {
         return "Json";
+    }
+
+    @Override
+    public void prepareOperation(ProtocolConfig config, JsonNode contract, Target target, Binding<Object> binding) {
+        // RSF uses the method information already carried by the request.
     }
 
     @Override

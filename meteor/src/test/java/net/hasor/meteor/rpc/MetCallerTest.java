@@ -122,7 +122,7 @@ public class MetCallerTest {
 
             // 调用方得到保留原始消息的远端异常。
             Throwable error = failure(call);
-            assertTrue(error instanceof MetException);
+            assertInstanceOf(MetException.class, error);
             assertTrue(error.getMessage().contains(message));
         }
     }
@@ -146,7 +146,7 @@ public class MetCallerTest {
 
             // 缺省错误文本仍包含对端返回的状态码。
             Throwable error = failure(call);
-            assertTrue(error instanceof MetException);
+            assertInstanceOf(MetException.class, error);
             assertTrue(error.getMessage().contains(String.valueOf(ProtocolStatus.InvokeError)));
         }
     }
@@ -218,7 +218,7 @@ public class MetCallerTest {
 
             // 地址前缀不授予协议访问权限，请求在业务过滤器前被拒绝。
             Throwable failure = failure(client.invoke(server.address));
-            assertTrue(failure instanceof MetException);
+            assertInstanceOf(MetException.class, failure);
             assertEquals(ProtocolStatus.Forbidden, ((MetException) failure).getStatus());
             assertEquals(0, server.remoteFilters.get());
         }
@@ -386,7 +386,7 @@ public class MetCallerTest {
             missing.callbackRequest(client.service, "echo", parameterTypes, arguments, callback);
 
             // 早于注册的失败仍原样交付，并回收超时任务。
-            assertTrue(error.get(2, TimeUnit.SECONDS) instanceof IOException);
+            assertInstanceOf(IOException.class, error.get(2, TimeUnit.SECONDS));
             assertEquals(1, client.cancelledTimers.get());
         }
     }
@@ -417,7 +417,7 @@ public class MetCallerTest {
             assertFalse(writing.cancel());
 
             // 写入取消作为请求失败交付，并回收请求的定时任务。
-            assertTrue(failed.get(2, TimeUnit.SECONDS) instanceof CancellationException);
+            assertInstanceOf(CancellationException.class, failed.get(2, TimeUnit.SECONDS));
             assertEquals(1, client.cancelledTimers.get());
         }
     }
@@ -984,7 +984,7 @@ public class MetCallerTest {
 
             // 请求先于连接交付超时。
             MetFuture expired = client.invoke(server.address);
-            assertTrue(failure(expired) instanceof MetTimeoutException);
+            assertInstanceOf(MetTimeoutException.class, failure(expired));
             MemoryConnector connector = client.connector();
             MemoryChannel channel = connector.outgoing;
 
@@ -1050,7 +1050,7 @@ public class MetCallerTest {
 
             // 超时同时结束业务 Future 和协议报文，保留通道可用性。
             Throwable cause = failure(call);
-            assertTrue(cause instanceof MetTimeoutException);
+            assertInstanceOf(MetTimeoutException.class, cause);
             assertTrue(payload.completion().isDone());
             assertSame(cause, payload.completion().getCause());
             assertTrue(client.connector().outgoing.isActive());
@@ -1073,7 +1073,7 @@ public class MetCallerTest {
             // 取消结束协议报文，迟到响应不能覆盖取消终态。
             RequestPayload request = channel.sent.poll(2, TimeUnit.SECONDS);
             assertTrue(request.completion().isDone());
-            assertTrue(request.completion().getCause() instanceof CancellationException);
+            assertInstanceOf(CancellationException.class, request.completion().getCause());
             client.manager.deliver(channel, request.getRequestID(), response(request, ProtocolStatus.OK));
             assertTrue(call.isCancelled());
 
@@ -1094,7 +1094,7 @@ public class MetCallerTest {
             // 首次连接失败后，唯一的请求槽位应立即释放。
             InterAddress missing = new InterAddress("memory", "missing", 1);
             MetFuture missingCall = client.invoke(missing);
-            assertTrue(failure(missingCall) instanceof IOException);
+            assertInstanceOf(IOException.class, failure(missingCall));
             assertEquals(1, client.cancelledTimers.get());
 
             // 后续正常调用成功，证明连接失败没有占住请求容量。
@@ -1113,9 +1113,9 @@ public class MetCallerTest {
 
             // 两次调用都进入写入失败路径，后一次不能被容量限制提前拒绝。
             MetFuture first = client.invoke(server.address);
-            assertTrue(failure(first) instanceof IOException);
+            assertInstanceOf(IOException.class, failure(first));
             MetFuture next = client.invoke(server.address);
-            assertTrue(failure(next) instanceof IOException);
+            assertInstanceOf(IOException.class, failure(next));
 
             // 每次写入失败都回收自己的超时任务。
             assertEquals(2, client.cancelledTimers.get());
@@ -1130,7 +1130,7 @@ public class MetCallerTest {
             Throwable failure = failure(client.invoke(unknown));
 
             // 协议选择在登记请求前失败，不创建连接器和超时任务。
-            assertTrue(failure instanceof MetException);
+            assertInstanceOf(MetException.class, failure);
             assertNull(client.connector());
             assertEquals(0, client.cancelledTimers.get());
         }
@@ -1160,7 +1160,7 @@ public class MetCallerTest {
                 assertFalse(pending.isDone());
                 Class<?>[] parameterTypes = { String.class };
                 MetFuture late = remote.asyncInvoke(client.service, "echo", parameterTypes, new Object[] { "late" });
-                assertTrue(failure(late) instanceof IllegalStateException);
+                assertInstanceOf(IllegalStateException.class, failure(late));
             } finally {
                 // 无论断言是否成功，都释放关闭线程并有界等待其退出。
                 channel.close();
@@ -1169,7 +1169,7 @@ public class MetCallerTest {
             }
 
             // 排空之后结束未完成请求；重复关闭不会重新初始化管理器。
-            assertTrue(failure(pending) instanceof IllegalStateException);
+            assertInstanceOf(IllegalStateException.class, failure(pending));
             assertFalse(channel.isActive());
             client.close();
             assertFalse(client.manager.isInitialized());
@@ -1187,7 +1187,7 @@ public class MetCallerTest {
             MetFuture outbound = server.invoke(peer.address);
             assertFalse(outbound.isDone());
             MetFuture rejected = server.invoke(peer.address);
-            assertTrue(failure(rejected) instanceof MetException);
+            assertInstanceOf(MetException.class, failure(rejected));
 
             // 入站分发不受出站容量影响，原出站请求仍在等待。
             MetFuture inbound = peer.invoke(server.address);
@@ -1332,7 +1332,7 @@ public class MetCallerTest {
             // 连接尚未交付时取消连接 Future。
             MetFuture call = client.invoke(server.address);
             client.connector().connecting.cancel();
-            assertTrue(failure(call) instanceof CancellationException);
+            assertInstanceOf(CancellationException.class, failure(call));
             assertEquals(1, client.cancelledTimers.get());
 
             // 连接取消回收请求容量，后续调用仍可进入等待。
@@ -1353,7 +1353,7 @@ public class MetCallerTest {
             MetFuture cancelled = client.invoke(server.address);
             MemoryChannel first = client.connector().outgoing;
             first.writing.cancel();
-            assertTrue(failure(cancelled) instanceof CancellationException);
+            assertInstanceOf(CancellationException.class, failure(cancelled));
             assertTrue(first.isActive());
             assertEquals(1, client.cancelledTimers.get());
 
@@ -1395,11 +1395,11 @@ public class MetCallerTest {
 
             // 通道同步抛出的异常应转为调用失败。
             MetFuture first = client.invoke(server.address);
-            assertTrue(failure(first) instanceof IllegalStateException);
+            assertInstanceOf(IllegalStateException.class, failure(first));
 
             // 再次调用仍到达写入路径，证明失败没有泄漏请求容量。
             MetFuture next = client.invoke(server.address);
-            assertTrue(failure(next) instanceof IllegalStateException);
+            assertInstanceOf(IllegalStateException.class, failure(next));
             assertEquals(2, client.cancelledTimers.get());
         }
     }
@@ -1415,7 +1415,7 @@ public class MetCallerTest {
             MetFuture active = client.invoke(server.address);
             client.rpc.close();
             client.rpc.close();
-            assertTrue(failure(active) instanceof IllegalStateException);
+            assertInstanceOf(IllegalStateException.class, failure(active));
 
             // 新建的本地请求在进入过滤器之前就被拒绝。
             Class<?>[] types = { String.class };
@@ -1423,7 +1423,7 @@ public class MetCallerTest {
             Object[] arguments = { "rejected" };
             MetRequestObject rejected = client.rpc.createRequest(target, client.service, "echo", types, arguments);
             MetFuture rejectedCall = client.rpc.invoke(rejected);
-            assertTrue(failure(rejectedCall) instanceof IllegalStateException);
+            assertInstanceOf(IllegalStateException.class, failure(rejectedCall));
             assertEquals(1, client.localFilters.get());
             assertEquals(0, client.remoteFilters.get());
             assertEquals(1, client.cancelledTimers.get());
@@ -1443,7 +1443,7 @@ public class MetCallerTest {
             RequestPayload request = channel.sent.remove();
             client.rpc.close();
             client.rpc.close();
-            assertTrue(failure(active) instanceof IllegalStateException);
+            assertInstanceOf(IllegalStateException.class, failure(active));
 
             // 关闭后从旧通道到达的入站请求不执行过滤器，也不生成响应。
             client.manager.deliver(channel, request.getRequestID(), request);
@@ -1467,7 +1467,7 @@ public class MetCallerTest {
 
             // 关闭后交付的迟到连接不能发送旧请求。
             connector.connecting.completed(connector.outgoing);
-            assertTrue(failure(call) instanceof IllegalStateException);
+            assertInstanceOf(IllegalStateException.class, failure(call));
             assertTrue(connector.outgoing.sent.isEmpty());
         }
     }
@@ -1815,7 +1815,7 @@ public class MetCallerTest {
         }
 
         private MetClient client(InterAddress target) {
-            return new MetClientImpl(this.rpc, new InstanceAddressProvider(target));
+            return new MetClientImpl(this.rpc, new InstanceAddressProvider(target), null);
         }
 
         private MetFuture invoke(InterAddress target) {

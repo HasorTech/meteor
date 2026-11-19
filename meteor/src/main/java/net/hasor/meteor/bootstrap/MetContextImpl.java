@@ -30,6 +30,7 @@ import net.hasor.meteor.domain.ProtocolStatus;
 import net.hasor.meteor.domain.ServiceDomain;
 import net.hasor.meteor.rpc.MetCaller;
 import net.hasor.meteor.rpc.MetClientImpl;
+import net.hasor.meteor.rpc.MetServiceResolver;
 import net.hasor.meteor.serialize.SerializeCoder;
 import net.hasor.meteor.serialize.SerializeFactory;
 
@@ -742,7 +743,8 @@ public final class MetContextImpl implements MetContext, MetUpdater {
 
     @Override
     public MetClient getRsfClient() {
-        return new MetClientImpl(this.rsfCaller, this.addresses.getProvider());
+        MetServiceResolver resolver = this.getExtension(MetServiceResolver.class);
+        return new MetClientImpl(this.rsfCaller, this.addresses.getProvider(), resolver);
     }
 
     @Override
@@ -757,7 +759,8 @@ public final class MetContextImpl implements MetContext, MetUpdater {
 
     @Override
     public MetClient getRsfClient(InterAddress target) {
-        return new MetClientImpl(this.rsfCaller, this.addresses.getProvider(target));
+        MetServiceResolver resolver = this.getExtension(MetServiceResolver.class);
+        return new MetClientImpl(this.rsfCaller, this.addresses.getProvider(target), resolver);
     }
 
     @Override

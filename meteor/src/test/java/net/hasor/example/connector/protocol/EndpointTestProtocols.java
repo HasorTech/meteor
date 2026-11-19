@@ -9,6 +9,7 @@ package net.hasor.example.connector.protocol;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.ObjLongConsumer;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.cobble.concurrent.future.BasicFuture;
@@ -70,6 +71,10 @@ public final class EndpointTestProtocols {
 
         public String defaultSerialize() {
             return "Java";
+        }
+
+        @Override
+        public void prepareOperation(ProtocolConfig config, JsonNode contract, Target target, Binding<Object> binding) {
         }
 
         @Override
@@ -184,6 +189,10 @@ public final class EndpointTestProtocols {
     public static class WireA implements TcpProtocolProvider {
         public String defaultSerialize() {
             return "Java";
+        }
+
+        @Override
+        public void prepareOperation(ProtocolConfig config, JsonNode contract, Target target, Binding<Object> binding) {
         }
 
         @Override

@@ -9,6 +9,7 @@ package net.hasor.meteor.registry.shared;
 import java.util.List;
 import java.util.Set;
 import java.util.function.ObjLongConsumer;
+import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
@@ -42,6 +43,10 @@ public final class RegistryHttpProtocol implements HttpProtocolProvider {
     @Override
     public String defaultSerialize() {
         return "Java";
+    }
+
+    @Override
+    public void prepareOperation(ProtocolConfig config, JsonNode contract, Target target, Binding<Object> binding) {
     }
 
     @Override

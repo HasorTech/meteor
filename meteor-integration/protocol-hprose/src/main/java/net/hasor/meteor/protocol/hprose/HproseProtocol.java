@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.ObjLongConsumer;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
@@ -56,6 +57,11 @@ public final class HproseProtocol implements HttpProtocolProvider {
     @Override
     public List<String> serviceKey(MetBindInfo<?> service, ProtocolBinding binding) {
         return List.of(binding.getDescription().path("name").asText().toLowerCase(Locale.ROOT));
+    }
+
+    @Override
+    public void prepareOperation(ProtocolConfig config, JsonNode contract, Target target, Binding<Object> binding) {
+        // Hprose encodes the method name and values directly.
     }
 
     @Override

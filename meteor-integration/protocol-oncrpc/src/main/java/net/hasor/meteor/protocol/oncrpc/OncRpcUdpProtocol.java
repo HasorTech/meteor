@@ -13,7 +13,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetContext;
-import net.hasor.meteor.connector.ProtocolOperationBinder;
 import net.hasor.meteor.connector.ProtocolSession;
 import net.hasor.meteor.connector.ProtocolSessionContext;
 import net.hasor.meteor.connector.RouteProbeResult;
@@ -28,7 +27,7 @@ import net.hasor.meteor.protocol.oncrpc.binding.OncRpcServiceBinding;
 import net.hasor.meteor.protocol.oncrpc.session.OncRpcSession;
 
 /** ONC RPC UDP 入口；一个数据报承载一条 RPC，重传与去重归协议会话。 */
-public final class OncRpcUdpProtocol implements UdpProtocolProvider, ProtocolOperationBinder {
+public final class OncRpcUdpProtocol implements UdpProtocolProvider {
     @Override
     public String name() {
         return "oncrpc-udp";

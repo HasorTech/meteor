@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.ObjLongConsumer;
+import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
@@ -41,6 +42,10 @@ public class TextProtocol implements TestHttpCodec, HttpProtocolProvider {
 
     public String defaultSerialize() {
         return "Java";
+    }
+
+    @Override
+    public void prepareOperation(ProtocolConfig config, JsonNode contract, Target target, Binding<Object> binding) {
     }
 
     @Override

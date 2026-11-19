@@ -9,6 +9,7 @@ package net.hasor.example.rpc.websocket;
 import java.util.List;
 import java.util.Set;
 import java.util.function.ObjLongConsumer;
+import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.connector.ProtocolSession;
@@ -41,6 +42,10 @@ public final class JsonWebSocketProtocol implements HttpProtocolProvider {
     @Override
     public String defaultSerialize() {
         return "Json";
+    }
+
+    @Override
+    public void prepareOperation(ProtocolConfig config, JsonNode contract, Target target, Binding<Object> binding) {
     }
 
     @Override

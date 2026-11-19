@@ -9,6 +9,7 @@ package net.hasor.meteor.protocol.hessian;
 import java.util.List;
 import java.util.Set;
 import java.util.function.ObjLongConsumer;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
@@ -51,6 +52,11 @@ public final class HessianProtocol implements HttpProtocolProvider {
     @Override
     public List<String> serviceKey(MetBindInfo<?> service, ProtocolBinding binding) {
         return List.of(binding.getDescription().path("name").asText());
+    }
+
+    @Override
+    public void prepareOperation(ProtocolConfig config, JsonNode contract, Target target, Binding<Object> binding) {
+        // Hessian encodes the method name and values directly.
     }
 
     @Override

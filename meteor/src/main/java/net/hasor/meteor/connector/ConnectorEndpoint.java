@@ -397,10 +397,10 @@ final class ConnectorEndpoint<M> {
     }
 
     void prepareOperation(String protocol, JsonNode contract, //
-            ProtocolOperationBinder.Target target, ProtocolOperationBinder.Binding<Object> result) {
+            ProtocolProvider.Target target, ProtocolProvider.Binding<Object> result) {
         ProtocolMountBinding<M> binding = this.plan.protocolBindings().get(protocol);
-        if (binding != null && binding.provider() instanceof ProtocolOperationBinder compiler) {
-            compiler.prepareOperation(binding.config(), contract, target, result);
+        if (binding != null) {
+            binding.provider().prepareOperation(binding.config(), contract, target, result);
         }
     }
 

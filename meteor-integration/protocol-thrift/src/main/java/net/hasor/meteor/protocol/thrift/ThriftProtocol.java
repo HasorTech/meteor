@@ -13,7 +13,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetContext;
-import net.hasor.meteor.connector.ProtocolOperationBinder;
 import net.hasor.meteor.connector.ProtocolSession;
 import net.hasor.meteor.connector.ProtocolSessionContext;
 import net.hasor.meteor.connector.RouteProbeResult;
@@ -28,7 +27,7 @@ import net.hasor.meteor.protocol.thrift.codec.ThriftServiceSchema;
 import net.hasor.meteor.protocol.thrift.session.ThriftSession;
 
 /** Thrift TCP 入口；分帧及编码由本插件处理，TLS 由传输配置提供。 */
-public final class ThriftProtocol implements TcpProtocolProvider, ProtocolOperationBinder {
+public final class ThriftProtocol implements TcpProtocolProvider {
     @Override
     public String name() {
         return "thrift";

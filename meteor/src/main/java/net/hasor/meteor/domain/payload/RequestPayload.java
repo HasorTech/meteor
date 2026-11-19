@@ -15,7 +15,7 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import net.hasor.cobble.concurrent.future.BasicFuture;
 import net.hasor.cobble.concurrent.future.Future;
-import net.hasor.meteor.connector.ProtocolOperationBinder.Target;
+import net.hasor.meteor.connector.ProtocolProvider.Target;
 
 /**
  * RSF Request 的化身,是封装 Request 的数据对象。

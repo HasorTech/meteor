@@ -11,7 +11,7 @@ import java.util.Enumeration;
 import java.util.List;
 import net.hasor.meteor.*;
 import net.hasor.meteor.address.InterAddress;
-import net.hasor.meteor.connector.ProtocolOperationBinder.Target;
+import net.hasor.meteor.connector.ProtocolProvider.Target;
 
 /** One RPC invocation, with its direction and metadata supplied by the creator. */
 public class MetRequestObject implements MetRequest {

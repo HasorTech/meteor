@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.function.Function;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.cobble.StringUtils;
-import net.hasor.meteor.connector.ProtocolOperationBinder.Target;
+import net.hasor.meteor.connector.ProtocolProvider.Target;
 import net.hasor.meteor.protocol.soap.definition.SoapDefinitionResource;
 import net.hasor.meteor.protocol.soap.definition.SoapOperation;
 import net.hasor.meteor.protocol.soap.definition.SoapPublishedResource;

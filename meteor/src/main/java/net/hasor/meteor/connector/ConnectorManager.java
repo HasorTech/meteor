@@ -617,7 +617,7 @@ public class ConnectorManager implements AutoCloseable {
     }
 
     public void prepareOperation(String connectorName, String protocol, JsonNode contract, //
-            ProtocolOperationBinder.Target target, ProtocolOperationBinder.Binding<Object> result) {
+            ProtocolProvider.Target target, ProtocolProvider.Binding<Object> result) {
         ConnectorEndpoint<?> endpoint;
         synchronized (this) {
             endpoint = this.endpoints.get(connectorName);

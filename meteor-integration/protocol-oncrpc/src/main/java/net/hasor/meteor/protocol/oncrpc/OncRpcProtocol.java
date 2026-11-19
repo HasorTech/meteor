@@ -13,7 +13,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetContext;
-import net.hasor.meteor.connector.ProtocolOperationBinder;
 import net.hasor.meteor.connector.ProtocolSession;
 import net.hasor.meteor.connector.ProtocolSessionContext;
 import net.hasor.meteor.connector.RouteProbeResult;
@@ -28,7 +27,7 @@ import net.hasor.meteor.protocol.oncrpc.binding.OncRpcServiceBinding;
 import net.hasor.meteor.protocol.oncrpc.session.OncRpcSession;
 
 /** ONC RPC TCP 入口；Record Marking 归协议会话，安全传输归端点。 */
-public final class OncRpcProtocol implements TcpProtocolProvider, ProtocolOperationBinder {
+public final class OncRpcProtocol implements TcpProtocolProvider {
     @Override
     public String name() {
         return "oncrpc";

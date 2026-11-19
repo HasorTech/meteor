@@ -13,7 +13,6 @@ import java.util.function.ObjLongConsumer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.hasor.meteor.MetContext;
-import net.hasor.meteor.connector.ProtocolOperationBinder;
 import net.hasor.meteor.connector.ProtocolSession;
 import net.hasor.meteor.connector.ProtocolSessionContext;
 import net.hasor.meteor.connector.RouteProbeResult;
@@ -27,7 +26,7 @@ import net.hasor.meteor.protocol.dubbo.codec.DubboCodec;
 import net.hasor.meteor.protocol.dubbo.session.DubboSession;
 
 /** Dubbo 2.x 与 3.x 共用的二进制协议入口，安全连接复用 TCP 传输配置。 */
-public final class DubboProtocol implements TcpProtocolProvider, ProtocolOperationBinder {
+public final class DubboProtocol implements TcpProtocolProvider {
     @Override
     public String name() {
         return "dubbo";
