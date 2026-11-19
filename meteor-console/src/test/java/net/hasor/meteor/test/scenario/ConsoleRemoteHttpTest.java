@@ -19,10 +19,13 @@ import net.hasor.meteor.console.ConsoleMain;
 import net.hasor.meteor.console.component.provider.ProviderConnection;
 import net.hasor.meteor.console.component.rpc.RpcManagement;
 import net.hasor.meteor.console.component.rpc.RpcManagementFilter;
-import net.hasor.meteor.test.component.rpc.RegistryRpcFixture;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.utils.JsonUtils;
 import net.hasor.meteor.registry.RegistryAdmin;
 import net.hasor.meteor.registry.memory.MemoryRegistryConfiguration;
+import net.hasor.meteor.test.component.rpc.RegistryRpcFixture;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -84,10 +87,52 @@ public class ConsoleRemoteHttpTest {
                 String message = error.path("error").asText();
                 assertFalse(message.contains(token), response.body());
                 if (remoteStatus == 401) {
-                    assertEquals("Remote Console authentication failed", message);
+                    assertEquals("远端控制台管理凭据无效", message);
                 } else {
                     assertTrue(message.contains("Remote failure: managementToken=***"), message);
                 }
+            }
+        }
+    }
+
+    @Test
+    public void remoteKeyedFailureLocalizesArgumentsAndMasksCredentials() throws Exception {
+        // 启动独立的 RSF 服务，使用 Console 的管理过滤器处理带参数的异常。
+        MemoryRegistryConfiguration storage = new MemoryRegistryConfiguration();
+        storage.setManagementToken("local-admin-token");
+        MetConfiguration configuration = new MetConfiguration() //
+                .setApplicationName("console-keyed-errors") //
+                .setDataHome(this.temporary.resolve("keyed-remote"));
+        configuration.connector("tcp").bind("127.0.0.1", 0).protocol("rsf");
+        String token = "rsf-secret";
+        Boot boot = new Boot().sources(ConsoleMain.class).hconfigFile(console(this.temporary));
+
+        try (ProviderConnection connection = ProviderConnection.registry(storage.buildAdmin()); //
+             MetContext remote = configuration.buildContext()) {
+            MetBindInfo<RpcManagement> binding = remote.publisher().rsfService(RpcManagement.class, RegistryRpcFixture.management(connection)) //
+                    .bindFilter("console-auth", new RpcManagementFilter(() -> token)) //
+                    .bindFilter("keyed-failure", (request, response, chain) -> {
+                        throw new ErrorMessageException(ConsoleMessageKey.ERROR_MISSING_PARAMETER, "scope=" + token);
+                    }) //
+                    .asShadow().asDistributedCall().register();
+            remote.getExtension(MetAccessPolicy.class).allow(binding, MetAccessEnum.values());
+            remote.start();
+
+            try (BootApplication application = boot.start()) {
+                Api api = new Api(application);
+                api.login();
+                Map<String, Object> profile = Map.of(//
+                        "name", "Remote Console", //
+                        "type", "remote", //
+                        "remoteClusterId", "saved-registry", //
+                        "address", remote.getListenAddress("rsf").toString(), //
+                        "managementToken", token);
+
+                // 默认中文只在收到 key 和参数后才能得到带参数的译文。
+                var response = api.send("clusters/test", "POST", profile);
+                assertEquals(400, response.statusCode(), response.body());
+                assertEquals("缺少参数：scope=***", JsonUtils.readTree(response.body()).path("error").asText());
+                assertFalse(response.body().contains(token));
             }
         }
     }

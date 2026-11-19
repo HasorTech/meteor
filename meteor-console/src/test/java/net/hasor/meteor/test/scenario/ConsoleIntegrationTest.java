@@ -772,9 +772,15 @@ public class ConsoleIntegrationTest {
             URI loginUri = root.resolve("/api/auth/login");
             HttpRequest.Builder foreignBuilder = HttpRequest.newBuilder(loginUri)//
                     .header("Origin", "https://elsewhere.invalid")//
+                    .header("Accept-Language", "en-US")//
                     .header("Content-Type", "application/json");
             HttpRequest foreign = foreignBuilder.POST(HttpRequest.BodyPublishers.ofString(credentials)).build();
-            assertEquals(403, client.send(foreign, HttpResponse.BodyHandlers.ofString()).statusCode());
+            HttpResponse<String> rejected = client.send(foreign, HttpResponse.BodyHandlers.ofString());
+            assertEquals(403, rejected.statusCode(), rejected.body());
+            assertEquals("en-US", rejected.headers().firstValue("Content-Language").orElseThrow());
+            var rejectedBody = JsonUtils.readTree(rejected.body());
+            assertEquals(403, rejectedBody.path("status").asInt());
+            assertEquals("Cross-site operations are not allowed", rejectedBody.path("error").asText());
             HttpRequest.Builder loginBuilder = HttpRequest.newBuilder(loginUri)//
                     .header("Content-Type", "application/json");
             HttpRequest login = loginBuilder.POST(HttpRequest.BodyPublishers.ofString(credentials)).build();
@@ -789,7 +795,9 @@ public class ConsoleIntegrationTest {
             HttpRequest.Builder malformedBuilder = HttpRequest.newBuilder(clustersUri)//
                     .header("Content-Type", "application/json");
             HttpRequest malformed = malformedBuilder.POST(HttpRequest.BodyPublishers.ofString("{")).build();
-            assertEquals(400, client.send(malformed, HttpResponse.BodyHandlers.ofString()).statusCode());
+            HttpResponse<String> malformedResponse = client.send(malformed, HttpResponse.BodyHandlers.ofString());
+            assertEquals(400, malformedResponse.statusCode(), malformedResponse.body());
+            assertEquals("请求正文包含无效的 JSON", JsonUtils.readTree(malformedResponse.body()).path("error").asText());
             HttpRequest.Builder wrongTypeBuilder = HttpRequest.newBuilder(clustersUri)//
                     .header("Content-Type", "text/plain");
             HttpRequest wrongType = wrongTypeBuilder.POST(HttpRequest.BodyPublishers.ofString("{}")).build();
