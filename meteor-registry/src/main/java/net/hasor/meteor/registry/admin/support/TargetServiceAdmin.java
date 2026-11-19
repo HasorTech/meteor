@@ -65,7 +65,7 @@ final class TargetServiceAdmin implements MetServiceAdmin {
 
     @Override
     public MetServiceMethodPage methods(String methodName, MetDirectoryQuery query) {
-        throw new UnsupportedOperationException("实例方法请读取实例服务描述");
+        throw new UnsupportedOperationException("Read method details from the instance service descriptor");
     }
 
     @Override

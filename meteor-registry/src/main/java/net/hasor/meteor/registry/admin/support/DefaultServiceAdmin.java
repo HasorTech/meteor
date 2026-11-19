@@ -56,7 +56,7 @@ final class DefaultServiceAdmin implements MetServiceAdmin {
     public MetServiceMethodPage methods(String methodName, MetDirectoryQuery query) {
         this.governance.requireAccess();
         if (this.instanceId != null) {
-            throw new IllegalArgumentException("持久方法目录只接受服务作用域");
+            throw new IllegalArgumentException("The persistent method directory requires service scope");
         }
 
         return call(() -> {
