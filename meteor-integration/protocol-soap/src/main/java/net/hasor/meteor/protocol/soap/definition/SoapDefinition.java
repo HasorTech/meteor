@@ -38,7 +38,7 @@ public final class SoapDefinition {
         this.methods = Collections.unmodifiableMap(methods);
     }
 
-    SoapVersion version() {
+    public SoapVersion version() {
         return this.version;
     }
 

@@ -7,20 +7,16 @@
  */
 package net.hasor.meteor.protocol.thrift.codec;
 import java.math.BigDecimal;
-import net.hasor.meteor.annotation.MetField;
 import java.nio.ByteBuffer;
 import java.util.*;
 import net.hasor.cobble.function.EConsumer;
 import net.hasor.cobble.reflect.resolvable.ResolvableType;
-import net.hasor.example.protocol.thrift.mapping.Note;
-import net.hasor.example.protocol.thrift.mapping.NoteService;
+import net.hasor.example.protocol.thrift.mapping.*;
+import net.hasor.meteor.annotation.MetField;
 import net.hasor.meteor.annotation.MetParam;
 import net.hasor.meteor.domain.ServiceDomain;
 import net.hasor.meteor.protocol.thrift.ThriftIdlResource;
-import net.hasor.example.protocol.thrift.mapping.MappedBean;
-import net.hasor.example.protocol.thrift.mapping.MappedState;
-import net.hasor.example.protocol.thrift.mapping.FailingNote;
-import net.hasor.meteor.protocol.thrift.annotation.*;
+import net.hasor.meteor.protocol.thrift.annotation.ThriftUnion;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.*;
 import org.apache.thrift.transport.TMemoryInputTransport;
@@ -596,7 +592,7 @@ public class ThriftValueCodecTest {
     private ThriftType idlType(Class<?> contract, String name) throws Exception {
         ThriftIdlResource resource = new ThriftIdlResource(this.getClass().getResource("/thrift/mapping.thrift"));
         ThriftServiceSchema schema = resource.selectService(name).bind(new ServiceDomain<>(contract));
-        return schema.javaMethod("echo").args.fields.get(0).type;
+        return schema.javaMethod("echo").args().fields.get(0).type;
     }
 
     private Values values() {

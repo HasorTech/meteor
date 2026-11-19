@@ -9,8 +9,10 @@ package net.hasor.meteor.protocol.triple;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.ObjLongConsumer;
+import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
+import net.hasor.meteor.connector.ProtocolOperationBinder;
 import net.hasor.meteor.connector.ProtocolSession;
 import net.hasor.meteor.connector.ProtocolSessionContext;
 import net.hasor.meteor.connector.RouteMountIndex;
@@ -28,7 +30,7 @@ import net.hasor.meteor.protocol.triple.session.TripleMountRuntime;
 import net.hasor.meteor.protocol.triple.session.TripleSession;
 
 /** Triple SPI 入口；按挂载点组装编码规则和调用会话。 */
-public final class TripleProtocol implements HttpProtocolProvider {
+public final class TripleProtocol implements HttpProtocolProvider, ProtocolOperationBinder {
     @Override
     public Set<Integer> httpVersions(ProtocolConfig config) {
         return Set.of(1, 2);
@@ -49,6 +51,11 @@ public final class TripleProtocol implements HttpProtocolProvider {
     @Override
     public String defaultSerialize() {
         return "Hessian2";
+    }
+
+    @Override
+    public void prepareOperation(ProtocolConfig config, JsonNode contract, Target target, Binding<Object> binding) {
+        TripleHttpCodec.prepareOperation(contract, target, binding);
     }
 
     @Override

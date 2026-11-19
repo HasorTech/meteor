@@ -27,12 +27,16 @@ import net.hasor.meteor.address.provider.InstanceAddressProvider;
 import net.hasor.meteor.connector.ConnectorConfig;
 import net.hasor.meteor.connector.ConnectorManager;
 import net.hasor.meteor.connector.MetChannel;
+import net.hasor.meteor.connector.transport.http.HttpServicePathUtils;
 import net.hasor.meteor.domain.*;
+import net.hasor.meteor.domain.meta.ProtocolMeta;
 import net.hasor.meteor.domain.meta.ServiceMetaParser;
 import net.hasor.meteor.domain.payload.Payload;
 import net.hasor.meteor.domain.payload.RequestPayload;
 import net.hasor.meteor.domain.payload.ResponsePayload;
 import net.hasor.meteor.domain.payload.ThrowPayload;
+import net.hasor.meteor.domain.warp.MetBindInfoWrap;
+import net.hasor.meteor.serialize.SerializeCoder;
 
 /** Coordinates outbound invocations, inbound dispatch and connector messages. */
 public final class MetCaller implements AutoCloseable {
@@ -198,7 +202,7 @@ public final class MetCaller implements AutoCloseable {
 
         if (invLogger.isDebugEnabled()) {
             invLogger.debug("request(" + requestID + ") -> doSendRequest, bindID =" + serviceID //
-                    + ", callMethod =" + rsfRequest.getMethod() + ", isMessage =" + rsfRequest.isMessage() + ".");
+                    + ", callMethod =" + rsfRequest.getMethodName() + ", isMessage =" + rsfRequest.isMessage() + ".");
         }
 
         try {
@@ -271,13 +275,15 @@ public final class MetCaller implements AutoCloseable {
     }
 
     private ProtocolSelection resolveProtocol(MetRequestObject request) {
-        InterAddress target = request.getTargetAddress();
+        MetBindInfo<?> service = request.getBindInfo();
+        return this.resolveProtocol(request.getTargetAddress(), service.getBindID(), service.getBindProtocols());
+    }
+
+    private ProtocolSelection resolveProtocol(InterAddress target, String serviceId, Set<String> declared) {
         if (target == null) {
             return new ProtocolSelection(null, this.context.getDefaultProtocol(), null);
         }
 
-        MetBindInfo<?> service = request.getBindInfo();
-        Set<String> declared = service.getBindProtocols();
         boolean useDefault = declared == null || declared.isEmpty();
         String defaultProtocol = this.context.getDefaultProtocol();
         Set<String> selectors = useDefault ? Collections.singleton(defaultProtocol) : declared;
@@ -296,7 +302,6 @@ public final class MetCaller implements AutoCloseable {
             candidates = available;
         }
 
-        String serviceId = service.getBindID();
         if (candidates.isEmpty()) {
             String message = "Service [" + serviceId + "] has no protocol for address scheme " + scheme;
             message += " and selection " + selectors;
@@ -354,16 +359,76 @@ public final class MetCaller implements AutoCloseable {
             return;
         }
 
-        RequestPayload payload = this.prepareRequest(future, () -> {
+        RequestPayload payload = this.prepareRequest(future, request.getRequestID(), request.getTimeout(), () -> {
             RequestPayload mapped = MetPayloadBuilder.buildRequestPayload(request);
             mapped.setFlags(request.getFlags());
             return mapped;
         });
 
-        if (payload == null) {
-            return;
+        if (payload != null) {
+            this.sendPendingRequest(address, selection, payload);
+        }
+    }
+
+    MetGenericService resolveLocalService(String serviceId, String protocol, InterAddress target) {
+        MetBindInfo<?> service = this.context.getServiceInfo(serviceId);
+        if (service == null || service.getServiceType() != MetServiceType.Provider) {
+            return null;
         }
 
+        ServiceDomain<?> domain = MetBindInfoWrap.unwrap(service);
+        ProtocolMeta publication = domain.getProtocolMeta(protocol);
+        if (publication == null) {
+            return null;
+        }
+
+        for (ConnectorConfig connector : this.context.getSettings().getConnectorConfigs()) {
+            ProtocolBinding binding = publication.getEndpoint(connector.name());
+            if (binding == null || binding.getDescription() == null || !connector.bindEnabled()) {
+                continue;
+            }
+
+            for (ProtocolConfig mount : connector.protocols()) {
+                if (!StringUtils.equalsIgnoreCase(protocol, mount.name())) {
+                    continue;
+                }
+
+                InterAddress listen = this.context.getListenAddress(connector.name(), mount.name(), mount.scheme());
+                if (listen == null) {
+                    continue;
+                }
+
+                ContextPath paths = binding.getContextPath();
+                Collection<String> candidates = paths == null ? Collections.singletonList(null) : paths.getPaths();
+                for (String path : candidates) {
+                    String connectPath = HttpServicePathUtils.clientPath(binding, path);
+                    InterAddress address = new InterAddress(listen.getSchema(), listen.getHost(), listen.getPort(), connectPath);
+                    if (target == null || target.equals(address)) {
+                        return new MetGenericService(address, service.getBindGroup(), service.getBindName(), service.getBindVersion(), //
+                                mount.name(), path, domain.getServiceMeta().createServiceDescription(), binding.getDescription());
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    MetFuture invokePublished(MetGenericService service, String method, Object[] arguments, int requestTimeout, //
+            Map<String, String> options) {
+        PublishedContract.Call call = service.getContract().bindCall(method, arguments);
+        MetRequestObject request = MetPayloadBuilder.buildPublishedRequest(REQUEST_IDS.incrementAndGet(), this.context, service, method, call);
+        request.setPeerAddress(service.getAddress());
+        ProtocolSelection selection = this.resolveProtocol(request);
+        ProtocolOperation operation = call.operation;
+        this.connectors.prepareOperation(selection.endpointName, selection.protocol, service.getProtocolDescription(), operation, operation::bind);
+        request.setFlags(MetFlags.P2PFlag.addTag((short) 0));
+        request.setTimeout(this.timeout(requestTimeout));
+        request.addOptionMap(this.context.getSettings().getRequestOptions());
+        options.forEach(request::addOption);
+        return this.invoke(request);
+    }
+
+    private void sendPendingRequest(InterAddress address, ProtocolSelection selection, RequestPayload payload) {
         Future<?> sending = this.sendRequest(address, selection, payload);
         sending.onFailed(sent -> this.putResponse(payload.getRequestID(), sent.getCause()));
         sending.onCancel(sent -> {
@@ -374,21 +439,22 @@ public final class MetCaller implements AutoCloseable {
     }
 
     /** Reserve capacity before mapping; a registered entry owns its permit and timer. */
-    private RequestPayload prepareRequest(MetFuture future, Callable<RequestPayload> mapping) throws Exception {
+    private RequestPayload prepareRequest(BasicFuture<?> future, long requestId, int timeout, Callable<RequestPayload> mapping) throws Exception {
         if (this.closed) {
             throw new IllegalStateException("RSF runtime closed");
         }
-        if (!this.acquireRequestPermit(future)) {
+
+        if (!this.acquireRequestPermit(future, requestId)) {
             return null;
         }
 
         boolean registered = false;
         try {
             RequestPayload payload = mapping.call();
-            this.registerRequest(future, payload);
+            this.registerRequest(future, payload, this.timeout(timeout));
             registered = true;
 
-            this.startRequest(future);
+            this.startRequest(requestId, this.timeout(timeout));
             if (future.isDone()) {
                 return null;
             }
@@ -401,7 +467,7 @@ public final class MetCaller implements AutoCloseable {
         }
     }
 
-    private synchronized void registerRequest(MetFuture future, RequestPayload payload) {
+    private synchronized void registerRequest(BasicFuture<?> future, RequestPayload payload, int timeout) {
         if (this.closed) {
             throw new IllegalStateException("RSF runtime closed");
         }
@@ -409,18 +475,17 @@ public final class MetCaller implements AutoCloseable {
             throw new CancellationException("RPC ended before registration");
         }
 
-        long requestId = future.getRequest().getRequestID();
-        PendingRequest pending = new PendingRequest(future, payload, this.timeout(future.getRequest().getTimeout()));
+        long requestId = payload.getRequestID();
+        PendingRequest pending = new PendingRequest(future, payload, timeout);
         if (this.rsfResponse.putIfAbsent(requestId, pending) != null) {
             throw new IllegalStateException("Request is already pending");
         }
     }
 
-    private void startRequest(MetFuture future) {
-        long requestId = future.getRequest().getRequestID();
+    private void startRequest(long requestId, int timeout) {
         Cancellable timer = this.connectors.schedule(() -> {
             this.putResponse(requestId, new MetTimeoutException("request(" + requestId + ") -> timeout for client."));
-        }, this.timeout(future.getRequest().getTimeout()));
+        }, timeout);
 
         synchronized (this) {
             PendingRequest pending = this.rsfResponse.get(requestId);
@@ -432,7 +497,7 @@ public final class MetCaller implements AutoCloseable {
         timer.cancel();
     }
 
-    private boolean acquireRequestPermit(MetFuture future) throws InterruptedException {
+    private boolean acquireRequestPermit(BasicFuture<?> future, long requestId) throws InterruptedException {
         if (this.requestPermits.tryAcquire()) {
             return true;
         }
@@ -449,7 +514,6 @@ public final class MetCaller implements AutoCloseable {
             }
         }
 
-        long requestId = future.getRequest().getRequestID();
         String message = "request(" + requestId + ") -> maximum number of requests, apply SendPolicy = " + policy;
         future.failed(new MetException(ProtocolStatus.SendLimitPolicy, message));
         return false;
@@ -559,26 +623,10 @@ public final class MetCaller implements AutoCloseable {
         return timeout > 0 ? timeout : this.context.getSettings().getDefaultTimeout();
     }
 
-    private static final class ProtocolSelection {
-        private final String       endpointName;
-        private final String       protocol;
-        private final InterAddress bindAddress;
-
-        private ProtocolSelection(String endpointName, String protocol, InterAddress bindAddress) {
-            this.endpointName = endpointName;
-            this.protocol = protocol;
-            this.bindAddress = bindAddress;
-        }
+    private record ProtocolSelection(String endpointName, String protocol, InterAddress bindAddress) {
     }
 
-    private static final class ProtocolCandidate {
-        private final ConnectorConfig endpoint;
-        private final ProtocolConfig  mount;
-
-        private ProtocolCandidate(ConnectorConfig endpoint, ProtocolConfig mount) {
-            this.endpoint = endpoint;
-            this.mount = mount;
-        }
+    private record ProtocolCandidate(ConnectorConfig endpoint, ProtocolConfig mount) {
     }
 
     //
@@ -635,13 +683,13 @@ public final class MetCaller implements AutoCloseable {
 
         if (response.completion() != null && response.getStatus() == ProtocolStatus.OK) {
             PendingRequest pending = this.rsfResponse.get(requestId);
-            if (pending == null || pending.channel != channel || pending.future.isDone()) {
+            if (pending == null || pending.channel != channel || !(pending.future instanceof MetFuture) || pending.future.isDone()) {
                 response.completion().cancel();
                 return;
             }
 
             // 交付响应 Publisher，保留截止时间与配额，直到消息流真正结束。
-            this.putResponse(pending.future, response);
+            this.putResponse((MetFuture) pending.future, response);
             response.completion().onFinal(done -> {
                 Throwable failure = done.getCause();
                 if (done.isCancelled()) {
@@ -652,27 +700,27 @@ public final class MetCaller implements AutoCloseable {
             return;
         }
 
-        MetFuture future = this.takeResponse(channel, requestId, response.getStatus() == ProtocolStatus.Accept, null);
-        if (future != null) {
-            this.putResponse(future, response);
+        PendingRequest pending = this.takeResponse(channel, requestId, response.getStatus() == ProtocolStatus.Accept, null);
+        if (pending != null) {
+            this.putResponse((MetFuture) pending.future, response);
         }
     }
 
     private void onFailure(MetChannel channel, long requestId, Throwable failure) {
-        MetFuture future = this.takeResponse(channel, requestId, false, failure);
-        if (future != null) {
+        PendingRequest pending = this.takeResponse(channel, requestId, false, failure);
+        if (pending != null) {
             invLogger.error("response(" + requestId + ") -> errorFailed, " + failure.getMessage(), failure);
-            future.failed(failure);
+            pending.future.failed(failure);
         }
     }
 
     /** Match the source, then remove that exact entry; ordinary ACKs keep the request pending. */
-    private MetFuture takeResponse(MetChannel channel, long requestId, boolean acknowledgement, Throwable cause) {
+    private PendingRequest takeResponse(MetChannel channel, long requestId, boolean acknowledgement, Throwable cause) {
         PendingRequest pending = this.rsfResponse.get(requestId);
         if (pending == null || channel == null || pending.channel != channel) {
             return null;
         }
-        if (acknowledgement && !pending.future.getRequest().isMessage()) {
+        if (acknowledgement && !pending.payload.isMessage()) {
             return null;
         }
         return this.removeRsfFuture(pending, cause);
@@ -705,6 +753,18 @@ public final class MetCaller implements AutoCloseable {
             if (returnType.isAssignableFrom(MetResult.class)) {
                 result = new MetResultDO(request.getRequestID(), true);
             }
+        } else if (info.getEncodedReturnData() != null) {
+            try {
+                SerializeCoder coder = this.context.getSerializeCoder(info.getSerializeType());
+                if (coder == null) {
+                    throw new MetException(ProtocolStatus.SerializeError, "Unsupported serialization type: " + info.getSerializeType());
+                }
+                Class<?> type = ((MetRequestObject) request).getReturnType();
+                result = coder.decode(info.getEncodedReturnData(), type);
+            } catch (Exception | LinkageError failure) {
+                future.failed(failure);
+                return;
+            }
         }
         MetResponseObject response = new MetResponseObject(request);
         response.setOptions(info);
@@ -719,40 +779,40 @@ public final class MetCaller implements AutoCloseable {
 
     /** 响应挂起的Request请求。 */
     private void putResponse(long requestID, Throwable e) {
-        MetFuture rsfFuture = this.removeRsfFuture(this.rsfResponse.get(requestID), e);
-        if (rsfFuture != null) {
+        PendingRequest pending = this.removeRsfFuture(this.rsfResponse.get(requestID), e);
+        if (pending != null) {
             invLogger.error("response(" + requestID + ") -> errorFailed, " + e.getMessage(), e);
-            rsfFuture.failed(e);
+            pending.future.failed(e);
         }
     }
 
-    private MetFuture removeRsfFuture(PendingRequest pending, Throwable cause) {
+    private PendingRequest removeRsfFuture(PendingRequest pending, Throwable cause) {
         if (pending == null) {
             return null;
         }
 
         synchronized (this) {
             // Coordinate with closeRpc so only one terminal path releases this request's permit.
-            if (!this.rsfResponse.remove(pending.future.getRequest().getRequestID(), pending)) {
+            if (!this.rsfResponse.remove(pending.payload.getRequestID(), pending)) {
                 return null;
             }
             this.requestPermits.release();
         }
         pending.cancelTimeout();
         pending.payload.complete(cause);
-        return pending.future;
+        return pending;
     }
 
     //
 
     private static final class PendingRequest {
-        private final    MetFuture      future;
+        private final    BasicFuture<?> future;
         private final    RequestPayload payload;
         private final    long           deadline;
         private volatile MetChannel     channel;
         private          Cancellable    timer;
 
-        private PendingRequest(MetFuture future, RequestPayload payload, int timeout) {
+        private PendingRequest(BasicFuture<?> future, RequestPayload payload, int timeout) {
             this.future = future;
             this.payload = payload;
             this.deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeout);

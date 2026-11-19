@@ -8,6 +8,7 @@
 package net.hasor.example.protocol.dubbo.interop;
 import java.util.List;
 import java.util.Map;
+import net.hasor.meteor.annotation.MetMethod;
 
 /** Meteor 和独立官方 Dubbo 进程共同使用的普通 Java 业务接口。 */
 public interface DubboInteropService {
@@ -15,8 +16,10 @@ public interface DubboInteropService {
 
     String combine(String value, int count);
 
+    @MetMethod(name = "overloadedText")
     String overloaded(String value);
 
+    @MetMethod(name = "overloadedNumber")
     String overloaded(int value);
 
     String noArgs();

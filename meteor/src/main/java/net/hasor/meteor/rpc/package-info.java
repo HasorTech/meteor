@@ -7,7 +7,7 @@
  */
 /**
  * RPC 的两条处理链，统一由 MetCaller 协调。
- * 对外公开 MetCaller、MetClientImpl 和 MetFilterProvider，其余类仅供包内实现使用。
+ * MetServiceResolver 提供 RPC 目标发现，选定的接入点和契约由本包组装。
  *
  * <p>出站通过 MetCaller.createRequest 和 invoke 发起；本地提供者命中时直接调用，
  * 否则执行过滤器、登记请求、建连发送并管理超时。入站消息由 MetCaller.onMessage 接收。</p>

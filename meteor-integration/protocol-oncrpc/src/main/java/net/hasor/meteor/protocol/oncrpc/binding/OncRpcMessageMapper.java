@@ -13,9 +13,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
+import net.hasor.meteor.connector.ProtocolOperationBinder.Binding;
+import net.hasor.meteor.connector.ProtocolOperationBinder.Target;
 import net.hasor.meteor.connector.RouteMountIndex;
 import net.hasor.meteor.domain.*;
 import net.hasor.meteor.domain.meta.ProtocolMeta;
@@ -49,24 +52,67 @@ public final class OncRpcMessageMapper {
         if (request.isMessage()) {
             throw new IllegalArgumentException("ONC RPC does not support Meteor message mode");
         }
-        MetBindInfo<?> service = this.service(request);
-        OncRpcServiceBinding resource = this.resource(service);
-        Method method = method(resource, request.getTargetMethod());
+        OncRpcOperation operation = this.operation(request);
         List<Object> values = request.getParameterValues();
-        Type[] types = method.getGenericParameterTypes();
-        if (values.size() != types.length) {
+        if (values.size() != operation.parameters().size()) {
             throw new IllegalArgumentException("ONC RPC argument count differs from the service contract");
         }
 
-        // Procedure arguments form one XDR struct in Java declaration order, without an extra argument count.
         XdrOutput output = this.output();
-        for (int index = 0; index < types.length; index++) {
-            XdrCodec<Object> codec = resource.parameter(method.getName(), index);
-            output.write(codec, values.get(resource.parameterIndex(method.getName(), index)));
+        for (int index = 0; index < operation.parameters().size(); index++) {
+            output.write(operation.parameters().get(index), values.get(operation.order().get(index)));
         }
-        long procedure = resource.getProcedure(method.getName());
-        return OncRpcMessage.newCall(xid, 2, resource.getProgram(), resource.getVersion(), procedure, //
+        return OncRpcMessage.newCall(xid, 2, operation.program(), operation.version(), operation.procedure(), //
                 this.credentials, OncRpcAuth.newNone(), output.toByteArray());
+    }
+
+    private OncRpcOperation operation(RequestPayload request) {
+        return request.resolveProtocolBinding(OncRpcOperation.class, () -> {
+            OncRpcServiceBinding resource = this.resource(this.service(request));
+            Method method = method(resource, request.getTargetMethod());
+            String name = method.getName();
+            List<XdrCodec<Object>> parameters = new ArrayList<>();
+            List<Integer> order = new ArrayList<>();
+            for (int index = 0; index < method.getParameterCount(); index++) {
+                parameters.add(resource.parameter(name, index));
+                order.add(resource.parameterIndex(name, index));
+            }
+            return new OncRpcOperation(resource.getProgram(), resource.getVersion(), //
+                    resource.getProcedure(name), parameters, order, resource.result(name), method.getReturnType());
+        });
+    }
+
+    public static void prepareOperation(ProtocolConfig config, JsonNode contract, Target operation, Binding<Object> binding) {
+        JsonNode method = null;
+        for (JsonNode candidate : contract.path("methods")) {
+            if (StringUtils.equals(candidate.path("name").textValue(), operation.methodName())) {
+                method = candidate;
+                break;
+            }
+        }
+        if (method == null) {
+            throw new IllegalArgumentException("ONC RPC operation is unavailable: " + operation.methodName());
+        }
+
+        XdrContractCompiler compiler = new XdrContractCompiler(contract.path("types"), config.integer("maxMessageSize", 8 * 1024 * 1024), config.integer("maxContainerSize", 100000));
+        List<Integer> order = new ArrayList<>();
+        method.path("argIndexes").forEach(index -> order.add(index.intValue()));
+        List<XdrCodec<Object>> parameters = new ArrayList<>();
+        String input = method.path("requestType").textValue();
+        if (order.size() == 1) {
+            parameters.add(compiler.compile(input));
+        } else if (order.size() > 1) {
+            for (JsonNode member : compiler.declaration(input).path("members")) {
+                parameters.add(compiler.compile(member.path("type").textValue()));
+            }
+        }
+        if (parameters.size() != order.size()) {
+            throw new IllegalArgumentException("ONC RPC published argument order differs from the XDR declaration");
+        }
+        XdrCodec<Object> result = compiler.compile(method.path("responseType").textValue());
+        OncRpcOperation compiled = new OncRpcOperation(contract.path("program").longValue(), contract.path("version").longValue(), //
+                method.path("procedureId").longValue(), parameters, order, result, operation.returnType());
+        binding.bind(null, compiled);
     }
 
     /** A validated NULL procedure returns null and is answered by the session without entering the Dispatcher. */
@@ -185,17 +231,16 @@ public final class OncRpcMessageMapper {
             long high = message.getHighVersion();
             throw OncRpcException.newAccepted(status, low, high, "ONC RPC procedure returned a standard error");
         }
-        OncRpcServiceBinding resource = this.resource(this.service(request));
-        Method method = method(resource, request.getTargetMethod());
+        OncRpcOperation binding = this.operation(request);
         XdrInput input = this.input(message.getBody());
-        Object value = input.read(resource.result(method.getName()));
+        Object value = input.read(binding.result());
         input.requireEnd();
         ResponsePayload response = new ResponsePayload();
         response.setRequestID(request.getRequestID());
         response.setReceiveTime(System.currentTimeMillis());
         response.setStatus(ProtocolStatus.OK);
         response.setSerializeType("oncrpc");
-        response.setReturnType(method.getReturnType().getName());
+        response.setReturnType(binding.returnType().getName());
         response.setReturnData(value);
         return response;
     }

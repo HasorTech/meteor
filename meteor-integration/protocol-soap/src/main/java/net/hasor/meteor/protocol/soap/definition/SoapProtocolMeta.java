@@ -8,6 +8,7 @@
 package net.hasor.meteor.protocol.soap.definition;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -21,6 +22,8 @@ import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.domain.MetRuntimeUtils;
 import net.hasor.meteor.domain.meta.ParameterMeta;
 import net.hasor.meteor.domain.meta.ServiceMetaParser;
+import net.hasor.meteor.protocol.soap.annotation.SoapGet;
+import net.hasor.meteor.protocol.soap.codec.SoapMessageCodec;
 import net.hasor.meteor.protocol.soap.mapping.SoapMethodTypes;
 import net.hasor.meteor.protocol.soap.mapping.SoapXmlMapping;
 
@@ -92,17 +95,22 @@ public final class SoapProtocolMeta {
             ArrayNode parameters = target.putArray("parameters");
             List<SoapPart> parts = operation.inputBody().parts();
             int[] order = this.parameterOrder.get(method);
+            JavaType[] wireTypes = this.wireParameterTypes(method);
             for (int index = 0; index < parts.size(); index++) {
                 ObjectNode parameter = parameters.addObject();
                 int argIndex = order.length == 1 ? order[0] : order[index];
                 describePart(parts.get(index), parameter, argIndex);
+                parameter.put("bindingType", wireTypes[index].toCanonical());
             }
 
             if (!operation.oneWay()) {
                 SoapBody output = operation.outputBody();
                 ArrayNode returns = target.putArray("returns");
-                for (SoapPart part : output.parts()) {
-                    describePart(part, returns.addObject(), null);
+                Type[] resultTypes = SoapMessageCodec.resultTypes(output, this.types(method).getReturnType(), this.mapper);
+                for (int index = 0; index < resultTypes.length; index++) {
+                    ObjectNode result = returns.addObject();
+                    describePart(output.parts().get(index), result, null);
+                    result.put("bindingType", this.mapper.constructType(resultTypes[index]).toCanonical());
                 }
             }
 
@@ -113,6 +121,7 @@ public final class SoapProtocolMeta {
 
             // SOAP 专属设置放在操作主体之后，先展示公共名称与 Java 参数对应关系。
             target.put("soapAction", operation.soapAction());
+            target.put("get", method.isAnnotationPresent(SoapGet.class));
             target.put("style", operation.style());
             target.put("use", operation.inputBody().use());
             if (operation.inputBody().wrapper() != null) {
@@ -124,6 +133,7 @@ public final class SoapProtocolMeta {
         }
         description.set("types", this.mapping.describeTypes());
         description.set("schemas", this.resource.describeSchemas());
+        description.set("documents", this.resource.describeDocuments());
         description.put("version", definition.version().displayName());
         description.put("namespace", definition.targetNamespace());
         return description;

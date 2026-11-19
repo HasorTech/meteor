@@ -37,7 +37,11 @@ final class TripleValueCodec {
     }
 
     byte[] encodeArguments(Object[] values, Class<?>[] types) {
-        if (values.length != types.length) {
+        return this.encodeArguments(values, java.util.Arrays.stream(types).map(Class::getName).toList());
+    }
+
+    byte[] encodeArguments(Object[] values, List<String> types) {
+        if (values.length != types.size()) {
             throw format("Triple argument values and types disagree", null);
         }
 
@@ -49,8 +53,8 @@ final class TripleValueCodec {
             for (int index = 0; index < values.length; index++) {
                 output.writeByteArray(2, this.encodeValue(values[index]));
             }
-            for (Class<?> type : types) {
-                output.writeString(3, type.getName());
+            for (String type : types) {
+                output.writeString(3, type);
             }
             output.flush();
             return bytes.toByteArray();
@@ -104,6 +108,10 @@ final class TripleValueCodec {
     }
 
     Object decodeResult(byte[] body, Class<?> type) {
+        return this.decodeResult(body, type.getName(), type);
+    }
+
+    Object decodeResult(byte[] body, String declaredType, Class<?> type) {
         this.checkSize(body.length);
         CodedInputStream input = CodedInputStream.newInstance(body);
         String serializer = null;
@@ -140,7 +148,7 @@ final class TripleValueCodec {
 
         // Dubbo 的异常回复仍写原方法返回类型；异常通道通过响应头单独标记。
         boolean exception = Throwable.class.isAssignableFrom(type);
-        if (!exception && !StringUtils.equals(name, type.getName())) {
+        if (!exception && !StringUtils.equals(name, declaredType)) {
             throw format("Triple result type does not match published method", null);
         }
         return this.decodeValue(value, type);

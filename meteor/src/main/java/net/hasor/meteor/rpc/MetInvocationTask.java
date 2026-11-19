@@ -10,6 +10,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import com.fasterxml.jackson.databind.type.TypeFactory;
 import net.hasor.cobble.logging.Logger;
 import net.hasor.cobble.logging.LoggerFactory;
 import net.hasor.meteor.MetBindInfo;
@@ -19,8 +20,11 @@ import net.hasor.meteor.MetFilterChain;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.connector.MetChannel;
 import net.hasor.meteor.domain.*;
+import net.hasor.meteor.domain.meta.ServiceMetaParser;
 import net.hasor.meteor.domain.payload.RequestPayload;
 import net.hasor.meteor.domain.payload.ResponsePayload;
+import net.hasor.meteor.serialize.SerializeCoder;
+import net.hasor.meteor.serialize.coder.JsonSerializeCoder;
 
 /**
  * 负责处理远程Request对象的请求调用，同时也负责将产生的Response对象写回客户端。
@@ -85,7 +89,7 @@ final class MetInvocationTask implements Runnable {
         Object[] pObjects;
         Class<?>[] pTypes;
         try {
-            // 协议已经完成解码，执行层只检查参数数量与 Java 类型。
+            // 先验证参数数量并还原方法签名。
             List<String> pTypeList = this.requestInfo.getParameterTypes();
             List<Object> pObjectList = this.requestInfo.getParameterValues();
             if (pTypeList.size() != pObjectList.size()) {
@@ -97,7 +101,6 @@ final class MetInvocationTask implements Runnable {
                 return;
             }
 
-            // 解析方法签名，参数值保持协议交付的 Java 对象。
             pTypes = new Class<?>[pTypeList.size()];
             pObjects = new Object[pObjectList.size()];
             for (int i = 0; i < pTypeList.size(); i++) {
@@ -134,9 +137,35 @@ final class MetInvocationTask implements Runnable {
             return;
         }
 
+        MetContext context = this.dispatcher.getContext();
+        if (this.requestInfo.hasEncodedArguments() && pObjects.length > 0) {
+            try {
+                SerializeCoder coder = context.getSerializeCoder(serializeType);
+                if (coder == null) {
+                    throw new IllegalArgumentException("Unsupported serialization type: " + serializeType);
+                }
+
+                if (coder instanceof JsonSerializeCoder json) {
+                    var method = ServiceMetaParser.method(bindInfo.getBindType(), targetMethod);
+                    var types = ServiceMetaParser.parameterTypes(method, TypeFactory.defaultInstance());
+                    for (int index = 0; index < pObjects.length; index++) {
+                        pObjects[index] = json.decodeParameter((byte[]) pObjects[index], types[index]);
+                    }
+                } else {
+                    for (int index = 0; index < pObjects.length; index++) {
+                        pObjects[index] = coder.decode((byte[]) pObjects[index], pTypes[index]);
+                    }
+                }
+            } catch (Exception | LinkageError failure) {
+                String message = "Cannot decode " + serializeType + " arguments for request " + requestID;
+                this.logger.error(message, failure);
+                this.sendResponse(MetPayloadBuilder.buildResponseStatus(requestID, ProtocolStatus.SerializeError, message));
+                return;
+            }
+        }
+
         MetResponseObject rsfResponse = null;
         try {
-            MetContext context = this.dispatcher.getContext();
             MetRequestObject rsfRequest = new MetRequestObject(requestID, false, context, bindInfo, targetMethod, pObjects);
             rsfRequest.setPeerAddress(this.target);
             rsfRequest.setBindAddress(this.channel.getLocal());

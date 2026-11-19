@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 import java.util.function.ObjLongConsumer;
+import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.cobble.concurrent.future.BasicFuture;
 import net.hasor.cobble.concurrent.future.Future;
@@ -392,6 +393,14 @@ final class ConnectorEndpoint<M> {
             });
         } catch (RuntimeException | Error failure) {
             channel.fail(failure);
+        }
+    }
+
+    void prepareOperation(String protocol, JsonNode contract, //
+            ProtocolOperationBinder.Target target, ProtocolOperationBinder.Binding<Object> result) {
+        ProtocolMountBinding<M> binding = this.plan.protocolBindings().get(protocol);
+        if (binding != null && binding.provider() instanceof ProtocolOperationBinder compiler) {
+            compiler.prepareOperation(binding.config(), contract, target, result);
         }
     }
 

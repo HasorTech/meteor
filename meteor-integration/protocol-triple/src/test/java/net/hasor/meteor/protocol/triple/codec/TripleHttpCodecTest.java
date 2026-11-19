@@ -132,32 +132,30 @@ public class TripleHttpCodecTest {
     }
 
     @Test
-    public void jsonAmbiguousOverloadIsRejected() throws Exception {
+    public void jsonJavaMethodNameIsRejectedWhenOnlyAliasesArePublished() throws Exception {
         // 准备普通 Java 提供者与独立的协议编解码器。
         try (MetContext context = this.configuration().buildContext()) {
             this.publishPojo(context, "Hessian2");
             TripleHttpCodec codec = this.codec(context, Map.of());
 
-            // JSON 数字和文本转换都可能命中时，要求调用方使用带类型的 wrapper。
+            // Java 方法的两个签名各有对外名称，直接传 Java 名称无法找到操作。
             HttpRequest input = this.input("overloaded", "application/json", "[42]", 1, Map.of());
-            RequestPayload request = codec.open(input);
-            GrpcStatusException failure = assertThrows(GrpcStatusException.class, //
-                    () -> codec.readRequest(request, input));
-            assertEquals(3, failure.getCode());
+            GrpcStatusException failure = assertThrows(GrpcStatusException.class, () -> codec.open(input));
+            assertEquals(12, failure.getCode());
         }
     }
 
     @Test
-    public void wrapperSelectsThePrimitiveOverloadByDeclaredSignature() throws Exception {
+    public void wrapperSelectsPrimitiveMethodByRpcName() throws Exception {
         // 准备普通 Java 提供者与独立的协议编解码器。
         try (MetContext context = this.configuration().buildContext()) {
             this.publishPojo(context, "Hessian2");
             TripleHttpCodec codec = this.codec(context, Map.of());
 
-            // 带类型的 wrapper 能精确选择 primitive 重载。
+            // 带类型的 wrapper 调用已发布的整数操作。
             TripleValueCodec values = new TripleValueCodec(4096, this.getClass().getClassLoader());
             byte[] body = values.encodeArguments(new Object[] { 42 }, new Class<?>[] { int.class });
-            HttpRequest input = this.framed("overloaded", codec.frame(body, "identity"), Map.of());
+            HttpRequest input = this.framed("overloadedNumber", codec.frame(body, "identity"), Map.of());
             RequestPayload request = codec.open(input);
             codec.readRequest(request, input);
             assertEquals(List.of("int"), request.getParameterTypes());
@@ -166,7 +164,7 @@ public class TripleHttpCodecTest {
     }
 
     @Test
-    public void wrapperSelectsTheStringOverloadByDeclaredSignature() throws Exception {
+    public void wrapperSelectsStringMethodByRpcName() throws Exception {
         // 准备普通 Java 提供者与独立的协议编解码器。
         try (MetContext context = this.configuration().buildContext()) {
             this.publishPojo(context, "Hessian2");
@@ -175,7 +173,7 @@ public class TripleHttpCodecTest {
             // 文本内容即使看起来像数字，也按声明的 String 签名路由。
             TripleValueCodec values = new TripleValueCodec(4096, this.getClass().getClassLoader());
             byte[] body = values.encodeArguments(new Object[] { "42" }, new Class<?>[] { String.class });
-            HttpRequest input = this.framed("overloaded", codec.frame(body, "identity"), Map.of());
+            HttpRequest input = this.framed("overloadedText", codec.frame(body, "identity"), Map.of());
             RequestPayload request = codec.open(input);
             codec.readRequest(request, input);
             assertEquals(List.of(String.class.getName()), request.getParameterTypes());

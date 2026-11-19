@@ -8,9 +8,12 @@
 package net.hasor.meteor.rpc;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetBindInfo;
-import net.hasor.meteor.MetRequest;
+import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetResponse;
+import net.hasor.meteor.domain.MetRequestObject;
 import net.hasor.meteor.domain.MetRuntimeUtils;
+import net.hasor.meteor.domain.MetServiceType;
+import net.hasor.meteor.domain.ServiceDomain;
 import net.hasor.meteor.domain.payload.RequestPayload;
 import net.hasor.meteor.domain.payload.ResponsePayload;
 
@@ -23,8 +26,8 @@ final class MetPayloadBuilder {
     private MetPayloadBuilder() {
     }
 
-    /**将{@link MetRequest},转换为{@link RequestPayload}。*/
-    static RequestPayload buildRequestPayload(MetRequest rsfRequest) {
+    /**将{@link MetRequestObject},转换为{@link RequestPayload}。*/
+    static RequestPayload buildRequestPayload(MetRequestObject rsfRequest) {
         RequestPayload info = new RequestPayload();
         MetBindInfo<?> rsfBindInfo = rsfRequest.getBindInfo();
         String serializeType = rsfRequest.getSerializeType();
@@ -34,24 +37,45 @@ final class MetPayloadBuilder {
         info.setServiceGroup(rsfBindInfo.getBindGroup());//序列化策略
         info.setServiceName(rsfBindInfo.getBindName());//序列化策略
         info.setServiceVersion(rsfBindInfo.getBindVersion());//序列化策略
-        info.setTargetMethod(rsfRequest.getMethod().getName());//序列化策略
+        ProtocolOperation operation = (ProtocolOperation) rsfRequest.getProtocolOperation();
+        info.setTargetMethod(operation == null ? rsfRequest.getMethod().getName() : operation.methodName());
+        if (operation != null) {
+            operation.apply(info);
+        }
         info.setSerializeType(serializeType);//序列化策略
         info.setClientTimeout(rsfRequest.getTimeout());
         info.setMessage(rsfRequest.isMessage());
 
         //2.params
-        Class<?>[] pTypes = rsfRequest.getParameterTypes();
         Object[] pObjects = rsfRequest.getParameterObject();
-        pTypes = (pTypes == null) ? new Class[0] : pTypes;
         pObjects = (pObjects == null) ? new Object[0] : pObjects;
-        for (int i = 0; i < pTypes.length; i++) {
-            String typeByte = MetRuntimeUtils.toAsmType(pTypes[i]);
+        Class<?>[] pTypes = rsfRequest.getParameterTypes();
+        int parameterCount = operation == null ? pTypes.length : rsfRequest.getWireParameterTypes().size();
+        for (int i = 0; i < parameterCount; i++) {
+            String typeByte = operation == null ? MetRuntimeUtils.toAsmType(pTypes[i]) : rsfRequest.getWireParameterTypes().get(i);
             info.addParameter(typeByte, pObjects[i]);
         }
 
         //3.Opt参数
         info.addOptionMap(rsfRequest);
         return info;
+    }
+
+    static MetRequestObject buildPublishedRequest(long id, MetContext context, MetGenericService target, String method, //
+            PublishedContract.Call call) {
+        ServiceDomain<Object> binding = new ServiceDomain<>(Object.class);
+        binding.setBindGroup(target.getGroup());
+        binding.setBindName(target.getName());
+        binding.setBindVersion(target.getVersion());
+        binding.setServiceType(MetServiceType.Consumer);
+        binding.setDistributed(true);
+        binding.addBindProtocol(target.getProtocol());
+        binding.setSerializeType(call.serializeType);
+
+        MetRequestObject request = new MetRequestObject(id, true, context, binding, null, call.arguments);
+        request.setProtocolOperation(method, call.operation, call.parameterTypes);
+        request.setSerializeType(call.serializeType);
+        return request;
     }
 
     static ResponsePayload buildResponseStatus(long requestID, short status, String errorInfo) {

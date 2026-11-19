@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -57,5 +58,18 @@ public class JsonSerializeCoder implements SerializeCoder {
         } catch (RuntimeException e) {
             throw new IOException("Cannot decode JSON value", e);
         }
+    }
+
+    /** Decode a provider parameter with the generic declaration resolved against the service interface. */
+    public Object decodeParameter(byte[] bytes, JavaType type) throws IOException {
+        if (bytes == null) {
+            return null;
+        }
+
+        JsonSerializeDelegate delegate = this.delegate;
+        if (delegate != null) {
+            return delegate.decode(bytes, type.getRawClass());
+        }
+        return JSON.readerFor(type).with(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES).readValue(bytes);
     }
 }

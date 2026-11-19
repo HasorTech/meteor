@@ -72,6 +72,10 @@ public class TcpTransportTest {
         return response;
     }
 
+    private Object decodeReply(ResponsePayload response) throws IOException {
+        return new JavaSerializeCoder().decode(response.getEncodedReturnData(), String.class);
+    }
+
     @Test
     @Timeout(value = 10000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void managerCloseDoesNotWaitForPendingRpcReply() throws Exception {
@@ -100,7 +104,7 @@ public class TcpTransportTest {
                     lifecycle.submit(manager::close).get(2, TimeUnit.SECONDS);
                     assertNotNull(server.manager.connect(server.config.address()).getCause());
                     Future<MetChannel> lateReply = first.channel.sendData(response(first, "late"));
-                    assertTrue(lateReply.getCause() instanceof IllegalStateException);
+                    assertInstanceOf(IllegalStateException.class, lateReply.getCause());
                 } finally {
                     lifecycle.shutdownNow();
                 }
@@ -147,14 +151,14 @@ public class TcpTransportTest {
                     outgoing.sendData(failure).get(2, TimeUnit.SECONDS);
                     fail("Failure notifications cannot be sent over the network");
                 } catch (ExecutionException expected) {
-                    assertTrue(expected.getCause() instanceof UnsupportedOperationException);
+                    assertInstanceOf(UnsupportedOperationException.class, expected.getCause());
                 }
 
                 // 失败后仍能回复原请求，证明业务往返未被污染。
                 Payload response = response(incoming, "response");
                 assertSame(incoming.channel, incoming.channel.sendData(response).get(2, TimeUnit.SECONDS));
                 ResponsePayload returned = inbox.expect(1).get(2, TimeUnit.SECONDS);
-                assertEquals("response", returned.getReturnData());
+                assertEquals("response", this.decodeReply(returned));
                 assertTrue(requests.isEmpty());
             }
         }
@@ -189,14 +193,14 @@ public class TcpTransportTest {
                     incoming.channel.sendData(failure).get(2, TimeUnit.SECONDS);
                     fail("Failure notifications cannot be sent over the network");
                 } catch (ExecutionException expected) {
-                    assertTrue(expected.getCause() instanceof UnsupportedOperationException);
+                    assertInstanceOf(UnsupportedOperationException.class, expected.getCause());
                 }
 
                 // 失败后仍能回复原请求，证明业务往返未被污染。
                 Payload response = response(incoming, "response");
                 assertSame(incoming.channel, incoming.channel.sendData(response).get(2, TimeUnit.SECONDS));
                 ResponsePayload returned = inbox.expect(1).get(2, TimeUnit.SECONDS);
-                assertEquals("response", returned.getReturnData());
+                assertEquals("response", this.decodeReply(returned));
                 assertTrue(requests.isEmpty());
             }
         }
@@ -254,7 +258,7 @@ public class TcpTransportTest {
                 }
                 for (int i = 1; i <= 20; i++) {
                     ResponsePayload matchingReply = received.expect(i).get(2, TimeUnit.SECONDS);
-                    assertEquals("value-" + i, matchingReply.getReturnData());
+                    assertEquals("value-" + i, this.decodeReply(matchingReply));
                 }
             }
         }
@@ -319,7 +323,7 @@ public class TcpTransportTest {
                     received.expect(2);
                     second.sendData(request(2, "next"));
                     ResponsePayload reconnectedReply = received.expect(2).get(2, TimeUnit.SECONDS);
-                    assertEquals("reconnected", reconnectedReply.getReturnData());
+                    assertEquals("reconnected", this.decodeReply(reconnectedReply));
                 }
             }
         }
@@ -340,7 +344,7 @@ public class TcpTransportTest {
                 ExecutionException failure = assertThrows(ExecutionException.class, () -> {
                     session.sendData(request(4, "event loop closed")).get(2, TimeUnit.SECONDS);
                 });
-                assertTrue(failure.getCause() instanceof IllegalStateException);
+                assertInstanceOf(IllegalStateException.class, failure.getCause());
             }
         }
     }
@@ -370,7 +374,7 @@ public class TcpTransportTest {
                         connection.get(2, TimeUnit.SECONDS);
                         fail();
                     } catch (ExecutionException expected) {
-                        assertTrue(expected.getCause() instanceof TimeoutException);
+                        assertInstanceOf(TimeoutException.class, expected.getCause());
                     }
                 }
             }
@@ -429,7 +433,7 @@ public class TcpTransportTest {
                     RequestPayload request = request(id, "no request timer");
                     assertSame(session, session.sendData(request).get(2, TimeUnit.SECONDS));
                     ResponsePayload returned = received.expect(id).get(2, TimeUnit.SECONDS);
-                    assertEquals("reply", returned.getReturnData());
+                    assertEquals("reply", this.decodeReply(returned));
                     request.completion().get(2, TimeUnit.SECONDS);
                 }
             }
@@ -442,8 +446,10 @@ public class TcpTransportTest {
         Inbox incoming = new Inbox() {
             public void onRequest(MetChannel channel, long id, RequestPayload request) {
                 ReceivedRequest exchange = new ReceivedRequest(channel, id);
-                String value = (String) request.getParameterValues().get(0);
-                exchange.channel.sendData(response(exchange, value));
+                byte[] argument = (byte[]) request.getParameterValues().get(0);
+                ResponsePayload reply = response(exchange, null);
+                reply.setEncodedReturnData(argument);
+                exchange.channel.sendData(reply);
             }
         };
         // 同一接收者接入两个真实监听端点，分别验证连接和响应。
@@ -463,12 +469,12 @@ public class TcpTransportTest {
                     MetChannel first = client.connect(firstListen).get(2, TimeUnit.SECONDS);
                     first.sendData(request(1, "first")).get(2, TimeUnit.SECONDS);
                     ResponsePayload firstReply = received.expect(1).get(2, TimeUnit.SECONDS);
-                    assertEquals("first", firstReply.getReturnData());
+                    assertEquals("first", this.decodeReply(firstReply));
                     MetChannel second = client.connect(secondListen).get(2, TimeUnit.SECONDS);
                     assertNotSame(first, second);
                     second.sendData(request(2, "second")).get(2, TimeUnit.SECONDS);
                     ResponsePayload secondReply = received.expect(2).get(2, TimeUnit.SECONDS);
-                    assertEquals("second", secondReply.getReturnData());
+                    assertEquals("second", this.decodeReply(secondReply));
                     assertTrue(incoming.results.isEmpty());
                 }
             }
@@ -514,9 +520,9 @@ public class TcpTransportTest {
                     MetChannel firstWritten = first.channel.sendData(firstResponse).get(2, TimeUnit.SECONDS);
                     assertSame(first.channel, firstWritten);
                     ResponsePayload firstReply = firstInbox.expect(1).get(2, TimeUnit.SECONDS);
-                    assertEquals("first", firstReply.getReturnData());
+                    assertEquals("first", this.decodeReply(firstReply));
                     ResponsePayload secondReply = secondInbox.expect(1).get(2, TimeUnit.SECONDS);
-                    assertEquals("second", secondReply.getReturnData());
+                    assertEquals("second", this.decodeReply(secondReply));
                     assertSame(firstClientChannel, firstInbox.sources.get(1L));
                     assertSame(secondClientChannel, secondInbox.sources.get(1L));
                 }
@@ -589,9 +595,9 @@ public class TcpTransportTest {
                 atClient.channel.sendData(response(atClient, "client response")).get(2, TimeUnit.SECONDS);
                 atServer.channel.sendData(response(atServer, "server response")).get(2, TimeUnit.SECONDS);
                 ResponsePayload clientReply = serverInbox.expect(1).get(2, TimeUnit.SECONDS);
-                assertEquals("client response", clientReply.getReturnData());
+                assertEquals("client response", this.decodeReply(clientReply));
                 ResponsePayload serverReply = clientInbox.expect(1).get(2, TimeUnit.SECONDS);
-                assertEquals("server response", serverReply.getReturnData());
+                assertEquals("server response", this.decodeReply(serverReply));
                 assertSame(atServer.channel, serverInbox.sources.get(1L));
                 assertSame(outgoing, clientInbox.sources.get(1L));
             }
@@ -626,7 +632,7 @@ public class TcpTransportTest {
                 assertReplyRejected(incoming.channel, wrong);
                 incoming.channel.sendData(response(incoming, "valid")).get(2, TimeUnit.SECONDS);
                 ResponsePayload returned = received.expect(7).get(2, TimeUnit.SECONDS);
-                assertEquals("valid", returned.getReturnData());
+                assertEquals("valid", this.decodeReply(returned));
             }
         }
     }
@@ -663,7 +669,7 @@ public class TcpTransportTest {
                 received.results.remove(7L);
                 incoming.channel.sendData(response(incoming, "final")).get(2, TimeUnit.SECONDS);
                 ResponsePayload returned = received.expect(7).get(2, TimeUnit.SECONDS);
-                assertEquals("final", returned.getReturnData());
+                assertEquals("final", this.decodeReply(returned));
                 assertReplyRejected(incoming.channel, response(incoming, "duplicate"));
             }
         }
@@ -723,12 +729,12 @@ public class TcpTransportTest {
                             assertSame(incoming.channel, writing.get(2, TimeUnit.SECONDS));
                             successful++;
                         } catch (ExecutionException expected) {
-                            assertTrue(expected.getCause() instanceof IllegalStateException);
+                            assertInstanceOf(IllegalStateException.class, expected.getCause());
                         }
                     }
                     assertEquals(1, successful);
                     ResponsePayload finalReply = received.expect(7).get(2, TimeUnit.SECONDS);
-                    assertEquals("final", finalReply.getReturnData());
+                    assertEquals("final", this.decodeReply(finalReply));
                 } finally {
                     workers.shutdownNow();
                 }
@@ -913,7 +919,7 @@ public class TcpTransportTest {
                 second.payload.complete(new TimeoutException("late completion"));
                 reused.channel.sendData(response(reused, "reused")).get(2, TimeUnit.SECONDS);
                 ResponsePayload reusedReply = received.expect(2).get(2, TimeUnit.SECONDS);
-                assertEquals("reused", reusedReply.getReturnData());
+                assertEquals("reused", this.decodeReply(reusedReply));
             }
         }
     }
@@ -923,7 +929,7 @@ public class TcpTransportTest {
             channel.sendData(response).get(2, TimeUnit.SECONDS);
             fail("Unknown or completed request must reject a reply");
         } catch (ExecutionException expected) {
-            assertTrue(expected.getCause() instanceof IllegalStateException);
+            assertInstanceOf(IllegalStateException.class, expected.getCause());
         }
     }
 

@@ -34,8 +34,11 @@ public interface MetRequest extends MetHeader {
     /** 请求是否为消息类请求,对于消息类请求返回值是无效的。*/
     boolean isMessage();
 
-    /**获取要调用的目标方法。*/
+    /** The bound Java method, or null for a call bound from a published contract. */
     Method getMethod();
+
+    /** 获取对外方法名。 */
+    String getMethodName();
 
     /**获取上下文。*/
     MetContext getContext();

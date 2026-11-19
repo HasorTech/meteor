@@ -14,6 +14,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
+import net.hasor.cobble.StringUtils;
 import net.hasor.cobble.concurrent.future.FutureCallback;
 import net.hasor.cobble.logging.Logger;
 import net.hasor.cobble.logging.LoggerFactory;
@@ -21,7 +22,9 @@ import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetFuture;
 import net.hasor.meteor.MetResponse;
+import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.address.provider.AddressProvider;
+import net.hasor.meteor.address.provider.InstanceAddressProvider;
 import net.hasor.meteor.domain.MetRequestObject;
 
 /** Client facade with a fixed address provider; the host owns the shared caller's lifecycle. */
@@ -29,18 +32,28 @@ public final class MetClientImpl implements MetClient {
     private static final Logger              logger  = LoggerFactory.getLogger(MetClientImpl.class);
     private final        MetCaller           caller;
     private final        AddressProvider     provider;
+    private final        MetServiceResolver  serviceResolver;
     private final        Map<String, String> options = new LinkedHashMap<>();
 
-    public MetClientImpl(MetCaller caller, AddressProvider provider) {
+    /** Uses the context's discovery source when no client-specific resolver is supplied. */
+    public MetClientImpl(MetCaller caller, AddressProvider provider, MetServiceResolver serviceResolver) {
         this.caller = caller;
         this.provider = provider;
+        this.serviceResolver = serviceResolver;
     }
 
     @Override
     public MetClient withOptions(Map<String, String> options) {
-        MetClientImpl client = new MetClientImpl(this.caller, this.provider);
+        MetClientImpl client = new MetClientImpl(this.caller, this.provider, this.serviceResolver);
         client.options.putAll(this.options);
         client.options.putAll(options);
+        return client;
+    }
+
+    @Override
+    public MetClient withServiceResolver(MetServiceResolver resolver) {
+        MetClientImpl client = new MetClientImpl(this.caller, this.provider, Objects.requireNonNull(resolver, "resolver"));
+        client.options.putAll(this.options);
         return client;
     }
 
@@ -103,6 +116,48 @@ public final class MetClientImpl implements MetClient {
             timeout = this.caller.getContext().getSettings().getDefaultTimeout();
         }
         return future.get(timeout, TimeUnit.MILLISECONDS).getData();
+    }
+
+    @Override
+    public Object syncInvokeGeneric(String serviceId, String protocol, String methodName, Object[] arguments, int timeout) //
+            throws InterruptedException, ExecutionException, TimeoutException {
+        MetServiceResolver resolver = this.serviceResolver;
+        if (resolver == null) {
+            resolver = this.caller.getContext().getExtension(MetServiceResolver.class);
+        }
+        String selected = StringUtils.defaultIfBlank(protocol, this.caller.getContext().getDefaultProtocol());
+        InterAddress address = null;
+        if (this.provider instanceof InstanceAddressProvider instance) {
+            address = instance.get(null);
+        }
+
+        MetGenericService service;
+        try {
+            if (resolver == null) {
+                service = this.caller.resolveLocalService(serviceId, selected, address);
+            } else {
+                service = resolver.resolve(serviceId, selected, address, MetGenericService::new);
+            }
+        } catch (InterruptedException failure) {
+            throw failure;
+        } catch (Exception failure) {
+            throw new ExecutionException(failure);
+        }
+
+        if (service == null) {
+            throw new IllegalArgumentException("No published provider for " + serviceId + " via " + selected);
+        }
+        if (address != null && !address.equals(service.getAddress())) {
+            throw new IllegalArgumentException("The service endpoint does not match the fixed-address client");
+        }
+
+        MetFuture future = this.caller.invokePublished(service, methodName, arguments, timeout, this.options);
+        try {
+            return future.get(future.getRequest().getTimeout(), TimeUnit.MILLISECONDS).getData();
+        } catch (InterruptedException | TimeoutException failure) {
+            future.cancel(false);
+            throw failure;
+        }
     }
 
     @Override

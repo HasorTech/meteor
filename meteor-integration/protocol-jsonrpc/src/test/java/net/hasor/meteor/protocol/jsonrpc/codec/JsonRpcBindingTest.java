@@ -176,9 +176,9 @@ public class JsonRpcBindingTest {
     }
 
     @Test
-    public void differentAritySelectsAnUnambiguousOverload() {
-        // 参数个数不同的重载可以唯一确定方法。
-        JsonRpcCall call = this.decode("math.arity", "[1,2]", "7");
+    public void explicitAliasSelectsTwoArgumentMethod() {
+        // 双参数的 Java 方法有独立的对外名称。
+        JsonRpcCall call = this.decode("math.arityPair", "[1,2]", "7");
         assertEquals(2, call.request().getParameterTypes().size());
     }
 
@@ -384,15 +384,13 @@ public class JsonRpcBindingTest {
 
     @Test
     public void sameArityOverloadsAreRejectedBeforeRequestsCanReachThem() {
-        // 通过正式发布入口登记重载服务；RSF 可接受，JSON-RPC 拒绝整个接口。
-        MetBindInfo<SameArityOverloads> service = this.context.publisher() //
+        var provider = this.context.publisher() //
                 .rsfService(SameArityOverloads.class, new SameArityOverloads() {
                 }) //
-                .name("overloaded").register();
-        ServiceDomain<?> domain = MetBindInfoWrap.unwrap(service);
-        assertNull(domain.getProtocolMeta("jsonrpc"));
+                .name("overloaded");
+        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, provider::register);
+        assertTrue(failure.getMessage().contains("Duplicate RPC method name 'select'"));
 
-        // 未被协议接受的接口不能等到调用时才表现为参数歧义。
         JsonRpcCall call = this.decode("overloaded.select", "[1]", "7");
         assertNull(call.request());
         assertEquals(-32601, call.response().path("error").path("code").intValue());
@@ -470,6 +468,7 @@ public class JsonRpcBindingTest {
             return first;
         }
 
+        @MetMethod(name = "arityPair")
         default int arity(int first, int second) {
             return first + second;
         }

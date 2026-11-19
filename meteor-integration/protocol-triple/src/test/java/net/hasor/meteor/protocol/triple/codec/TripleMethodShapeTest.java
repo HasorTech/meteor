@@ -24,7 +24,7 @@ public class TripleMethodShapeTest {
         // 普通 Java 方法通过参数列表承载多个值。
         Method method = Service.class.getMethod("join", String.class, int.class);
         MethodMeta description = ServiceMetaParser.method(Service.class, method);
-        TripleMethodShape shape = new TripleMethodShape(description);
+        TripleMethodShape shape = TripleMethodShape.fromMethod(description);
         assertSame(description.getJavaMethod(), shape.method());
         assertSame(Object[].class, shape.requestType());
         assertSame(String.class, shape.responseType());
@@ -240,7 +240,7 @@ public class TripleMethodShapeTest {
 
         // 流形态从公共描述读取已解析的元素，不把父接口的 T 当作未绑定变量。
         assertTrue(TripleMethodShape.supports(description));
-        assertEquals(String.class, new TripleMethodShape(description).requestType());
+        assertEquals(String.class, TripleMethodShape.fromMethod(description).requestType());
     }
 
     @Test
@@ -251,7 +251,7 @@ public class TripleMethodShapeTest {
 
         // 已确定的响应消息类型与请求流使用相同的公共泛型规则。
         assertTrue(TripleMethodShape.supports(description));
-        assertEquals(String.class, new TripleMethodShape(description).responseType());
+        assertEquals(String.class, TripleMethodShape.fromMethod(description).responseType());
     }
 
     @Test
@@ -276,7 +276,7 @@ public class TripleMethodShapeTest {
 
     private TripleMethodShape shape(String name, Class<?>... parameters) throws NoSuchMethodException {
         Method method = Service.class.getMethod(name, parameters);
-        return new TripleMethodShape(ServiceMetaParser.method(Service.class, method));
+        return TripleMethodShape.fromMethod(ServiceMetaParser.method(Service.class, method));
     }
 
     public interface GenericFlow<T> {

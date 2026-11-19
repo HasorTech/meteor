@@ -18,11 +18,11 @@ final class ThriftContractWriter {
     Map<String, String> sources(String name, Collection<ThriftMethodBinding> methods) {
         this.identifier(name);
         List<ThriftMethodBinding> ordered = new ArrayList<>(methods);
-        ordered.sort(Comparator.comparing(method -> method.name));
+        ordered.sort(Comparator.comparing(method -> method.name()));
         for (ThriftMethodBinding method : ordered) {
-            this.collectFields(method.args);
-            if (method.result != null) {
-                this.collectFields(method.result);
+            this.collectFields(method.args());
+            if (method.result() != null) {
+                this.collectFields(method.result());
             }
         }
 
@@ -57,17 +57,17 @@ final class ThriftContractWriter {
         text.append("service ").append(name).append(" {\n");
         for (ThriftMethodBinding method : ordered) {
             text.append("  ");
-            if (method.oneway) {
+            if (method.oneway()) {
                 text.append("oneway ");
             }
-            ThriftFieldBinding success = method.result == null ? null : method.result.fieldsById.get((short) 0);
+            ThriftFieldBinding success = method.result() == null ? null : method.result().fieldsById.get((short) 0);
             text.append(success == null ? "void" : this.type(success.type));
-            text.append(' ').append(this.identifier(method.name)).append('(');
-            this.fields(text, method.args.fields);
+            text.append(' ').append(this.identifier(method.name())).append('(');
+            this.fields(text, method.args().fields);
             text.append(')');
             List<ThriftFieldBinding> failures = new ArrayList<>();
-            if (method.result != null) {
-                for (ThriftFieldBinding field : method.result.fields) {
+            if (method.result() != null) {
+                for (ThriftFieldBinding field : method.result().fields) {
                     if (field.field.id != 0) {
                         failures.add(field);
                     }

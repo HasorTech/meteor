@@ -19,14 +19,28 @@ public final class GrpcMethodShape {
     private final Method   method;
     private final Class<?> requestType;
     private final Class<?> responseType;
+    private final boolean  streamingRequest;
+    private final boolean  streamingResponse;
 
-    public GrpcMethodShape(Method method, Class<?> service) {
+    private GrpcMethodShape(Method method, Class<?> requestType, Class<?> responseType, boolean streamingRequest, boolean streamingResponse) {
+        this.method = method;
+        this.requestType = requestType;
+        this.responseType = responseType;
+        this.streamingRequest = streamingRequest;
+        this.streamingResponse = streamingResponse;
+    }
+
+    public static GrpcMethodShape fromMethod(Method method, Class<?> service) {
         if (method.getParameterCount() != 1 || method.getReturnType() == void.class) {
             throw new IllegalArgumentException("gRPC requires one request and one response type: " + method);
         }
-        this.method = method;
-        this.requestType = messageType(GrpcValueMapping.messageType(service, method, true));
-        this.responseType = messageType(GrpcValueMapping.messageType(service, method, false));
+        Class<?> request = messageType(GrpcValueMapping.messageType(service, method, true));
+        Class<?> response = messageType(GrpcValueMapping.messageType(service, method, false));
+        return new GrpcMethodShape(method, request, response, method.getParameterTypes()[0] == Flow.Publisher.class, method.getReturnType() == Flow.Publisher.class);
+    }
+
+    static GrpcMethodShape unary(Class<?> requestType, Class<?> responseType) {
+        return new GrpcMethodShape(null, requestType, responseType, false, false);
     }
 
     public Method method() {
@@ -42,11 +56,11 @@ public final class GrpcMethodShape {
     }
 
     public boolean streamingRequest() {
-        return this.method.getParameterTypes()[0] == Flow.Publisher.class;
+        return this.streamingRequest;
     }
 
     public boolean streamingResponse() {
-        return this.method.getReturnType() == Flow.Publisher.class;
+        return this.streamingResponse;
     }
 
     public boolean streaming() {
@@ -56,7 +70,7 @@ public final class GrpcMethodShape {
     /** 判断 Java 方法能否表示为 gRPC 请求和响应，不创建调用或协议状态。 */
     public static boolean supports(Method method, Class<?> service) {
         try {
-            new GrpcMethodShape(method, service);
+            fromMethod(method, service);
             return true;
         } catch (IllegalArgumentException unsupported) {
             return false;

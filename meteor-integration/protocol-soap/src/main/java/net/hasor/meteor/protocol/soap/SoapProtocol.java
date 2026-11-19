@@ -18,11 +18,13 @@ import java.util.function.Function;
 import java.util.function.ObjLongConsumer;
 import javax.xml.namespace.QName;
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
+import net.hasor.meteor.connector.ProtocolOperationBinder;
 import net.hasor.meteor.connector.ProtocolSession;
 import net.hasor.meteor.connector.ProtocolSessionContext;
 import net.hasor.meteor.connector.transport.NetworkChannel;
@@ -37,6 +39,7 @@ import net.hasor.meteor.domain.meta.ServiceMetaParser;
 import net.hasor.meteor.domain.payload.Payload;
 import net.hasor.meteor.protocol.soap.annotation.SoapGet;
 import net.hasor.meteor.protocol.soap.channel.SoapSession;
+import net.hasor.meteor.protocol.soap.codec.SoapCallBinding;
 import net.hasor.meteor.protocol.soap.codec.SoapMessageCodec;
 import net.hasor.meteor.protocol.soap.definition.*;
 import net.hasor.meteor.protocol.soap.mapping.SoapMethodTypes;
@@ -44,7 +47,12 @@ import net.hasor.meteor.protocol.soap.mapping.SoapXmlMapping;
 import net.hasor.meteor.protocol.soap.mapping.SoapXmlProperty;
 
 /** SOAP 1.1/1.2 协议入口及 Java 服务映射校验。 */
-public final class SoapProtocol implements HttpProtocolProvider {
+public final class SoapProtocol implements HttpProtocolProvider, ProtocolOperationBinder {
+    @Override
+    public void prepareOperation(ProtocolConfig config, JsonNode contract, Target target, Binding<Object> binding) {
+        binding.bind(null, SoapCallBinding.published(contract, target));
+    }
+
     @Override
     public Set<Integer> httpVersions(ProtocolConfig config) {
         return Set.of(1, 2);
@@ -172,6 +180,7 @@ public final class SoapProtocol implements HttpProtocolProvider {
         // 定义与描述复用同一份准备结果，绑定只在全部映射成功后创建。
         ObjectNode description = meta.createServiceDescription(config, this.defaultSerialize());
         prepared.describeContract(description);
+        description.put("parameterStyle", externalDefinition ? config.option("soapParameterStyle", "auto") : SoapDefinitionResource.parameterStyle(config));
         ProtocolBinding binding = HttpServicePathUtils.bind(config, meta, prepared, description);
         if (binding.getContextPath() == null) {
             return binding;
@@ -179,11 +188,13 @@ public final class SoapProtocol implements HttpProtocolProvider {
 
         // 契约入口属于具体服务，精确路径不能再次追加服务名。
         ObjectNode endpoints = description.putObject("endpoints");
+        ObjectNode requestPaths = description.putObject("requestPaths");
         for (String path : binding.getContextPath().getPaths()) {
             String endpoint = path;
             if (!binding.getContextPath().isExact()) {
                 endpoint = (path.endsWith("/") ? path : path + "/") + prepared.serviceName();
             }
+            requestPaths.put(path, endpoint);
             String publicBase = config.option("publicBaseUrl", null);
             if (StringUtils.isNotBlank(publicBase)) {
                 endpoint = (publicBase.endsWith("/") ? publicBase.substring(0, publicBase.length() - 1) : publicBase) + endpoint;

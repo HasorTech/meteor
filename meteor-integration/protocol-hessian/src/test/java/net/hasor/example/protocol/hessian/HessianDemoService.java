@@ -9,6 +9,7 @@ package net.hasor.example.protocol.hessian;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import net.hasor.meteor.annotation.MetMethod;
 
 /** 普通 Java 接口直接发布为 Hessian 服务，无需绑定 IDL。 */
 public interface HessianDemoService {
@@ -32,8 +33,10 @@ public interface HessianDemoService {
 
     String nullable(String value);
 
+    @MetMethod(name = "overloadedText")
     String overloaded(String value);
 
+    @MetMethod(name = "overloadedNumber")
     String overloaded(int value);
 
     String fail(String message);

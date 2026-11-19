@@ -13,6 +13,7 @@ import net.hasor.example.protocol.xmlrpc.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.annotation.MetIgnore;
+import net.hasor.meteor.annotation.MetMethod;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.connector.RouteMountIndex;
 import net.hasor.meteor.domain.ProtocolConfig;
@@ -230,22 +231,20 @@ public class XmlRpcBindingTest {
     }
 
     @Test
-    public void distinctAritySelectsUniqueOverload() throws Exception {
-        // 参数数量可以唯一确定方法时允许同名重载。
-        RequestPayload request = this.decode("math.arity", List.of(2, 3));
+    public void explicitAliasSelectsTwoArgumentMethod() throws Exception {
+        // 双参数的 Java 方法有独立的对外名称。
+        RequestPayload request = this.decode("math.arityPair", List.of(2, 3));
         assertEquals(2, request.getParameterTypes().size());
     }
 
     @Test
     public void sameArityOverloadsAreRejectedBeforeInboundDispatch() {
-        // 同数量重载无法由 XML-RPC 唯一定位，发布检查拒绝整个接口。
-        MetBindInfo<AmbiguousMethods> service = this.context.publisher() //
+        var provider = this.context.publisher() //
                 .rsfService(AmbiguousMethods.class, new AmbiguousMethods()) //
-                .name("ambiguous").register();
-        ServiceDomain<?> domain = MetBindInfoWrap.unwrap(service);
-        assertNull(domain.getProtocolMeta("xmlrpc"));
+                .name("ambiguous");
+        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, provider::register);
+        assertTrue(failure.getMessage().contains("Duplicate RPC method name 'overload'"));
 
-        // 服务仍在容器中，入站报文不能绕过实际端点的拒绝结果。
         XmlRpcException error = assertThrows(XmlRpcException.class, //
                 () -> this.decode("ambiguous.overload", List.of(1)));
         assertEquals(-32601, error.getCode());
@@ -470,6 +469,7 @@ public class XmlRpcBindingTest {
             return value;
         }
 
+        @MetMethod(name = "arityPair")
         public int arity(int first, int second) {
             return first + second;
         }

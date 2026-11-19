@@ -69,8 +69,8 @@ public class DubboCodecTest {
     }
 
     @Test
-    public void primitiveOverloadMatchesPublishedDescriptor() throws Exception {
-        // 同名方法由精确参数描述区分，而非参数值猜测。
+    public void primitiveMethodAliasMatchesPublishedDescriptor() throws Exception {
+        // 整数操作使用显式对外名称，参数仍按声明的描述编解码。
         try (MetContext context = configuration().buildContext()) {
             MetBindInfo<?> service = publish(context);
             RequestPayload request = request(service, "overloaded", int.class, 9);
@@ -489,7 +489,7 @@ public class DubboCodecTest {
 
             // 不将业务错误误写成非 OK 协议状态的字符串。
             ResponsePayload result = codec(context).decodeResponse(request, decode(encoded));
-            assertTrue(result.getFailure() instanceof IllegalArgumentException);
+            assertInstanceOf(IllegalArgumentException.class, result.getFailure());
             assertEquals("broken", result.getFailure().getMessage());
         }
     }

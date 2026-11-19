@@ -385,6 +385,7 @@ async function invoke() {
     return;
   }
   const protocol = endpoint.value.endpoint.protocolName;
+  const operation = method.value.name || selectedSignature;
   const requestTimeout = Number(timeout.value);
   const targets = chooseProvider
       ? Object.values(selectedProviders.value).map((member) => member.instance)
@@ -420,9 +421,10 @@ async function invoke() {
             (item) =>
                 item.endpoint.protocolName === protocol &&
                 (item.description || contract.description)?.methods?.some(
-                    (candidate) => candidate.javaSignature === selectedSignature
+                    (candidate) => (candidate.name || candidate.javaSignature) === operation
                 )
         );
+
         if (!target) throw new Error(t('ui.the-selected-protocol-does-not-support-2'));
         const result = await api(
             'service/debug',
@@ -432,7 +434,7 @@ async function invoke() {
               protocol,
               address: target.address,
               contextPath: target.endpoint.contextPath,
-              method: selectedSignature,
+              method: operation,
               arguments: argumentsValue,
               timeout: requestTimeout
             },

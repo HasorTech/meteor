@@ -39,6 +39,7 @@ public final class ServiceDebugService {
             item.put("unit", endpoint.getUnit());
             item.put("address", endpoint.getAddress());
             item.put("endpoint", endpoint.getEndpoint());
+            item.put("description", endpoint.getDescription());
             item.put("parameterTypes", this.consoleTypes.types(endpoint.getEndpoint().getProtocolName()));
             endpoints.add(item);
         }

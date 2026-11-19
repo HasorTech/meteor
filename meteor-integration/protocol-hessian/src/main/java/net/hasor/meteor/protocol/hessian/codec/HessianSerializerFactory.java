@@ -6,17 +6,61 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor.protocol.hessian.codec;
+import java.io.IOException;
+import java.util.Collection;
 import com.caucho.burlap.io.BurlapRemoteObject;
 import com.caucho.hessian.io.*;
+import net.hasor.meteor.serialize.StructuredValue;
 
 /** 保留原生对象图编码，阻止可调用远程对象进入 RPC 参数与返回值。 */
 final class HessianSerializerFactory extends SerializerFactory {
+    private static final Serializer STRUCT = new AbstractSerializer() {
+        @Override
+        public void writeObject(Object value, AbstractHessianOutput output) throws IOException {
+            if (output.addRef(value)) {
+                return;
+            }
+
+            StructuredValue object = (StructuredValue) value;
+            output.writeMapBegin(object.typeName());
+            for (var field : object.fields().entrySet()) {
+                output.writeString(field.getKey());
+                output.writeObject(field.getValue());
+            }
+            output.writeMapEnd();
+        }
+    };
+
+    private static final Serializer COLLECTION = new AbstractSerializer() {
+        @Override
+        public void writeObject(Object value, AbstractHessianOutput output) throws IOException {
+            if (output.addRef(value)) {
+                return;
+            }
+
+            Collection<?> collection = (Collection<?>) value;
+            boolean end = output.writeListBegin(collection.size(), null);
+            for (Object item : collection) {
+                output.writeObject(item);
+            }
+            if (end) {
+                output.writeListEnd();
+            }
+        }
+    };
+
     HessianSerializerFactory(ClassLoader classLoader) {
         super(classLoader);
     }
 
     @Override
     public Serializer getSerializer(Class type) throws HessianProtocolException {
+        if (StructuredValue.class.isAssignableFrom(type)) {
+            return STRUCT;
+        }
+        if (Collection.class.isAssignableFrom(type) && type.getName().startsWith("java.util.ImmutableCollections$")) {
+            return COLLECTION;
+        }
         rejectRemote(type);
         return super.getSerializer(type);
     }

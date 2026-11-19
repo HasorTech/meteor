@@ -8,6 +8,7 @@
 package net.hasor.meteor.protocol.thrift.codec;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Map;
 import net.hasor.meteor.protocol.thrift.definition.ThriftIdlValue;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
@@ -20,12 +21,18 @@ final class ThriftFieldBinding {
     final TField     field;
     final byte       requirement;
     final ThriftType type;
-    int            position = -1;
-    Field          property;
-    Method         getter;
-    Method         setter;
-    TFieldIdEnum   generated;
-    ThriftIdlValue defaultValue;
+    int             position        = -1;
+    Field           property;
+    Method          getter;
+    Method          setter;
+    TFieldIdEnum    generated;
+    ThriftIdlValue  defaultValue;
+    ArgumentBinding argumentBinding = value -> value;
+
+    @FunctionalInterface
+    interface ArgumentBinding {
+        Object bind(Object value) throws TException;
+    }
 
     ThriftFieldBinding(short id, String name, byte requirement, ThriftType type) {
         this.field = new TField(name, type.wireType, id);
@@ -39,6 +46,11 @@ final class ThriftFieldBinding {
             if (this.position >= 0) {
                 return ((Object[]) owner)[this.position];
             }
+
+            if (owner instanceof Map<?, ?> fields) {
+                return fields.get(this.field.name);
+            }
+
             if (this.generated != null) {
                 TBase value = (TBase) owner;
                 if (this.requirement == TFieldRequirementType.OPTIONAL && !value.isSet(this.generated)) {
@@ -60,6 +72,8 @@ final class ThriftFieldBinding {
         try {
             if (this.position >= 0) {
                 ((Object[]) owner)[this.position] = value;
+            } else if (owner instanceof Map fields) {
+                fields.put(this.field.name, value);
             } else if (this.generated != null) {
                 ((TBase) owner).setFieldValue(this.generated, value);
             } else if (this.setter != null) {

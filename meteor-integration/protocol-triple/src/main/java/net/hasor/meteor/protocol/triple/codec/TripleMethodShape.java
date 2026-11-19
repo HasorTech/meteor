@@ -23,33 +23,47 @@ public final class TripleMethodShape {
     private final Class<?> requestType;
     private final Class<?> responseType;
 
-    public TripleMethodShape(MethodMeta description) {
-        Method method = description.getJavaMethod();
+    private TripleMethodShape(Method method, Class<?> requestType, Class<?> responseType) {
         this.method = method;
+        this.requestType = requestType;
+        this.responseType = responseType;
+    }
+
+    static TripleMethodShape unary(Class<?> responseType) {
+        return new TripleMethodShape(null, Object[].class, responseType);
+    }
+
+    public static TripleMethodShape fromMethod(MethodMeta description) {
+        Method method = description.getJavaMethod();
         boolean publisher = false;
         for (ParameterMeta parameter : description.getParameters()) {
             Class<?> type = parameter.getType().resolve(Object.class);
             publisher |= Flow.Publisher.class.isAssignableFrom(type);
             rejectStream(type);
         }
+
         if (publisher && (method.getParameterCount() != 1 || method.getParameterTypes()[0] != Flow.Publisher.class)) {
             throw new IllegalArgumentException("Triple request Flow must be the sole direct parameter: " + method);
         }
-        this.requestType = publisher ? element(description.getParameters().get(0).getType()) : Object[].class;
+
+        Class<?> requestType = publisher ? element(description.getParameters().get(0).getType()) : Object[].class;
         Class<?> result = description.getReturnType().resolve(Object.class);
-        if (Flow.Publisher.class.isAssignableFrom(result) && !this.streamingResponse()) {
+        boolean streamingResponse = method.getReturnType() == Flow.Publisher.class;
+        if (Flow.Publisher.class.isAssignableFrom(result) && !streamingResponse) {
             String message = "Triple response Flow must use the direct Publisher interface: " + method;
             throw new IllegalArgumentException(message);
         }
-        this.responseType = this.streamingResponse() ? element(description.getReturnType()) //
+
+        Class<?> responseType = streamingResponse ? element(description.getReturnType()) //
                 : description.getReturnType().resolve(Object.class);
-        rejectStream(this.responseType);
+        rejectStream(responseType);
+        return new TripleMethodShape(method, requestType, responseType);
     }
 
     /** 发布期判断签名是否可表达，不把协议不支持转换为应用启动异常。 */
     public static boolean supports(MethodMeta method) {
         try {
-            new TripleMethodShape(method);
+            fromMethod(method);
             return true;
         } catch (IllegalArgumentException unsupported) {
             return false;
@@ -69,11 +83,11 @@ public final class TripleMethodShape {
     }
 
     public boolean streamingRequest() {
-        return this.method.getParameterCount() == 1 && this.method.getParameterTypes()[0] == Flow.Publisher.class;
+        return this.method != null && this.method.getParameterCount() == 1 && this.method.getParameterTypes()[0] == Flow.Publisher.class;
     }
 
     public boolean streamingResponse() {
-        return this.method.getReturnType() == Flow.Publisher.class;
+        return this.method != null && this.method.getReturnType() == Flow.Publisher.class;
     }
 
     public boolean streaming() {

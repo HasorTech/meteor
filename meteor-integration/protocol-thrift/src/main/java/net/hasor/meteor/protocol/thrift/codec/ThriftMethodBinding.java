@@ -13,20 +13,7 @@ import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;
 
 /** 一个 Java 方法与 CALL/REPLY 正文之间的静态映射。 */
-final class ThriftMethodBinding {
-    final Method     method;
-    final String     name;
-    final boolean    oneway;
-    final ThriftType args;
-    final ThriftType result;
-
-    ThriftMethodBinding(Method method, String name, boolean oneway, ThriftType args, ThriftType result) {
-        this.method = method;
-        this.name = name;
-        this.oneway = oneway;
-        this.args = args;
-        this.result = result;
-    }
+record ThriftMethodBinding(Method method, String name, boolean oneway, ThriftType args, ThriftType result) {
 
     Object arguments(List<Object> parameters) throws TException {
         if (parameters.size() != this.args.fields.size()) {
@@ -34,7 +21,9 @@ final class ThriftMethodBinding {
         }
         Object value = this.args.newValue();
         for (int index = 0; index < parameters.size(); index++) {
-            this.args.fields.get(index).set(value, parameters.get(index));
+            ThriftFieldBinding field = this.args.fields.get(index);
+            Object parameter = parameters.get(index);
+            field.set(value, parameter == null ? null : field.argumentBinding.bind(parameter));
         }
         return value;
     }

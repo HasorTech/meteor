@@ -6,6 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor.container;
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -25,6 +26,7 @@ import net.hasor.meteor.domain.MetException;
 import net.hasor.meteor.domain.MetServiceType;
 import net.hasor.meteor.domain.ProtocolStatus;
 import net.hasor.meteor.domain.ServiceDomain;
+import net.hasor.meteor.domain.meta.MethodMeta;
 import net.hasor.meteor.domain.meta.ServiceMeta;
 import net.hasor.meteor.domain.meta.ServiceMetaParser;
 
@@ -293,8 +295,12 @@ public class MetContainer {
     protected final <T> void publishService(ServiceDefine<T> serviceDefine) {
         String serviceID = serviceDefine.getDomain().getBindID();
         boolean provider = MetServiceType.Provider == serviceDefine.getServiceType();
-        if (provider && serviceDefine.getCustomerProvider() == null) {
-            throw new MetException(ProtocolStatus.Forbidden, "Provider Not set the implementation class.");
+        if (provider) {
+            if (serviceDefine.getCustomerProvider() == null) {
+                throw new MetException(ProtocolStatus.Forbidden, "Provider Not set the implementation class.");
+            }
+
+            this.validatePublishedMethods(serviceID, serviceDefine.getDomain().getServiceMeta());
         }
 
         // 先准备服务的初始地址与规则，不占用容器注册锁。
@@ -350,6 +356,24 @@ public class MetContainer {
             throw failure;
         }
         logger.info("service published, id= " + serviceID);
+    }
+
+    private void validatePublishedMethods(String serviceID, ServiceMeta service) {
+        Map<String, MethodMeta> methods = new HashMap<>();
+        for (MethodMeta method : service.getMethods()) {
+            Method declaration = method.getJavaMethod();
+            if (declaration.isBridge() || declaration.isSynthetic()) {
+                continue;
+            }
+
+            String name = method.getName();
+            MethodMeta previous = methods.putIfAbsent(name, method);
+            // 同一个 Java 签名可以从多个父接口继承，调用时仍是同一个方法。
+            if (previous != null && !StringUtils.equals(previous.getJavaSignature(), method.getJavaSignature())) {
+                throw new IllegalArgumentException("Duplicate RPC method name '" + name + "' in service " + serviceID //
+                        + ": " + previous.getJavaMethod() + " and " + declaration);
+            }
+        }
     }
 
     /**

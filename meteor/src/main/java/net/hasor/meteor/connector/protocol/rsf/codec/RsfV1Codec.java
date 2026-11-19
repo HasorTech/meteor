@@ -9,10 +9,8 @@ package net.hasor.meteor.connector.protocol.rsf.codec;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import net.hasor.cobble.ClassUtils;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetContext;
-import net.hasor.meteor.domain.MetRuntimeUtils;
 import net.hasor.meteor.domain.payload.Payload;
 import net.hasor.meteor.domain.payload.RequestPayload;
 import net.hasor.meteor.domain.payload.ResponsePayload;
@@ -25,13 +23,11 @@ public final class RsfV1Codec {
     private static final byte RSF_RESPONSE        = (byte) 0xb1;
 
     private final MetContext         context;
-    private final ClassLoader        classLoader;
     private final RsfV1RequestCodec  requestCodec  = new RsfV1RequestCodec();
     private final RsfV1ResponseCodec responseCodec = new RsfV1ResponseCodec();
 
     public RsfV1Codec(MetContext context) {
         this.context = context;
-        this.classLoader = context.getClassLoader();
     }
 
     public byte[] encode(Payload payload) throws IOException {
@@ -109,7 +105,7 @@ public final class RsfV1Codec {
             for (int i = 0; i < parameterTypes.size(); i++) {
                 String parameterType = parameterTypes.get(i);
                 Object parameterValue = parameterValues.get(i);
-                byte[] encodedValue = coder.encode(parameterValue);
+                byte[] encodedValue = payload.hasEncodedArguments() ? (byte[]) parameterValue : coder.encode(parameterValue);
 
                 short typeIndex = addString(frame, parameterType);
                 short valueIndex = frame.addValue(encodedValue);
@@ -143,11 +139,9 @@ public final class RsfV1Codec {
             throw new IOException("Unsupported serialization type: " + payload.getSerializeType());
         }
 
-        byte[] encodedReturnData;
-        if (serializeCoder != null) {
-            encodedReturnData = serializeCoder.encode(payload.getReturnData());
-        } else {
-            encodedReturnData = new byte[0];
+        byte[] encodedReturnData = payload.getEncodedReturnData();
+        if (encodedReturnData == null) {
+            encodedReturnData = serializeCoder == null ? new byte[0] : serializeCoder.encode(payload.getReturnData());
         }
         frame.setReturnTypeIndex(addString(frame, returnType));
         frame.setReturnDataIndex(frame.addValue(encodedReturnData));
@@ -210,19 +204,14 @@ public final class RsfV1Codec {
 
             // 调用参数。
             int[] encodedParameters = requestFrame.getParameterMappings();
-            SerializeCoder serializeCoder = this.context.getSerializeCoder(serializeType);
+            request.markArgumentsEncoded();
             for (int encodedParameter : encodedParameters) {
                 short typeIndex = (short) (encodedParameter >>> 16);
                 short valueIndex = (short) (encodedParameter & RsfV1AttributePool.MAX_VALUE_COUNT);
                 String parameterType = decodeString(requestFrame.getValue(typeIndex));
                 byte[] parameterData = requestFrame.getValue(valueIndex);
 
-                Object parameterValue = null;
-                if (serializeCoder != null && StringUtils.isNotBlank(parameterType)) {
-                    Class<?> valueType = MetRuntimeUtils.getType(parameterType, this.classLoader);
-                    parameterValue = serializeCoder.decode(parameterData, valueType);
-                }
-                request.addParameter(parameterType, parameterValue);
+                request.addParameter(parameterType, parameterData);
             }
         } finally {
             requestFrame.release();
@@ -252,17 +241,11 @@ public final class RsfV1Codec {
 
             // 响应值。
             response.setStatus(responseFrame.getStatus());
-            SerializeCoder serializeCoder = this.context.getSerializeCoder(serializeType);
             String returnType = decodeString(responseFrame.getValue(responseFrame.getReturnTypeIndex()));
             response.setReturnType(returnType);
-            byte[] encodedReturnData = responseFrame.getValue(responseFrame.getReturnDataIndex());
-            Object returnValue = null;
-            boolean canDecode = serializeCoder != null && StringUtils.isNotBlank(returnType);
-            if (canDecode && !StringUtils.equals("void", returnType)) {
-                Class<?> resultType = ClassUtils.getClass(this.classLoader, returnType, false);
-                returnValue = serializeCoder.decode(encodedReturnData, resultType);
+            if (StringUtils.isNotBlank(returnType) && !StringUtils.equals("void", returnType)) {
+                response.setEncodedReturnData(responseFrame.getValue(responseFrame.getReturnDataIndex()));
             }
-            response.setReturnData(returnValue);
         } finally {
             responseFrame.release();
         }

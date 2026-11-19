@@ -21,6 +21,7 @@ public class ResponsePayload extends Payload {
     private           String       returnType    = null; //返回数据类型
     private           Object       returnData    = null; //返回数据
     private           Future<Void> completion;    //流返回值的实际结束信号；普通响应为空
+    private transient byte[]       encodedReturnData;
     private transient Throwable    failure; //本地执行失败，交给协议转换；不直接编码异常对象
 
     public Throwable getFailure() {
@@ -98,6 +99,15 @@ public class ResponsePayload extends Payload {
     /**设置返回值数据*/
     public void setReturnData(Object returnData) {
         this.returnData = returnData;
+    }
+
+    /** Serialized result, decoded by the caller after matching the response to a request. */
+    public byte[] getEncodedReturnData() {
+        return this.encodedReturnData;
+    }
+
+    public void setEncodedReturnData(byte[] encodedReturnData) {
+        this.encodedReturnData = encodedReturnData;
     }
 
     /** 流句柄可先返回，调用的超时、配额和关闭仍等待这个信号。 */

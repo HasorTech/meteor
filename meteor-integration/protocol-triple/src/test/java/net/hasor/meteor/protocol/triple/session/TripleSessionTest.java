@@ -20,6 +20,7 @@ import net.hasor.example.protocol.triple.TripleFlowServiceImpl;
 import net.hasor.example.protocol.triple.TripleMessage;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
+import net.hasor.meteor.annotation.MetMethod;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.connector.ProtocolSession;
 import net.hasor.meteor.connector.ProtocolSessionContext;
@@ -158,7 +159,7 @@ public class TripleSessionTest {
                 assertTrue(sent.cancel());
                 network.runTasks();
                 assertTrue(network.writeResult.isCancelled());
-                assertTrue(request.completion().getCause() instanceof CancellationException);
+                assertInstanceOf(CancellationException.class, request.completion().getCause());
                 assertTrue(network.writes.get(0).completion().isDone());
                 assertEquals(0, network.closes);
             } finally {
@@ -734,7 +735,7 @@ public class TripleSessionTest {
                 assertTrue(exchange.respond(occupied));
 
                 Future<Void> sent = session.send(response(request.getRequestID()));
-                assertTrue(sent.getCause() instanceof IllegalStateException);
+                assertInstanceOf(IllegalStateException.class, sent.getCause());
                 assertTrue(network.writes.isEmpty());
             } finally {
                 session.closed(null);
@@ -922,7 +923,7 @@ public class TripleSessionTest {
                 request.complete(new CancellationException("already cancelled"));
 
                 Future<Void> sent = session.send(request);
-                assertTrue(sent.getCause() instanceof CancellationException);
+                assertInstanceOf(CancellationException.class, sent.getCause());
                 assertTrue(network.writes.isEmpty());
             } finally {
                 session.closed(null);
@@ -973,8 +974,8 @@ public class TripleSessionTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void mixedOverloadPreservesItsPrefetchedStreamMessage() throws Exception {
-        // 同名方法具有普通与 Flow 两种形状，入站先读取首帧选择流方法。
+    public void explicitStreamAliasDeliversTheFirstFrame() throws Exception {
+        // 同一个 Java 方法名以独立的对外名称发布流操作和普通操作。
         try (MetContext context = mixedContext()) {
             ControlledNetwork network = new ControlledNetwork();
             List<Payload> received = new ArrayList<>();
@@ -998,7 +999,7 @@ public class TripleSessionTest {
                 network.runTasks();
                 assertEquals(1, received.size());
 
-                // 首帧须交还接收流，不能被重载探测吞掉。
+                // 流操作按顺序交付包括首帧在内的所有消息。
                 RequestPayload incoming = (RequestPayload) received.get(0);
                 Flow.Publisher<String> source = (Flow.Publisher<String>) incoming.getParameterValues().get(0);
                 List<String> values = new ArrayList<>();
@@ -1011,8 +1012,8 @@ public class TripleSessionTest {
     }
 
     @Test
-    public void mixedOverloadDispatchesOrdinaryParametersOnce() throws Exception {
-        // 普通参数的 wrapper 与同名流方法共用路径。
+    public void unaryAliasDispatchesOrdinaryParametersOnce() throws Exception {
+        // 普通参数的 wrapper 走已发布的普通操作路径。
         try (MetContext context = mixedContext()) {
             ControlledNetwork network = new ControlledNetwork();
             List<Payload> received = new ArrayList<>();
@@ -1033,7 +1034,7 @@ public class TripleSessionTest {
                 assertTrue(network.awaitTask());
                 network.runTasks();
 
-                // 首帧解码的参数只追加一次，分发保持普通调用语义。
+                // 解码的参数只追加一次，分发保持普通调用语义。
                 assertEquals(1, received.size());
                 RequestPayload incoming = (RequestPayload) received.get(0);
                 assertEquals(List.of(int.class.getName()), incoming.getParameterTypes());
@@ -1047,8 +1048,8 @@ public class TripleSessionTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void emptyMixedOverloadDispatchesTheRequestStream() throws Exception {
-        // 空客户端流没有首帧签名，仍可选定唯一的请求流重载。
+    public void streamAliasDispatchesAnEmptyRequestStream() throws Exception {
+        // 空客户端流通过已发布的对外名称定位流操作。
         try (MetContext context = mixedContext()) {
             ControlledNetwork network = new ControlledNetwork();
             List<Payload> received = new ArrayList<>();
@@ -1117,8 +1118,10 @@ public class TripleSessionTest {
     }
 
     public interface Mixed {
+        @MetMethod(name = "exchangeValue")
         String exchange(int value);
 
+        @MetMethod(name = "exchangeStream")
         Flow.Publisher<String> exchange(Flow.Publisher<String> source);
     }
 

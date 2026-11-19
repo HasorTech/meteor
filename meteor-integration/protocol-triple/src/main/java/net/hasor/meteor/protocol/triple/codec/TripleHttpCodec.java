@@ -27,6 +27,8 @@ import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetOptionSet;
+import net.hasor.meteor.connector.ProtocolOperationBinder.Binding;
+import net.hasor.meteor.connector.ProtocolOperationBinder.Target;
 import net.hasor.meteor.connector.RouteMount;
 import net.hasor.meteor.connector.RouteMountIndex;
 import net.hasor.meteor.connector.RouteSelection;
@@ -42,6 +44,7 @@ import net.hasor.meteor.domain.payload.ResponsePayload;
 import net.hasor.meteor.protocol.grpc.GrpcMetadata;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
 import net.hasor.meteor.protocol.grpc.GrpcStatusException;
+import net.hasor.meteor.protocol.grpc.binding.GrpcOperation;
 import net.hasor.meteor.protocol.grpc.binding.GrpcServiceBinding;
 import net.hasor.meteor.protocol.grpc.codec.GrpcHttpCodec;
 import net.hasor.meteor.protocol.triple.binding.TripleServiceBinding;
@@ -148,7 +151,7 @@ public final class TripleHttpCodec {
             if (!TripleMethodShape.supports(description) || service.isMessage() || description.isMessage()) {
                 return null;
             }
-            TripleMethodShape shape = new TripleMethodShape(description);
+            TripleMethodShape shape = TripleMethodShape.fromMethod(description);
             if (!StringUtils.equalsIgnoreCase(mode, "grpc") && shape.streaming()) {
                 return null;
             }
@@ -235,16 +238,38 @@ public final class TripleHttpCodec {
         return StringUtils.equals(this.requestMode(request), "grpc");
     }
 
+    public static void prepareOperation(JsonNode contract, Target target, Binding<Object> binding) {
+        TripleMethodShape shape = TripleMethodShape.unary(target.returnType());
+        if (contract.hasNonNull("protobufDescriptors")) {
+            GrpcServiceBinding.prepareOperation(contract, target, (path, protobuf) -> binding.bind(path, new TripleOperation(shape, protobuf, target.declaredReturnType())));
+            return;
+        }
+
+        String path = target.requestPath();
+        if (!contract.path("contextExact").asBoolean()) {
+            path = (path.endsWith("/") ? path : path + "/") + target.serviceName() + "/" + target.methodName();
+        }
+        binding.bind(path, new TripleOperation(shape, null, target.declaredReturnType()));
+    }
+
+    private boolean usesNativeMessages(RequestPayload request) {
+        return request.resolveOperationValue(bound -> request.getProtocolBinding(TripleOperation.class).protobuf() != null, () -> this.definition(this.service(request)) != null);
+    }
+
+    private GrpcOperation nativeOperation(RequestPayload request) {
+        return request.resolveOperationValue(bound -> request.getProtocolBinding(TripleOperation.class).protobuf(), () -> this.definition(this.service(request)).operation(this.target(request)));
+    }
+
     public boolean wrapped(RequestPayload request) {
-        return this.framed(request) && this.definition(this.service(request)) == null;
+        return this.framed(request) && !this.usesNativeMessages(request);
     }
 
     public TripleMethodShape shape(RequestPayload request) {
-        return shape(this.service(request), this.target(request));
+        return request.resolveOperationValue(bound -> request.getProtocolBinding(TripleOperation.class).shape(), () -> shape(this.service(request), this.target(request)));
     }
 
     private static TripleMethodShape shape(MetBindInfo<?> service, Method method) {
-        return new TripleMethodShape(ServiceMetaParser.method(service.getBindType(), method));
+        return TripleMethodShape.fromMethod(ServiceMetaParser.method(service.getBindType(), method));
     }
 
     public Method target(RequestPayload request) {
@@ -364,7 +389,7 @@ public final class TripleHttpCodec {
             }
             method = this.jsonMethod(request, input);
             arguments = this.jsonArguments(input, method);
-            if (this.definition(this.service(request)) != null) {
+            if (this.usesNativeMessages(request)) {
                 // 严格文档及参数校验已完成，IDL 绑定继续使用原字节，保留整数词法 -0。
                 byte[] encoded = bytes;
                 if (input.isArray()) {
@@ -423,9 +448,10 @@ public final class TripleHttpCodec {
             if (shape.streamingRequest()) {
                 return this.values.encodeArguments(new Object[] { value }, new Class<?>[] { shape.requestType() });
             }
-            return this.values.encodeArguments((Object[]) value, shape.method().getParameterTypes());
+            List<String> types = request.resolveOperationValue(bound -> request.getParameterTypes(), () -> Arrays.stream(shape.method().getParameterTypes()).map(Class::getName).toList());
+            return this.values.encodeArguments((Object[]) value, types);
         }
-        if (this.definition(this.service(request)) != null) {
+        if (this.usesNativeMessages(request)) {
             Object single = parameter && !shape.streamingRequest() ? ((Object[]) value)[0] : value;
             byte[] encoded = this.nativeEncode(request, single, parameter);
             if (parameter && StringUtils.equals(this.requestMode(request), "json")) {
@@ -445,9 +471,10 @@ public final class TripleHttpCodec {
             if (parameter) {
                 return this.values.decodeArguments(bytes, new Class<?>[] { type })[0];
             }
-            return this.values.decodeResult(bytes, type);
+            String declaredType = request.resolveOperationValue(bound -> request.getProtocolBinding(TripleOperation.class).returnWireType(), type::getName);
+            return this.values.decodeResult(bytes, declaredType, type);
         }
-        if (this.definition(this.service(request)) != null) {
+        if (this.usesNativeMessages(request)) {
             return this.nativeDecode(request, type, bytes, parameter);
         }
         if (type == void.class || type == Void.class) {
@@ -880,10 +907,10 @@ public final class TripleHttpCodec {
     }
 
     private byte[] nativeEncode(RequestPayload request, Object value, boolean parameter) throws Exception {
-        GrpcServiceBinding binding = this.definition(this.service(request));
+        GrpcOperation binding = this.nativeOperation(request);
         DynamicMessage message;
         try {
-            message = binding.encode(this.target(request), value, parameter);
+            message = binding.encode(value, parameter);
         } catch (IllegalArgumentException invalid) {
             throw status(3, invalid.getMessage());
         }
@@ -900,20 +927,19 @@ public final class TripleHttpCodec {
     private Object nativeDecode(RequestPayload request, Class<?> type, byte[] bytes, //
             boolean parameter) throws Exception {
         this.frames.check(bytes);
-        GrpcServiceBinding binding = this.definition(this.service(request));
-        Method method = this.target(request);
+        GrpcOperation binding = this.nativeOperation(request);
         if (!StringUtils.equalsIgnoreCase(request.getSerializeType(), "Protobuf")) {
             JsonNode document = JSON.readTree(bytes);
             if (document == null || document.isMissingNode()) {
                 throw status(13, "Triple JSON message requires a complete document");
             }
             String json = new String(bytes, StandardCharsets.UTF_8);
-            bytes = binding.parseJson(method, json, parameter).toByteArray();
+            bytes = binding.parseJson(json, parameter).toByteArray();
         }
         if (type == DynamicMessage.class || type == Message.class) {
-            return binding.parse(method, bytes, parameter);
+            return binding.parse(bytes, parameter);
         }
-        return binding.decode(method, bytes, parameter);
+        return binding.decode(bytes, parameter);
     }
 
     private GrpcServiceBinding definition(MetBindInfo<?> service) {
@@ -934,6 +960,10 @@ public final class TripleHttpCodec {
     }
 
     private String path(RequestPayload request) {
+        return request.resolveRequestPath(() -> this.localPath(request));
+    }
+
+    private String localPath(RequestPayload request) {
         MetBindInfo<?> service = this.service(request);
         Method method = this.target(request);
         GrpcServiceBinding definition = this.definition(service);

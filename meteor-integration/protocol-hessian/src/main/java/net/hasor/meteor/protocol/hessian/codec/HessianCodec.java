@@ -14,10 +14,12 @@ import java.util.Map;
 import java.util.concurrent.Flow;
 import com.caucho.hessian.io.*;
 import com.caucho.services.server.AbstractSkeleton;
+import com.fasterxml.jackson.databind.type.TypeFactory;
 import net.hasor.cobble.StringUtils;
 import net.hasor.cobble.function.EConsumer;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
+import net.hasor.meteor.connector.ProtocolOperationBinder.Target;
 import net.hasor.meteor.connector.RouteMount;
 import net.hasor.meteor.connector.RouteMountIndex;
 import net.hasor.meteor.domain.MetRuntimeUtils;
@@ -128,21 +130,24 @@ public final class HessianCodec {
             throw new IOException("Hessian does not support message calls");
         }
 
-        MetBindInfo<?> service = this.service(request);
-        Method method = this.method(request, service);
-        // 名称表在发布时生成；对象序列化仍保留原生 Java 类名。
-        String wireMethod = this.binding(service).name(method);
+        String name = request.resolveOperationValue(Target::methodName, () -> {
+            MetBindInfo<?> service = this.service(request);
+            return this.binding(service).name(this.method(request, service));
+        });
+
         Object[] parameters = request.getParameterValues().toArray();
-        return this.encode(this.version, output -> output.call(wireMethod, parameters));
+        return this.encode(this.version, output -> output.call(name, parameters));
     }
 
     public String requestPath(RequestPayload request) {
-        MetBindInfo<?> service = this.service(request);
+        return request.resolveRequestPath(() -> this.requestPath(this.service(request)));
+    }
+
+    private String requestPath(MetBindInfo<?> service) {
         if (!this.routes.exactPaths(service).isEmpty()) {
             return this.routes.contextPath(service);
-        } else {
-            return this.routes.requestPath(service, alias(service));
         }
+        return this.routes.requestPath(service, alias(service));
     }
 
     public byte[] encodeResponse(ResponsePayload response, int version) throws IOException {
@@ -196,8 +201,7 @@ public final class HessianCodec {
 
         this.configure(input);
         try {
-            Method method = this.method(request, this.service(request));
-            Class<?> resultType = method.getReturnType();
+            Class<?> resultType = request.resolveReturnType(() -> TypeFactory.defaultInstance().constructType(this.method(request, this.service(request)).getReturnType())).getRawClass();
             Class<?> expected = resultType == void.class ? Object.class : resultType;
             Object value = input.readReply(expected);
             this.end(input, bytes);

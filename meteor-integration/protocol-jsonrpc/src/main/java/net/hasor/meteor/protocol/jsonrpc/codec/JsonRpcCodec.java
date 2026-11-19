@@ -24,6 +24,7 @@ import net.hasor.cobble.StringUtils;
 import net.hasor.cobble.reflect.resolvable.ResolvableType;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
+import net.hasor.meteor.connector.ProtocolOperationBinder.Target;
 import net.hasor.meteor.connector.RouteMount;
 import net.hasor.meteor.connector.RouteMountIndex;
 import net.hasor.meteor.domain.MetRuntimeUtils;
@@ -227,9 +228,9 @@ public final class JsonRpcCodec {
     }
 
     public byte[] encodeRequest(RequestPayload request) throws IOException {
-        MetBindInfo<?> service = this.service(request);
-        String serviceAlias = alias(service);
-        String methodName = this.binding(service).name(this.method(request));
+        String serviceAlias = request.resolveOperationValue(Target::serviceName, () -> alias(this.service(request)));
+        String methodName = request.resolveOperationValue(Target::methodName, //
+                () -> this.binding(this.service(request)).name(this.method(request)));
         String name = serviceAlias + "." + methodName;
         String scopedService = this.protocol.option("service", null);
         if (scopedService != null) {
@@ -250,7 +251,7 @@ public final class JsonRpcCodec {
     }
 
     public String requestPath(RequestPayload request) {
-        return this.routes.contextPath(this.service(request));
+        return request.resolveRequestPath(() -> this.routes.contextPath(this.service(request)));
     }
 
     public JsonNode encodeResponse(JsonRpcCall call, ResponsePayload response) {
@@ -334,22 +335,22 @@ public final class JsonRpcCodec {
             throw new JsonRpcException(error.get("code").intValue(), error.get("message").textValue(), data);
         }
 
-        // 返回值按消费者接口的泛型声明恢复，不将 DTO 降级为无类型 Map。
-        Method method = this.method(request);
-        Object value = null;
-        if (method.getReturnType() != void.class) {
-            try {
-                value = this.convert(response.get("result"), this.binding(this.service(request)).returnType(method));
-            } catch (IllegalArgumentException failure) {
-                throw new IOException("Invalid JSON-RPC result type", failure);
-            }
-        }
         ResponsePayload result = new ResponsePayload();
         result.setRequestID(request.getRequestID());
         result.setStatus(ProtocolStatus.OK);
         result.setSerializeType("json");
         result.setReceiveTime(System.currentTimeMillis());
-        result.setReturnType(method.getReturnType().getName());
+        JavaType target = request.resolveReturnType(() -> this.javaType(this.binding(this.service(request)).returnType(this.method(request))));
+        Object value = null;
+        if (!target.hasRawClass(void.class)) {
+            try {
+                value = JSON.convertValue(response.get("result"), target);
+            } catch (IllegalArgumentException failure) {
+                throw new IOException("Invalid JSON-RPC result type", failure);
+            }
+        }
+
+        result.setReturnType(target.getRawClass().getName());
         result.setReturnData(value);
         return result;
     }

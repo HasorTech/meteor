@@ -15,6 +15,7 @@ import com.caucho.services.server.AbstractSkeleton;
 import net.hasor.example.protocol.hessian.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.annotation.MetIgnore;
+import net.hasor.meteor.annotation.MetMethod;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.connector.ConnectorConfig;
 import net.hasor.meteor.connector.RouteMountIndex;
@@ -171,10 +172,12 @@ final class HessianCodecTestFixture implements AutoCloseable {
             return values;
         }
 
+        @MetMethod(name = "overloadedText")
         public String overloaded(String value) {
             return value;
         }
 
+        @MetMethod(name = "overloadedNumber")
         public int overloaded(int value) {
             return value;
         }
@@ -183,6 +186,7 @@ final class HessianCodecTestFixture implements AutoCloseable {
             return "default";
         }
 
+        @MetMethod(name = "optionalText")
         public String optional(String value) {
             return value;
         }
@@ -191,6 +195,7 @@ final class HessianCodecTestFixture implements AutoCloseable {
             return value;
         }
 
+        @MetMethod(name = "arityPair")
         public int arity(int left, int right) {
             return left + right;
         }

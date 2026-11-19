@@ -6,22 +6,18 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor.protocol.thrift.codec;
-import net.hasor.meteor.annotation.MetEnumValue;
-import net.hasor.meteor.annotation.MetField;
-import net.hasor.meteor.annotation.MetMessage;
-import net.hasor.meteor.annotation.MetMethod;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import net.hasor.cobble.reflect.resolvable.ResolvableType;
-import net.hasor.example.protocol.thrift.mapping.Note;
+import net.hasor.example.protocol.thrift.mapping.FailingNote;
 import net.hasor.example.protocol.thrift.mapping.MappedBean;
 import net.hasor.example.protocol.thrift.mapping.MappedState;
-import net.hasor.example.protocol.thrift.mapping.FailingNote;
-import net.hasor.meteor.annotation.MetParam;
+import net.hasor.example.protocol.thrift.mapping.Note;
+import net.hasor.meteor.annotation.*;
 import net.hasor.meteor.domain.ServiceDomain;
 import net.hasor.meteor.protocol.thrift.ThriftIdlResource;
-import net.hasor.meteor.protocol.thrift.annotation.*;
+import net.hasor.meteor.protocol.thrift.annotation.ThriftUnion;
 import org.apache.thrift.protocol.TType;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -160,8 +156,8 @@ public class ThriftSchemaBuilderTest {
         ThriftMethodBinding method = schema.javaMethod("echo");
 
         // 泛型声明在发布时编译，运行时不再解析 TypeVariable。
-        assertSame(Note.class, method.args.fields.get(0).type.javaType);
-        assertSame(Note.class, method.result.fieldsById.get((short) 0).type.javaType);
+        assertSame(Note.class, method.args().fields.get(0).type.javaType);
+        assertSame(Note.class, method.result().fieldsById.get((short) 0).type.javaType);
     }
 
     @Test

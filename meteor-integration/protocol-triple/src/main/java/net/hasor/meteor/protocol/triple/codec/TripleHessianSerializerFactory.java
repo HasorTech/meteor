@@ -6,14 +6,33 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor.protocol.triple.codec;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import com.caucho.hessian.io.*;
 import net.hasor.cobble.StringUtils;
+import net.hasor.meteor.serialize.StructuredValue;
 
 /** 集合按容器协议编码，避免原生工厂反射 JDK 不可变集合的 writeReplace。 */
 final class TripleHessianSerializerFactory extends SerializerFactory {
+    private static final Serializer STRUCT = new AbstractSerializer() {
+        @Override
+        public void writeObject(Object value, AbstractHessianOutput output) throws IOException {
+            if (output.addRef(value)) {
+                return;
+            }
+
+            StructuredValue object = (StructuredValue) value;
+            output.writeMapBegin(object.typeName());
+            for (var field : object.fields().entrySet()) {
+                output.writeString(field.getKey());
+                output.writeObject(field.getValue());
+            }
+            output.writeMapEnd();
+        }
+    };
+
     private final CollectionSerializer collections = new CollectionSerializer();
     private final MapSerializer        maps        = new MapSerializer();
 
@@ -24,6 +43,9 @@ final class TripleHessianSerializerFactory extends SerializerFactory {
 
     @Override
     public Serializer getSerializer(Class type) throws HessianProtocolException {
+        if (StructuredValue.class.isAssignableFrom(type)) {
+            return STRUCT;
+        }
         if (Collection.class.isAssignableFrom(type)) {
             return this.collections;
         }

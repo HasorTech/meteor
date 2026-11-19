@@ -12,9 +12,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.ObjLongConsumer;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
+import net.hasor.meteor.connector.ProtocolOperationBinder;
 import net.hasor.meteor.connector.ProtocolSession;
 import net.hasor.meteor.connector.ProtocolSessionContext;
 import net.hasor.meteor.connector.RouteMountIndex;
@@ -32,7 +34,7 @@ import net.hasor.meteor.protocol.grpc.session.GrpcMountRuntime;
 import net.hasor.meteor.protocol.grpc.session.GrpcWebSession;
 
 /** gRPC-Web 的 HTTP 挂载入口，复用 gRPC 服务映射与调用生命周期。 */
-public final class GrpcWebProtocol implements HttpProtocolProvider {
+public final class GrpcWebProtocol implements HttpProtocolProvider, ProtocolOperationBinder {
     @Override
     public Set<Integer> httpVersions(ProtocolConfig config) {
         return Set.of(1, 2);
@@ -58,6 +60,11 @@ public final class GrpcWebProtocol implements HttpProtocolProvider {
     @Override
     public List<String> serviceKey(MetBindInfo<?> service, ProtocolBinding binding) {
         return List.of(((GrpcServiceBinding) binding.getDefinition()).serviceName());
+    }
+
+    @Override
+    public void prepareOperation(ProtocolConfig config, JsonNode contract, Target target, Binding<Object> binding) {
+        GrpcServiceBinding.prepareOperation(contract, target, binding);
     }
 
     @Override

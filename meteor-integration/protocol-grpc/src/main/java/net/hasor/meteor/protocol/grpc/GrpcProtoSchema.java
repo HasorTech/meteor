@@ -65,6 +65,45 @@ public final class GrpcProtoSchema {
         return new GrpcProtoSchema(files, sources);
     }
 
+    public byte[] descriptorSet() {
+        var descriptors = DescriptorProtos.FileDescriptorSet.newBuilder();
+        for (FileDescriptor file : this.fileDescriptors) {
+            descriptors.addFile(file.toProto());
+        }
+        return descriptors.build().toByteArray();
+    }
+
+    public static GrpcProtoSchema fromDescriptorSet(byte[] bytes) {
+        try {
+            Map<String, FileDescriptorProto> files = new LinkedHashMap<>();
+            for (FileDescriptorProto file : DescriptorProtos.FileDescriptorSet.parseFrom(bytes).getFileList()) {
+                if (files.putIfAbsent(file.getName(), file) != null) {
+                    throw new IllegalArgumentException("Repeated proto file: " + file.getName());
+                }
+            }
+            Map<String, FileDescriptor> linked = new LinkedHashMap<>();
+            while (!files.isEmpty()) {
+                int previous = linked.size();
+                var entries = files.entrySet().iterator();
+                while (entries.hasNext()) {
+                    var entry = entries.next();
+                    var proto = entry.getValue();
+                    if (linked.keySet().containsAll(proto.getDependencyList())) {
+                        FileDescriptor[] dependencies = proto.getDependencyList().stream().map(linked::get).toArray(FileDescriptor[]::new);
+                        linked.put(entry.getKey(), FileDescriptor.buildFrom(proto, dependencies));
+                        entries.remove();
+                    }
+                }
+                if (linked.size() == previous) {
+                    throw new IllegalArgumentException("Unresolved proto dependencies: " + files.keySet());
+                }
+            }
+            return fromDescriptors(linked.values(), Map.of());
+        } catch (IOException | DescriptorValidationException failure) {
+            throw new IllegalArgumentException("Invalid published protobuf descriptor set", failure);
+        }
+    }
+
     static GrpcProtoSchema load(URL source) throws IOException {
         if (source == null) {
             throw new IllegalArgumentException("gRPC proto resource URL is required");

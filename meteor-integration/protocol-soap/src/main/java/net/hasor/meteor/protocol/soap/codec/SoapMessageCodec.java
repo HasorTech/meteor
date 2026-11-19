@@ -23,7 +23,6 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetBindInfo;
@@ -64,10 +63,10 @@ public final class SoapMessageCodec {
     private       DocumentBuilderFactory documentFactory;
 
     private SoapMessageCodec(ProtocolConfig config, RouteMountIndex routes, //
-            SoapHeaderHandler headerHandler, SoapXmlMapping mapping, SoapProtocolMeta definition) {
+            SoapHeaderHandler headerHandler, SoapXmlMapping mapping, SoapProtocolMeta definition, SoapVersion version) {
         this.config = config;
         this.routes = routes;
-        this.version = SoapVersion.from(config);
+        this.version = version;
         this.headerHandler = headerHandler;
         this.mapping = mapping;
         this.binding = definition;
@@ -77,12 +76,17 @@ public final class SoapMessageCodec {
 
     public static SoapMessageCodec newService(ProtocolConfig config, RouteMountIndex routes, //
             SoapHeaderHandler headerHandler, SoapProtocolMeta definition) {
-        return new SoapMessageCodec(config, routes, headerHandler, definition.mapping(), definition);
+        return new SoapMessageCodec(config, routes, headerHandler, definition.mapping(), definition, definition.resource().definition().version());
     }
 
     public static SoapMessageCodec newFaults(ProtocolConfig config, RouteMountIndex routes, //
             SoapHeaderHandler headerHandler, SoapXmlMapping mapping) {
-        return new SoapMessageCodec(config, routes, headerHandler, mapping, null);
+        return new SoapMessageCodec(config, routes, headerHandler, mapping, null, SoapVersion.from(config));
+    }
+
+    SoapMessageCodec forVersion(SoapVersion version) {
+        return this.version == version ? this : new SoapMessageCodec(//
+                this.config, this.routes, this.headerHandler, this.mapping, this.binding, version);
     }
 
     /** 复用运行期结果映射校验发布服务的 Java 返回类型。 */
@@ -194,24 +198,38 @@ public final class SoapMessageCodec {
 
     public HttpRequest encode(RequestPayload request, MetBindInfo<?> service, //
             SoapDefinitionResource resource) throws Exception {
+        return this.encode(request, this.bind(request, service, resource));
+    }
+
+    public SoapCallBinding bind(RequestPayload request, MetBindInfo<?> service, SoapDefinitionResource resource) {
         SoapOperation operation = this.binding.operation(request.getTargetMethod());
         Method method = this.method(service, operation);
-        if (request.getParameterValues().size() != method.getParameterCount()) {
-            throw new IllegalArgumentException("SOAP argument count does not match Java method: " + method.getName());
+        SoapResultMapping result = operation.oneWay() ? null : new SoapResultMapping(//
+                operation.outputBody(), this.binding.types(method).getReturnType(), this.mapping);
+        return new SoapCallBinding(resource, operation, this.requestPath(service, this.binding.serviceName()), //
+                method.isAnnotationPresent(SoapGet.class), this.binding.wireParameterTypes(method), //
+                args -> this.binding.wireParameters(method, args), result == null ? new Type[0] : result.types(), //
+                result == null ? values -> null : result::join, this);
+    }
+
+    public HttpRequest encode(RequestPayload request, SoapCallBinding call) throws Exception {
+        SoapOperation operation = call.operation;
+        SoapDefinitionResource resource = call.resource;
+        if (request.getParameterValues().size() != call.inputTypes.length) {
+            throw new IllegalArgumentException("SOAP argument count does not match operation: " + operation.name());
         }
 
         // 调用模式在 Caller 过滤器执行前由服务配置和方法注解确定，协议层只校验契约一致性。
         if (request.isMessage() != operation.oneWay()) {
-            throw new IllegalArgumentException("SOAP request mode does not match WSDL operation: " + method.getName());
+            throw new IllegalArgumentException("SOAP request mode does not match WSDL operation: " + operation.name());
         }
         if (StringUtils.isBlank(request.getSerializeType())) {
             request.setSerializeType("Xml");
         }
 
-        String alias = this.binding.serviceName();
-        String path = this.requestPath(service, alias);
+        String path = call.path;
         Map<String, List<String>> headers = this.requestHeaders(request);
-        if (this.version == SoapVersion.SOAP_12 && method.isAnnotationPresent(SoapGet.class)) {
+        if (this.version == SoapVersion.SOAP_12 && call.get) {
             headers.put("Accept", List.of(this.version.contentType()));
             String query = path + "?method=" + operation.name();
             return HttpRequest.newBuffered("GET", query, headers, new byte[0], 1, Map.of());
@@ -221,11 +239,7 @@ public final class SoapMessageCodec {
         Element body = this.envelope(document);
         Map<Element, byte[]> binaries = new IdentityHashMap<>();
         Object[] arguments = request.getParameterValues().toArray();
-        SoapMethodTypes methodTypes = this.binding.types(method);
-        SoapProtocolMeta definition = this.binding;
-        JavaType[] wireTypes = definition.wireParameterTypes(method);
-        Object[] wireValues = definition.wireParameters(method, arguments);
-        this.bodies.write(body, operation.inputBody(), wireTypes, wireValues, binaries);
+        this.bodies.write(body, operation.inputBody(), call.inputTypes, call.parameters.apply(arguments), binaries);
         this.validateBody(resource, body, operation, operation.inputBody());
         this.writeHeaders(document, request, true, resource, operation);
         if (this.version == SoapVersion.SOAP_11) {
@@ -272,7 +286,12 @@ public final class SoapMessageCodec {
 
     public ResponsePayload decode(RequestPayload request, HttpResponse input, MetBindInfo<?> service, //
             SoapDefinitionResource resource) throws Exception {
-        SoapOperation operation = this.binding.operation(request.getTargetMethod());
+        return this.decode(request, input, this.bind(request, service, resource));
+    }
+
+    public ResponsePayload decode(RequestPayload request, HttpResponse input, SoapCallBinding call) throws Exception {
+        SoapOperation operation = call.operation;
+        SoapDefinitionResource resource = call.resource;
         if (input.stream() != null) {
             throw new IllegalArgumentException("SOAP does not support an incremental HTTP response body");
         }
@@ -318,14 +337,10 @@ public final class SoapMessageCodec {
             return this.copyResponseHeaders(input, failure);
         }
 
-        Method method = this.method(service, operation);
         this.validateRpcResult(body, operation);
         this.validateBody(resource, body, operation, operation.outputBody());
-        SoapMethodTypes methodTypes = this.binding.types(method);
-        SoapResultMapping results = new SoapResultMapping(//
-                operation.outputBody(), methodTypes.getReturnType(), this.mapping);
-        Object[] values = this.bodies.read(body, operation.outputBody(), results.types());
-        response.setReturnData(results.join(values));
+        Object[] values = this.bodies.read(body, operation.outputBody(), call.outputTypes);
+        response.setReturnData(call.result.apply(values));
         return this.copyResponseHeaders(input, response);
     }
 

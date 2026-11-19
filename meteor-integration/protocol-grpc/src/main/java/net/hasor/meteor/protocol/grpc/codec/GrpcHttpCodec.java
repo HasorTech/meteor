@@ -19,6 +19,7 @@ import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetOptionSet;
+import net.hasor.meteor.connector.ProtocolOperationBinder.Target;
 import net.hasor.meteor.connector.RouteMount;
 import net.hasor.meteor.connector.RouteMountIndex;
 import net.hasor.meteor.connector.RouteSelection;
@@ -31,6 +32,7 @@ import net.hasor.meteor.domain.payload.ResponsePayload;
 import net.hasor.meteor.protocol.grpc.GrpcMetadata;
 import net.hasor.meteor.protocol.grpc.GrpcStatusException;
 import net.hasor.meteor.protocol.grpc.binding.GrpcMethodShape;
+import net.hasor.meteor.protocol.grpc.binding.GrpcOperation;
 import net.hasor.meteor.protocol.grpc.binding.GrpcServiceBinding;
 import net.hasor.meteor.serialize.SerializeCoder;
 
@@ -142,16 +144,17 @@ public final class GrpcHttpCodec {
             throw new IllegalArgumentException("gRPC unary calls require a response");
         }
 
-        MetBindInfo<?> service = this.service(request);
-        Method method = this.method(service, request.getTargetMethod());
+        GrpcOperation operation = this.operation(request);
+        if (operation.shape().streaming()) {
+            throw new IllegalArgumentException("Streaming methods require incremental HTTP bodies");
+        }
         if (request.getParameterValues().size() != 1) {
             throw new IllegalArgumentException("gRPC requires one request DTO");
         }
 
         String coding = request.getSerializeType();
-        byte[] body = this.encode(service, method, coding, request.getParameterValues().get(0), true);
-        String remoteName = this.definition(service).remoteName(method);
-        String path = this.routes.requestPath(service, this.definition(service).serviceName() + "/" + remoteName);
+        byte[] body = this.encodeValue(request, request.getParameterValues().get(0), true);
+        String path = this.requestPath(request);
         Map<String, List<String>> headers = this.metadata(request);
         headers.putAll(GrpcMetadata.from(request).getHeaders());
         headers.put("content-type", List.of(this.contentType(coding)));
@@ -163,9 +166,7 @@ public final class GrpcHttpCodec {
     }
 
     public HttpRequest streamRequest(RequestPayload request, HttpBodyStream body) {
-        MetBindInfo<?> service = this.service(request);
-        String remoteName = this.definition(service).remoteName(this.target(request));
-        String path = this.routes.requestPath(service, this.definition(service).serviceName() + "/" + remoteName);
+        String path = this.requestPath(request);
         Map<String, List<String>> headers = this.metadata(request);
         headers.putAll(GrpcMetadata.from(request).getHeaders());
         headers.put("content-type", List.of(this.contentType(request.getSerializeType())));
@@ -176,9 +177,28 @@ public final class GrpcHttpCodec {
         return HttpRequest.newStreaming("POST", path, headers, body, 2);
     }
 
+    private GrpcOperation operation(RequestPayload request) {
+        return request.resolveProtocolBinding(GrpcOperation.class, () -> {
+            MetBindInfo<?> service = this.service(request);
+            return this.definition(service).operation(this.target(request));
+        });
+    }
+
+    private String requestPath(RequestPayload request) {
+        return request.resolveRequestPath(() -> {
+            MetBindInfo<?> service = this.service(request);
+            GrpcServiceBinding definition = this.definition(service);
+            String method = definition.remoteName(this.operation(request).shape().method());
+            return this.routes.requestPath(service, definition.serviceName() + "/" + method);
+        });
+    }
+
     public byte[] encodeValue(RequestPayload request, Object value, boolean parameter) throws Exception {
-        MetBindInfo<?> service = this.service(request);
-        return this.encode(service, this.target(request), request.getSerializeType(), value, parameter);
+        String coding = request.getSerializeType();
+        if (!StringUtils.equalsIgnoreCase(coding, "Protobuf")) {
+            return this.coder(coding).encode(value);
+        }
+        return this.operation(request).encode(value, parameter).toByteArray();
     }
 
     public Object decodeValue(RequestPayload request, Class<?> type, byte[] bytes, boolean parameter) throws Exception {
@@ -186,9 +206,7 @@ public final class GrpcHttpCodec {
         if (!StringUtils.equalsIgnoreCase(coding, "Protobuf")) {
             return this.coder(coding).decode(bytes, type);
         }
-
-        MetBindInfo<?> service = this.service(request);
-        return this.definition(service).decode(this.target(request), bytes, parameter);
+        return this.operation(request).decode(bytes, parameter);
     }
 
     public HttpResponse encode(RequestPayload request, ResponsePayload response) throws Exception {
@@ -242,16 +260,19 @@ public final class GrpcHttpCodec {
     public ResponsePayload decode(RequestPayload request, HttpResponse input) throws Exception {
         this.validateResponse(request, input, input.trailers());
         String coding = request.getSerializeType();
-        MetBindInfo<?> service = this.service(request);
-        Method method = this.method(service, request.getTargetMethod());
+        GrpcOperation operation = this.operation(request);
+        if (operation.shape().streaming()) {
+            throw new IllegalArgumentException("Streaming methods require incremental HTTP bodies");
+        }
         byte[] body = this.frames.unframe(input.body(), input.header("grpc-encoding"));
-        Object value = this.decode(service, method, coding, body, false);
+        Class<?> responseType = request.resolveOperationValue(Target::returnType, () -> operation.shape().method().getReturnType());
+        Object value = this.decodeValue(request, responseType, body, false);
 
         ResponsePayload response = new ResponsePayload();
         response.setRequestID(request.getRequestID());
         response.setStatus(ProtocolStatus.OK);
         response.setSerializeType(coding);
-        response.setReturnType(method.getReturnType().getName());
+        response.setReturnType(responseType.getName());
         response.setReturnData(value);
         this.readHeaders(input.headers(), response);
         this.readTrailers(input.trailers(), response);
@@ -589,7 +610,7 @@ public final class GrpcHttpCodec {
     }
 
     public GrpcMethodShape shape(RequestPayload request) {
-        return this.definition(this.service(request)).shape(this.target(request));
+        return this.operation(request).shape();
     }
 
     private Method findMethod(MetBindInfo<?> service, String name) {

@@ -44,8 +44,8 @@ public class ThriftIdlBindingTest {
 
         // 同一份契约再绑定到 Java 接口，保持两类数组的真实组件类型。
         ThriftServiceSchema restored = new ThriftIdlResource(file.toUri().toURL()).bind(service);
-        ThriftType counts = restored.javaMethod("counts").args.fields.get(0).type;
-        ThriftType names = restored.javaMethod("names").args.fields.get(0).type;
+        ThriftType counts = restored.javaMethod("counts").args().fields.get(0).type;
+        ThriftType names = restored.javaMethod("names").args().fields.get(0).type;
         assertEquals(TType.LIST, counts.wireType);
         assertSame(int[].class, counts.javaType);
         assertSame(int.class, counts.element.javaType);
@@ -149,7 +149,7 @@ public class ThriftIdlBindingTest {
 
         // 生成的名称同时接受 MetType 基名与泛型实参，文件入口恢复同一组字段类型。
         ThriftServiceSchema restored = new ThriftIdlResource(file.toUri().toURL()).bind(service);
-        ThriftType pair = restored.javaMethod("mirror").args.fields.get(0).type;
+        ThriftType pair = restored.javaMethod("mirror").args().fields.get(0).type;
         assertEquals("BoxOfString", pair.fieldsById.get((short) 1).type.name);
         assertEquals("BoxOfInteger", pair.fieldsById.get((short) 2).type.name);
     }
@@ -176,10 +176,10 @@ public class ThriftIdlBindingTest {
 
         // 导出的文件再次绑定原接口，保留字段号、名称和参数位置。
         ThriftServiceSchema restored = new ThriftIdlResource(file.toUri().toURL()).bind(service);
-        ThriftType value = restored.wireMethod("Echo").args.fields.get(0).type;
+        ThriftType value = restored.wireMethod("Echo").args().fields.get(0).type;
         assertEquals("WireRecord", value.name);
         assertEquals("remote_count", value.fieldsById.get((short) 7).field.name);
-        assertEquals(3, restored.wireMethod("Echo").args.fields.get(0).field.id);
+        assertEquals(3, restored.wireMethod("Echo").args().fields.get(0).field.id);
     }
 
     @Test
@@ -207,10 +207,10 @@ public class ThriftIdlBindingTest {
 
         // 线上名称映回原方法，参数数组仍使用 Java 下标。
         ThriftMethodBinding method = schema.wireMethod("Echo");
-        assertEquals("echo", method.method.getName());
-        assertEquals(3, method.args.fields.get(0).field.id);
-        assertEquals(0, method.args.fields.get(0).position);
-        ThriftType dto = method.args.fields.get(0).type;
+        assertEquals("echo", method.method().getName());
+        assertEquals(3, method.args().fields.get(0).field.id);
+        assertEquals(0, method.args().fields.get(0).position);
+        ThriftType dto = method.args().fields.get(0).type;
         assertEquals("WireRecord", dto.name);
         assertEquals("remote_count", dto.fieldsById.get((short) 7).field.name);
         assertEquals("count", dto.fieldsById.get((short) 7).property.getName());
@@ -220,7 +220,7 @@ public class ThriftIdlBindingTest {
     public void fileAndAnnotationBindingsUseTheSameWireCodec() throws Exception {
         // 同一 DTO 分别从文件和注解建立定义，不复制编码实现。
         ThriftServiceSchema schema = this.resource("binding").bind(new ServiceDomain<>(Records.class));
-        ThriftType fileType = schema.javaMethod("echo").args.fields.get(0).type;
+        ThriftType fileType = schema.javaMethod("echo").args().fields.get(0).type;
         ThriftType annotationType = new ThriftSchemaBuilder().javaType( //
                 ResolvableType.forClass(RecordDto.class));
         RecordDto input = new RecordDto();
@@ -242,7 +242,7 @@ public class ThriftIdlBindingTest {
     public void omittedFieldsUseTheIdlDefaults() throws Exception {
         // 报文只携带必填计数，文本和集合默认值来自 IDL。
         ThriftServiceSchema schema = this.resource("binding").bind(new ServiceDomain<>(Records.class));
-        ThriftType type = schema.javaMethod("echo").result.fields.get(0).type;
+        ThriftType type = schema.javaMethod("echo").result().fields.get(0).type;
 
         RecordDto decoded = this.readCount(type);
 
@@ -254,7 +254,7 @@ public class ThriftIdlBindingTest {
     public void mutableDefaultsAreIndependentForEachDecodedObject() throws Exception {
         // 两次解码得到同一个契约默认值，但不能共享同一个 List 实例。
         ThriftServiceSchema schema = this.resource("binding").bind(new ServiceDomain<>(Records.class));
-        ThriftType type = schema.javaMethod("echo").result.fields.get(0).type;
+        ThriftType type = schema.javaMethod("echo").result().fields.get(0).type;
         RecordDto first = this.readCount(type);
         RecordDto second = this.readCount(type);
 
@@ -271,7 +271,7 @@ public class ThriftIdlBindingTest {
         ThriftServiceSchema schema = resource.bind(new ServiceDomain<>(Records.class));
 
         assertEquals("Child", schema.getName());
-        assertEquals("echo", schema.wireMethod("Echo").method.getName());
+        assertEquals("echo", schema.wireMethod("Echo").method().getName());
         assertTrue(resource.getDocument().includes.containsKey("binding"));
     }
 

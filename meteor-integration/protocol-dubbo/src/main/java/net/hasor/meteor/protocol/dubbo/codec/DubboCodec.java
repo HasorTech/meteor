@@ -15,6 +15,7 @@ import java.util.concurrent.Flow;
 import com.caucho.hessian.io.Hessian2Input;
 import com.caucho.hessian.io.Hessian2Output;
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.hasor.cobble.ClassUtils;
 import net.hasor.cobble.StringUtils;
@@ -22,6 +23,8 @@ import net.hasor.cobble.reflect.resolvable.ResolvableType;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetOptionSet;
+import net.hasor.meteor.connector.ProtocolOperationBinder.Binding;
+import net.hasor.meteor.connector.ProtocolOperationBinder.Target;
 import net.hasor.meteor.connector.RouteMountIndex;
 import net.hasor.meteor.domain.MetRuntimeUtils;
 import net.hasor.meteor.domain.MetServiceType;
@@ -84,37 +87,35 @@ public final class DubboCodec {
     }
 
     public byte[] encode(RequestPayload request) throws IOException {
-        MetBindInfo<?> service = this.service(request);
-        Method method = this.method(service, request);
+        CallBinding operation = this.operation(request);
         List<Object> values = request.getParameterValues();
-        if (values.size() != method.getParameterCount()) {
+        if (values.size() != request.getParameterTypes().size()) {
             throw new IOException("Dubbo argument count differs from published method");
         }
 
-        // 方法描述只由本地发布接口产生，不从远端提供的类型名称加载类。
         DubboBoundedOutputStream bytes = new DubboBoundedOutputStream(this.maximum);
         Hessian2Output output = this.output(bytes);
         output.writeString(VERSION);
-        output.writeString(this.alias(service));
+        output.writeString(operation.serviceName);
         String requestedVersion = request.getOption("dubbo.version");
-        String selectedVersion = wireVersion(service);
+        String selectedVersion = StringUtils.defaultString(operation.version, normalizeVersion(request.getServiceVersion()));
         if (requestedVersion != null) {
             selectedVersion = normalizeVersion(requestedVersion);
         }
         output.writeString(selectedVersion);
-        output.writeString(this.methods(service).get(method));
-        output.writeString(descriptor(method));
+        output.writeString(operation.methodName);
+        output.writeString(descriptor(request.getParameterTypes()));
         for (Object value : values) {
             output.writeObject(value);
         }
 
         // 协议身份、期限在用户附加项之后写入，用户选项不覆盖调用目标。
         Map<String, Object> attachments = attachments(request);
-        attachments.put("path", this.alias(service));
-        attachments.put("interface", this.alias(service));
+        attachments.put("path", operation.serviceName);
+        attachments.put("interface", operation.serviceName);
         attachments.put("dubbo", VERSION);
         String requestedGroup = request.getOption("dubbo.group");
-        String group = requestedGroup == null ? wireGroup(service) : requestedGroup;
+        String group = requestedGroup == null ? StringUtils.defaultString(operation.group, StringUtils.defaultString(request.getServiceGroup())) : requestedGroup;
         if (!group.isEmpty()) {
             attachments.put("group", group);
         } else {
@@ -134,6 +135,20 @@ public final class DubboCodec {
         output.flush();
         byte flags = (byte) (request.isMessage() ? 0x82 : 0xc2);
         return this.frame(flags, (byte) 0, request.getRequestID(), bytes.toByteArray());
+    }
+
+    public static void prepareOperation(JsonNode contract, Target target, Binding<Object> binding) {
+        binding.bind(null, new CallBinding(target.serviceName(), target.methodName(), target.returnType(), //
+                contract.path("wireGroup").textValue(), contract.path("wireVersion").textValue()));
+    }
+
+    private CallBinding operation(RequestPayload request) throws IOException {
+        return request.resolveProtocolBinding(CallBinding.class, () -> {
+            MetBindInfo<?> service = this.service(request);
+            Method method = this.method(service, request);
+            return new CallBinding(this.alias(service), this.methods(service).get(method), method.getReturnType(), //
+                    wireGroup(service), wireVersion(service));
+        });
     }
 
     public RequestPayload decodeRequest(DubboFrame frame) throws IOException {
@@ -300,7 +315,7 @@ public final class DubboCodec {
             throw new IOException("Unknown Dubbo response value flag: " + flag);
         }
 
-        Method method = this.method(this.service(outgoing), outgoing);
+        Class<?> resultType = this.operation(outgoing).returnType;
         boolean exceptional = flag == 0 || flag == 3;
         boolean hasValue = flag == 1 || flag == 4;
         if (exceptional) {
@@ -312,12 +327,12 @@ public final class DubboCodec {
             response.setStatus(ProtocolStatus.InvokeError);
             response.addOption("message", failure.getMessage());
         } else {
-            Object value = hasValue ? this.readValue(input, method.getReturnType()) : null;
-            if (value == null && method.getReturnType().isPrimitive() && method.getReturnType() != void.class) {
+            Object value = hasValue ? this.readValue(input, resultType) : null;
+            if (value == null && resultType.isPrimitive() && resultType != void.class) {
                 throw new IOException("Null Dubbo result cannot match a primitive return type");
             }
             response.setStatus(ProtocolStatus.OK);
-            response.setReturnType(method.getReturnType().getName());
+            response.setReturnType(resultType.getName());
             response.setReturnData(value);
         }
 
@@ -798,6 +813,35 @@ public final class DubboCodec {
         return result.toString();
     }
 
+    private static String descriptor(List<String> parameters) throws IOException {
+        StringBuilder result = new StringBuilder();
+        for (String parameter : parameters) {
+            int offset = 0;
+            while (offset < parameter.length() && parameter.charAt(offset) == '[') {
+                result.append('[');
+                offset++;
+            }
+            String type = parameter.substring(offset);
+            switch (type) {
+                case "B", "byte" -> result.append('B');
+                case "C", "char" -> result.append('C');
+                case "D", "double" -> result.append('D');
+                case "F", "float" -> result.append('F');
+                case "I", "int" -> result.append('I');
+                case "J", "long" -> result.append('J');
+                case "S", "short" -> result.append('S');
+                case "Z", "boolean" -> result.append('Z');
+                default -> {
+                    if (StringUtils.isBlank(type)) {
+                        throw new IOException("Missing Dubbo parameter type");
+                    }
+                    result.append('L').append(type.replace('.', '/')).append(';');
+                }
+            }
+        }
+        return result.toString();
+    }
+
     private static void appendDescriptor(StringBuilder result, Class<?> type) {
         if (type.isArray()) {
             result.append('[');
@@ -870,5 +914,8 @@ public final class DubboCodec {
             case 40 -> ProtocolStatus.ProtocolError;
             default -> ProtocolStatus.InvokeError;
         };
+    }
+
+    private record CallBinding(String serviceName, String methodName, Class<?> returnType, String group, String version) {
     }
 }

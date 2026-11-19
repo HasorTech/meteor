@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
+import net.hasor.meteor.connector.ProtocolOperationBinder.Target;
 import net.hasor.meteor.connector.RouteMount;
 import net.hasor.meteor.connector.RouteMountIndex;
 import net.hasor.meteor.domain.MetRuntimeUtils;
@@ -186,9 +187,15 @@ public final class XmlRpcCodec {
             throw new IOException("XML-RPC does not support notifications");
         }
 
-        MetBindInfo<?> service = this.service(request);
-        String alias = alias(service);
-        String methodName = this.methods(service).get(this.method(request));
+        String alias = request.resolveOperationValue(Target::serviceName, () -> alias(this.service(request)));
+        String methodName = request.resolveOperationValue(Target::methodName, () -> {
+            MetBindInfo<?> service = this.service(request);
+            if (this.routes.binding(service) == null) {
+                throw new IOException("XML-RPC consumer binding is unavailable");
+            }
+            return this.methods(service).get(this.method(request));
+        });
+
         String name = alias + "." + methodName;
         String scopedService = this.protocol.option("service", null);
         if (scopedService != null) {
@@ -211,7 +218,7 @@ public final class XmlRpcCodec {
     }
 
     public String requestPath(RequestPayload request) {
-        return this.routes.contextPath(this.service(request));
+        return request.resolveRequestPath(() -> this.routes.contextPath(this.service(request)));
     }
 
     public byte[] encodeResponse(ResponsePayload response) throws IOException {
@@ -241,13 +248,15 @@ public final class XmlRpcCodec {
 
     public ResponsePayload decodeResponse(RequestPayload request, byte[] body) throws IOException {
         Object decoded = this.wire.decodeResponse(body);
-        Method method = this.method(request);
+        ResponsePayload result = new ResponsePayload();
+        result.setRequestID(request.getRequestID());
+        result.setStatus(ProtocolStatus.OK);
+        result.setSerializeType("json");
+        result.setReceiveTime(System.currentTimeMillis());
+        JavaType target = request.resolveReturnType(() -> this.returnType(this.service(request), this.method(request)));
         Object value = null;
-        if (method.getReturnType() != void.class) {
+        if (!target.hasRawClass(void.class)) {
             try {
-                Class<?> serviceType = this.service(request).getBindType();
-                MethodMeta description = ServiceMetaParser.method(serviceType, method);
-                JavaType target = ServiceMetaParser.returnType(description, MAPPER.getTypeFactory());
                 value = this.convert(decoded, target);
             } catch (IllegalArgumentException failure) {
                 throw new IOException("Invalid XML-RPC result type", failure);
@@ -255,15 +264,14 @@ public final class XmlRpcCodec {
         } else if (decoded != null) {
             throw new IOException("XML-RPC void result must be nil");
         }
-
-        ResponsePayload result = new ResponsePayload();
-        result.setRequestID(request.getRequestID());
-        result.setStatus(ProtocolStatus.OK);
-        result.setSerializeType("json");
-        result.setReceiveTime(System.currentTimeMillis());
-        result.setReturnType(method.getReturnType().getName());
+        result.setReturnType(target.getRawClass().getName());
         result.setReturnData(value);
         return result;
+    }
+
+    private JavaType returnType(MetBindInfo<?> service, Method method) {
+        MethodMeta description = ServiceMetaParser.method(service.getBindType(), method);
+        return ServiceMetaParser.returnType(description, MAPPER.getTypeFactory());
     }
 
     private Object convert(Object value, JavaType target) {

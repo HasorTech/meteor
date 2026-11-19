@@ -54,27 +54,27 @@ public final class ThriftCodec {
 
     public byte[] encodeRequest(RequestPayload request, int sequenceId) throws TException {
         validateSerialization(request.getSerializeType());
-        MetBindInfo<?> service = this.service(request);
-        ThriftServiceSchema schema = this.schema(service);
-        ThriftMethodBinding method = schema.javaMethod(request.getTargetMethod());
-        if (request.isMessage() != method.oneway) {
+        ThriftCallBinding operation = this.operation(request);
+        ThriftMethodBinding method = operation.method;
+        if (request.isMessage() != method.oneway()) {
             throw application(TApplicationException.PROTOCOL_ERROR, "Meteor message mode differs from Thrift oneway");
         }
 
-        String serviceAlias = alias(this.protocol, service, schema);
-        if (!selected(this.protocol.option("service", null), serviceAlias, schema)) {
+        String serviceAlias = operation.serviceAlias;
+        String configured = this.protocol.option("service", null);
+        if (configured != null && !StringUtils.equals(configured, serviceAlias) && !StringUtils.equals(configured, operation.contractName)) {
             throw application(TApplicationException.UNKNOWN_METHOD, "Service is not selected by this Thrift endpoint");
         }
 
-        String name = method.name;
+        String name = method.name();
         if (this.multiplexed) {
             name = serviceAlias + ":" + name;
         }
 
         Object arguments = method.arguments(request.getParameterValues());
-        byte type = method.oneway ? TMessageType.ONEWAY : TMessageType.CALL;
+        byte type = method.oneway() ? TMessageType.ONEWAY : TMessageType.CALL;
         return this.wire.encodeBody(this.encoding, name, type, sequenceId, //
-                output -> ThriftValueCodec.write(output, method.args, arguments));
+                output -> ThriftValueCodec.write(output, method.args(), arguments));
     }
 
     public RequestPayload decodeRequest(ThriftMessage message) throws TException {
@@ -127,24 +127,24 @@ public final class ThriftCodec {
             throw application(TApplicationException.UNKNOWN_METHOD, "Thrift service is unavailable");
         }
         ThriftMethodBinding method = selectedSchema.wireMethod(methodName);
-        if (method.oneway != (type == TMessageType.ONEWAY)) {
+        if (method.oneway() != (type == TMessageType.ONEWAY)) {
             throw application(TApplicationException.INVALID_MESSAGE_TYPE, "Message type differs from Thrift oneway");
         }
-        Object arguments = this.readBody(message, method.args);
+        Object arguments = this.readBody(message, method.args());
 
         // 线协议别名还原为 Java 方法名，之后仍由原 Dispatcher 调用普通接口。
         RequestPayload request = new RequestPayload();
         request.setServiceGroup(selectedService.getBindGroup());
         request.setServiceName(selectedService.getBindName());
         request.setServiceVersion(selectedService.getBindVersion());
-        request.setTargetMethod(method.method.getName());
+        request.setTargetMethod(method.method().getName());
         request.setSerializeType("thrift");
-        request.setMessage(method.oneway);
+        request.setMessage(method.oneway());
         request.setReceiveTime(System.currentTimeMillis());
         request.setClientTimeout(this.context.getSettings().getDefaultTimeout());
-        Class<?>[] types = method.method.getParameterTypes();
+        Class<?>[] types = method.method().getParameterTypes();
         for (int index = 0; index < types.length; index++) {
-            Object value = method.args.fields.get(index).get(arguments);
+            Object value = method.args().fields.get(index).get(arguments);
             value = ThriftMethodBinding.binary(value, types[index]);
             if (value == null && types[index].isPrimitive()) {
                 value = BeanUtils.getDefaultValue(types[index]);
@@ -154,46 +154,58 @@ public final class ThriftCodec {
         return request;
     }
 
+    private ThriftCallBinding operation(RequestPayload request) throws TApplicationException {
+        return request.resolveProtocolBinding(ThriftCallBinding.class, () -> {
+            MetBindInfo<?> service = this.service(request);
+            ThriftServiceSchema schema = this.schema(service);
+            ThriftMethodBinding method = schema.javaMethod(request.getTargetMethod());
+            String alias = alias(this.protocol, service, schema);
+            return new ThriftCallBinding(method, alias, schema.getName(), method.method().getReturnType());
+        });
+    }
+
     public String requestPath(RequestPayload request) {
-        return this.routes.contextPath(this.service(request));
+        return request.resolveRequestPath(() -> this.routes.contextPath(this.service(request)));
     }
 
     /** 用于会话关联响应；Java 方法名可能通过注解映射为不同的线协议方法名。 */
     public String requestMethod(RequestPayload request) throws TApplicationException {
-        return this.schema(this.service(request)).javaMethod(request.getTargetMethod()).name;
+        return this.operation(request).method.name();
     }
 
     public byte[] encodeResponse(RequestPayload request, ResponsePayload response, //
             ThriftMessage original) throws TException {
         ThriftMethodBinding method = this.schema(this.service(request)).javaMethod(request.getTargetMethod());
-        if (method.oneway) {
+        if (method.oneway()) {
             throw application(TApplicationException.INVALID_MESSAGE_TYPE, "A Thrift oneway has no response message");
         }
-        Object result = method.result.newValue();
+        Object result = method.result().newValue();
         if (response.getStatus() != ProtocolStatus.OK) {
             Throwable cause = unwrap(response.getFailure());
-            for (ThriftFieldBinding field : method.result.fields) {
+            for (ThriftFieldBinding field : method.result().fields) {
                 if (field.field.id != 0 && field.type.javaType.isInstance(cause)) {
                     field.set(result, cause);
-                    return this.encodeResult(original, method.result, result);
+                    return this.encodeResult(original, method.result(), result);
                 }
             }
             return this.encodeError(original, cause);
         }
-        if (method.method.getReturnType() != void.class) {
+        if (method.method().getReturnType() != void.class) {
             if (response.getReturnData() == null) {
                 int status = TApplicationException.MISSING_RESULT;
                 TApplicationException missing = application(status, "Missing Thrift result");
                 return this.encodeError(original, missing);
             }
-            method.result.fieldsById.get((short) 0).set(result, response.getReturnData());
+            method.result().fieldsById.get((short) 0).set(result, response.getReturnData());
         }
-        return this.encodeResult(original, method.result, result);
+        return this.encodeResult(original, method.result(), result);
     }
 
     public ResponsePayload decodeResponse(RequestPayload request, ThriftMessage message) throws Throwable {
-        ThriftMethodBinding method = this.schema(this.service(request)).javaMethod(request.getTargetMethod());
-        if (!StringUtils.equals(method.name, message.methodName())) {
+        ThriftCallBinding operation = this.operation(request);
+        ThriftMethodBinding method = operation.method;
+        Class<?> returnType = operation.returnType;
+        if (!StringUtils.equals(method.name(), message.methodName())) {
             throw application(TApplicationException.WRONG_METHOD_NAME, "Unexpected Thrift response method");
         }
         if (message.messageType() == TMessageType.EXCEPTION) {
@@ -204,13 +216,13 @@ public final class ThriftCodec {
             input.readMessageEnd();
             throw exception;
         }
-        if (message.messageType() != TMessageType.REPLY || method.oneway) {
+        if (message.messageType() != TMessageType.REPLY || method.oneway()) {
             throw application(TApplicationException.INVALID_MESSAGE_TYPE, "Expected a Thrift REPLY or EXCEPTION");
         }
-        Object result = this.readBody(message, method.result);
+        Object result = this.readBody(message, method.result());
         Object value = null;
         int fields = 0;
-        for (ThriftFieldBinding field : method.result.fields) {
+        for (ThriftFieldBinding field : method.result().fields) {
             Object member = field.get(result);
             if (member == null) {
                 continue;
@@ -219,11 +231,13 @@ public final class ThriftCodec {
                 throw application(TApplicationException.PROTOCOL_ERROR, "Thrift reply contains multiple results");
             }
             if (field.field.id != 0) {
-                throw (Throwable) member;
+                if (member instanceof Throwable failure) {
+                    throw failure;
+                }
+                throw application(TApplicationException.INTERNAL_ERROR, "Thrift exception " + field.field.name + ": " + member);
             }
-            value = ThriftMethodBinding.binary(member, method.method.getReturnType());
+            value = ThriftMethodBinding.binary(member, returnType);
         }
-        Class<?> returnType = method.method.getReturnType();
         if (returnType != void.class && value == null) {
             throw application(TApplicationException.MISSING_RESULT, "Thrift success result is missing");
         }

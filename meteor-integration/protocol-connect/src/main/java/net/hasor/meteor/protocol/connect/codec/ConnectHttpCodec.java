@@ -45,6 +45,7 @@ import net.hasor.meteor.domain.payload.ResponsePayload;
 import net.hasor.meteor.protocol.connect.ConnectMetadata;
 import net.hasor.meteor.protocol.connect.ConnectStatusException;
 import net.hasor.meteor.protocol.grpc.binding.GrpcMethodShape;
+import net.hasor.meteor.protocol.grpc.binding.GrpcOperation;
 import net.hasor.meteor.protocol.grpc.binding.GrpcServiceBinding;
 
 /** Connect HTTP 信封及 Java/Protobuf 消息映射；不承担调用调度或连接生命周期。 */
@@ -152,7 +153,23 @@ public final class ConnectHttpCodec {
     }
 
     public GrpcMethodShape shape(RequestPayload request) {
-        return this.definition(this.service(request)).shape(this.target(request));
+        return this.operation(request).shape();
+    }
+
+    private GrpcOperation operation(RequestPayload request) {
+        return request.resolveProtocolBinding(GrpcOperation.class, () -> {
+            MetBindInfo<?> service = this.service(request);
+            return this.definition(service).operation(this.target(request));
+        });
+    }
+
+    private String requestPath(RequestPayload request) {
+        return request.resolveRequestPath(() -> {
+            MetBindInfo<?> service = this.service(request);
+            GrpcServiceBinding definition = this.definition(service);
+            String method = definition.remoteName(this.operation(request).shape().method());
+            return this.routes.requestPath(service, definition.serviceName() + "/" + method);
+        });
     }
 
     public void readRequest(RequestPayload request, HttpRequest input) throws Exception {
@@ -190,19 +207,16 @@ public final class ConnectHttpCodec {
         if (request.isMessage()) {
             throw invalid("Connect requires a response");
         }
-        Method method = this.target(request);
-        GrpcMethodShape shape = this.definition(this.service(request)).shape(method);
-        if (shape.streaming() || request.getParameterValues().size() != 1) {
+        GrpcOperation binding = this.operation(request);
+        if (binding.shape().streaming() || request.getParameterValues().size() != 1) {
             throw invalid("Connect unary calls require one request DTO");
         }
-        MetBindInfo<?> service = this.service(request);
-        String operation = this.definition(service).remoteName(method);
-        String path = this.routes.requestPath(service, this.serviceName(service) + "/" + operation);
+        String path = this.requestPath(request);
         Map<String, List<String>> headers = this.requestHeaders(request, false);
         byte[] body = this.encodeValue(request, request.getParameterValues().get(0), true);
         body = this.frames.compress(body, this.compression);
         if (Boolean.parseBoolean(this.config.option("get", "false"))) {
-            this.sideEffectFree(service, method);
+            sideEffectFree(binding.descriptor());
             String message = Base64.getUrlEncoder().withoutPadding().encodeToString(body);
             String coding = StringUtils.equalsIgnoreCase(request.getSerializeType(), "Protobuf") ? "proto" : "json";
             path += "?connect=v1&base64=1&compression=" + this.compression //
@@ -215,23 +229,19 @@ public final class ConnectHttpCodec {
     }
 
     public HttpRequest streamRequest(RequestPayload request, HttpBodyStream body) {
-        MetBindInfo<?> service = this.service(request);
-        Method method = this.target(request);
-        GrpcMethodShape shape = this.definition(this.service(request)).shape(method);
+        GrpcMethodShape shape = this.operation(request).shape();
         if (shape.streamingRequest() && shape.streamingResponse() && this.httpVersion() != 2) {
             throw new UnsupportedOperationException("Bidirectional Connect streams require HTTP/2");
         }
-        String operation = this.definition(service).remoteName(method);
-        String path = this.routes.requestPath(service, this.serviceName(service) + "/" + operation);
+        String path = this.requestPath(request);
         return HttpRequest.newStreaming("POST", path, this.requestHeaders(request, true), body, this.httpVersion());
     }
 
     public byte[] encodeValue(RequestPayload request, Object value, boolean parameter) throws Exception {
-        MetBindInfo<?> service = this.service(request);
         boolean protobuf = StringUtils.equalsIgnoreCase(request.getSerializeType(), "Protobuf");
-        GrpcServiceBinding binding = this.definition(service);
+        GrpcOperation binding = this.operation(request);
         byte[] result;
-        if (binding.schema() == null) {
+        if (binding.descriptor() == null) {
             if (protobuf) {
                 throw invalid("Protobuf service has no prepared definition");
             }
@@ -239,7 +249,7 @@ public final class ConnectHttpCodec {
         } else {
             DynamicMessage message;
             try {
-                message = binding.encode(this.target(request), value, parameter);
+                message = binding.encode(value, parameter);
             } catch (IllegalArgumentException invalid) {
                 throw invalid(invalid.getMessage());
             }
@@ -259,26 +269,24 @@ public final class ConnectHttpCodec {
 
     public Object decodeValue(RequestPayload request, Class<?> type, byte[] bytes, boolean parameter) throws Exception {
         this.frames.decompress(bytes, "identity");
-        MetBindInfo<?> service = this.service(request);
         boolean protobuf = StringUtils.equalsIgnoreCase(request.getSerializeType(), "Protobuf");
-        GrpcServiceBinding binding = this.definition(service);
-        if (binding.schema() == null) {
+        GrpcOperation binding = this.operation(request);
+        if (binding.descriptor() == null) {
             if (protobuf) {
                 throw invalid("Protobuf service has no prepared definition");
             }
             return MAPPER.readValue(bytes, type);
         }
-        Method method = this.target(request);
         if (!protobuf) {
             String json = utf8(bytes);
             // 先确认只有一个 JSON 文档，再按官方 ProtoJSON 规则解释正文。
             MAPPER.readTree(json);
-            bytes = binding.parseJson(method, json, parameter).toByteArray();
+            bytes = binding.parseJson(json, parameter).toByteArray();
         }
         if (type == DynamicMessage.class || type == Message.class) {
-            return binding.parse(method, bytes, parameter);
+            return binding.parse(bytes, parameter);
         }
-        return binding.decode(method, bytes, parameter);
+        return binding.decode(bytes, parameter);
     }
 
     public HttpResponse encode(RequestPayload request, ResponsePayload response) throws Exception {
@@ -304,8 +312,7 @@ public final class ConnectHttpCodec {
     public ResponsePayload decode(RequestPayload request, HttpResponse input) throws Exception {
         this.validateStatus(input);
         this.validateResponseHeaders(request, input);
-        Method method = this.target(request);
-        Class<?> type = this.definition(this.service(request)).shape(method).responseType();
+        Class<?> type = this.shape(request).responseType();
         byte[] body = this.frames.decompress(input.body(), input.header("content-encoding"));
         Object value = this.decodeValue(request, type, body, false);
         ResponsePayload response = new ResponsePayload();
@@ -587,8 +594,11 @@ public final class ConnectHttpCodec {
     }
 
     private void sideEffectFree(MetBindInfo<?> service, Method method) {
-        MethodDescriptor descriptor = this.definition(service).descriptor(method);
-        if (descriptor.getOptions().getIdempotencyLevel() != IdempotencyLevel.NO_SIDE_EFFECTS) {
+        sideEffectFree(this.definition(service).descriptor(method));
+    }
+
+    private static void sideEffectFree(MethodDescriptor descriptor) {
+        if (descriptor == null || descriptor.getOptions().getIdempotencyLevel() != IdempotencyLevel.NO_SIDE_EFFECTS) {
             throw new ConnectHttpStatusException(405, "Connect GET requires a NO_SIDE_EFFECTS proto method");
         }
     }

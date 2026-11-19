@@ -9,9 +9,11 @@ package net.hasor.meteor.protocol.thrift;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.function.ObjLongConsumer;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetContext;
+import net.hasor.meteor.connector.ProtocolOperationBinder;
 import net.hasor.meteor.connector.ProtocolSession;
 import net.hasor.meteor.connector.ProtocolSessionContext;
 import net.hasor.meteor.connector.RouteProbeResult;
@@ -26,7 +28,7 @@ import net.hasor.meteor.protocol.thrift.codec.ThriftServiceSchema;
 import net.hasor.meteor.protocol.thrift.session.ThriftSession;
 
 /** Thrift TCP 入口；分帧及编码由本插件处理，TLS 由传输配置提供。 */
-public final class ThriftProtocol implements TcpProtocolProvider {
+public final class ThriftProtocol implements TcpProtocolProvider, ProtocolOperationBinder {
     @Override
     public String name() {
         return "thrift";
@@ -35,6 +37,11 @@ public final class ThriftProtocol implements TcpProtocolProvider {
     @Override
     public String defaultSerialize() {
         return "thrift";
+    }
+
+    @Override
+    public void prepareOperation(ProtocolConfig config, JsonNode contract, Target target, Binding<Object> binding) {
+        ThriftServiceSchema.prepareOperation(contract, target, binding);
     }
 
     @Override

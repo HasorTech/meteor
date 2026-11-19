@@ -14,6 +14,7 @@ import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetPublisher;
 import net.hasor.meteor.MetSettings;
 import net.hasor.meteor.address.AddressPool;
+import net.hasor.meteor.annotation.MetMethod;
 import net.hasor.meteor.container.ContainerFixtures.Echo;
 import net.hasor.meteor.container.ContainerFixtures.EchoImpl;
 import net.hasor.meteor.container.ContainerFixtures.PrivateEcho;
@@ -65,7 +66,7 @@ public class MetContainerProviderTest {
         assertEquals(0, CountingEcho.created.get());
 
         // 解析提供者时才调用公开构造方法。
-        assertTrue(provider.get() instanceof CountingEcho);
+        assertInstanceOf(CountingEcho.class, provider.get());
         assertEquals(1, CountingEcho.created.get());
         assertEquals(MetServiceType.Provider, service.getServiceType());
     }
@@ -94,6 +95,72 @@ public class MetContainerProviderTest {
 
         // 一次失败不污染同 ID 服务的后续有效发布。
         assertNotNull(this.publisher.rsfService(Echo.class, new EchoImpl()).register());
+    }
+
+    @Test
+    public void rejectsOverloadedProviderBeforeMakingItVisible() {
+        List<String> serviceChanges = new ArrayList<>();
+        this.container.subscribe(event -> serviceChanges.add(event.getServiceId()));
+        var provider = this.publisher.rsfService(Overloaded.class, new Overloaded() {
+        }).name("lookup").aliasName("http", "catalog");
+
+        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, provider::register);
+        assertTrue(failure.getMessage().contains("Duplicate RPC method name 'lookup' in service [default]lookup-1.0"));
+        assertTrue(failure.getMessage().contains("lookup(int)"));
+        assertTrue(failure.getMessage().contains("lookup(java.lang.String)"));
+        assertTrue(this.container.getServiceIDs().isEmpty());
+        assertNull(this.container.getRsfBindInfo("http", "catalog"));
+        assertTrue(serviceChanges.isEmpty());
+    }
+
+    @Test
+    public void publishesJavaOverloadsWithDistinctRpcNames() {
+        var provider = this.publisher.rsfService(NamedOperations.class, new NamedOperations() {
+        }).name("lookup").register();
+
+        assertEquals(MetServiceType.Provider, provider.getServiceType());
+        assertNotNull(this.container.getRsfBindInfo(provider.getBindID()));
+    }
+
+    @Test
+    public void rejectsDifferentJavaMethodsWithTheSameRpcName() {
+        var provider = this.publisher.rsfService(AliasConflict.class, new AliasConflict() {
+        });
+
+        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, provider::register);
+        assertTrue(failure.getMessage().contains("Duplicate RPC method name 'lookup'"));
+        assertTrue(failure.getMessage().contains("lookupByName(java.lang.String)"));
+        assertTrue(failure.getMessage().contains("lookupById(int)"));
+    }
+
+    public interface Overloaded {
+        default String lookup(String name) {
+            return name;
+        }
+
+        default String lookup(int id) {
+            return String.valueOf(id);
+        }
+    }
+
+    public interface NamedOperations extends Overloaded {
+        @Override
+        @MetMethod(name = "lookupById")
+        default String lookup(int id) {
+            return Overloaded.super.lookup(id);
+        }
+    }
+
+    public interface AliasConflict {
+        @MetMethod(name = "lookup")
+        default String lookupByName(String name) {
+            return name;
+        }
+
+        @MetMethod(name = "lookup")
+        default String lookupById(int id) {
+            return String.valueOf(id);
+        }
     }
 
     public static class CountingEcho extends EchoImpl {

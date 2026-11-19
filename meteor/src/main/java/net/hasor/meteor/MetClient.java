@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import net.hasor.cobble.concurrent.future.FutureCallback;
+import net.hasor.meteor.rpc.MetServiceResolver;
 
 /**
  * RSF调用者。
@@ -19,6 +20,9 @@ import net.hasor.cobble.concurrent.future.FutureCallback;
 public interface MetClient {
     /** Return an independent client carrying these request options; existing options are merged. */
     MetClient withOptions(Map<String, String> options);
+
+    /** Returns an independent client that obtains published contracts from the supplied discovery source. */
+    MetClient withServiceResolver(MetServiceResolver resolver);
 
     /**
      * 根据服务ID，获取远程服务对象
@@ -85,8 +89,12 @@ public interface MetClient {
      * @return 返回执行结果
      * @throws Throwable 同步执行期间遇到的错误。
      */
-    Object syncInvoke(MetBindInfo<?> bindInfo, String methodName, Class<?>[] parameterTypes,//
-            Object[] parameterObjects) throws InterruptedException, ExecutionException, TimeoutException;
+    Object syncInvoke(MetBindInfo<?> bindInfo, String methodName, Class<?>[] parameterTypes, Object[] parameterObjects) //
+            throws InterruptedException, ExecutionException, TimeoutException;
+
+    /** Resolves the service in the configured registry, or the local provider catalogue when no registry is configured. */
+    Object syncInvokeGeneric(String serviceId, String protocol, String methodName, Object[] arguments, int timeout) //
+            throws InterruptedException, ExecutionException, TimeoutException;
 
     /**
      * 异步方式调用远程服务。

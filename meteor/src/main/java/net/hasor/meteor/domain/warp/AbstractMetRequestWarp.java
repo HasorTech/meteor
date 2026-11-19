@@ -113,6 +113,11 @@ public abstract class AbstractMetRequestWarp implements MetRequest {
     }
 
     @Override
+    public String getMethodName() {
+        return this.getRsfRequest().getMethodName();
+    }
+
+    @Override
     public MetContext getContext() {
         return getRsfRequest().getContext();
     }

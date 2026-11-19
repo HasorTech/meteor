@@ -8,8 +8,10 @@
 package net.hasor.meteor.domain;
 import java.lang.reflect.Method;
 import java.util.Enumeration;
+import java.util.List;
 import net.hasor.meteor.*;
 import net.hasor.meteor.address.InterAddress;
+import net.hasor.meteor.connector.ProtocolOperationBinder.Target;
 
 /** One RPC invocation, with its direction and metadata supplied by the creator. */
 public class MetRequestObject implements MetRequest {
@@ -29,6 +31,9 @@ public class MetRequestObject implements MetRequest {
     private       boolean        message;
     private       int            timeout;
     private       long           receiveTime;
+    private       Target         operation;
+    private       List<String>   wireParameterTypes;
+    private       String         publishedMethodName;
 
     public MetRequestObject(long requestID, boolean local, MetContext context,//
             MetBindInfo<?> bindInfo, Method targetMethod, Object[] parameterObjects) {
@@ -37,7 +42,7 @@ public class MetRequestObject implements MetRequest {
         this.context = context;
         this.bindInfo = bindInfo;
         this.targetMethod = targetMethod;
-        this.parameterTypes = targetMethod.getParameterTypes();
+        this.parameterTypes = targetMethod == null ? new Class<?>[0] : targetMethod.getParameterTypes();
         this.parameterObjects = parameterObjects;
     }
 
@@ -64,6 +69,29 @@ public class MetRequestObject implements MetRequest {
     @Override
     public Method getMethod() {
         return this.targetMethod;
+    }
+
+    public void setProtocolOperation(String publishedMethodName, Target operation, List<String> wireParameterTypes) {
+        this.operation = operation;
+        this.publishedMethodName = publishedMethodName;
+        this.wireParameterTypes = List.copyOf(wireParameterTypes);
+    }
+
+    public Target getProtocolOperation() {
+        return this.operation;
+    }
+
+    public List<String> getWireParameterTypes() {
+        return this.wireParameterTypes;
+    }
+
+    @Override
+    public String getMethodName() {
+        return this.targetMethod == null ? this.publishedMethodName : MetRuntimeUtils.getProtocolMethodName(this.targetMethod);
+    }
+
+    public Class<?> getReturnType() {
+        return this.targetMethod == null ? this.operation.returnType() : this.targetMethod.getReturnType();
     }
 
     @Override

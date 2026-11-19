@@ -21,9 +21,10 @@ final class ThriftValueCodec {
     }
 
     static Object read(TProtocol input, ThriftType type) throws TException {
-        if (type.javaType.isEnum()) {
+        if (type.hasEnumValues()) {
             return type.enumValues.get(input.readI32());
         }
+
         return switch (type.wireType) {
             case TType.BOOL -> input.readBool();
             case TType.BYTE -> input.readByte();
@@ -44,7 +45,8 @@ final class ThriftValueCodec {
         if (value == null) {
             throw invalid("Thrift container values cannot be null");
         }
-        if (type.javaType.isEnum()) {
+
+        if (type.hasEnumValues()) {
             Integer number = type.enumNumbers.get(value);
             if (number == null) {
                 throw invalid("Unexpected Thrift enum value: " + value);
@@ -177,7 +179,7 @@ final class ThriftValueCodec {
 
     /** 按同一份协议定义恢复默认值，每个 DTO 获得独立的可变容器。 */
     static Object defaultValue(ThriftType type, Object value) throws TException {
-        if (type.javaType.isEnum()) {
+        if (type.hasEnumValues()) {
             int number = new BigDecimal(value.toString()).intValueExact();
             Object constant = type.enumValues.get(number);
             if (constant == null) {
@@ -257,6 +259,57 @@ final class ThriftValueCodec {
             return result;
         }
         throw invalid("IDL default differs from Java field type: " + type.name);
+    }
+
+    static Object bindArgument(ThriftType type, Object value) throws TException {
+        if (type.hasEnumValues() && value instanceof String name) {
+            Object constant = type.enumNames.get(name);
+            if (constant == null) {
+                throw invalid("Unknown Thrift enum value: " + name);
+            }
+            return constant;
+        }
+
+        if (type.binary) {
+            if (value instanceof byte[] || value instanceof ByteBuffer) {
+                return value;
+            }
+            if (value instanceof String encoded) {
+                try {
+                    return java.util.Base64.getDecoder().decode(encoded);
+                } catch (IllegalArgumentException invalid) {
+                    throw invalid("Invalid base64 Thrift binary");
+                }
+            }
+        }
+
+        if (value instanceof Collection<?> collection && (type.wireType == TType.LIST || type.wireType == TType.SET)) {
+            Collection<Object> result = type.wireType == TType.LIST ? new ArrayList<>() : new LinkedHashSet<>();
+            for (Object element : collection) {
+                result.add(bindArgument(type.element, element));
+            }
+            return result;
+        }
+
+        if (value instanceof Map<?, ?> values && type.wireType == TType.MAP) {
+            Map<Object, Object> result = new LinkedHashMap<>();
+            for (var entry : values.entrySet()) {
+                result.put(bindArgument(type.key, entry.getKey()), bindArgument(type.element, entry.getValue()));
+            }
+            return result;
+        }
+
+        if (value instanceof Map<?, ?> values && type.wireType == TType.STRUCT) {
+            Object result = type.newValue();
+            for (ThriftFieldBinding field : type.fields) {
+                Object item = values.get(field.field.name);
+                if (item != null) {
+                    field.set(result, bindArgument(field.type, item));
+                }
+            }
+            return result;
+        }
+        return defaultValue(type, value);
     }
 
     private static void writeStruct(TProtocol output, ThriftType type, Object value) throws TException {

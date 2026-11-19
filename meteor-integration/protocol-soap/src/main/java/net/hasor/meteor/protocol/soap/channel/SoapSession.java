@@ -30,9 +30,9 @@ import net.hasor.meteor.domain.payload.Payload;
 import net.hasor.meteor.domain.payload.RequestPayload;
 import net.hasor.meteor.domain.payload.ResponsePayload;
 import net.hasor.meteor.domain.payload.ThrowPayload;
+import net.hasor.meteor.protocol.soap.codec.SoapCallBinding;
 import net.hasor.meteor.protocol.soap.codec.SoapInboundResult;
 import net.hasor.meteor.protocol.soap.codec.SoapMessageCodec;
-import net.hasor.meteor.protocol.soap.definition.SoapDefinitionResource;
 import net.hasor.meteor.protocol.soap.definition.SoapProtocolMeta;
 
 /** 一个 HTTP 连接上的 SOAP 内部通道；公开构造仅用于协议入口组装。 */
@@ -149,11 +149,14 @@ public final class SoapSession implements ProtocolSession<HttpExchange> {
             return;
         }
 
-        MetBindInfo<?> service = this.service(request);
-        SoapProtocolMeta definition = (SoapProtocolMeta) this.routes.binding(service).getDefinition();
-        SoapDefinitionResource resource = definition.resource();
-        SoapMessageCodec codec = this.codecs.apply(service);
-        HttpExchange exchange = new HttpExchange(codec.encode(request, service, resource));
+        SoapCallBinding call = request.resolveProtocolBinding(SoapCallBinding.class, () -> {
+            MetBindInfo<?> service = this.service(request);
+            SoapProtocolMeta definition = (SoapProtocolMeta) this.routes.binding(service).getDefinition();
+            return this.codecs.apply(service).bind(request, service, definition.resource());
+        });
+
+        SoapMessageCodec codec = call.codec(this.codec);
+        HttpExchange exchange = new HttpExchange(codec.encode(request, call));
         request.completion().onFinal(done -> {
             if (!exchange.completion().isDone()) {
                 Throwable failure = done.getCause();
@@ -174,7 +177,7 @@ public final class SoapSession implements ProtocolSession<HttpExchange> {
             }
 
             try {
-                ResponsePayload response = codec.decode(request, done.getResult(), service, resource);
+                ResponsePayload response = codec.decode(request, done.getResult(), call);
                 this.messages.accept(response, response.getRequestID());
                 request.complete(null);
             } catch (Exception failure) {

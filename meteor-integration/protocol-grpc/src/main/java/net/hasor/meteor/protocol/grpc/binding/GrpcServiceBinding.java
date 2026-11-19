@@ -12,12 +12,15 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.protobuf.Descriptors.*;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetBindInfo;
+import net.hasor.meteor.connector.ProtocolOperationBinder.Binding;
+import net.hasor.meteor.connector.ProtocolOperationBinder.Target;
 import net.hasor.meteor.connector.transport.http.HttpSchemaResource;
 import net.hasor.meteor.domain.MetRuntimeUtils;
 import net.hasor.meteor.domain.ProtocolConfig;
@@ -55,7 +58,7 @@ public final class GrpcServiceBinding {
         this.javaMethods = methods;
         Map<String, GrpcValueMapping> mappings = new LinkedHashMap<>();
         for (Method method : methods.values()) {
-            this.shapes.put(method, new GrpcMethodShape(method, type));
+            this.shapes.put(method, GrpcMethodShape.fromMethod(method, type));
             String remoteName = MetRuntimeUtils.getProtocolMethodName(method);
             this.remoteMethods.put(remoteName, method);
             if (this.service == null) {
@@ -161,6 +164,10 @@ public final class GrpcServiceBinding {
     /** 从已编译的操作和消息图导出端点契约，外部 proto 和自动生成入口共用。 */
     public ObjectNode describeContract(ObjectNode description) {
         description.put("name", this.serviceName);
+        if (this.schema != null) {
+            description.put("protobufDescriptors", Base64.getEncoder().encodeToString(this.schema.descriptorSet()));
+        }
+
         ArrayNode methods = description.putArray("methods");
         ObjectNode types = description.putObject("types");
         for (Method method : this.javaMethods.values()) {
@@ -266,8 +273,67 @@ public final class GrpcServiceBinding {
         return descriptor;
     }
 
+    public GrpcOperation operation(Method method) {
+        return new GrpcOperation(this.shape(method), this.descriptors.get(method), this.registry, (value, request) -> this.encode(method, value, request), //
+                (bytes, request) -> this.decode(method, bytes, request));
+    }
+
+    public static void prepareOperation(JsonNode contract, Target operation, Binding<? super GrpcOperation> binding) {
+        String descriptors = contract.path("protobufDescriptors").textValue();
+        TypeFactory types = TypeFactory.defaultInstance();
+        if (descriptors == null) {
+            if (StringUtils.equalsIgnoreCase("Protobuf", contract.path("serializeType").textValue())) {
+                throw new IllegalArgumentException("Published protobuf descriptor set is required");
+            }
+            binding.bind(operationPath(contract, operation), //
+                    new GrpcOperation(GrpcMethodShape.unary(Object.class, Object.class), null, null, null, null));
+            return;
+        }
+
+        GrpcProtoSchema schema = GrpcProtoSchema.fromDescriptorSet(Base64.getDecoder().decode(descriptors));
+        ServiceDescriptor declared = schema.service(operation.serviceName());
+        MethodDescriptor method = declared == null ? null : declared.findMethodByName(operation.methodName());
+        if (method == null || method.isClientStreaming() || method.isServerStreaming()) {
+            throw new IllegalArgumentException("Published unary protobuf operation is required: " + operation.methodName());
+        }
+
+        Map<Descriptor, GrpcMessageTree> trees = new IdentityHashMap<>();
+        GrpcMessageTree.compile(method.getInputType(), trees);
+        GrpcMessageTree.compile(method.getOutputType(), trees);
+        Map<String, GrpcValueMapping> mappings = new HashMap<>();
+        JavaType objectType = types.constructType(Object.class);
+        GrpcValueMapping input = GrpcValueMapping.compile(objectType, method.getInputType(), mappings);
+        GrpcValueMapping output = GrpcValueMapping.compile(objectType, method.getOutputType(), mappings);
+        JsonFormat.TypeRegistry.Builder registry = JsonFormat.TypeRegistry.newBuilder();
+        Set<String> visited = new HashSet<>();
+        schema.fileDescriptors().forEach(file -> addTypes(file, registry, visited));
+        JsonFormat.TypeRegistry linked = registry.build();
+
+        GrpcOperation bound = new GrpcOperation(GrpcMethodShape.unary(Object.class, Object.class), method, linked, //
+                (value, request) -> {
+                    Descriptor descriptor = request ? method.getInputType() : method.getOutputType();
+                    return encode(descriptor, request ? input : output, trees.get(descriptor), linked, value);
+                }, (bytes, request) -> {
+            Descriptor descriptor = request ? method.getInputType() : method.getOutputType();
+            return decode(descriptor, request ? input : output, trees.get(descriptor), linked, bytes);
+        });
+        binding.bind(operationPath(contract, operation), bound);
+    }
+
+    private static String operationPath(JsonNode contract, Target operation) {
+        String path = operation.requestPath();
+        if (contract.path("contextExact").asBoolean()) {
+            return path;
+        }
+        return (path.endsWith("/") ? path : path + "/") + operation.serviceName() + "/" + operation.methodName();
+    }
+
     public DynamicMessage encode(Method method, Object value, boolean request) throws Exception {
         Descriptor descriptor = this.message(method, request);
+        return encode(descriptor, this.mapping(method, request), this.messageTrees.get(descriptor), this.registry, value);
+    }
+
+    private static DynamicMessage encode(Descriptor descriptor, GrpcValueMapping mapping, GrpcMessageTree tree, JsonFormat.TypeRegistry registry, Object value) throws Exception {
         if (value instanceof Message message) {
             if (!StringUtils.equals(message.getDescriptorForType().getFullName(), descriptor.getFullName())) {
                 throw new IllegalArgumentException("Protobuf value has a different message type");
@@ -275,15 +341,14 @@ public final class GrpcServiceBinding {
             return DynamicMessage.parseFrom(descriptor, message.toByteArray());
         }
 
-        GrpcValueMapping mapping = this.mapping(method, request);
         JsonNode json = mapping.toProto(GrpcValueMapping.MAPPER.valueToTree(value));
-        DynamicMessage encoded = this.messageTrees.get(descriptor).tryEncode(json);
+        DynamicMessage encoded = tree.tryEncode(json);
         if (encoded != null) {
             return encoded;
         }
 
         DynamicMessage.Builder result = DynamicMessage.newBuilder(descriptor);
-        GrpcProtoSchema.mergeJson(GrpcValueMapping.MAPPER.writeValueAsString(json), result, this.registry);
+        GrpcProtoSchema.mergeJson(GrpcValueMapping.MAPPER.writeValueAsString(json), result, registry);
         return result.build();
     }
 
@@ -299,19 +364,23 @@ public final class GrpcServiceBinding {
     }
 
     public Object decode(Method method, byte[] bytes, boolean request) throws Exception {
-        GrpcValueMapping mapping = this.mapping(method, request);
+        Descriptor descriptor = this.message(method, request);
+        return decode(descriptor, this.mapping(method, request), this.messageTrees.get(descriptor), this.registry, bytes);
+    }
+
+    private static Object decode(Descriptor descriptor, GrpcValueMapping mapping, GrpcMessageTree tree, JsonFormat.TypeRegistry registry, byte[] bytes) throws Exception {
         Class<?> type = mapping.javaType().getRawClass();
         if (Message.class.isAssignableFrom(type) && type != DynamicMessage.class && type != Message.class) {
             return type.getMethod("parseFrom", byte[].class).invoke(null, bytes);
         }
-        DynamicMessage message = this.parse(method, bytes, request);
+        DynamicMessage message = DynamicMessage.parseFrom(descriptor, bytes);
         if (type == DynamicMessage.class || type == Message.class) {
             return message;
         }
 
-        JsonNode json = this.messageTrees.get(message.getDescriptorForType()).tryDecode(message);
+        JsonNode json = tree.tryDecode(message);
         if (json == null) {
-            json = GrpcValueMapping.MAPPER.readTree(this.json(message));
+            json = GrpcValueMapping.MAPPER.readTree(JsonFormat.printer().usingTypeRegistry(registry).print(message));
         }
 
         JsonNode javaValue = mapping.fromProto(json);

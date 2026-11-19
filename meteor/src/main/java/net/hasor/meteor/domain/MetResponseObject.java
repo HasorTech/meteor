@@ -53,7 +53,11 @@ public class MetResponseObject extends OptionInfo implements MetResponse {
 
     @Override
     public Class<?> getReturnType() {
-        return this.rsfRequest.getMethod().getReturnType();
+        if (this.rsfRequest instanceof MetRequestObject request) {
+            return request.getReturnType();
+        } else {
+            return this.rsfRequest.getMethod().getReturnType();
+        }
     }
 
     @Override

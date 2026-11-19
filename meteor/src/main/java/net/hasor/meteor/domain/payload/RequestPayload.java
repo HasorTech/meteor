@@ -6,10 +6,16 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor.domain.payload;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.type.TypeFactory;
 import net.hasor.cobble.concurrent.future.BasicFuture;
 import net.hasor.cobble.concurrent.future.Future;
+import net.hasor.meteor.connector.ProtocolOperationBinder.Target;
 
 /**
  * RSF Request 的化身,是封装 Request 的数据对象。
@@ -19,6 +25,10 @@ import net.hasor.cobble.concurrent.future.Future;
 public class RequestPayload extends Payload {
     // Local lifecycle only: protocol codecs do not encode this notification.
     private final transient BasicFuture<Void> completion     = new BasicFuture<>();
+    private transient       boolean           encodedArguments;
+    private transient       Target            protocolTarget;
+    private transient       String            protocolPath;
+    private transient       Object            protocolBinding;
     private                 long              requestID      = 0;    //请求ID
     private                 short             flags          = 0;    //标签
     private                 long              receiveTime    = 0;    //接收请求（本地时间戳）
@@ -50,6 +60,62 @@ public class RequestPayload extends Payload {
         } else {
             this.completion.failed(cause);
         }
+    }
+
+    /** The argument values contain serialized bytes until the provider resolves the method. */
+    public boolean hasEncodedArguments() {
+        return this.encodedArguments;
+    }
+
+    public void markArgumentsEncoded() {
+        this.encodedArguments = true;
+    }
+
+    public void setProtocolBinding(Target target, String path, Object binding) {
+        this.protocolTarget = target;
+        this.protocolPath = path;
+        this.protocolBinding = binding;
+    }
+
+    /** Reuse the codec binding prepared for this call. */
+    public <T, E extends Exception> T resolveProtocolBinding(Class<T> type, OperationResolver<T, E> resolver) throws E {
+        if (this.protocolBinding == null) {
+            this.protocolBinding = resolver.resolve();
+        }
+        return type.cast(this.protocolBinding);
+    }
+
+    public <T> T getProtocolBinding(Class<T> type) {
+        return type.cast(this.protocolBinding);
+    }
+
+    public <T, E extends Exception> T resolveOperationValue(Function<Target, T> bound, OperationResolver<T, E> fallback) throws E {
+        if (this.protocolTarget == null) {
+            return fallback.resolve();
+        } else {
+            return bound.apply(this.protocolTarget);
+        }
+    }
+
+    public String resolveRequestPath(Supplier<String> path) {
+        if (this.protocolPath == null) {
+            return path.get();
+        } else {
+            return this.protocolPath;
+        }
+    }
+
+    public JavaType resolveReturnType(OperationResolver<JavaType, IOException> resolver) throws IOException {
+        if (this.protocolTarget == null) {
+            return resolver.resolve();
+        } else {
+            return TypeFactory.defaultInstance().constructType(this.protocolTarget.returnType());
+        }
+    }
+
+    @FunctionalInterface
+    public interface OperationResolver<T, E extends Exception> {
+        T resolve() throws E;
     }
 
     /**获取请求ID。*/

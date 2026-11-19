@@ -11,10 +11,14 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 import java.util.*;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import net.hasor.cobble.StringUtils;
 import net.hasor.cobble.reflect.resolvable.ResolvableType;
 import net.hasor.meteor.MetBindInfo;
+import net.hasor.meteor.connector.ProtocolOperationBinder.Binding;
+import net.hasor.meteor.connector.ProtocolOperationBinder.Target;
 import net.hasor.meteor.connector.transport.http.HttpSchemaResource;
 import net.hasor.meteor.domain.MetRuntimeUtils;
 import net.hasor.meteor.domain.meta.MethodMeta;
@@ -53,21 +57,125 @@ public final class ThriftServiceSchema {
         Map<ThriftType, String> visited = new IdentityHashMap<>();
         for (ThriftMethodBinding method : this.wireMethods.values()) {
             ObjectNode operation = methods.addObject();
-            operation.put("name", method.name);
-            operation.put("javaSignature", ServiceMetaParser.method(method.method).getJavaSignature());
+            operation.put("name", method.name());
+            operation.put("javaSignature", ServiceMetaParser.method(method.method()).getJavaSignature());
             ArrayNode parameters = operation.putArray("parameters");
-            for (int index = 0; index < method.args.fields.size(); index++) {
-                ThriftFieldBinding field = method.args.fields.get(index);
+            for (int index = 0; index < method.args().fields.size(); index++) {
+                ThriftFieldBinding field = method.args().fields.get(index);
                 ObjectNode argument = parameters.addObject();
                 int argIndex = field.position < 0 ? index : field.position;
-                describeField(field, argument, argIndex, method.name + "." + field.field.name, types, visited);
+                describeField(field, argument, argIndex, method.name() + "." + field.field.name, types, visited);
             }
-            if (method.result != null) {
-                operation.put("responseType", describeType(method.result, method.name + ".result", types, visited));
+            if (method.result() != null) {
+                operation.put("responseType", describeType(method.result(), method.name() + ".result", types, visited));
             }
-            operation.put("message", method.oneway);
+            operation.put("message", method.oneway());
         }
         return description;
+    }
+
+    public static void prepareOperation(JsonNode contract, Target operation, Binding<Object> binding) {
+        JsonNode selected = null;
+        for (JsonNode method : contract.path("methods")) {
+            if (StringUtils.equals(operation.methodName(), method.path("name").textValue())) {
+                selected = method;
+                break;
+            }
+        }
+
+        if (selected == null || selected.path("message").asBoolean()) {
+            throw new IllegalArgumentException("Published Thrift call is unavailable: " + operation.methodName());
+        }
+
+        Map<String, ThriftType> compiled = new LinkedHashMap<>();
+        JsonNode definitions = contract.path("types");
+        ThriftType args = new ThriftType(TType.STRUCT, Object[].class);
+        args.name = operation.methodName() + "_args";
+        List<ThriftFieldBinding> fields = new ArrayList<>();
+        for (JsonNode parameter : selected.path("parameters")) {
+            ThriftFieldBinding field = contractField(parameter, definitions, compiled);
+            field.position = parameter.path("argIndex").asInt(fields.size());
+            field.argumentBinding = value -> ThriftValueCodec.bindArgument(field.type, value);
+            fields.add(field);
+        }
+
+        fields.sort(Comparator.comparingInt(field -> field.position));
+        for (ThriftFieldBinding field : fields) {
+            args.add(field);
+        }
+
+        String resultType = selected.path("responseType").textValue();
+        ThriftType result = resultType == null ? null : contractType(resultType, definitions, compiled);
+        ThriftMethodBinding nativeBinding = new ThriftMethodBinding(null, operation.methodName(), false, args, result);
+        String alias = contract.path("multiplexedName").asText(operation.serviceName());
+        String contractName = contract.path("idlServiceName").asText(operation.serviceName());
+        binding.bind(null, new ThriftCallBinding(nativeBinding, alias, contractName, operation.returnType()));
+    }
+
+    private static ThriftFieldBinding contractField(JsonNode field, JsonNode definitions, Map<String, ThriftType> compiled) {
+        byte requirement = switch (field.path("requirement").asText()) {
+            case "required" -> TFieldRequirementType.REQUIRED;
+            case "optional" -> TFieldRequirementType.OPTIONAL;
+            default -> TFieldRequirementType.DEFAULT;
+        };
+
+        ThriftType value = contractType(field.path("type").textValue(), definitions, compiled);
+        return new ThriftFieldBinding((short) field.path("fieldId").intValue(), field.path("name").asText(), requirement, value);
+    }
+
+    private static ThriftType contractType(String reference, JsonNode definitions, Map<String, ThriftType> compiled) {
+        if (reference == null) {
+            throw new IllegalArgumentException("Missing Thrift type reference");
+        }
+
+        ThriftType previous = compiled.get(reference);
+        if (previous != null) {
+            return previous;
+        }
+
+        JsonNode definition = definitions.path(reference);
+        byte wire = (byte) definition.path("wireType").asInt(-1);
+        boolean binary = definition.path("binary").asBoolean();
+        Class<?> type = switch (wire) {
+            case TType.BOOL -> Boolean.class;
+            case TType.BYTE -> Byte.class;
+            case TType.I16 -> Short.class;
+            case TType.I32 -> Integer.class;
+            case TType.I64 -> Long.class;
+            case TType.DOUBLE -> Double.class;
+            case TType.STRING -> binary ? byte[].class : String.class;
+            case TType.UUID -> UUID.class;
+            case TType.STRUCT, TType.MAP -> LinkedHashMap.class;
+            case TType.LIST -> ArrayList.class;
+            case TType.SET -> LinkedHashSet.class;
+            default -> throw new IllegalArgumentException("Unsupported Thrift contract type: " + reference);
+        };
+
+        ThriftType result = new ThriftType(wire, type);
+        result.name = definition.path("name").asText();
+        result.binary = binary;
+        result.union = definition.path("union").asBoolean();
+        compiled.put(reference, result);
+        if (definition.hasNonNull("keyType")) {
+            result.key = contractType(definition.path("keyType").textValue(), definitions, compiled);
+        }
+
+        if (definition.hasNonNull("elementType")) {
+            result.element = contractType(definition.path("elementType").textValue(), definitions, compiled);
+        }
+
+        for (JsonNode field : definition.path("fields")) {
+            result.add(contractField(field, definitions, compiled));
+        }
+
+        for (JsonNode constant : definition.path("values")) {
+            String name = constant.path("name").asText();
+            int number = constant.path("fieldId").intValue();
+            result.enumNames.put(name, name);
+            result.enumNumbers.put(name, number);
+            result.enumValues.put(number, name);
+        }
+        return result;
     }
 
     private static String describeType(ThriftType type, String reference, ObjectNode types, //
@@ -76,19 +184,23 @@ public final class ThriftServiceSchema {
         if (previous != null) {
             return previous;
         }
+
         visited.put(type, reference);
         ObjectNode value = types.putObject(reference);
         value.put("name", type.name);
         if (type.key != null) {
             value.put("keyType", describeType(type.key, reference + ".key", types, visited));
         }
+
         if (type.element != null) {
             value.put("elementType", describeType(type.element, reference + ".element", types, visited));
         }
+
         ArrayNode fields = value.putArray("fields");
         for (ThriftFieldBinding field : type.fields) {
             describeField(field, fields.addObject(), -1, reference + "." + field.field.name, types, visited);
         }
+
         ArrayNode constants = value.putArray("values");
         for (Map.Entry<String, Object> constant : type.enumNames.entrySet()) {
             ObjectNode entry = constants.addObject();
@@ -245,11 +357,11 @@ public final class ThriftServiceSchema {
     }
 
     void add(ThriftMethodBinding method) {
-        if (this.javaMethods.putIfAbsent(method.method.getName(), method) != null) {
+        if (this.javaMethods.putIfAbsent(method.method().getName(), method) != null) {
             throw new IllegalArgumentException("Thrift does not support Java method overloads");
         }
-        if (this.wireMethods.putIfAbsent(method.name, method) != null) {
-            throw new IllegalArgumentException("Duplicate Thrift wire method name: " + method.name);
+        if (this.wireMethods.putIfAbsent(method.name(), method) != null) {
+            throw new IllegalArgumentException("Duplicate Thrift wire method name: " + method.name());
         }
     }
 

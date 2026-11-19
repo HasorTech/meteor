@@ -9,9 +9,11 @@ package net.hasor.meteor.protocol.oncrpc;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.function.ObjLongConsumer;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetContext;
+import net.hasor.meteor.connector.ProtocolOperationBinder;
 import net.hasor.meteor.connector.ProtocolSession;
 import net.hasor.meteor.connector.ProtocolSessionContext;
 import net.hasor.meteor.connector.RouteProbeResult;
@@ -26,7 +28,7 @@ import net.hasor.meteor.protocol.oncrpc.binding.OncRpcServiceBinding;
 import net.hasor.meteor.protocol.oncrpc.session.OncRpcSession;
 
 /** ONC RPC UDP 入口；一个数据报承载一条 RPC，重传与去重归协议会话。 */
-public final class OncRpcUdpProtocol implements UdpProtocolProvider {
+public final class OncRpcUdpProtocol implements UdpProtocolProvider, ProtocolOperationBinder {
     @Override
     public String name() {
         return "oncrpc-udp";
@@ -35,6 +37,11 @@ public final class OncRpcUdpProtocol implements UdpProtocolProvider {
     @Override
     public String defaultSerialize() {
         return "oncrpc";
+    }
+
+    @Override
+    public void prepareOperation(ProtocolConfig config, JsonNode contract, Target target, Binding<Object> binding) {
+        OncRpcMessageMapper.prepareOperation(config, contract, target, binding);
     }
 
     @Override

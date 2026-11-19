@@ -11,6 +11,7 @@ import net.hasor.meteor.MetExtension;
 import net.hasor.meteor.registry.admin.support.TargetAdminImpl;
 import net.hasor.meteor.registry.client.RegistryClient;
 import net.hasor.meteor.registry.client.support.DefaultRegistryClient;
+import net.hasor.meteor.rpc.MetServiceResolver;
 
 /** 统一管理在线与离线模式；仅在线模式持有注册中心管理端与客户端。 */
 final class RegistryExtension implements MetExtension {
@@ -37,7 +38,8 @@ final class RegistryExtension implements MetExtension {
         if (type == RegistryAdmin.class) {
             return type.cast(this.admin);
         }
-        if (type == RegistryClient.class) {
+
+        if (type == RegistryClient.class || type == MetServiceResolver.class) {
             return type.cast(this.client);
         }
         return null;

@@ -43,7 +43,7 @@ public class GrpcMethodShapeTest {
 
         // 解析时拒绝不受支持的流签名。
         assertFalse(GrpcMethodShape.supports(method, method.getDeclaringClass()));
-        assertThrows(IllegalArgumentException.class, () -> new GrpcMethodShape(method, method.getDeclaringClass()));
+        assertThrows(IllegalArgumentException.class, () -> GrpcMethodShape.fromMethod(method, method.getDeclaringClass()));
     }
 
     @Test
@@ -53,7 +53,7 @@ public class GrpcMethodShapeTest {
 
         // 解析时拒绝不受支持的流签名。
         assertFalse(GrpcMethodShape.supports(method, method.getDeclaringClass()));
-        assertThrows(IllegalArgumentException.class, () -> new GrpcMethodShape(method, method.getDeclaringClass()));
+        assertThrows(IllegalArgumentException.class, () -> GrpcMethodShape.fromMethod(method, method.getDeclaringClass()));
     }
 
     @Test
@@ -63,7 +63,7 @@ public class GrpcMethodShapeTest {
 
         // 解析时拒绝不受支持的流签名。
         assertFalse(GrpcMethodShape.supports(method, method.getDeclaringClass()));
-        assertThrows(IllegalArgumentException.class, () -> new GrpcMethodShape(method, method.getDeclaringClass()));
+        assertThrows(IllegalArgumentException.class, () -> GrpcMethodShape.fromMethod(method, method.getDeclaringClass()));
     }
 
     @Test
@@ -73,7 +73,7 @@ public class GrpcMethodShapeTest {
 
         // 解析时拒绝不受支持的流签名。
         assertFalse(GrpcMethodShape.supports(method, method.getDeclaringClass()));
-        assertThrows(IllegalArgumentException.class, () -> new GrpcMethodShape(method, method.getDeclaringClass()));
+        assertThrows(IllegalArgumentException.class, () -> GrpcMethodShape.fromMethod(method, method.getDeclaringClass()));
     }
 
     @Test
@@ -83,7 +83,7 @@ public class GrpcMethodShapeTest {
 
         // 解析时拒绝不受支持的流签名。
         assertFalse(GrpcMethodShape.supports(method, method.getDeclaringClass()));
-        assertThrows(IllegalArgumentException.class, () -> new GrpcMethodShape(method, method.getDeclaringClass()));
+        assertThrows(IllegalArgumentException.class, () -> GrpcMethodShape.fromMethod(method, method.getDeclaringClass()));
     }
 
     @Test
@@ -93,7 +93,7 @@ public class GrpcMethodShapeTest {
 
         // 解析时拒绝不受支持的流签名。
         assertFalse(GrpcMethodShape.supports(method, method.getDeclaringClass()));
-        assertThrows(IllegalArgumentException.class, () -> new GrpcMethodShape(method, method.getDeclaringClass()));
+        assertThrows(IllegalArgumentException.class, () -> GrpcMethodShape.fromMethod(method, method.getDeclaringClass()));
     }
 
     @Test
@@ -103,7 +103,7 @@ public class GrpcMethodShapeTest {
 
         // 解析时拒绝不受支持的流签名。
         assertFalse(GrpcMethodShape.supports(method, method.getDeclaringClass()));
-        assertThrows(IllegalArgumentException.class, () -> new GrpcMethodShape(method, method.getDeclaringClass()));
+        assertThrows(IllegalArgumentException.class, () -> GrpcMethodShape.fromMethod(method, method.getDeclaringClass()));
     }
 
     @Test
@@ -113,7 +113,7 @@ public class GrpcMethodShapeTest {
 
         // 解析时拒绝不受支持的流签名。
         assertFalse(GrpcMethodShape.supports(method, method.getDeclaringClass()));
-        assertThrows(IllegalArgumentException.class, () -> new GrpcMethodShape(method, method.getDeclaringClass()));
+        assertThrows(IllegalArgumentException.class, () -> GrpcMethodShape.fromMethod(method, method.getDeclaringClass()));
     }
 
     @Test
@@ -123,7 +123,7 @@ public class GrpcMethodShapeTest {
 
         // 解析方向与元素类型，确认只解包 Publisher 的元素。
         assertTrue(GrpcMethodShape.supports(method, method.getDeclaringClass()));
-        GrpcMethodShape shape = new GrpcMethodShape(method, method.getDeclaringClass());
+        GrpcMethodShape shape = GrpcMethodShape.fromMethod(method, method.getDeclaringClass());
         assertFalse(shape.streamingRequest());
         assertTrue(shape.streamingResponse());
         assertSame(Message.class, shape.requestType());
@@ -137,7 +137,7 @@ public class GrpcMethodShapeTest {
 
         // 解析方向与元素类型，确认只解包 Publisher 的元素。
         assertTrue(GrpcMethodShape.supports(method, method.getDeclaringClass()));
-        GrpcMethodShape shape = new GrpcMethodShape(method, method.getDeclaringClass());
+        GrpcMethodShape shape = GrpcMethodShape.fromMethod(method, method.getDeclaringClass());
         assertTrue(shape.streamingRequest());
         assertFalse(shape.streamingResponse());
         assertSame(Message.class, shape.requestType());
@@ -151,7 +151,7 @@ public class GrpcMethodShapeTest {
 
         // 解析方向与元素类型，确认只解包 Publisher 的元素。
         assertTrue(GrpcMethodShape.supports(method, method.getDeclaringClass()));
-        GrpcMethodShape shape = new GrpcMethodShape(method, method.getDeclaringClass());
+        GrpcMethodShape shape = GrpcMethodShape.fromMethod(method, method.getDeclaringClass());
         assertTrue(shape.streamingRequest());
         assertTrue(shape.streamingResponse());
         assertSame(Message.class, shape.requestType());

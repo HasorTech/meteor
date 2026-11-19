@@ -7,6 +7,7 @@
  */
 package net.hasor.example.protocol.triple;
 import java.util.List;
+import net.hasor.meteor.annotation.MetMethod;
 
 /** 普通 Java 接口直接发布，无需提供 proto 或生成客户端代码。 */
 public interface TripleDemoService {
@@ -14,8 +15,10 @@ public interface TripleDemoService {
 
     String greet(String name, int times);
 
+    @MetMethod(name = "overloadedText")
     String overloaded(String value);
 
+    @MetMethod(name = "overloadedNumber")
     String overloaded(int value);
 
     List<TripleMessage> list(List<TripleMessage> requests);

@@ -10,6 +10,7 @@ import java.io.IOException;
 import net.hasor.meteor.domain.ProtocolStatus;
 import net.hasor.meteor.domain.payload.RequestPayload;
 import net.hasor.meteor.domain.payload.ResponsePayload;
+import net.hasor.meteor.serialize.coder.JavaSerializeCoder;
 import org.junit.jupiter.api.Test;
 import static net.hasor.meteor.connector.protocol.rsf.RsfFixtures.fixture;
 import static net.hasor.meteor.connector.protocol.rsf.RsfFixtures.serializationContext;
@@ -26,7 +27,9 @@ public class RsfCodecTest {
         RequestPayload request = (RequestPayload) this.codec.decode(fixture);
         assertEquals(42, request.getRequestID());
         assertEquals("Echo", request.getServiceName());
-        assertEquals("中文🙂", request.getParameterValues().get(0));
+        assertTrue(request.hasEncodedArguments());
+        byte[] argument = (byte[]) request.getParameterValues().get(0);
+        assertEquals("中文🙂", new JavaSerializeCoder().decode(argument, String.class));
         assertEquals(0x1234, request.getFlags());
         assertEquals("legacy", request.getOption("trace"));
         assertArrayEquals(fixture, this.codec.encode(request));
@@ -45,7 +48,9 @@ public class RsfCodecTest {
         // 旧响应中的重复返回值仍可正常读取。
         byte[] fixture = fixture("response-v1.bin");
         ResponsePayload response = (ResponsePayload) this.codec.decode(fixture);
-        assertEquals("中文🙂", response.getReturnData());
+        assertNull(response.getReturnData());
+        byte[] returnData = response.getEncodedReturnData();
+        assertEquals("中文🙂", new JavaSerializeCoder().decode(returnData, String.class));
         assertEquals(42, response.getRequestID());
 
         // 正常编码只保留一份返回值数据。
@@ -59,7 +64,7 @@ public class RsfCodecTest {
         assertEquals(response.getStatus(), decoded.getStatus());
         assertEquals(response.getSerializeType(), decoded.getSerializeType());
         assertEquals(response.getReturnType(), decoded.getReturnType());
-        assertEquals(response.getReturnData(), decoded.getReturnData());
+        assertArrayEquals(returnData, decoded.getEncodedReturnData());
         for (String key : response.getOptionKeys()) {
             assertEquals(response.getOption(key), decoded.getOption(key));
         }
@@ -68,16 +73,18 @@ public class RsfCodecTest {
     @Test
     public void unsignedParameterCountRoundTrips() throws Exception {
         // 参数数量超过有符号 byte 上限，准备 200 个参数。
-        RequestPayload request = (RequestPayload) this.codec.decode(fixture("request-v1.bin"));
-        for (int i = 1; i < 200; i++) {
-            request.addParameter("java.lang.String", "v" + i);
+        RequestPayload request = new RequestPayload();
+        request.setSerializeType("Java");
+        for (int i = 0; i < 200; i++) {
+            request.addParameter(String.class.getName(), "v" + i);
         }
 
         // 按无符号数量读取参数，最后一个参数不能丢失。
         byte[] encoded = this.codec.encode(request);
         RequestPayload decoded = (RequestPayload) this.codec.decode(encoded);
         assertEquals(200, decoded.getParameterValues().size());
-        assertEquals("v199", decoded.getParameterValues().get(199));
+        byte[] lastArgument = (byte[]) decoded.getParameterValues().get(199);
+        assertEquals("v199", new JavaSerializeCoder().decode(lastArgument, String.class));
     }
 
     @Test
@@ -98,9 +105,10 @@ public class RsfCodecTest {
     @Test
     public void parameterCountAboveUnsignedByteLimitIsRejected() throws Exception {
         // RSF/1 数量字段最多表示 255 个参数，256 个参数必须拒绝编码。
-        RequestPayload request = (RequestPayload) this.codec.decode(fixture("request-v1.bin"));
-        for (int i = 1; i <= 255; i++) {
-            request.addParameter("java.lang.String", "overflow");
+        RequestPayload request = new RequestPayload();
+        request.setSerializeType("Java");
+        for (int i = 0; i < 256; i++) {
+            request.addParameter(String.class.getName(), "overflow");
         }
 
         // 超过协议数量上限时明确拒绝编码。
@@ -173,7 +181,8 @@ public class RsfCodecTest {
         response.addOption("message", "unsupported serializer");
         byte[] encoded = this.codec.encode(response);
         ResponsePayload recovered = (ResponsePayload) this.codec.decode(encoded);
-        assertEquals("recovered", recovered.getReturnData());
+        byte[] data = recovered.getEncodedReturnData();
+        assertEquals("recovered", new JavaSerializeCoder().decode(data, String.class));
         assertEquals(ProtocolStatus.SerializeForbidden, recovered.getStatus());
     }
 

@@ -46,23 +46,25 @@ final class SoapBodyCodec {
             SoapPart part = binding.parts().get(index);
             List<Element> elements = fields.get(index);
             if (this.repeated(part)) {
-                JavaType collectionType = this.collectionType(types[index]);
+                Type collectionType = types[index];
                 if (elements.isEmpty() && this.choiceMember(binding, index)) {
                     values[index] = null;
                     continue;
                 }
-                Type itemType = collectionType.getContentType();
+
+                Type itemType = this.itemType(collectionType);
                 List<Object> items = new ArrayList<>();
                 for (Element element : elements) {
                     items.add(this.readValue(element, part, itemType, decoder));
                 }
-                values[index] = this.collection(collectionType, items);
+
+                values[index] = collectionType instanceof SoapLiteralType ? items : this.collection(this.collectionType(collectionType), items);
             } else if (!elements.isEmpty()) {
                 values[index] = this.readValue(elements.get(0), part, types[index], decoder);
-                if (values[index] == null && this.mapper.constructType(types[index]).isPrimitive()) {
+                if (values[index] == null && this.primitive(types[index])) {
                     throw new IllegalArgumentException("Nil SOAP part cannot map to a primitive: " + part.name());
                 }
-            } else if (this.mapper.constructType(types[index]).isPrimitive()) {
+            } else if (this.primitive(types[index])) {
                 throw new IllegalArgumentException("Absent SOAP part cannot map to a primitive: " + part.name());
             }
         }
@@ -97,8 +99,9 @@ final class SoapBodyCodec {
             SoapPart part = binding.parts().get(index);
             Type itemType = types[index];
             if (this.repeated(part)) {
-                itemType = this.collectionType(itemType).getContentType();
+                itemType = this.itemType(itemType);
             }
+
             for (Object value : fields.get(index)) {
                 if (encoder == null) {
                     Element element = this.append(container, part.element());
@@ -214,21 +217,36 @@ final class SoapBodyCodec {
             }
             return Collections.singletonList(value);
         }
-        this.collectionType(type);
+
+        this.itemType(type);
         if (value == null) {
             return Collections.emptyList();
         }
+
         if (value instanceof Collection<?> collection) {
             return new ArrayList<>(collection);
         }
+
         if (!value.getClass().isArray()) {
             throw new IllegalArgumentException("Repeated SOAP part requires an array or collection: " + part.name());
         }
+
         List<Object> values = new ArrayList<>();
         for (int index = 0; index < Array.getLength(value); index++) {
             values.add(Array.get(value, index));
         }
         return values;
+    }
+
+    private boolean primitive(Type type) {
+        return !(type instanceof SoapLiteralType) && this.mapper.constructType(type).isPrimitive();
+    }
+
+    private Type itemType(Type type) {
+        if (type instanceof SoapLiteralType shape && shape.content != null && !shape.map) {
+            return shape.content;
+        }
+        return this.collectionType(type).getContentType();
     }
 
     private JavaType collectionType(Type type) {

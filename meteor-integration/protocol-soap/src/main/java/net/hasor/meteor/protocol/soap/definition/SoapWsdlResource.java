@@ -91,6 +91,17 @@ public final class SoapWsdlResource extends SoapDefinitionResource {
     }
 
     @Override
+    public ObjectNode describeDocuments() {
+        ObjectNode result = com.fasterxml.jackson.databind.node.JsonNodeFactory.instance.objectNode();
+        result.put("entry", this.wsdlName);
+        ObjectNode files = result.putObject("files");
+        for (SoapXmlResource resource : this.resources.values()) {
+            files.put(resource.name(), java.util.Base64.getEncoder().encodeToString(resource.body()));
+        }
+        return result;
+    }
+
+    @Override
     public ObjectNode describeSchemas() {
         return this.schemas.describeSchemas();
     }
@@ -161,7 +172,7 @@ public final class SoapWsdlResource extends SoapDefinitionResource {
         // 每个资源和整个定义图均受限制，避免发布服务时占用无界内存。
         byte[] body = this.read(source);
         state.addBytes(body.length);
-        Document document = this.parse(source, body);
+        Document document = parse(source, body);
         SoapXmlResource resource = new SoapXmlResource(name, source, body, document);
         state.resources().put(name, resource);
 
@@ -206,7 +217,7 @@ public final class SoapWsdlResource extends SoapDefinitionResource {
         }
     }
 
-    private Document parse(URL source, byte[] body) throws IOException {
+    static Document parse(URL source, byte[] body) throws IOException {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setNamespaceAware(true);
@@ -529,6 +540,11 @@ public final class SoapWsdlResource extends SoapDefinitionResource {
         @Override
         public ObjectNode describeSchemas() {
             return this.source.describeSchemas();
+        }
+
+        @Override
+        public ObjectNode describeDocuments() {
+            return this.source.describeDocuments();
         }
 
         @Override

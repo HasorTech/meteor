@@ -21,6 +21,7 @@ import net.hasor.cobble.logging.Logger;
 import net.hasor.cobble.logging.LoggerFactory;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetContextEvent;
+import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.connector.ConnectorManager;
 import net.hasor.meteor.registry.RegistryStatus;
 import net.hasor.meteor.registry.RegistryTokenProvider;
@@ -28,9 +29,10 @@ import net.hasor.meteor.registry.client.RegistryClient;
 import net.hasor.meteor.registry.shared.rpc.ConfigurationData;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
 import net.hasor.meteor.registry.shared.storage.domain.EntConfigurationData;
+import net.hasor.meteor.rpc.MetServiceResolver;
 
 /** 协调本地运行服务与注册服务的生命周期、订阅及推拉流程。 */
-public final class DefaultRegistryClient implements RegistryClient, AutoCloseable {
+public final class DefaultRegistryClient implements RegistryClient, MetServiceResolver, AutoCloseable {
     private static final Logger                         LOGGER         = LoggerFactory.getLogger(DefaultRegistryClient.class);
     private final        MetContext                     context;
     private final        ManagementRPCImpl              rpcService;
@@ -81,6 +83,15 @@ public final class DefaultRegistryClient implements RegistryClient, AutoCloseabl
         // 订阅处理后续变更，周期核对补偿丢失通知和临时记录。
         this.worker.scheduleWithFixedDelay(this::requestRefresh, this.refreshMillis, this.refreshMillis, TimeUnit.MILLISECONDS);
         this.running = true;
+    }
+
+    @Override
+    public synchronized <T> T resolve(String serviceId, String protocol, InterAddress address, EndpointFactory<T> factory) throws Exception {
+        if (!this.running) {
+            throw new IllegalStateException("Registry service discovery is unavailable");
+        } else {
+            return this.registrationService.resolve(serviceId, protocol, address, factory);
+        }
     }
 
     private void onContextEvent(MetContextEvent event) {

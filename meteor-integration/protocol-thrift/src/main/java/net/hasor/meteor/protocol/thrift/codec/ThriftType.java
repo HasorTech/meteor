@@ -49,7 +49,15 @@ final class ThriftType {
         this.fields.add(binding);
     }
 
+    boolean hasEnumValues() {
+        return this.javaType.isEnum() || !this.enumNames.isEmpty();
+    }
+
     Object newValue() throws TException {
+        if (this.javaType == LinkedHashMap.class) {
+            return new LinkedHashMap<>();
+        }
+
         if (this.javaType == Object[].class) {
             return new Object[this.fields.size()];
         }

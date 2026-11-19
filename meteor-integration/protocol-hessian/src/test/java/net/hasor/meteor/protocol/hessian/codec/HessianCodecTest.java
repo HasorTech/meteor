@@ -69,9 +69,9 @@ public class HessianCodecTest {
     }
 
     @Test
-    public void mangledStringOverloadIsSelected() throws Exception {
-        // 使用官方方法名算法明确选择 String 重载。
-        String method = HessianCodecTestFixture.method("overloaded", String.class);
+    public void mangledTextAliasIsSelected() throws Exception {
+        // 对外别名也接受 Hessian 带参数类型的名称。
+        String method = HessianCodecTestFixture.method("overloaded", String.class).replace("overloaded", "overloadedText");
         byte[] body = HessianCodecTestFixture.call(2, method, "Ada");
         RequestPayload request = this.fixture.decode(body);
 
@@ -82,9 +82,9 @@ public class HessianCodecTest {
     }
 
     @Test
-    public void mangledIntegerOverloadIsSelected() throws Exception {
-        // 同名不同类型的方法不会按反射枚举顺序选错。
-        String method = HessianCodecTestFixture.method("overloaded", int.class);
+    public void mangledNumberAliasIsSelected() throws Exception {
+        // 带整数签名的对外名称映射到 Java 的整数声明。
+        String method = HessianCodecTestFixture.method("overloaded", int.class).replace("overloaded", "overloadedNumber");
         RequestPayload request = this.fixture.decode(HessianCodecTestFixture.call(1, method, 11));
 
         // 原始类型声明保留给内核调用。
@@ -93,52 +93,52 @@ public class HessianCodecTest {
     }
 
     @Test
-    public void ambiguousUnmangledOverloadIsRejected() throws Exception {
-        // 不带参数类型的同名方法无法唯一定位。
+    public void javaOverloadNameIsRejectedWhenOnlyAliasesArePublished() throws Exception {
+        // 两个方法分别发布了别名，原 Java 名称未发布。
         byte[] body = HessianCodecTestFixture.call(2, "overloaded", "Ada");
         assertThrows(Exception.class, () -> this.fixture.decode(body));
     }
 
     @Test
-    public void hessianTwoArityDisambiguatesPlainMethod() throws Exception {
-        // Hessian 2 明确携带参数个数，可以区分不同参数数量的重载。
-        byte[] body = HessianCodecTestFixture.call(2, "arity", 7, 2);
+    public void hessianTwoPairAliasUsesTwoArguments() throws Exception {
+        // 双参数方法使用明确发布的对外名称。
+        byte[] body = HessianCodecTestFixture.call(2, "arityPair", 7, 2);
         RequestPayload request = this.fixture.decode(body);
         assertEquals(List.of("int", "int"), request.getParameterTypes());
     }
 
     @Test
-    public void hessianOneZeroArgumentOverloadUsesExactMangledName() throws Exception {
+    public void hessianOneZeroArgumentMethodUsesExactMangledName() throws Exception {
         // 官方零参方法的 mangled 名就是方法名，不附加参数类型。
         byte[] body = HessianCodecTestFixture.call(1, "optional");
         RequestPayload request = this.fixture.decode(body);
 
-        // 同时存在 optional(String) 时，也能明确选择零参方法。
+        // optional 对应零参方法，有参声明发布为 optionalText。
         assertEquals("optional", request.getTargetMethod());
         assertTrue(request.getParameterTypes().isEmpty());
         assertTrue(request.getParameterValues().isEmpty());
     }
 
     @Test
-    public void legacyTwoReplyCallSelectsZeroArgumentOverload() throws Exception {
+    public void legacyTwoReplyCallSelectsZeroArgumentMethod() throws Exception {
         // c 2 0 只改变回复版本，调用参数仍使用 Hessian 1 编码。
         byte[] body = HessianCodecTestFixture.call(1, "optional");
         body[1] = 2;
         RequestPayload request = this.fixture.decode(body);
 
-        // 没有显式参数数量的请求仍按精确 mangled 名选择零参重载。
+        // 没有显式参数数量的请求仍按精确名称选择零参方法。
         assertEquals(2, this.fixture.codec.responseVersion(body));
         assertEquals("optional", request.getTargetMethod());
         assertTrue(request.getParameterTypes().isEmpty());
     }
 
     @Test
-    public void hessianTwoPlainNameUsesArgumentCountOverZeroArgumentOverload() throws Exception {
-        // Hessian 2 的普通方法名携带一个参数，不能误选同名零参方法。
-        byte[] body = HessianCodecTestFixture.call(2, "optional", "chosen");
+    public void hessianTwoTextAliasBindsArgument() throws Exception {
+        // 文本别名映射到有参 Java 声明。
+        byte[] body = HessianCodecTestFixture.call(2, "optionalText", "chosen");
         RequestPayload request = this.fixture.decode(body);
 
-        // 参数数量和原始 Java 签名共同确定目标。
+        // 内核仍收到原始 Java 方法名及参数声明。
         assertEquals("optional", request.getTargetMethod());
         assertEquals(List.of(String.class.getName()), request.getParameterTypes());
         assertEquals(List.of("chosen"), request.getParameterValues());
@@ -324,13 +324,13 @@ public class HessianCodecTest {
     }
 
     @Test
-    public void outboundRequestKeepsMangledOverload() throws Exception {
-        // 出站编码根据确切 Java 参数类型选择官方重载命名。
+    public void outboundRequestUsesPublishedNumberAlias() throws Exception {
+        // 出站以确切 Java 签名选择已发布的协议别名。
         RequestPayload request = this.fixture.request("overloaded", new Class<?>[] { int.class }, 21);
         byte[] body = this.fixture.codec.encodeRequest(request);
         RequestPayload decoded = this.fixture.decode(body);
 
-        // 往返后仍为 int 重载，而不是同名 String 方法。
+        // 往返后仍定位到 int 参数的 Java 方法。
         assertEquals(List.of("int"), decoded.getParameterTypes());
         assertEquals(List.of(21), decoded.getParameterValues());
     }

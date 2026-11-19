@@ -22,6 +22,7 @@ import net.hasor.cobble.StringUtils;
 import net.hasor.cobble.reflect.resolvable.ResolvableType;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
+import net.hasor.meteor.connector.ProtocolOperationBinder.Target;
 import net.hasor.meteor.connector.RouteMount;
 import net.hasor.meteor.connector.RouteMountIndex;
 import net.hasor.meteor.connector.RouteSelection;
@@ -282,13 +283,14 @@ public final class HproseHttpCodec {
         }
         headers.put("Content-Type", List.of("application/hprose"));
 
-        MetBindInfo<?> service = this.context.getServiceInfo( //
-                request.getServiceGroup(), request.getServiceName(), request.getServiceVersion());
-        Method method = this.method(service, request);
-        String name = this.services.methods(service).get(method);
-        String uri = this.routes.contextPath(service);
-        byte[] body = HproseWireCodec.encodeRequest(name, request);
-        return HttpRequest.newBuffered("POST", uri, headers, body, 1, Map.of());
+        String method = request.resolveOperationValue(Target::methodName, () -> {
+            MetBindInfo<?> service = this.service(request);
+            return this.services.methods(service).get(this.method(service, request));
+        });
+
+        String path = request.resolveRequestPath(() -> this.routes.contextPath(this.service(request)));
+        byte[] body = HproseWireCodec.encodeRequest(method, request);
+        return HttpRequest.newBuffered("POST", path, headers, body, 1, Map.of());
     }
 
     public ResponsePayload decodeResponse(RequestPayload request, HttpResponse response) throws Exception {
@@ -369,21 +371,30 @@ public final class HproseHttpCodec {
     }
 
     private void decodeResult(RequestPayload request, byte[] body, ResponsePayload result) throws Exception {
-        MetBindInfo<?> service = this.context.getServiceInfo( //
-                request.getServiceGroup(), request.getServiceName(), request.getServiceVersion());
-        Method method = this.method(service, request);
+        Type returnType = request.resolveOperationValue(Target::returnType, () -> {
+            MetBindInfo<?> service = this.service(request);
+            Method method = this.method(service, request);
+            return wireType(ServiceMetaParser.method(service.getBindType(), method).getReturnType());
+        });
+
         ByteArrayInputStream input = new ByteArrayInputStream(body);
         if (input.read() != 'R') {
             throw new IOException("Invalid Hprose result tag");
         }
-        MethodMeta description = ServiceMetaParser.method(service.getBindType(), method);
-        Object value = new HproseReader(input).unserialize(wireType(description.getReturnType()));
+
+        Object value = new HproseReader(input).unserialize(returnType);
         if (input.read() != 'z' || input.read() != -1) {
             throw new IOException("Invalid Hprose response terminator");
         }
 
-        result.setReturnType(method.getReturnType().getName());
+        String resultType = request.resolveOperationValue(target -> target.returnType().getName(), //
+                () -> this.method(this.service(request), request).getReturnType().getName());
+        result.setReturnType(resultType);
         result.setReturnData(value);
+    }
+
+    private MetBindInfo<?> service(RequestPayload request) {
+        return this.context.getServiceInfo(request.getServiceGroup(), request.getServiceName(), request.getServiceVersion());
     }
 
     private Method method(MetBindInfo<?> service, RequestPayload request) throws IOException {

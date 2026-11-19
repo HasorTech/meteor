@@ -43,11 +43,149 @@ final class SoapLiteralValueCodec {
     }
 
     Object read(Element element, Type type) throws Exception {
-        return this.readValue(element, this.mapper.constructType(type), 0);
+        return this.readPart(element, type, 0);
     }
 
     void write(Element target, Type type, Object value, Map<Element, byte[]> binaries) throws Exception {
-        this.writeValue(target, this.mapper.constructType(type), value, binaries, new IdentityHashMap<>(), 0);
+        this.writePart(target, type, value, binaries, 0);
+    }
+
+    private Object readPart(Element element, Type type, int depth) throws Exception {
+        this.requireDepth(depth);
+        if (!(type instanceof SoapLiteralType shape)) {
+            return this.readValue(element, this.mapper.constructType(type), depth);
+        }
+        if (this.nil(element)) {
+            return null;
+        }
+
+        if (shape.content != null) {
+            if (shape.map) {
+                Map<String, Object> values = new LinkedHashMap<>();
+                for (Element child : this.children(element)) {
+                    String key = child.getLocalName();
+                    this.requireMapKey(element, key, false);
+                    if (values.containsKey(key)) {
+                        throw new IllegalArgumentException("Duplicate SOAP XML Map key: " + key);
+                    }
+                    values.put(key, this.readPart(child, shape.content, depth + 1));
+                }
+                return values;
+            }
+            return this.readItems(this.children(element), shape.content, depth);
+        }
+        Map<String, Object> value = new LinkedHashMap<>();
+        for (SoapLiteralType.Property property : shape.properties) {
+            Object member = this.readMember(element, property, depth);
+            if (member != null || property.required || property.nillable) {
+                value.put(property.name, member);
+            }
+        }
+        return value;
+    }
+
+    private Object readMember(Element element, SoapLiteralType.Property property, int depth) throws Exception {
+        if (property.attribute) {
+            Attr attribute = element.getAttributeNodeNS(property.element.getNamespaceURI(), property.element.getLocalPart());
+            return attribute == null ? null : this.scalarValue(attribute.getValue(), this.mapper.constructType(property.type));
+        }
+        if (property.text) {
+            return this.scalarValue(element.getTextContent(), this.mapper.constructType(property.type));
+        }
+        Element scope = property.wrapper == null ? element : this.single(element, property.wrapper);
+        if (scope == null || this.nil(scope)) {
+            return null;
+        }
+        if (property.type instanceof SoapLiteralType collection && collection.content != null && !collection.map) {
+            return this.readItems(this.matching(scope, property.element), collection.content, depth);
+        }
+        Element child = this.single(scope, property.element);
+        return child == null ? null : this.readPart(child, property.type, depth + 1);
+    }
+
+    private List<Object> readItems(List<Element> elements, Type type, int depth) throws Exception {
+        List<Object> values = new ArrayList<>();
+        for (Element child : elements) {
+            values.add(this.readPart(child, type, depth + 1));
+        }
+        return values;
+    }
+
+    private void writePart(Element target, Type type, Object value, Map<Element, byte[]> binaries, int depth) throws Exception {
+        this.requireDepth(depth);
+        if (!(type instanceof SoapLiteralType shape)) {
+            JavaType javaType = this.mapper.constructType(type);
+            if (value != null && SoapXmlMapping.isScalar(javaType) && !javaType.getRawClass().isInstance(value)) {
+                value = this.mapper.convertValue(value, javaType);
+            }
+            this.writeValue(target, javaType, value, binaries, new IdentityHashMap<>(), depth);
+            return;
+        }
+        if (value == null) {
+            this.writeNil(target);
+            return;
+        }
+        if (shape.content != null && !shape.map) {
+            for (Object item : this.publishedItems(value)) {
+                this.writePart(this.append(target, new QName("item")), shape.content, item, binaries, depth + 1);
+            }
+            return;
+        }
+        if (!(value instanceof Map<?, ?> members)) {
+            throw new IllegalArgumentException("SOAP XML value must supply named fields for " + shape.name);
+        }
+        if (shape.map) {
+            for (Map.Entry<?, ?> entry : members.entrySet()) {
+                String key = this.requireMapKey(target, entry.getKey(), false);
+                QName element = new QName(this.namespace(target.getNamespaceURI()), key);
+                this.writePart(this.append(target, element), shape.content, entry.getValue(), binaries, depth + 1);
+            }
+            return;
+        }
+        for (SoapLiteralType.Property property : shape.properties) {
+            this.writeMember(target, property, members.get(property.name), binaries, depth);
+        }
+    }
+
+    private void writeMember(Element target, SoapLiteralType.Property property, Object value, //
+            Map<Element, byte[]> binaries, int depth) throws Exception {
+        if (value == null && !property.required && !property.nillable) {
+            return;
+        }
+        if (property.attribute) {
+            if (value != null) {
+                this.writeBoundAttributeValue(target, property.element, new SoapJacksonValue(value, null));
+            }
+        } else if (property.text) {
+            if (value != null) {
+                target.appendChild(target.getOwnerDocument().createTextNode(this.scalarText(value)));
+            }
+        } else {
+            Element scope = property.wrapper == null ? target : this.append(target, property.wrapper);
+            if (property.type instanceof SoapLiteralType collection && collection.content != null && !collection.map) {
+                if (value != null) {
+                    for (Object item : this.publishedItems(value)) {
+                        this.writePart(this.append(scope, property.element), collection.content, item, binaries, depth + 1);
+                    }
+                }
+            } else {
+                this.writePart(this.append(scope, property.element), property.type, value, binaries, depth + 1);
+            }
+        }
+    }
+
+    private List<?> publishedItems(Object value) {
+        if (value instanceof Collection<?> values) {
+            return new ArrayList<>(values);
+        }
+        if (!value.getClass().isArray()) {
+            throw new IllegalArgumentException("SOAP XML collection requires an array or collection");
+        }
+        List<Object> values = new ArrayList<>();
+        for (int index = 0; index < Array.getLength(value); index++) {
+            values.add(Array.get(value, index));
+        }
+        return values;
     }
 
     private Object readValue(Element element, JavaType type, int depth) throws Exception {
@@ -1058,9 +1196,7 @@ final class SoapLiteralValueCodec {
         if (value.source() != null) {
             JavaType actual = this.mapper.constructType(value.source().getClass());
             boolean structuredBean = !SoapXmlMapping.isMap(actual) && !SoapXmlMapping.isCollection(actual);
-            if (structuredBean && !this.mapping.type(actual).getProperties().isEmpty()) {
-                return false;
-            }
+            return !structuredBean || this.mapping.type(actual).getProperties().isEmpty();
         }
         return true;
     }

@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
+import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.cobble.concurrent.future.BasicFuture;
 import net.hasor.cobble.concurrent.future.Cancellable;
@@ -613,6 +614,18 @@ public class ConnectorManager implements AutoCloseable {
     public synchronized Set<String> getProtocolFamilies(String connectorName, String protocol) {
         ConnectorEndpoint<?> endpoint = this.endpoints.get(connectorName);
         return endpoint == null ? Set.of() : endpoint.protocolFamilies(protocol);
+    }
+
+    public void prepareOperation(String connectorName, String protocol, JsonNode contract, //
+            ProtocolOperationBinder.Target target, ProtocolOperationBinder.Binding<Object> result) {
+        ConnectorEndpoint<?> endpoint;
+        synchronized (this) {
+            endpoint = this.endpoints.get(connectorName);
+        }
+        if (endpoint == null) {
+            throw new IllegalStateException("Protocol connector is unavailable: " + connectorName);
+        }
+        endpoint.prepareOperation(protocol, contract, target, result);
     }
 
     public synchronized Set<String> getEndpointTypes(String connectorName, String protocol) {

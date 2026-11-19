@@ -7,10 +7,13 @@
  */
 package net.hasor.meteor.protocol.dubbo;
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Map;
 import java.util.function.ObjLongConsumer;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.hasor.meteor.MetContext;
+import net.hasor.meteor.connector.ProtocolOperationBinder;
 import net.hasor.meteor.connector.ProtocolSession;
 import net.hasor.meteor.connector.ProtocolSessionContext;
 import net.hasor.meteor.connector.RouteProbeResult;
@@ -24,7 +27,7 @@ import net.hasor.meteor.protocol.dubbo.codec.DubboCodec;
 import net.hasor.meteor.protocol.dubbo.session.DubboSession;
 
 /** Dubbo 2.x 与 3.x 共用的二进制协议入口，安全连接复用 TCP 传输配置。 */
-public final class DubboProtocol implements TcpProtocolProvider {
+public final class DubboProtocol implements TcpProtocolProvider, ProtocolOperationBinder {
     @Override
     public String name() {
         return "dubbo";
@@ -36,15 +39,23 @@ public final class DubboProtocol implements TcpProtocolProvider {
     }
 
     @Override
+    public void prepareOperation(ProtocolConfig config, JsonNode contract, Target target, Binding<Object> binding) {
+        DubboCodec.prepareOperation(contract, target, binding);
+    }
+
+    @Override
     public ProtocolBinding prepareBinding(ProtocolConfig config, MetContext context, ProtocolMeta meta) {
         Map<Method, String> methods = DubboCodec.prepareService(meta.getService());
         if (methods == null) {
             return null;
         }
         ObjectNode description = meta.createServiceDescription(config, this.defaultSerialize(), methods);
-        description.put("name", DubboCodec.serviceName(meta.getService(), config.name()));
+        List<String> key = DubboCodec.serviceKey(meta.getService(), config.name());
+        description.put("name", key.get(0));
+        description.put("wireGroup", key.get(1));
+        description.put("wireVersion", key.get(2));
         return meta.build(config, methods, description) //
-                .claimRoute(DubboCodec.serviceKey(meta.getService(), config.name()));
+                .claimRoute(key);
     }
 
     @Override

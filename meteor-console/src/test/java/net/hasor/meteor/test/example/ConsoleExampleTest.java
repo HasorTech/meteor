@@ -32,9 +32,7 @@ import net.hasor.core.AppContext;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.console.ConsoleMain;
-import net.hasor.meteor.console.dao.ClusterDao;
 import net.hasor.meteor.console.component.commands.dto.service.ExampleTarget;
-import net.hasor.meteor.console.component.debug.DebugContract;
 import net.hasor.meteor.console.component.debug.DebugInvoker;
 import net.hasor.meteor.console.component.provider.ProviderConnection;
 import net.hasor.meteor.console.component.provider.ProviderFactory;
@@ -43,6 +41,7 @@ import net.hasor.meteor.console.component.provider.nacos.NacosProviderFactory;
 import net.hasor.meteor.console.component.provider.remote.RemoteProviderFactory;
 import net.hasor.meteor.console.component.provider.zk.ZookeeperProviderFactory;
 import net.hasor.meteor.console.component.rpc.RpcServer;
+import net.hasor.meteor.console.dao.ClusterDao;
 import net.hasor.meteor.console.model.fo.ClusterProfile;
 import net.hasor.meteor.console.utils.JsonUtils;
 import net.hasor.meteor.domain.MetServiceType;
@@ -220,12 +219,10 @@ public class ConsoleExampleTest {
                     target.setEndpoint(endpoint);
                     target.setAddress(endpoint.getPublishedAddress());
                     target.setDescription(admin.descriptions().get(instanceId));
-                    var contract = new DebugContract(target.getDescription());
-                    assertNotSame(EchoService.class, contract.serviceType());
                     Object debug = new DebugInvoker().invoke(target, target.getDescription().getMethods().stream().filter(method -> StringUtils.equals("echo", method.getJavaName())).findFirst().orElseThrow().getJavaSignature(), JsonUtils.readTree("[{\"value\":\"console-debug\",\"left\":20,\"right\":22}]"), 5000, this.temporary.resolve("debug"));
                     assertTrue(JsonUtils.writeValueAsString(debug).contains(":console-debug"));
                     if (StringUtils.equals("rsf", protocol)) {
-                        // 调试器根据上报契约创建代理，验证零参数和多个独立输入的组装。
+                        // 调试器按上报契约发起调用，验证零参数和多个独立输入的组装。
                         var parameterAdmin = registryAdmin.getServiceAdmin(parameters.getBindID(), instanceId);
                         var parameterMember = parameterAdmin.providers(null, null).getItems().get(0);
                         target.setServiceId(parameters.getBindID());

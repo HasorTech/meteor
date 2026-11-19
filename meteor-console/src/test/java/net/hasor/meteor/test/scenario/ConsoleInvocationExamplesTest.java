@@ -52,7 +52,7 @@ public class ConsoleInvocationExamplesTest {
     public Path directory;
 
     @ParameterizedTest(name = "{0} 调试使用 SDK 挂载和当前服务身份")
-    @ValueSource(strings = { "connect", "grpc", "grpc-web", "hessian", "hprose", "jsonrpc", "soap", "thrift-http", "triple", "xmlrpc" })
+    @ValueSource(strings = { "connect", "grpc", "grpc-web", "hessian", "hprose", "jsonrpc", "rsf", "soap", "thrift-http", "triple", "xmlrpc" })
     public void debugCallsTheSelectedServiceThroughItsSdkMount(String protocol) throws Exception {
         // 使用不同于接口注解的分组、版本，控制台必须恢复真实绑定并补齐协议路由。
         MetConfiguration configuration = configuration(this.directory.resolve("provider"), protocol);
@@ -70,8 +70,7 @@ public class ConsoleInvocationExamplesTest {
             JsonNode contract = api.get("service/debug?" + selected);
             String address = contract.path("endpoints").get(0).path("address").asText();
             assertEquals(provider.getListenAddress(protocol).toString(), address);
-            String signature = "echo(" + DebugMessage.class.getName() + ")";
-            var request = Map.of("protocol", protocol, "address", address, "method", signature, //
+            var request = Map.of("protocol", protocol, "address", address, "method", "echo", //
                     "arguments", List.of(Map.of("value", "sdk", "left", 3, "right", 4)));
             JsonNode response = api.ok("service/debug?" + selected, "POST", request);
             assertTrue(response.path("success").asBoolean(), response.toPrettyString());

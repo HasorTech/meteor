@@ -8,7 +8,9 @@
 package net.hasor.meteor.protocol.soap.definition;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Base64;
 import java.util.Set;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import net.hasor.cobble.StringUtils;
@@ -69,6 +71,19 @@ public abstract class SoapDefinitionResource {
             throw new IllegalArgumentException("Unsupported SOAP " + name + ": " + selected);
         }
         return selected;
+    }
+
+    /** Self-contained transport description for consumers that bind without a Java interface. */
+    public ObjectNode describeDocuments() {
+        try {
+            ObjectNode snapshot = JsonNodeFactory.instance.objectNode();
+            snapshot.put("entry", "service.wsdl");
+            byte[] wsdl = this.renderWsdl(URI.create("http://127.0.0.1/soap"));
+            snapshot.putObject("files").put("service.wsdl", Base64.getEncoder().encodeToString(wsdl));
+            return snapshot;
+        } catch (IOException failure) {
+            throw new IllegalStateException("Cannot describe published WSDL", failure);
+        }
     }
 
     public abstract SoapDefinition definition();
