@@ -420,6 +420,7 @@ public final class MetCaller implements AutoCloseable {
         request.setPeerAddress(service.getAddress());
         ProtocolSelection selection = this.resolveProtocol(request);
         ProtocolOperation operation = call.operation;
+
         this.connectors.prepareOperation(selection.endpointName, selection.protocol, service.getProtocolDescription(), operation, operation::bind);
         request.setFlags(MetFlags.P2PFlag.addTag((short) 0));
         request.setTimeout(this.timeout(requestTimeout));

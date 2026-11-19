@@ -625,6 +625,7 @@ public class ConnectorManager implements AutoCloseable {
         if (endpoint == null) {
             throw new IllegalStateException("Protocol connector is unavailable: " + connectorName);
         }
+
         endpoint.prepareOperation(protocol, contract, target, result);
     }
 
