@@ -8,6 +8,9 @@
 package net.hasor.meteor.console.component.telnet;
 import java.util.List;
 import net.hasor.cobble.StringUtils;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleI18n;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.service.ClusterService;
 import net.hasor.tconsole.TelCommand;
 
@@ -19,8 +22,8 @@ public final class ClustersCommand extends AbstractCommand {
     }
 
     @Override
-    public String helpInfo() {
-        return "clusters [use <id>|clear]: list or select saved cluster for this connection";
+    protected ConsoleMessageKey helpKey() {
+        return ConsoleMessageKey.TELNET_HELP_CLUSTERS;
     }
 
     @Override
@@ -30,13 +33,13 @@ public final class ClustersCommand extends AbstractCommand {
         }
         if (args.size() == 1 && StringUtils.equals(args.get(0), "clear")) {
             command.getSession().setAttribute(CommandOptions.CLUSTER, null);
-            return "OK  cluster selection cleared";
+            return "OK  " + ConsoleI18n.getMessage(ConsoleMessageKey.TELNET_CLUSTER_CLEARED);
         }
         requireCount(args, 2);
         if (!StringUtils.equals(args.get(0), "use") || this.clusters.list().stream().noneMatch(c -> StringUtils.equals(c.getId(), args.get(1)))) {
-            throw new IllegalArgumentException("Expected clusters use <existing-id>");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_TELNET_CLUSTER_USE);
         }
         command.getSession().setAttribute(CommandOptions.CLUSTER, args.get(1));
-        return "OK  selected cluster " + args.get(1);
+        return "OK  " + ConsoleI18n.getMessage(ConsoleMessageKey.TELNET_CLUSTER_SELECTED, args.get(1));
     }
 }

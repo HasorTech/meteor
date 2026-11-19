@@ -16,6 +16,9 @@ import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.console.component.provider.ProviderConnection;
 import net.hasor.meteor.console.component.provider.ProviderFactory;
 import net.hasor.meteor.console.component.rpc.RpcManagement;
+import net.hasor.meteor.console.component.rpc.RpcManagementErrors;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.model.fo.ClusterProfile;
 import net.hasor.meteor.registry.RegistryAdmin;
 import net.hasor.meteor.registry.RegistryTokenProvider;
@@ -35,11 +38,11 @@ public final class RemoteProviderFactory implements ProviderFactory {
     public ProviderConnection open(ClusterProfile profile, RegistryTokenProvider credentials) throws Exception {
         profile.validate();
         if (StringUtils.isBlank(profile.getRemoteClusterId())) {
-            throw new IllegalArgumentException("缺少远端集群 ID");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_MISSING_REMOTE_CLUSTER_ID);
         }
 
         InterAddress address = new InterAddress(URI.create(profile.getAddress()));
-        Map<String, String> options = Map.of(RpcManagement.CREDENTIAL_OPTION, profile.getManagementToken());
+        Map<String, String> options = Map.of(RpcManagement.CREDENTIAL_OPTION, profile.getManagementToken(), RpcManagementErrors.FORMAT_OPTION, RpcManagementErrors.FORMAT_VERSION);
         var client = this.context.getRsfClient(address).withOptions(options);
         RegistryAdmin admin = new RemoteConnection(client.wrapper(RpcManagement.class), profile.getManagementToken(), profile.getRemoteClusterId());
         return ProviderConnection.registry(admin);

@@ -13,6 +13,8 @@ import net.hasor.meteor.console.component.commands.dto.service.ExampleTarget;
 import net.hasor.meteor.console.component.examples.ExampleConnections;
 import net.hasor.meteor.console.component.examples.ExampleDocument;
 import net.hasor.meteor.console.component.examples.ExampleTemplates;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.utils.JsonUtils;
 
 /** 为没有通用动态 SDK 的语言提供一次完整线上报文调用；不会伪造业务类型或依赖生成工程。 */
@@ -22,6 +24,7 @@ public final class WireExampleGenerator {
         if (!Set.of("thrift", "thrift-http", "oncrpc", "oncrpc-udp", "hprose", "hessian").contains(protocol)) {
             return List.of();
         }
+
         ExampleConnections.validate(target);
         var binding = target.getEndpoint().getDescription();
         JsonNode method = JsonUtils.valueToTree(binding.getMethods()).get(0);
@@ -92,7 +95,7 @@ public final class WireExampleGenerator {
             }
             return http(HttpRequestExampleGenerator.endpoint(target, address, "http"), bytes.toByteArray(), Map.of("Content-Type", mediaType), operation, List.of("python", "javascript", "go", "cpp", "browser", "shell"));
         } catch (IOException failure) {
-            throw new IllegalArgumentException("无法构造原生请求样本", failure);
+            throw new ErrorMessageException(failure, ConsoleMessageKey.ERROR_COULD_NOT_CONSTRUCT_A_NATIVE_REQUEST);
         }
     }
 
@@ -197,7 +200,7 @@ public final class WireExampleGenerator {
 
     private void thrift(JsonNode types, String reference, DataOutputStream output, Set<String> parents) throws IOException {
         if (!parents.add(reference)) {
-            throw new IllegalArgumentException("Thrift 必填递归参数需要业务样本");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_A_REQUIRED_RECURSIVE_THRIFT_ARGUMENT_NEEDS);
         }
         JsonNode type = BinaryContracts.required(types, reference);
         switch (type.path("wireType").asInt()) {
@@ -235,13 +238,13 @@ public final class WireExampleGenerator {
                 output.writeLong(0);
                 output.writeLong(1);
             }
-            default -> throw new IllegalArgumentException("不支持的 Thrift 样本类型");
+            default -> throw new ErrorMessageException(ConsoleMessageKey.ERROR_UNSUPPORTED_THRIFT_SAMPLE_TYPE);
         }
     }
 
     private void xdr(JsonNode types, String reference, DataOutputStream output, Set<String> parents) throws IOException {
         if (!parents.add(reference)) {
-            throw new IllegalArgumentException("XDR 必填递归参数需要业务样本");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_A_REQUIRED_RECURSIVE_XDR_ARGUMENT_NEEDS);
         }
         JsonNode type = BinaryContracts.required(types, reference);
         switch (type.path("kind").asText()) {
@@ -268,7 +271,7 @@ public final class WireExampleGenerator {
                 if (type.path("fixed").asBoolean()) {
                     int length = type.path("length").asInt();
                     if (length > 1024) {
-                        throw new IllegalArgumentException("XDR 固定数组样本过大");
+                        throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_FIXED_LENGTH_XDR_SAMPLE_ARRAY);
                     }
                     for (int index = 0; index < length; index++) {
                         this.xdr(types, type.path("elementType").asText(), output, new HashSet<>(parents));
@@ -282,14 +285,14 @@ public final class WireExampleGenerator {
                 if (type.path("fixed").asBoolean()) {
                     length = type.path("length").asInt();
                     if (length > 65536 || length < 0) {
-                        throw new IllegalArgumentException("XDR 固定 opaque 样本过大");
+                        throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_FIXED_LENGTH_XDR_OPAQUE_SAMPLE);
                     }
                 } else {
                     output.writeInt(0);
                 }
                 output.write(new byte[length + (4 - length % 4) % 4]);
             }
-            default -> throw new IllegalArgumentException("当前 XDR 类型需要显式业务样本");
+            default -> throw new ErrorMessageException(ConsoleMessageKey.ERROR_THIS_XDR_TYPE_REQUIRES_AN_EXPLICIT_2);
         }
     }
 
@@ -343,7 +346,7 @@ public final class WireExampleGenerator {
         try {
             return JsonUtils.writeValueAsString(value);
         } catch (Exception failure) {
-            throw new IllegalArgumentException("无法编码调用文档", failure);
+            throw new ErrorMessageException(failure, ConsoleMessageKey.ERROR_COULD_NOT_ENCODE_THE_INVOCATION_DOCUMENT);
         }
     }
 }

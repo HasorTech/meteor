@@ -23,7 +23,6 @@ public class InvocationExampleController {
     @MappingTo("/examples/render")
     public Object render(Invoker invoker) {
         ConsoleRequest request = ConsoleRequest.from(invoker);
-        return this.examples.render(request.target(), request.required("protocol"),
-                request.required("endpointAddress"), request.query("contextPath"), request.query("address"));
+        return this.examples.render(request.target(), request.required("protocol"), request.required("endpointAddress"), request.query("contextPath"), request.query("address"), request.locale());
     }
 }

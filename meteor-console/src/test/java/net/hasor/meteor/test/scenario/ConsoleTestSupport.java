@@ -21,12 +21,12 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.List;
-import net.hasor.cobble.StringUtils;
+import java.util.Map;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.boot.BootApplication;
 import net.hasor.boot.web.WebServer;
+import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.console.model.fo.ClusterProfile;
 import net.hasor.meteor.console.utils.JsonUtils;
@@ -135,9 +135,14 @@ final class ConsoleTestSupport {
 
     static final class Api {
         private String managementToken;
+        private String acceptLanguage;
 
         void managementToken(String token) {
             this.managementToken = token;
+        }
+
+        void acceptLanguage(String language) {
+            this.acceptLanguage = language;
         }
 
         private final HttpClient http;
@@ -170,6 +175,9 @@ final class ConsoleTestSupport {
             HttpRequest.Builder builder = HttpRequest.newBuilder(this.root.resolve("/api/" + path))//
                     .timeout(Duration.ofSeconds(15))//
                     .header("Content-Type", "application/json");
+            if (this.acceptLanguage != null) {
+                builder.header("Accept-Language", this.acceptLanguage);
+            }
             if (path.contains("mode=direct") && this.managementToken != null) {
                 String token = Base64.getEncoder().encodeToString(this.managementToken.getBytes(StandardCharsets.UTF_8));
                 builder.header("X-Meteor-Management-Token", token);

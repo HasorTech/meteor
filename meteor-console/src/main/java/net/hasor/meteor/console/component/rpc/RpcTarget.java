@@ -7,6 +7,8 @@
  */
 package net.hasor.meteor.console.component.rpc;
 import net.hasor.cobble.StringUtils;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 
 /** 注册中心管理接口的作用域标识；不接受直连地址或目标实例凭据。 */
 public final class RpcTarget {
@@ -81,26 +83,26 @@ public final class RpcTarget {
 
     public void validate() {
         if (StringUtils.isBlank(this.clusterId)) {
-            throw new IllegalArgumentException("缺少远端集群 ID");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_MISSING_REMOTE_CLUSTER_ID);
         }
         if (this.scope == null) {
-            throw new IllegalArgumentException("缺少注册中心管理作用域");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_MISSING_REGISTRY_MANAGEMENT_SCOPE);
         }
 
         switch (this.scope) {
             case CLUSTER:
                 if (StringUtils.isNotBlank(this.serviceId) || StringUtils.isNotBlank(this.instanceId)) {
-                    throw new IllegalArgumentException("集群作用域不接受服务或实例 ID");
+                    throw new ErrorMessageException(ConsoleMessageKey.ERROR_CLUSTER_SCOPE_DOES_NOT_ACCEPT_A);
                 }
                 break;
             case SERVICE:
                 if (StringUtils.isBlank(this.serviceId)) {
-                    throw new IllegalArgumentException("缺少服务 ID");
+                    throw new ErrorMessageException(ConsoleMessageKey.ERROR_MISSING_SERVICE_ID);
                 }
                 break;
             case INSTANCE:
                 if (StringUtils.isBlank(this.instanceId) || StringUtils.isNotBlank(this.serviceId)) {
-                    throw new IllegalArgumentException("实例作用域要求实例 ID，且不接受服务 ID");
+                    throw new ErrorMessageException(ConsoleMessageKey.ERROR_INSTANCE_SCOPE_REQUIRES_AN_INSTANCE_ID);
                 }
                 break;
         }

@@ -11,6 +11,8 @@ import net.hasor.meteor.console.component.commands.CommandContext;
 import net.hasor.meteor.console.component.commands.RegistryCommand;
 import net.hasor.meteor.console.component.commands.dto.rule.ReadRuleRequest;
 import net.hasor.meteor.console.component.commands.dto.rule.RuleResult;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.model.fo.ManagementTarget;
 import net.hasor.meteor.registry.admin.MetClusterAdmin;
 import net.hasor.meteor.registry.admin.MetInstanceAdmin;
@@ -45,7 +47,7 @@ public final class ReadRuleRegistryCmd implements RegistryCommand<ReadRuleReques
                 content = admin.fetchRule(type);
                 enabled = admin.isRule(type);
             }
-            default -> throw new IllegalArgumentException("未知治理范围：" + scope);
+            default -> throw new ErrorMessageException(ConsoleMessageKey.ERROR_UNKNOWN_GOVERNANCE_SCOPE_2, scope);
         }
         return new RuleResult(type, content, enabled, !target.isDirect(), !StringUtils.equals("instance", scope));
     }

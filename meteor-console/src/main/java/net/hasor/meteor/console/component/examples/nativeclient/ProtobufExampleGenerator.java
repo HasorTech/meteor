@@ -14,6 +14,8 @@ import net.hasor.meteor.console.component.commands.dto.service.ExampleTarget;
 import net.hasor.meteor.console.component.examples.ExampleConnections;
 import net.hasor.meteor.console.component.examples.ExampleDocument;
 import net.hasor.meteor.console.component.examples.ExampleTemplates;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.utils.JsonUtils;
 
 /** 从已发布的 Protobuf 类型图生成原生 SDK 文档，编号和线上名称均取自提供者。 */
@@ -23,6 +25,7 @@ public final class ProtobufExampleGenerator {
         if (!Set.of("grpc", "grpc-web", "connect", "triple").contains(protocol)) {
             return List.of();
         }
+
         ExampleConnections.validate(target);
         var binding = target.getEndpoint().getDescription();
         JsonNode types = JsonUtils.valueToTree(binding.getTypes());
@@ -32,8 +35,9 @@ public final class ProtobufExampleGenerator {
             return List.of(); // Triple 的 POJO/Hessian 模式由独立 SDK 和普通 HTTP 示例处理。
         }
         if (method.path("clientStreaming").asBoolean() || method.path("serverStreaming").asBoolean()) {
-            throw new IllegalArgumentException("当前原生 Protobuf 示例仅选择一元方法");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_NATIVE_PROTOBUF_EXAMPLES_CURRENTLY_SUPPORT_UNARY);
         }
+
         try {
             Map<String, FileDescriptorProto.Builder> files = this.files(types);
             Map<String, Descriptors.FileDescriptor> linked = new LinkedHashMap<>();
@@ -105,7 +109,7 @@ public final class ProtobufExampleGenerator {
             }
             return result;
         } catch (Exception failure) {
-            throw new IllegalArgumentException("无法从提供者 Protobuf 契约生成调用文档：" + failure.getMessage(), failure);
+            throw new ErrorMessageException(failure, ConsoleMessageKey.ERROR_COULD_NOT_GENERATE_AN_INVOCATION_DOCUMENT, failure);
         }
     }
 
@@ -172,7 +176,7 @@ public final class ProtobufExampleGenerator {
             return linked.get(namespace);
         }
         if (!visiting.add(namespace)) {
-            throw new IllegalArgumentException("描述图包含跨命名空间循环引用");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_DESCRIPTOR_GRAPH_CONTAINS_A_DEPENDENCY);
         }
         FileDescriptorProto file = files.get(namespace).build();
         List<Descriptors.FileDescriptor> dependencies = new ArrayList<>();

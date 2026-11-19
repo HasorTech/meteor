@@ -10,7 +10,9 @@ import java.util.Map;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.core.Inject;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
 import net.hasor.meteor.console.global.http.ConsoleRequest;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.service.GovernanceService;
 import net.hasor.meteor.console.utils.JsonUtils;
 import net.hasor.web.Invoker;
@@ -37,7 +39,7 @@ public class MetadataController {
         ConsoleRequest request = ConsoleRequest.from(invoker);
         JsonNode values = request.body().get("values");
         if (values == null || !values.isObject()) {
-            throw new IllegalArgumentException("values 必须为 JSON 对象");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_VALUES_MUST_BE_A_JSON_OBJECT);
         }
 
         Map<String, Object> metadata = JsonUtils.convertValue(values, new TypeReference<>() {
@@ -52,12 +54,12 @@ public class MetadataController {
         ConsoleRequest request = ConsoleRequest.from(invoker);
         JsonNode keys = request.body().get("keys");
         if (keys == null || !keys.isArray()) {
-            throw new IllegalArgumentException("keys 必须为字符串数组");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_KEYS_MUST_BE_AN_ARRAY_OF);
         }
 
         for (JsonNode key : keys) {
             if (!key.isTextual()) {
-                throw new IllegalArgumentException("元数据 key 必须是字符串");
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_A_METADATA_KEY_MUST_BE_A);
             }
         }
 

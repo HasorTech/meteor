@@ -4,12 +4,10 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.meteor.console.component.examples.java;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringJoiner;
+import java.util.*;
 import net.hasor.cobble.StringUtils;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.registry.admin.description.MetFieldDescription;
 import net.hasor.meteor.registry.admin.description.MetMethodDescription;
 import net.hasor.meteor.registry.admin.description.MetServiceDescription;
@@ -17,16 +15,18 @@ import net.hasor.meteor.registry.admin.description.MetTypeDescription;
 
 /** 根据提供者的 Java 契约生成调用参数和示例实现，不复制业务接口或加载业务类。 */
 final class JavaContractSources {
-    private static final Set<String> KEYWORDS = Set.of("abstract", "assert", "boolean", "break", "byte", "case", "catch", "char", "class", "const", "continue", "default", "do", "double", "else", "enum", "extends", "final", "finally", "float", "for", "goto", "if", "implements", "import", "instanceof", "int", "interface", "long", "native", "new", "package", "private", "protected", "public", "return", "short", "static", "strictfp", "super", "switch", "synchronized", "this", "throw", "throws", "transient", "try", "void", "volatile", "while", "true", "false", "null", "_", "record", "var", "yield", "sealed", "permits");
-    private static final Set<String> PRIMITIVES = Set.of("boolean", "byte", "short", "int", "long", "float", "double", "char", "void");
-    private final MetServiceDescription description;
-    private final String serviceType;
-    private final Map<String, String> typeNames = new LinkedHashMap<>();
+    private static final Set<String>           KEYWORDS   = Set.of("abstract", "assert", "boolean", "break", "byte", "case", "catch", "char", "class", "const", "continue", "default", "do", "double", "else", "enum", "extends", "final", "finally", "float", "for", "goto", "if", "implements", "import", "instanceof", "int", "interface", "long", "native", "new", "package", "private", "protected", "public", "return", "short", "static", "strictfp", "super", "switch", "synchronized", "this", "throw", "throws", "transient", "try", "void", "volatile", "while", "true", "false", "null", "_", "record",
+            "var", "yield", "sealed", "permits");
+    private static final Set<String>           PRIMITIVES = Set.of("boolean", "byte", "short", "int", "long", "float", "double", "char", "void");
+    private final        MetServiceDescription description;
+    private final        String                serviceType;
+    private final        Map<String, String>   typeNames  = new LinkedHashMap<>();
 
     JavaContractSources(MetServiceDescription description) {
         if (description == null || description.getMethods() == null || description.getMethods().isEmpty()) {
-            throw new IllegalArgumentException("提供者没有可生成的 Java 服务契约。");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_PROVIDER_DOES_NOT_HAVE_A);
         }
+
         this.description = description;
         this.serviceType = sourceType(description.getJavaType(), description.getExtensions());
     }
@@ -80,8 +80,7 @@ final class JavaContractSources {
             source.append(this.valueType(parameter.getType())).append(" arg").append(index);
             parameters.add(source);
         }
-        StringBuilder source = new StringBuilder(this.returnType(method)).append(' ').append(identifier(method.getJavaName()))
-                .append('(').append(parameters).append(')');
+        StringBuilder source = new StringBuilder(this.returnType(method)).append(' ').append(identifier(method.getJavaName())).append('(').append(parameters).append(')');
         if (method.getExceptions() != null && !method.getExceptions().isEmpty()) {
             StringJoiner exceptions = new StringJoiner(", ");
             for (String exception : method.getExceptions()) {
@@ -94,7 +93,7 @@ final class JavaContractSources {
 
     private String returnType(MetMethodDescription method) {
         if (method.getReturns() == null) {
-            throw new IllegalArgumentException("方法缺少返回类型：" + method.getJavaName());
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_METHOD_IS_MISSING_ITS_RETURN_TYPE, method.getJavaName());
         }
         return this.type(method.getReturns().getType());
     }
@@ -102,7 +101,7 @@ final class JavaContractSources {
     private String valueType(String reference) {
         String type = this.type(reference);
         if (StringUtils.equals("void", type)) {
-            throw new IllegalArgumentException("Java 参数和属性不能使用 void 类型。");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_JAVA_PARAMETERS_AND_PROPERTIES_CANNOT_HAVE);
         }
         return type;
     }
@@ -114,7 +113,7 @@ final class JavaContractSources {
         }
         MetTypeDescription type = this.description.getTypes().get(reference);
         if (type == null) {
-            throw new IllegalArgumentException("Java 契约缺少类型描述：" + reference);
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_JAVA_CONTRACT_IS_MISSING_A_TYPE, reference);
         }
         if (StringUtils.equals("array", type.getKind())) {
             String result = this.type(type.getElementType()) + "[]";
@@ -122,21 +121,18 @@ final class JavaContractSources {
             return result;
         }
         String raw = sourceType(type.getJavaType(), type.getExtensions());
-        if (!StringUtils.equals("scalar", type.getKind()) && !StringUtils.equals("void", type.getKind())
-                && !StringUtils.equals("any", type.getKind()) && !StringUtils.equals("object", type.getKind())
-                && !StringUtils.equals("enum", type.getKind()) && !StringUtils.equals("collection", type.getKind())
-                && !StringUtils.equals("map", type.getKind())) {
-            throw new IllegalArgumentException("该 Java 契约类型尚不能生成可运行示例：" + reference + "（" + type.getKind() + "）");
+        if (!StringUtils.equals("scalar", type.getKind()) && !StringUtils.equals("void", type.getKind()) && !StringUtils.equals("any", type.getKind()) && !StringUtils.equals("object", type.getKind()) && !StringUtils.equals("enum", type.getKind()) && !StringUtils.equals("collection", type.getKind()) && !StringUtils.equals("map", type.getKind())) {
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_A_RUNNABLE_EXAMPLE_CANNOT_BE_GENERATED, reference, type.getKind());
         }
         if (!PRIMITIVES.contains(raw)) {
             qualifiedName(raw);
         }
         if (raw.startsWith("java.io.") && (raw.endsWith("Stream") || raw.endsWith("Reader") || raw.endsWith("Writer"))) {
-            throw new IllegalArgumentException("流类型不能生成为独立调用示例：" + reference);
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_A_STANDALONE_INVOCATION_EXAMPLE_CANNOT_BE, reference);
         }
         List<String> arguments = type.getArguments();
         if (arguments != null && !arguments.isEmpty() && !raw.startsWith("java.")) {
-            throw new IllegalArgumentException("当前描述不包含自定义泛型类的原始声明：" + reference);
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_DESCRIPTION_LACKS_THE_ORIGINAL_DECLARATION, reference);
         }
         // 先缓存原始类型，让 DTO 的自引用和相互引用在后续属性展开中保持有限。
         this.typeNames.put(reference, raw);
@@ -145,7 +141,7 @@ final class JavaContractSources {
             for (String argument : arguments) {
                 String parameter = this.valueType(argument);
                 if (PRIMITIVES.contains(parameter)) {
-                    throw new IllegalArgumentException("Java 泛型参数不能使用原始值类型：" + reference);
+                    throw new ErrorMessageException(ConsoleMessageKey.ERROR_JAVA_GENERIC_ARGUMENTS_CANNOT_BE_PRIMITIVE, reference);
                 }
                 parameters.add(parameter);
             }
@@ -199,7 +195,7 @@ final class JavaContractSources {
         }
         if (StringUtils.equals("enum", type.getKind())) {
             if (type.getValues() == null || type.getValues().isEmpty()) {
-                throw new IllegalArgumentException("无法为无常量枚举生成调用参数：" + name);
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_COULD_NOT_GENERATE_AN_ARGUMENT_FOR, name);
             }
             return name + "." + identifier(type.getValues().get(0).getJavaName());
         }
@@ -211,7 +207,7 @@ final class JavaContractSources {
             Object configuredLength = type.getExtensions().get("exampleArrayLength");
             if (configuredLength != null) {
                 if (!(configuredLength instanceof Integer arrayLength) || arrayLength < 0) {
-                    throw new IllegalArgumentException("数组样本长度无效：" + reference);
+                    throw new ErrorMessageException(ConsoleMessageKey.ERROR_INVALID_SAMPLE_ARRAY_LENGTH, reference);
                 }
                 length = arrayLength;
             }
@@ -271,12 +267,12 @@ final class JavaContractSources {
     private static List<MetFieldDescription> parameters(MetMethodDescription method) {
         List<MetFieldDescription> parameters = method.getParameters();
         if (parameters == null) {
-            throw new IllegalArgumentException("方法缺少参数声明：" + method.getJavaName());
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_METHOD_IS_MISSING_PARAMETER_DECLARATIONS, method.getJavaName());
         }
         for (int index = 0; index < parameters.size(); index++) {
             Integer position = parameters.get(index).getArgIndex();
             if (position == null || position != index) {
-                throw new IllegalArgumentException("Java 参数位置缺失或不连续：" + method.getJavaName());
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_JAVA_PARAMETER_POSITIONS_ARE_MISSING_OR, method.getJavaName());
             }
         }
         return parameters;
@@ -284,7 +280,7 @@ final class JavaContractSources {
 
     private static void qualifiedName(String name) {
         if (name == null) {
-            throw new IllegalArgumentException("Java 类型名称缺失。");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_MISSING_JAVA_TYPE_NAME);
         }
         for (String part : name.split("\\.", -1)) {
             identifier(part);
@@ -297,10 +293,10 @@ final class JavaContractSources {
         if (configured instanceof String value && StringUtils.isNotBlank(value)) {
             sourceName = value;
         } else if (binaryName != null && binaryName.indexOf('$') >= 0) {
-            throw new IllegalArgumentException("当前契约未提供 Java 源码类型名，无法引用嵌套类型：" + binaryName);
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_CONTRACT_LACKS_A_JAVA_SOURCE, binaryName);
         }
         if (sourceName == null) {
-            throw new IllegalArgumentException("Java 类型名称缺失。");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_MISSING_JAVA_TYPE_NAME);
         }
         if (!PRIMITIVES.contains(sourceName)) {
             qualifiedName(sourceName);
@@ -310,11 +306,11 @@ final class JavaContractSources {
 
     private static String identifier(String name) {
         if (name == null || name.isEmpty() || KEYWORDS.contains(name) || !Character.isJavaIdentifierStart(name.charAt(0))) {
-            throw new IllegalArgumentException("非法的 Java 标识符：" + name);
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_INVALID_JAVA_IDENTIFIER, name);
         }
         for (int index = 1; index < name.length(); index++) {
             if (!Character.isJavaIdentifierPart(name.charAt(index))) {
-                throw new IllegalArgumentException("非法的 Java 标识符：" + name);
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_INVALID_JAVA_IDENTIFIER, name);
             }
         }
         return name;

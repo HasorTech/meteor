@@ -12,6 +12,7 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,6 +30,9 @@ import net.hasor.cobble.StringUtils;
 import net.hasor.core.Init;
 import net.hasor.core.Inject;
 import net.hasor.meteor.console.global.MeteorConfig;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleI18n;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.utils.JsonUtils;
 import net.hasor.meteor.registry.RegistryTokenProvider;
 import net.hasor.web.Invoker;
@@ -63,13 +67,13 @@ public final class SessionService implements RegistryTokenProvider {
         String account = this.config.getSecurityAccount();
         int separator = account == null ? -1 : account.indexOf(':');
         if (separator < 0) {
-            throw new IllegalArgumentException("meteor.web.auth.account 格式必须为 账号:密码");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_METEOR_WEB_AUTH_ACCOUNT_MUST_USE);
         }
 
         this.username = account.substring(0, separator).trim();
         this.password = account.substring(separator + 1);
         if (StringUtils.isBlank(this.username) || StringUtils.isBlank(this.password)) {
-            throw new IllegalArgumentException("请配置 meteor.web.auth.account=账号:密码；无需登录时设置 meteor.web.auth.enabled=false");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_SET_METEOR_WEB_AUTH_ACCOUNT_USERNAME);
         }
     }
 
@@ -82,7 +86,7 @@ public final class SessionService implements RegistryTokenProvider {
     public String getToken() {
         Invoker invoker = HttpParameters.localInvoker();
         if (invoker == null) {
-            throw new AuthenticationException("注册中心管理需要当前控制台请求");
+            throw new AuthenticationException(ConsoleMessageKey.ERROR_REGISTRY_MANAGEMENT_REQUIRES_AN_ACTIVE_CONSOLE);
         }
         String token = this.cookies.token(invoker.getHttpRequest());
         this.authenticate(token);
@@ -94,7 +98,7 @@ public final class SessionService implements RegistryTokenProvider {
         byte[] expected = this.password.getBytes(StandardCharsets.UTF_8);
         boolean matches = MessageDigest.isEqual(expected, password.getBytes(StandardCharsets.UTF_8));
         if (!StringUtils.equals(this.username, username) || !matches) {
-            throw new AuthenticationException("账号或密码错误");
+            throw new AuthenticationException(ConsoleMessageKey.ERROR_INVALID_LOGIN);
         }
 
         // 登录时轮换当前浏览器的令牌，其他浏览器的会话继续有效。
@@ -110,7 +114,7 @@ public final class SessionService implements RegistryTokenProvider {
         }
         Claims claims = this.claims(token);
         if (this.revoked.containsKey(claims.getId())) {
-            throw new AuthenticationException("请登录控制台");
+            throw new AuthenticationException(ConsoleMessageKey.ERROR_SIGN_IN_TO_THE_CONSOLE);
         }
         return claims.getSubject();
     }
@@ -135,11 +139,11 @@ public final class SessionService implements RegistryTokenProvider {
             boolean identified = StringUtils.equals(this.username, claims.getSubject());
             boolean dated = claims.getIssuedAt() != null && claims.getExpiration() != null;
             if (!identified || !dated || StringUtils.isBlank(claims.getId())) {
-                throw new AuthenticationException("请登录控制台");
+                throw new AuthenticationException(ConsoleMessageKey.ERROR_SIGN_IN_TO_THE_CONSOLE);
             }
             return claims;
         } catch (JwtException | IllegalArgumentException invalid) {
-            throw new AuthenticationException("请登录控制台");
+            throw new AuthenticationException(ConsoleMessageKey.ERROR_SIGN_IN_TO_THE_CONSOLE);
         }
     }
 
@@ -153,7 +157,7 @@ public final class SessionService implements RegistryTokenProvider {
             try {
                 return JsonUtils.writeValueAsBytes(value);
             } catch (IOException failure) {
-                throw new SerializationException("Cannot encode JWT JSON", failure);
+                throw new SerializationException(ConsoleI18n.getMessage(ConsoleMessageKey.ERROR_JWT_JSON_ENCODE, Locale.US), failure);
             }
         }
 
@@ -162,7 +166,7 @@ public final class SessionService implements RegistryTokenProvider {
             try {
                 JsonUtils.writeValue(output, value);
             } catch (IOException failure) {
-                throw new SerializationException("Cannot encode JWT JSON", failure);
+                throw new SerializationException(ConsoleI18n.getMessage(ConsoleMessageKey.ERROR_JWT_JSON_ENCODE, Locale.US), failure);
             }
         }
 
@@ -171,7 +175,7 @@ public final class SessionService implements RegistryTokenProvider {
             try {
                 return JsonUtils.readValue(json, FIELDS);
             } catch (IOException failure) {
-                throw new DeserializationException("Cannot decode JWT JSON", failure);
+                throw new DeserializationException(ConsoleI18n.getMessage(ConsoleMessageKey.ERROR_JWT_JSON_DECODE, Locale.US), failure);
             }
         }
 
@@ -180,7 +184,7 @@ public final class SessionService implements RegistryTokenProvider {
             try {
                 return JsonUtils.readValue(json, FIELDS);
             } catch (IOException failure) {
-                throw new DeserializationException("Cannot decode JWT JSON", failure);
+                throw new DeserializationException(ConsoleI18n.getMessage(ConsoleMessageKey.ERROR_JWT_JSON_DECODE, Locale.US), failure);
             }
         }
     }

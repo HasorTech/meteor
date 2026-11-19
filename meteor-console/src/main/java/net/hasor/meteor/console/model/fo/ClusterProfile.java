@@ -8,6 +8,8 @@
 package net.hasor.meteor.console.model.fo;
 import java.net.URI;
 import net.hasor.cobble.StringUtils;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 
 /** 本地保存的连接定义，不是注册中心业务数据。 */
 public final class ClusterProfile {
@@ -122,32 +124,32 @@ public final class ClusterProfile {
 
     public void validate() {
         if (StringUtils.isBlank(this.name) || StringUtils.isBlank(this.address)) {
-            throw new IllegalArgumentException("连接名称和地址不能为空");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_CONNECTION_NAME_AND_ADDRESS_ARE);
         }
         if (this.name.length() > 100 || this.address.length() > 2048) {
-            throw new IllegalArgumentException("连接名称或地址过长");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_CONNECTION_NAME_OR_ADDRESS_IS);
         }
         if (this.type == null) {
-            throw new IllegalArgumentException("请选择注册中心类型");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_SELECT_A_REGISTRY_TYPE);
         }
         if (this.address.matches("(?i).*([?;&](password|pwd)=|://[^/]+@).*")) {
-            throw new IllegalArgumentException("请通过独立密码字段提供凭据，不要写入连接地址");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_ENTER_CREDENTIALS_IN_THE_PASSWORD_FIELD);
         }
         if (StringUtils.equals("remote", this.type)) {
             URI uri;
             try {
                 uri = URI.create(this.address);
             } catch (IllegalArgumentException failure) {
-                throw new IllegalArgumentException("Remote 地址格式不正确");
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_INVALID_REMOTE_ADDRESS);
             }
             if (!StringUtils.equalsIgnoreCase(uri.getScheme(), "rsf") || uri.getHost() == null || uri.getPort() <= 0 || uri.getUserInfo() != null || uri.getQuery() != null || uri.getFragment() != null) {
-                throw new IllegalArgumentException("Remote 地址必须是 rsf://主机:端口/单元，且不能包含凭据");
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_REMOTE_ADDRESS_MUST_USE_RSF);
             }
             if (StringUtils.isBlank(this.managementToken)) {
-                throw new IllegalArgumentException("Remote 连接需要管理凭据");
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_REMOTE_CONNECTIONS_REQUIRE_A_MANAGEMENT_TOKEN);
             }
             if (this.managementToken.length() > 4096) {
-                throw new IllegalArgumentException("管理凭据过长");
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_MANAGEMENT_TOKEN_IS_TOO_LONG);
             }
             this.username = null;
             this.password = null;
@@ -162,13 +164,13 @@ public final class ClusterProfile {
                 case "postgresql" -> "jdbc:postgresql:";
                 case "oracle" -> "jdbc:oracle:";
                 case "sqlserver" -> "jdbc:sqlserver:";
-                default -> throw new IllegalArgumentException("请选择数据库类型");
+                default -> throw new ErrorMessageException(ConsoleMessageKey.ERROR_SELECT_A_DATABASE_TYPE);
             };
             if (!this.address.startsWith(prefix)) {
-                throw new IllegalArgumentException("JDBC URL 与所选数据库类型不符");
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_JDBC_URL_DOES_NOT_MATCH);
             }
         } else if (!StringUtils.equals("nacos", this.type) && !StringUtils.equals("zookeeper", this.type)) {
-            throw new IllegalArgumentException("不支持的注册中心类型");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_UNSUPPORTED_REGISTRY_TYPE);
         }
         if (!StringUtils.equals("remote", this.type)) {
             this.managementToken = null;

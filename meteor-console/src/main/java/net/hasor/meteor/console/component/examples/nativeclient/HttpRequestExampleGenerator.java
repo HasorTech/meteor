@@ -8,6 +8,8 @@ import net.hasor.meteor.console.component.commands.dto.service.ExampleTarget;
 import net.hasor.meteor.console.component.examples.ExampleConnections;
 import net.hasor.meteor.console.component.examples.ExampleDocument;
 import net.hasor.meteor.console.component.examples.ExampleTemplates;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.utils.JsonUtils;
 
 /** HTTP 线上请求文档；同一请求正文在各语言中使用普通 HTTP 客户端发送。 */
@@ -17,6 +19,7 @@ public final class HttpRequestExampleGenerator {
         if (!List.of("jsonrpc", "xmlrpc", "soap", "triple").contains(protocol)) {
             return List.of();
         }
+
         ExampleConnections.validate(target);
         var binding = target.getEndpoint().getDescription();
         Map<String, Object> method = binding.getMethods().get(0);
@@ -85,7 +88,7 @@ public final class HttpRequestExampleGenerator {
                 return endpoints.get(type);
             }
         }
-        throw new IllegalArgumentException("提供者没有上报 " + type + " 接入点");
+        throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_PROVIDER_HAS_NOT_REPORTED_A_2, type);
     }
 
     static List<ExampleDocument> documents(String url, String body, Map<String, String> headers, List<String> languages) {
@@ -182,7 +185,7 @@ public final class HttpRequestExampleGenerator {
             return element(name, escape(String.valueOf(sample)));
         }
         if (!parents.add(type)) {
-            throw new IllegalArgumentException("SOAP 必填递归参数需要业务样本");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_A_REQUIRED_RECURSIVE_SOAP_ARGUMENT_NEEDS);
         }
         JsonNode schema = JsonUtils.valueToTree(graph.get(type));
         StringBuilder attributes = new StringBuilder();
@@ -198,7 +201,7 @@ public final class HttpRequestExampleGenerator {
                 } else if (StringUtils.isBlank(fieldNamespace)) {
                     attributes.append(' ').append(fieldName).append("=\"").append(escape(String.valueOf(sample))).append('"');
                 } else {
-                    throw new IllegalArgumentException("此 SOAP 命名空间属性需要业务 XML 样本");
+                    throw new ErrorMessageException(ConsoleMessageKey.ERROR_THIS_SOAP_NAMESPACE_ATTRIBUTE_REQUIRES_A);
                 }
             } else {
                 String qname = fieldName;
@@ -229,7 +232,7 @@ public final class HttpRequestExampleGenerator {
         try {
             return JsonUtils.writeValueAsString(value);
         } catch (Exception failure) {
-            throw new IllegalArgumentException("无法编码 HTTP 文档", failure);
+            throw new ErrorMessageException(failure, ConsoleMessageKey.ERROR_COULD_NOT_ENCODE_THE_HTTP_DOCUMENT);
         }
     }
 }

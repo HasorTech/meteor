@@ -9,6 +9,9 @@ package net.hasor.meteor.console.component.telnet;
 import java.util.List;
 import java.util.Set;
 import net.hasor.meteor.console.component.commands.CommandCredentials;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleI18n;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.model.fo.ManagementTarget;
 import net.hasor.meteor.console.service.ClusterService;
 import net.hasor.meteor.console.service.GovernanceService;
@@ -20,8 +23,8 @@ public final class InstanceCommand extends AbstractGovernanceCommand {
     }
 
     @Override
-    public String helpInfo() {
-        return "instance info|block|unblock <instanceId> [--cluster id]";
+    protected ConsoleMessageKey helpKey() {
+        return ConsoleMessageKey.TELNET_HELP_INSTANCE;
     }
 
     @Override
@@ -44,8 +47,8 @@ public final class InstanceCommand extends AbstractGovernanceCommand {
                 this.governance.instanceBlocked(target, false);
                 break;
             default:
-                throw new IllegalArgumentException("Expected info|block|unblock");
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_TELNET_INVALID_INSTANCE_OPERATION);
         }
-        return "SAVED  instance configuration saved; use instance info to check effective state";
+        return "SAVED  " + ConsoleI18n.getMessage(ConsoleMessageKey.TELNET_INSTANCE_SAVED);
     }
 }

@@ -11,6 +11,8 @@ import net.hasor.meteor.console.component.commands.CommandContext;
 import net.hasor.meteor.console.component.commands.RegistryCommand;
 import net.hasor.meteor.console.component.commands.dto.metadata.FetchMetadataRequest;
 import net.hasor.meteor.console.component.commands.dto.metadata.MetadataResult;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.model.fo.ManagementTarget;
 
 /** 读取集群或服务元信息。 */
@@ -21,7 +23,7 @@ public final class FetchMetadataRegistryCmd implements RegistryCommand<FetchMeta
         Map<String, Object> values = switch (context.scope(target)) {
             case "cluster" -> context.cluster().fetchMeta();
             case "service" -> context.service(target).fetchMeta();
-            default -> throw new UnsupportedOperationException("元数据查询仅支持集群或服务范围");
+            default -> throw ErrorMessageException.unsupported(ConsoleMessageKey.ERROR_METADATA_QUERIES_REQUIRE_CLUSTER_OR_SERVICE);
         };
         return new MetadataResult(values);
     }

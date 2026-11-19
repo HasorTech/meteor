@@ -8,6 +8,7 @@
 package net.hasor.meteor.console.component.telnet;
 import java.util.Set;
 import net.hasor.meteor.console.component.commands.CommandCredentials;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.model.fo.ManagementTarget;
 import net.hasor.meteor.console.service.ClusterService;
 import net.hasor.meteor.console.service.GovernanceService;
@@ -19,8 +20,8 @@ public final class ApplicationsCommand extends AbstractGovernanceCommand {
     }
 
     @Override
-    public String helpInfo() {
-        return "applications [--cluster id] [--filter text] [--limit N] [--cursor value]";
+    protected ConsoleMessageKey helpKey() {
+        return ConsoleMessageKey.TELNET_HELP_APPLICATIONS;
     }
 
     @Override

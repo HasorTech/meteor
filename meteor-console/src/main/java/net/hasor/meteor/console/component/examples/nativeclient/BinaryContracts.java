@@ -4,15 +4,11 @@
  * See LICENSE.txt or https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor.console.component.examples.nativeclient;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.cobble.StringUtils;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.utils.JsonUtils;
 import net.hasor.meteor.registry.admin.description.MetProtocolDescription;
 
@@ -31,7 +27,7 @@ public final class BinaryContracts {
 
     static String identifier(String value) {
         if (value == null || !value.matches("[A-Za-z_][A-Za-z0-9_]*")) {
-            throw new IllegalArgumentException("契约中存在无法生成原生示例的标识符：" + value);
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_CONTRACT_CONTAINS_AN_IDENTIFIER_THAT, value);
         }
         return value;
     }
@@ -39,7 +35,7 @@ public final class BinaryContracts {
     static JsonNode required(JsonNode types, String reference) {
         JsonNode value = types.get(reference);
         if (value == null || !value.isObject()) {
-            throw new IllegalArgumentException("契约缺少线上类型：" + reference);
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_CONTRACT_IS_MISSING_A_WIRE, reference);
         }
         return value;
     }
@@ -47,7 +43,7 @@ public final class BinaryContracts {
     private static long unsigned(JsonNode node, String field) {
         JsonNode value = node.get(field);
         if (value == null || !value.canConvertToLong() || value.longValue() < 0 || value.longValue() > 0xffffffffL) {
-            throw new IllegalArgumentException("ONC RPC 契约缺少有效的 " + field);
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_ONC_RPC_CONTRACT_IS_MISSING, field);
         }
         return value.longValue();
     }
@@ -59,11 +55,11 @@ public final class BinaryContracts {
 
     private static final class ThriftWriter {
         private final MetProtocolDescription binding;
-        private final JsonNode types;
-        private final JsonNode methods;
-        private final Map<String, String> names = new LinkedHashMap<>();
-        private final Set<String> visited = new HashSet<>();
-        private final Set<String> exceptions = new HashSet<>();
+        private final JsonNode               types;
+        private final JsonNode               methods;
+        private final Map<String, String>    names      = new LinkedHashMap<>();
+        private final Set<String>            visited    = new HashSet<>();
+        private final Set<String>            exceptions = new HashSet<>();
 
         private ThriftWriter(MetProtocolDescription binding) {
             this.binding = binding;
@@ -73,7 +69,7 @@ public final class BinaryContracts {
 
         private String write() {
             if (this.methods.isEmpty()) {
-                throw new IllegalArgumentException("Thrift 契约没有可调用方法");
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_THRIFT_CONTRACT_HAS_NO_CALLABLE);
             }
             for (JsonNode method : this.methods) {
                 for (JsonNode parameter : method.path("parameters")) {
@@ -155,7 +151,7 @@ public final class BinaryContracts {
                 String previous = this.names.putIfAbsent(name, reference);
                 if (previous != null && !StringUtils.equals(previous, reference)) {
                     if (!required(this.types, previous).equals(type)) {
-                        throw new IllegalArgumentException("Thrift 类型名冲突：" + name);
+                        throw new ErrorMessageException(ConsoleMessageKey.ERROR_CONFLICTING_THRIFT_TYPE_NAME, name);
                     }
                 }
                 for (JsonNode field : type.path("fields")) {
@@ -186,22 +182,21 @@ public final class BinaryContracts {
                 case 10 -> "i64";
                 case 11 -> type.path("binary").asBoolean() ? "binary" : "string";
                 case 12 -> identifier(type.path("name").asText());
-                case 13 -> "map<" + this.type(type.path("keyType").asText()) + ", "
-                        + this.type(type.path("elementType").asText()) + ">";
+                case 13 -> "map<" + this.type(type.path("keyType").asText()) + ", " + this.type(type.path("elementType").asText()) + ">";
                 case 14 -> "set<" + this.type(type.path("elementType").asText()) + ">";
                 case 15 -> "list<" + this.type(type.path("elementType").asText()) + ">";
                 case 16 -> "uuid";
-                default -> throw new IllegalArgumentException("不支持的 Thrift 线上类型：" + reference);
+                default -> throw new ErrorMessageException(ConsoleMessageKey.ERROR_UNSUPPORTED_THRIFT_WIRE_TYPE, reference);
             };
         }
 
         private String field(JsonNode field, boolean requirement) {
             if (!field.has("fieldId") || !field.path("fieldId").canConvertToInt()) {
-                throw new IllegalArgumentException("Thrift 字段缺少编号");
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_MISSING_THRIFT_FIELD_ID);
             }
             int id = field.path("fieldId").asInt();
             if (id < Short.MIN_VALUE || id > Short.MAX_VALUE) {
-                throw new IllegalArgumentException("Thrift 字段编号超出范围：" + id);
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_THRIFT_FIELD_ID_IS_OUT_OF, id);
             }
             String prefix = "";
             String policy = field.path("requirement").asText();
@@ -210,8 +205,7 @@ public final class BinaryContracts {
             } else if (requirement && StringUtils.equals(policy, "optional")) {
                 prefix = "optional ";
             }
-            return id + ": " + prefix + this.type(field.path("type").asText()) + " "
-                    + identifier(field.path("name").asText());
+            return id + ": " + prefix + this.type(field.path("type").asText()) + " " + identifier(field.path("name").asText());
         }
 
         private void fields(StringBuilder text, Iterable<JsonNode> fields) {
@@ -227,13 +221,13 @@ public final class BinaryContracts {
 
     static final class XdrWriter {
         private final MetProtocolDescription binding;
-        private final JsonNode types;
-        private final JsonNode methods;
-        private final Map<String, String> names = new LinkedHashMap<>();
-        private final Set<String> usedNames = new HashSet<>();
-        private final Set<String> visited = new HashSet<>();
-        private final Set<String> collecting = new HashSet<>();
-        private final List<String> ordered = new ArrayList<>();
+        private final JsonNode               types;
+        private final JsonNode               methods;
+        private final Map<String, String>    names      = new LinkedHashMap<>();
+        private final Set<String>            usedNames  = new HashSet<>();
+        private final Set<String>            visited    = new HashSet<>();
+        private final Set<String>            collecting = new HashSet<>();
+        private final List<String>           ordered    = new ArrayList<>();
 
         XdrWriter(MetProtocolDescription binding) {
             this.binding = binding;
@@ -243,7 +237,7 @@ public final class BinaryContracts {
 
         String write() {
             if (this.methods.isEmpty()) {
-                throw new IllegalArgumentException("ONC RPC 契约没有可调用过程");
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_ONC_RPC_CONTRACT_HAS_NO);
             }
             for (JsonNode method : this.methods) {
                 this.collect(method.path("requestType").asText());
@@ -306,7 +300,7 @@ public final class BinaryContracts {
             for (JsonNode method : this.methods) {
                 long id = unsigned(method, "procedureId");
                 if (!procedures.add(id)) {
-                    throw new IllegalArgumentException("ONC RPC 过程编号冲突：" + id);
+                    throw new ErrorMessageException(ConsoleMessageKey.ERROR_CONFLICTING_ONC_RPC_PROCEDURE_NUMBER, id);
                 }
                 text.append("    ").append(this.name(method.path("responseType").asText())).append(' ');
                 text.append(identifier(method.path("name").asText())).append('(');
@@ -323,7 +317,7 @@ public final class BinaryContracts {
             }
             String name = this.names.get(reference);
             if (name == null) {
-                throw new IllegalArgumentException("XDR 类型尚未导出：" + reference);
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_XDR_TYPE_WAS_NOT_EXPORTED, reference);
             }
             return name;
         }
@@ -339,19 +333,18 @@ public final class BinaryContracts {
                 return;
             }
             if (!this.collecting.add(reference)) {
-                throw new IllegalArgumentException("递归 XDR 类型需要原始 IDL，当前描述无法安全导出：" + reference);
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_RECURSIVE_XDR_TYPE_REQUIRES_THE, reference);
             }
             if (!this.names.containsKey(reference)) {
                 String declared = type.path("name").asText("");
                 String candidate = "Type" + (this.names.size() + 1);
-                boolean named = !declared.isEmpty() && !StringUtils.equals(declared, kind)
-                        && !StringUtils.equals(declared, "optional") && !StringUtils.equals(declared, "array");
+                boolean named = !declared.isEmpty() && !StringUtils.equals(declared, kind) && !StringUtils.equals(declared, "optional") && !StringUtils.equals(declared, "array");
                 if (named) {
                     candidate = identifier(declared);
                 }
                 if (!this.usedNames.add(candidate)) {
                     if (named) {
-                        throw new IllegalArgumentException("XDR 命名类型冲突：" + candidate);
+                        throw new ErrorMessageException(ConsoleMessageKey.ERROR_CONFLICTING_XDR_NAMED_TYPE, candidate);
                     }
                     candidate = "Type" + (this.names.size() + 1);
                     while (!this.usedNames.add(candidate)) {
@@ -361,7 +354,7 @@ public final class BinaryContracts {
                 this.names.put(reference, candidate);
             }
             if (StringUtils.equals(kind, "opaque") && !type.has("length")) {
-                throw new IllegalArgumentException("自定义 XDR codec 未导出布局，不能生成调用示例");
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_CUSTOM_XDR_CODEC_HAS_NOT);
             }
             if (type.hasNonNull("elementType")) {
                 this.collect(type.path("elementType").asText());
@@ -389,7 +382,7 @@ public final class BinaryContracts {
             String bounds = "<" + bound + ">";
             if (fixed) {
                 if (length < 0) {
-                    throw new IllegalArgumentException("XDR 定长数组缺少长度：" + reference);
+                    throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_FIXED_LENGTH_XDR_ARRAY_IS, reference);
                 }
                 bounds = "[" + bound + "]";
             }
@@ -400,7 +393,7 @@ public final class BinaryContracts {
                 case "unsigned_int" -> "unsigned int " + name;
                 case "unsigned_hyper" -> "unsigned hyper " + name;
                 case "int", "hyper", "bool", "float", "double", "quadruple" -> kind + " " + name;
-                default -> throw new IllegalArgumentException("无法导出的 XDR 类型：" + kind);
+                default -> throw new ErrorMessageException(ConsoleMessageKey.ERROR_XDR_TYPE_CANNOT_BE_EXPORTED, kind);
             };
         }
     }

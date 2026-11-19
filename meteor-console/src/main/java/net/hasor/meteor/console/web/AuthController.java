@@ -11,7 +11,7 @@ import net.hasor.core.Inject;
 import net.hasor.meteor.console.global.MeteorConfig;
 import net.hasor.meteor.console.global.auth.ConsoleCookies;
 import net.hasor.meteor.console.global.auth.SessionService;
-import net.hasor.meteor.console.global.http.ConsoleApiFilter;
+import net.hasor.meteor.console.global.http.ConsoleApiInterceptor;
 import net.hasor.meteor.console.global.http.ConsoleRequest;
 import net.hasor.web.Invoker;
 import net.hasor.web.annotation.Get;
@@ -46,7 +46,7 @@ public class AuthController {
     @Get
     @MappingTo("/auth/session")
     public Object session(Invoker invoker) {
-        String username = (String) invoker.getHttpRequest().getAttribute(ConsoleApiFilter.USERNAME);
+        String username = (String) invoker.getHttpRequest().getAttribute(ConsoleApiInterceptor.USERNAME);
         return this.sessionInfo(username);
     }
 

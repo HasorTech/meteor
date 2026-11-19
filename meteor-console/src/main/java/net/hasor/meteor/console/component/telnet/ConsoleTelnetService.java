@@ -16,6 +16,8 @@ import net.hasor.core.Inject;
 import net.hasor.core.Singleton;
 import net.hasor.meteor.console.component.commands.CommandCredentials;
 import net.hasor.meteor.console.global.MeteorConfig;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.service.ClusterService;
 import net.hasor.meteor.console.service.GovernanceService;
 import net.hasor.tconsole.TelConfig;
@@ -43,10 +45,12 @@ public final class ConsoleTelnetService implements AutoCloseable {
         InetAddress host = InetAddress.getByName(this.config.getTelnetHost());
         String password = this.config.getTelnetPassword();
         if (!host.isLoopbackAddress() && StringUtils.isBlank(password)) {
-            throw new IllegalArgumentException("Non-loopback Telnet requires meteor.telnet.auth.password or METEOR_TELNET_PASSWORD");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_TELNET_PASSWORD_REQUIRED);
         }
 
         this.server = new ConsoleTelnetServer(this.configuration());
+        this.server.addCommand("help", new HelpCommand());
+        this.server.addCommand("lang", new LanguageCommand());
         this.server.addCommand("status", new StatusCommand(this.config));
         this.server.addCommand("clusters", new ClustersCommand(this.clusters));
         this.server.addCommand("applications", new ApplicationsCommand(this.governance, this.clusters, this.credentials));

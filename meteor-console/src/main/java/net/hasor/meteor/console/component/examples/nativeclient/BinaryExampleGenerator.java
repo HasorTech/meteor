@@ -5,17 +5,15 @@
  */
 package net.hasor.meteor.console.component.examples.nativeclient;
 import java.net.URI;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.console.component.commands.dto.service.ExampleTarget;
 import net.hasor.meteor.console.component.examples.ExampleConnections;
 import net.hasor.meteor.console.component.examples.ExampleDocument;
 import net.hasor.meteor.console.component.examples.ExampleTemplates;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.utils.JsonUtils;
 import net.hasor.meteor.registry.admin.description.MetProtocolDescription;
 
@@ -41,7 +39,7 @@ public final class BinaryExampleGenerator {
         String contract = BinaryContracts.thrift(binding);
         Object framed = binding.getExtensions().get("framed");
         if (StringUtils.equals(target.getEndpoint().getProtocolName(), "thrift") && !(framed instanceof Boolean)) {
-            throw new IllegalArgumentException("Thrift 端点没有上报 framed 传输配置，请升级提供者后重新登记");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_THRIFT_ENDPOINT_HAS_NOT_REPORTED_2);
         }
         if (StringUtils.isNotBlank(providedAddress)) {
             this.address(providedAddress);
@@ -49,7 +47,7 @@ public final class BinaryExampleGenerator {
         JsonNode types = JsonUtils.valueToTree(binding.getTypes());
         JsonNode selected = null;
         String arguments = null;
-        String lastFailure = "";
+        IllegalArgumentException lastFailure = null;
         for (JsonNode method : JsonUtils.valueToTree(binding.getMethods())) {
             try {
                 StringBuilder values = new StringBuilder();
@@ -63,11 +61,11 @@ public final class BinaryExampleGenerator {
                 arguments = values.toString();
                 break;
             } catch (IllegalArgumentException failure) {
-                lastFailure = failure.getMessage();
+                lastFailure = failure;
             }
         }
         if (selected == null) {
-            throw new IllegalArgumentException("Thrift 方法无法构造合法的示例参数：" + lastFailure);
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_COULD_NOT_CONSTRUCT_VALID_SAMPLE_ARGUMENTS, lastFailure == null ? "" : lastFailure);
         }
         Map<String, String> values = new LinkedHashMap<>();
         values.put("service", BinaryContracts.identifier(BinaryContracts.thriftServiceName(binding)));
@@ -77,7 +75,7 @@ public final class BinaryExampleGenerator {
         if (Boolean.TRUE.equals(binding.getExtensions().get("multiplexed"))) {
             Object multiplexed = binding.getExtensions().get("multiplexedName");
             if (!(multiplexed instanceof String name) || StringUtils.isBlank(name)) {
-                throw new IllegalArgumentException("Thrift 契约缺少多路复用服务名");
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_THRIFT_CONTRACT_IS_MISSING_THE);
             }
             protocol = "TMultiplexedProtocol.TMultiplexedProtocol(" + protocol + ", " + this.string(name) + ")";
         }
@@ -89,8 +87,7 @@ public final class BinaryExampleGenerator {
             connection = "THttpClient.THttpClient(" + this.string(HttpRequestExampleGenerator.endpoint(target, providedAddress, "http")) + ")";
         }
         values.put("connection", connection);
-        return this.document("python", "thrift", contract, ExampleTemplates.render("thrift/consumer.py", values),
-                "Python 3；依赖 `thrift==0.22.0`，并使用下方 service.thrift 生成的 Python 绑定（meteor_example 包）。");
+        return this.document("python", "thrift", contract, ExampleTemplates.render("thrift/consumer.py", values), "Python 3；依赖 `thrift==0.22.0`，并使用下方 service.thrift 生成的 Python 绑定（meteor_example 包）。");
     }
 
     private ExampleDocument oncrpc(ExampleTarget target, String providedAddress) {
@@ -102,7 +99,7 @@ public final class BinaryExampleGenerator {
             address = this.address(providedAddress);
         }
         if (address != null && address.getHost().contains(":")) {
-            throw new IllegalArgumentException("当前 C ONC RPC 示例使用 IPv4 Socket，此端点为 IPv6，请使用 Java 示例");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_C_ONC_RPC_EXAMPLE_USES);
         }
         JsonNode selected = JsonUtils.valueToTree(binding.getMethods()).get(0);
         String input = selected.path("requestType").asText();
@@ -147,29 +144,25 @@ public final class BinaryExampleGenerator {
             values.put("printResult", ExampleTemplates.render("oncrpc/print-result.c", Map.of("type", outputType)));
         }
         if (StringUtils.equals(target.getEndpoint().getTransport(), "udp")) {
-            values.put("connect", "    struct timeval retry = {5, 0};\n"
-                    + "    CLIENT *client = clntudp_create(&address, PROGRAM_ID, VERSION_ID, retry, &socket_fd);\n");
+            values.put("connect", "    struct timeval retry = {5, 0};\n" + "    CLIENT *client = clntudp_create(&address, PROGRAM_ID, VERSION_ID, retry, &socket_fd);\n");
         } else if (StringUtils.equals(target.getEndpoint().getTransport(), "tcp")) {
             String connect = "    CLIENT *client = clnttcp_create(&address, PROGRAM_ID, VERSION_ID, &socket_fd, 0, 0);\n";
             values.put("connect", connect);
         } else {
-            throw new IllegalArgumentException("ONC RPC 端点未上报 TCP 或 UDP 传输");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_ONC_RPC_ENDPOINT_HAS_NOT);
         }
-        return this.document("c", "xdr", contract, ExampleTemplates.render("oncrpc/consumer.c", values),
-                "依赖 libtirpc，以及由下方 service.x 经 rpcgen 生成的 service.h、service_xdr.c。");
+        return this.document("c", "xdr", contract, ExampleTemplates.render("oncrpc/consumer.c", values), "依赖 libtirpc，以及由下方 service.x 经 rpcgen 生成的 service.h、service_xdr.c。");
     }
 
     private ExampleDocument document(String language, String contractLanguage, String contract, String code, String dependency) {
-        String markdown = ExampleTemplates.render("binary-document.md.tpl", Map.of("dependency", dependency,
-                "code", ExampleTemplates.codeBlock(language, code),
-                "contract", ExampleTemplates.codeBlock(contractLanguage, contract)));
+        String markdown = ExampleTemplates.render("binary-document.md.tpl", Map.of("dependency", dependency, "code", ExampleTemplates.codeBlock(language, code), "contract", ExampleTemplates.codeBlock(contractLanguage, contract)));
         return new ExampleDocument(language + "-direct", language, "direct", markdown);
     }
 
     private void cValue(BinaryContracts.XdrWriter writer, String reference, String expression, //
             StringBuilder text, int depth) {
         if (depth > 24) {
-            throw new IllegalArgumentException("XDR 类型层次过深，无法生成示例参数");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_XDR_TYPE_NESTING_IS_TOO);
         }
         JsonNode type = BinaryContracts.required(writer.types(), reference);
         String kind = type.path("kind").asText();
@@ -182,19 +175,18 @@ public final class BinaryExampleGenerator {
             text.append("    ").append(expression).append(" = strdup(").append(this.string(sample)).append(");\n");
         } else if (StringUtils.equals(kind, "struct")) {
             for (JsonNode member : type.path("members")) {
-                this.cValue(writer, member.path("type").asText(), expression + "."
-                        + BinaryContracts.identifier(member.path("name").asText()), text, depth + 1);
+                this.cValue(writer, member.path("type").asText(), expression + "." + BinaryContracts.identifier(member.path("name").asText()), text, depth + 1);
             }
         } else if (StringUtils.equals(kind, "enum")) {
             JsonNode first = type.path("values").get(0);
             if (first == null) {
-                throw new IllegalArgumentException("XDR 枚举没有合法示例值");
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_XDR_ENUM_HAS_NO_VALID);
             }
             text.append("    ").append(expression).append(" = ").append(first.path("fieldId").asInt()).append(";\n");
         } else if (StringUtils.equals(kind, "array") && type.path("fixed").asBoolean()) {
             long length = type.path("length").asLong(-1);
             if (length < 0 || length > 10000) {
-                throw new IllegalArgumentException("XDR 定长数组无法生成合理大小的示例参数");
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_FIXED_LENGTH_XDR_ARRAY_IS_2);
             }
             String index = "i" + depth;
             text.append("    for (size_t ").append(index).append(" = 0; ").append(index).append(" < ");
@@ -204,15 +196,14 @@ public final class BinaryExampleGenerator {
         } else if (StringUtils.equals(kind, "union")) {
             JsonNode branch = type.path("members").get(0);
             if (branch == null || branch.path("cases").isEmpty()) {
-                throw new IllegalArgumentException("XDR union 缺少可生成的显式分支");
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_XDR_UNION_HAS_NO_EXPLICIT);
             }
             String discriminator = BinaryContracts.identifier(type.path("discriminator").path("name").asText());
             text.append("    ").append(expression).append('.').append(discriminator).append(" = ");
             text.append(branch.path("cases").get(0).asLong()).append(";\n");
             String memberType = branch.path("type").asText();
             if (!StringUtils.equals(writer.name(memberType), "void")) {
-                this.cValue(writer, memberType, expression + "." + writer.name(reference) + "_u."
-                        + BinaryContracts.identifier(branch.path("name").asText()), text, depth + 1);
+                this.cValue(writer, memberType, expression + "." + writer.name(reference) + "_u." + BinaryContracts.identifier(branch.path("name").asText()), text, depth + 1);
             }
         }
         // optional 的 NULL、变长数组的空列表以及数值 0 均为合法 XDR 值，无需额外赋值。
@@ -234,13 +225,13 @@ public final class BinaryExampleGenerator {
             case 15 -> "[]";
             case 16 -> "uuid.UUID('00000000-0000-0000-0000-000000000001')";
             case 12 -> this.pythonStruct(types, reference, type, parents);
-            default -> throw new IllegalArgumentException("无法构造 Thrift 参数：" + reference);
+            default -> throw new ErrorMessageException(ConsoleMessageKey.ERROR_COULD_NOT_CONSTRUCT_THRIFT_ARGUMENTS, reference);
         };
     }
 
     private String pythonStruct(JsonNode types, String reference, JsonNode type, Set<String> parents) {
         if (!parents.add(reference)) {
-            throw new IllegalArgumentException("Thrift 必填递归类型没有有限的示例值：" + reference);
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_A_REQUIRED_RECURSIVE_THRIFT_TYPE_HAS, reference);
         }
         String name = BinaryContracts.identifier(type.path("name").asText());
         StringBuilder value = new StringBuilder("ttypes.").append(name);
@@ -266,7 +257,7 @@ public final class BinaryExampleGenerator {
     private MetProtocolDescription binding(ExampleTarget target) {
         MetProtocolDescription binding = target.getEndpoint().getDescription();
         if (binding == null) {
-            throw new IllegalArgumentException("当前提供端点尚未上报完整的协议契约");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_PROVIDER_ENDPOINT_HAS_NOT_REPORTED);
         }
         return binding;
     }
@@ -274,7 +265,7 @@ public final class BinaryExampleGenerator {
     private URI address(String providedAddress) {
         URI address = URI.create(providedAddress);
         if (address.getHost() == null || address.getPort() < 1) {
-            throw new IllegalArgumentException("服务没有有效的已发布直连地址");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_SERVICE_DOES_NOT_HAVE_A);
         }
         return address;
     }
@@ -283,7 +274,7 @@ public final class BinaryExampleGenerator {
         try {
             return JsonUtils.writeValueAsString(value);
         } catch (Exception failure) {
-            throw new IllegalArgumentException("无法编码示例中的字符串", failure);
+            throw new ErrorMessageException(failure, ConsoleMessageKey.ERROR_COULD_NOT_ENCODE_A_STRING_IN);
         }
     }
 }

@@ -11,7 +11,9 @@ import java.util.Map;
 import net.hasor.cobble.StringUtils;
 import net.hasor.core.Inject;
 import net.hasor.meteor.console.component.commands.dto.service.ServiceInfoResult;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
 import net.hasor.meteor.console.global.http.ConsoleRequest;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.model.fo.ManagementTarget;
 import net.hasor.meteor.console.service.GovernanceService;
 import net.hasor.meteor.domain.MetServiceType;
@@ -59,7 +61,7 @@ public class ServiceController {
         MetServiceType role = switch (request.required("role")) {
             case "providers" -> MetServiceType.Provider;
             case "consumers" -> MetServiceType.Consumer;
-            default -> throw new IllegalArgumentException("role 必须为 providers 或 consumers");
+            default -> throw new ErrorMessageException(ConsoleMessageKey.ERROR_INVALID_MEMBER_ROLE);
         };
         return this.governance.members(request.target(), role);
     }

@@ -22,6 +22,8 @@ import net.hasor.meteor.console.component.commands.dto.directory.ServicesRequest
 import net.hasor.meteor.console.component.provider.ProviderFactories;
 import net.hasor.meteor.console.dao.ClusterDao;
 import net.hasor.meteor.console.global.MeteorConfig;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.model.fo.ClusterProfile;
 import net.hasor.meteor.console.model.fo.ManagementTarget;
 import net.hasor.meteor.registry.RegistryAdmin;
@@ -53,13 +55,14 @@ public final class CommandDispatcher implements AutoCloseable {
     public void init() {
         long lifetime = this.config.getCommandContextTtl();
         if (lifetime <= 0) {
-            throw new IllegalArgumentException("meteor.commands.context.ttl-millis 必须大于 0，单位为毫秒");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_METEOR_COMMANDS_CONTEXT_TTL_MILLIS_MUST);
         }
 
         this.lifetimeNanos = TimeUnit.MILLISECONDS.toNanos(lifetime);
         for (CommandType type : CommandType.values()) {
             this.commands.put(type, this.appContext.getInstance(type.getCommandType()));
         }
+
         this.timer = Executors.newSingleThreadScheduledExecutor(task -> {
             Thread thread = new Thread(task, "meteor-console-context-expiry");
             thread.setDaemon(true);
@@ -75,14 +78,14 @@ public final class CommandDispatcher implements AutoCloseable {
         String requestedCluster = target.getClusterId();
         if (target.isDirect()) {
             if (StringUtils.isNotBlank(clusterId) || StringUtils.isNotBlank(requestedCluster)) {
-                throw new IllegalArgumentException("直连操作不接受 clusterId");
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_DIRECT_OPERATIONS_DO_NOT_ACCEPT_CLUSTERID);
             }
         } else {
             if (StringUtils.isBlank(clusterId)) {
-                throw new IllegalArgumentException("缺少参数：clusterId");
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_MISSING_PARAMETER_CLUSTERID);
             }
             if (StringUtils.isNotBlank(requestedCluster) && !StringUtils.equals(clusterId, requestedCluster)) {
-                throw new IllegalArgumentException("命令的 clusterId 与管理目标不一致");
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_COMMAND_CLUSTERID_DOES_NOT_MATCH);
             }
         }
 
@@ -114,6 +117,7 @@ public final class CommandDispatcher implements AutoCloseable {
             entry.active++;
             entry.lastAccessNanos = System.nanoTime();
         }
+
         try {
             return operation.apply(entry.context);
         } finally {
@@ -132,6 +136,7 @@ public final class CommandDispatcher implements AutoCloseable {
             context = CommandContext.open(profile, this.credentials, this.providers);
             this.temporary.add(context);
         }
+
         try (context) {
             ManagementTarget target = new ManagementTarget();
             target.setLimit(1);
@@ -167,15 +172,15 @@ public final class CommandDispatcher implements AutoCloseable {
         Objects.requireNonNull(request, "request");
         CommandType type = request.getCommand();
         if (type == null || !type.getRequestType().isInstance(request)) {
-            throw new IllegalArgumentException("命令与请求类型不匹配：" + type);
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_COMMAND_DOES_NOT_MATCH_REQUEST_TYPE, type);
         }
         if (request.getTarget() == null) {
-            throw new IllegalArgumentException("缺少管理目标");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_MISSING_MANAGEMENT_TARGET);
         }
 
         RegistryCommand<?, ?> command = this.commands.get(type);
         if (command == null) {
-            throw new IllegalStateException("命令未初始化：" + type);
+            throw ErrorMessageException.state(null, ConsoleMessageKey.ERROR_COMMAND_WAS_NOT_INITIALIZED, type);
         } else {
             return (RegistryCommand<CommandRequest<R>, R>) command;
         }
@@ -183,7 +188,7 @@ public final class CommandDispatcher implements AutoCloseable {
 
     private void requireOpen() {
         if (this.closed) {
-            throw new ConcurrentModificationException("命令入口已关闭");
+            throw ErrorMessageException.conflict(ConsoleMessageKey.ERROR_THE_COMMAND_DISPATCHER_IS_CLOSED);
         }
     }
 
@@ -233,10 +238,12 @@ public final class CommandDispatcher implements AutoCloseable {
             if (this.closed) {
                 return;
             }
+
             this.closed = true;
             for (ContextEntry entry : this.contexts.values()) {
                 owned.add(entry.context);
             }
+
             this.contexts.clear();
             owned.addAll(this.temporary);
             this.temporary.clear();
@@ -245,12 +252,14 @@ public final class CommandDispatcher implements AutoCloseable {
                 this.direct = null;
             }
         }
+
         if (this.timer != null) {
             this.timer.shutdownNow();
         }
         for (CommandContext context : owned) {
             this.closeContext(context);
         }
+
         if (this.timer != null) {
             try {
                 if (!this.timer.awaitTermination(5, TimeUnit.SECONDS)) {

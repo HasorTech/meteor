@@ -14,8 +14,8 @@ import net.hasor.meteor.console.component.commands.dto.directory.ServiceEntry;
 import net.hasor.meteor.console.component.commands.dto.directory.ServicesResult;
 import net.hasor.meteor.console.global.http.ConsoleRequest;
 import net.hasor.meteor.console.model.fo.ManagementTarget;
-import net.hasor.meteor.console.service.GovernanceService;
 import net.hasor.meteor.console.service.ConsoleSettingsService;
+import net.hasor.meteor.console.service.GovernanceService;
 import net.hasor.meteor.registry.admin.MetPage;
 import net.hasor.meteor.registry.admin.MetServiceInfo;
 import net.hasor.web.Invoker;
@@ -30,8 +30,8 @@ public class DirectoryController {
 
     @Get
     @MappingTo("/endpoint-types")
-    public List<Map<String, String>> endpointTypes() {
-        return ConsoleSettingsService.endpointTypes();
+    public List<Map<String, String>> endpointTypes(Invoker invoker) {
+        return ConsoleSettingsService.endpointTypes(ConsoleRequest.from(invoker).locale());
     }
 
     @Get

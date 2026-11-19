@@ -1,3 +1,10 @@
+/*
+ * Copyright 2015-2026 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0.
+ * See the LICENSE.txt file for the full license.
+ * https://www.apache.org/licenses/LICENSE-2.0
+ */
 package net.hasor.meteor.console.component.rpc;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
@@ -5,6 +12,7 @@ import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ConcurrentModificationException;
+import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
@@ -14,7 +22,11 @@ import net.hasor.meteor.MetFilter;
 import net.hasor.meteor.MetFilterChain;
 import net.hasor.meteor.MetRequest;
 import net.hasor.meteor.MetResponse;
+import net.hasor.meteor.console.global.error.ConsoleErrorMessages;
+import net.hasor.meteor.console.global.error.ConsoleErrorMessages.Message;
+import net.hasor.meteor.console.global.error.ConsoleHttpException;
 import net.hasor.meteor.console.global.error.ConsoleOperationException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.domain.MetException;
 import net.hasor.meteor.domain.ProtocolStatus;
 import net.hasor.meteor.registry.RegistryTokenProvider;
@@ -35,20 +47,20 @@ public final class RpcManagementFilter implements MetFilter {
         try {
             expected = this.tokens.getToken();
         } catch (RuntimeException failure) {
-            response.sendStatus(ProtocolStatus.Unauthorized, "Console management authentication unavailable");
+            send(request, response, ProtocolStatus.Unauthorized, ConsoleMessageKey.ERROR_RPC_AUTHENTICATION_UNAVAILABLE);
             return;
         }
 
         String supplied = request.getOption(RpcManagement.CREDENTIAL_OPTION);
         boolean blank = StringUtils.isBlank(expected) || StringUtils.isBlank(supplied);
         if (blank || !MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8), supplied.getBytes(StandardCharsets.UTF_8))) {
-            response.sendStatus(ProtocolStatus.Unauthorized, "Console management authentication failed");
+            send(request, response, ProtocolStatus.Unauthorized, ConsoleMessageKey.ERROR_RPC_AUTHENTICATION_FAILED);
             return;
         }
 
         Object[] arguments = request.getParameterObject();
         if (arguments.length == 0 || !(arguments[0] instanceof RpcTarget target)) {
-            response.sendStatus((short) 400, "Remote management requires a registry target");
+            send(request, response, (short) 400, ConsoleMessageKey.ERROR_RPC_REGISTRY_TARGET_REQUIRED);
             return;
         }
 
@@ -57,22 +69,22 @@ public final class RpcManagementFilter implements MetFilter {
             chain.doFilter(request, response);
         } catch (Exception failure) {
             Throwable cause = failure;
-            String message = failure.getMessage();
-            boolean redacted = false;
+            Throwable visible = null;
             while ((cause instanceof ConsoleOperationException || cause instanceof InvocationTargetException || cause instanceof UndeclaredThrowableException || cause instanceof ExecutionException || cause instanceof CompletionException) && cause.getCause() != null) {
-                if (!redacted && cause instanceof ConsoleOperationException) {
-                    message = cause.getMessage();
-                    redacted = true;
+                if (visible == null && cause instanceof ConsoleOperationException) {
+                    visible = cause;
                 }
                 cause = cause.getCause();
             }
-            if (StringUtils.isBlank(message)) {
-                message = cause.getClass().getSimpleName();
+            if (visible == null) {
+                visible = cause;
             }
 
             short status = ProtocolStatus.InvokeError;
             if (cause instanceof MetException remote) {
                 status = remote.getStatus();
+            } else if (cause instanceof ConsoleHttpException http) {
+                status = (short) http.status();
             } else if (cause instanceof IllegalArgumentException) {
                 status = 400;
             } else if (cause instanceof SecurityException) {
@@ -84,16 +96,30 @@ public final class RpcManagementFilter implements MetFilter {
             } else if (cause instanceof TimeoutException || cause instanceof SocketTimeoutException) {
                 status = ProtocolStatus.Timeout;
             }
-            // 集群连接已处理后端凭据，RPC 边界还要隐藏入站管理令牌。
-            message = message.replace(expected, "***");
-            if (this.secrets != null) {
-                for (String secret : this.secrets) {
-                    if (StringUtils.isNotBlank(secret)) {
-                        message = message.replace(secret, "***");
-                    }
+            // The downstream diagnostic is already sanitized. Also mask the inbound token.
+            String diagnostic = this.redact(ConsoleErrorMessages.getMessage(visible, Locale.US), expected);
+            Message message = ConsoleErrorMessages.messageOf(visible);
+            if (message != null) {
+                message = message.redact(value -> this.redact(value, expected));
+            }
+            RpcManagementErrors.send(request, response, status, message, diagnostic);
+        }
+    }
+
+    private static void send(MetRequest request, MetResponse response, short status, ConsoleMessageKey key) {
+        Message message = new Message(key);
+        RpcManagementErrors.send(request, response, status, message, message.format(Locale.US));
+    }
+
+    private String redact(String message, String expected) {
+        String sanitized = message.replace(expected, "***");
+        if (this.secrets != null) {
+            for (String secret : this.secrets) {
+                if (StringUtils.isNotBlank(secret)) {
+                    sanitized = sanitized.replace(secret, "***");
                 }
             }
-            response.sendStatus(status, message);
         }
+        return sanitized;
     }
 }

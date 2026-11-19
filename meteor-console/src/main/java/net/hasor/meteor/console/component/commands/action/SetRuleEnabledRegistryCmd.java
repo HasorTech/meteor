@@ -6,10 +6,12 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor.console.component.commands.action;
-import net.hasor.meteor.console.component.commands.SuccessResult;
 import net.hasor.meteor.console.component.commands.CommandContext;
 import net.hasor.meteor.console.component.commands.RegistryCommand;
+import net.hasor.meteor.console.component.commands.SuccessResult;
 import net.hasor.meteor.console.component.commands.dto.rule.SetRuleEnabledRequest;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.model.fo.ManagementTarget;
 import net.hasor.meteor.registry.admin.MetRuleType;
 
@@ -21,7 +23,7 @@ public final class SetRuleEnabledRegistryCmd implements RegistryCommand<SetRuleE
         MetRuleType type = request.getRuleType();
         boolean enabled = request.isEnabled();
         if (target.isDirect()) {
-            throw new UnsupportedOperationException("规则启停需要注册中心保留正文，直连请保存或清除规则");
+            throw ErrorMessageException.unsupported(ConsoleMessageKey.ERROR_TOGGLING_A_RULE_REQUIRES_THE_REGISTRY);
         }
         switch (context.scope(target)) {
             case "cluster" -> {
@@ -45,7 +47,7 @@ public final class SetRuleEnabledRegistryCmd implements RegistryCommand<SetRuleE
                     context.service(target).disableRule(type);
                 }
             }
-            default -> throw new IllegalArgumentException("未知治理范围");
+            default -> throw new ErrorMessageException(ConsoleMessageKey.ERROR_UNKNOWN_GOVERNANCE_SCOPE);
         }
         return new SuccessResult(true);
     }

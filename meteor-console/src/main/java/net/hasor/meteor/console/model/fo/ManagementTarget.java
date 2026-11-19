@@ -8,6 +8,8 @@
 package net.hasor.meteor.console.model.fo;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.address.InterAddress;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.registry.admin.MetDirectoryQuery;
 
 /** 管理查询或写入的上下文，与 HTTP 传输无关。 */
@@ -79,7 +81,7 @@ public final class ManagementTarget {
 
     public MetDirectoryQuery directoryQuery() {
         if (this.limit < 1 || this.limit > 1000) {
-            throw new IllegalArgumentException("limit 必须为 1 到 1000");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_LIMIT_MUST_BE_BETWEEN_1_AND);
         }
         MetDirectoryQuery query = new MetDirectoryQuery();
         query.setSearch(this.filter);
@@ -157,28 +159,28 @@ public final class ManagementTarget {
 
     public String requireClusterId() {
         if (StringUtils.isBlank(this.clusterId)) {
-            throw new IllegalArgumentException("缺少参数：clusterId");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_MISSING_PARAMETER_CLUSTERID);
         }
         return this.clusterId;
     }
 
     public String requireInstanceId() {
         if (StringUtils.isBlank(this.instanceId)) {
-            throw new IllegalArgumentException("缺少参数：instanceId");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_MISSING_PARAMETER_INSTANCEID);
         }
         return this.instanceId;
     }
 
     public String requireServiceId() {
         if (StringUtils.isBlank(this.serviceId)) {
-            throw new IllegalArgumentException("缺少参数：serviceId");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_MISSING_PARAMETER_SERVICEID);
         }
         return this.serviceId;
     }
 
     public String requireScope() {
         if (StringUtils.isBlank(this.scope)) {
-            throw new IllegalArgumentException("缺少参数：scope");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_MISSING_PARAMETER_SCOPE);
         }
         return this.scope;
     }

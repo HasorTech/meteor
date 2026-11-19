@@ -10,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import net.hasor.meteor.console.global.MeteorConfig;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.tconsole.TelCommand;
 
 public final class StatusCommand extends AbstractCommand {
@@ -20,8 +21,8 @@ public final class StatusCommand extends AbstractCommand {
     }
 
     @Override
-    public String helpInfo() {
-        return "status: Console runtime and selected cluster";
+    protected ConsoleMessageKey helpKey() {
+        return ConsoleMessageKey.TELNET_HELP_STATUS;
     }
 
     @Override

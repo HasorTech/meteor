@@ -2,12 +2,14 @@
 package net.hasor.meteor.console.component.examples.nativeclient;
 import java.net.URI;
 import java.util.*;
-import net.hasor.cobble.StringUtils;
 import net.hasor.cobble.ObjectUtils;
+import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.console.component.commands.dto.service.ExampleTarget;
 import net.hasor.meteor.console.component.examples.ExampleConnections;
 import net.hasor.meteor.console.component.examples.ExampleDocument;
 import net.hasor.meteor.console.component.examples.ExampleTemplates;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.utils.JsonUtils;
 import net.hasor.meteor.registry.admin.description.*;
 
@@ -18,21 +20,22 @@ public final class HttpExampleGenerator {
         if (!Set.of("jsonrpc", "xmlrpc", "hprose").contains(protocol)) {
             return List.of();
         }
+
         ExampleConnections.validate(target);
         MetServiceDescription description = target.getDescription();
         MetProtocolDescription binding = target.getEndpoint().getDescription();
         Map<String, Object> call = null;
-        String lastFailure = "当前接口没有可调用的方法";
+        IllegalArgumentException lastFailure = null;
         for (Map<String, Object> operation : binding.getMethods()) {
             try {
                 call = call(description, binding, operation, protocol);
                 break;
             } catch (IllegalArgumentException unavailable) {
-                lastFailure = unavailable.getMessage();
+                lastFailure = unavailable;
             }
         }
         if (call == null) {
-            throw new IllegalArgumentException(lastFailure);
+            throw lastFailure == null ? new ErrorMessageException(ConsoleMessageKey.ERROR_NO_INVOCABLE_METHODS) : lastFailure;
         }
         try {
             String sample = JsonUtils.valueToTree(call).toPrettyString();
@@ -48,18 +51,15 @@ public final class HttpExampleGenerator {
             }
             return documents;
         } catch (java.io.IOException failure) {
-            throw new IllegalStateException("无法生成调用参数", failure);
+            throw ErrorMessageException.state(failure, ConsoleMessageKey.ERROR_COULD_NOT_GENERATE_INVOCATION_ARGUMENTS);
         }
     }
 
-    public static Map<String, Object> call(MetServiceDescription description, MetProtocolDescription binding,
-            Map<String, Object> operation, String protocol) {
-        MetMethodDescription method = description.getMethods().stream()
-                .filter(item -> ObjectUtils.equals(item.getJavaSignature(), operation.get("javaSignature")))
-                .findFirst().orElseThrow(() -> new IllegalArgumentException("线上方法缺少对应接口声明"));
+    public static Map<String, Object> call(MetServiceDescription description, MetProtocolDescription binding, Map<String, Object> operation, String protocol) {
+        MetMethodDescription method = description.getMethods().stream().filter(item -> ObjectUtils.equals(item.getJavaSignature(), operation.get("javaSignature"))).findFirst().orElseThrow(() -> new ErrorMessageException(ConsoleMessageKey.ERROR_THE_WIRE_METHOD_HAS_NO_MATCHING));
         String name = Objects.toString(operation.get("name"), "");
         if (StringUtils.isBlank(name)) {
-            throw new IllegalArgumentException("线上方法名为空");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_WIRE_METHOD_NAME_IS_EMPTY);
         }
         if (!StringUtils.equals(protocol, "hprose")) {
             name = binding.getName() + "." + name;
@@ -83,8 +83,7 @@ public final class HttpExampleGenerator {
             arguments = JsonUtils.writeValueAsString(sample);
         }
         String code = ExampleTemplates.render("http/" + template, Map.of("url", url, "call", arguments));
-        String markdown = ExampleTemplates.render("http/document.md.tpl", Map.of("dependency", dependency,
-                "code", ExampleTemplates.codeBlock(language, code)));
+        String markdown = ExampleTemplates.render("http/document.md.tpl", Map.of("dependency", dependency, "code", ExampleTemplates.codeBlock(language, code)));
         return new ExampleDocument(language + "-direct", language, "direct", markdown);
     }
 
@@ -100,28 +99,28 @@ public final class HttpExampleGenerator {
         }
         URI context = URI.create(path);
         if (!path.startsWith("/") || !StringUtils.equals(context.getRawPath(), path)) {
-            throw new IllegalArgumentException("服务 HTTP 挂载路径格式不正确");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_INVALID_SERVICE_HTTP_MOUNT_PATH);
         }
         try {
             URI authority = new URI(scheme, null, address.getHost(), address.getPort(), null, null, null);
             // context 是经过验证的原始路径，不能由多参数 URI 构造器再次编码其中的百分号。
             return URI.create(authority.toASCIIString() + path).toASCIIString();
         } catch (java.net.URISyntaxException failure) {
-            throw new IllegalArgumentException("服务 HTTP 地址格式不正确", failure);
+            throw new ErrorMessageException(failure, ConsoleMessageKey.ERROR_INVALID_SERVICE_HTTP_ADDRESS);
         }
     }
 
     public static Object sample(MetServiceDescription service, String reference, String protocol, Set<String> visiting) {
         MetTypeDescription type = service.getTypes().get(reference);
         if (type == null) {
-            throw new IllegalArgumentException("缺少参数类型声明：" + reference);
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_MISSING_PARAMETER_TYPE_DECLARATION, reference);
         }
         String java = type.getJavaType();
         if (StringUtils.equals(java, "byte[]")) {
             return StringUtils.equals(protocol, "jsonrpc") ? "" : Map.of("$binary", "");
         }
         if (!visiting.add(reference)) {
-            throw new IllegalArgumentException("递归参数需要业务数据，无法生成完整默认参数：" + reference);
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_RECURSIVE_ARGUMENT_REQUIRES_BUSINESS_DATA, reference);
         }
         try {
             return switch (type.getKind()) {
@@ -129,7 +128,7 @@ public final class HttpExampleGenerator {
                 case "map" -> Map.of();
                 case "enum" -> {
                     if (type.getValues().isEmpty()) {
-                        throw new IllegalArgumentException("枚举没有值：" + reference);
+                        throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_ENUM_HAS_NO_VALUES, reference);
                     }
                     yield type.getValues().get(0).getJavaName();
                 }
@@ -141,7 +140,7 @@ public final class HttpExampleGenerator {
                     yield value;
                 }
                 case "scalar" -> scalar(java);
-                default -> throw new IllegalArgumentException("此参数类型不能自动生成原生语言样例：" + reference);
+                default -> throw new ErrorMessageException(ConsoleMessageKey.ERROR_NATIVE_LANGUAGE_EXAMPLES_CANNOT_BE_GENERATED, reference);
             };
         } finally {
             visiting.remove(reference);
@@ -153,10 +152,9 @@ public final class HttpExampleGenerator {
             case "java.lang.String" -> "example";
             case "char", "java.lang.Character" -> "x";
             case "boolean", "java.lang.Boolean" -> false;
-            case "byte", "short", "int", "long", "java.lang.Byte", "java.lang.Short", "java.lang.Integer", "java.lang.Long",
-                 "java.math.BigInteger" -> 1;
+            case "byte", "short", "int", "long", "java.lang.Byte", "java.lang.Short", "java.lang.Integer", "java.lang.Long", "java.math.BigInteger" -> 1;
             case "float", "double", "java.lang.Float", "java.lang.Double", "java.math.BigDecimal" -> 1.0;
-            default -> throw new IllegalArgumentException("此标量类型需要业务数据：" + java);
+            default -> throw new ErrorMessageException(ConsoleMessageKey.ERROR_THIS_SCALAR_TYPE_REQUIRES_BUSINESS_DATA, java);
         };
     }
 }

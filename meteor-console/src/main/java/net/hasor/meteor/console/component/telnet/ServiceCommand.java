@@ -10,6 +10,9 @@ import java.util.List;
 import java.util.Set;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.console.component.commands.CommandCredentials;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleI18n;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.model.fo.ManagementTarget;
 import net.hasor.meteor.console.service.ClusterService;
 import net.hasor.meteor.console.service.GovernanceService;
@@ -21,8 +24,8 @@ public final class ServiceCommand extends AbstractGovernanceCommand {
     }
 
     @Override
-    public String helpInfo() {
-        return "service info|enable|disable <serviceId> [--cluster id] [--instance id] [--scope service]";
+    protected ConsoleMessageKey helpKey() {
+        return ConsoleMessageKey.TELNET_HELP_SERVICE;
     }
 
     @Override
@@ -38,21 +41,21 @@ public final class ServiceCommand extends AbstractGovernanceCommand {
         String action = args.get(0);
         if (StringUtils.equals(action, "info")) {
             if (options.option("--scope") != null) {
-                throw new IllegalArgumentException("info does not accept --scope");
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_TELNET_INFO_SCOPE);
             }
             return json(this.governance.serviceInfo(target));
         }
         if (!StringUtils.equals(action, "enable") && !StringUtils.equals(action, "disable")) {
-            throw new IllegalArgumentException("Expected info|enable|disable");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_TELNET_INVALID_SERVICE_OPERATION);
         }
         // 未指定实例时，必须显式确认修改整个服务。
         if (target.getInstanceId() == null && !StringUtils.equals(target.getScope(), "service")) {
-            throw new IllegalArgumentException("Specify --instance id or --scope service");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_TELNET_SERVICE_SCOPE_REQUIRED);
         }
         if (target.getScope() != null && !StringUtils.equals(target.getScope(), "service")) {
-            throw new IllegalArgumentException("Expected --scope service");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_TELNET_INVALID_SERVICE_SCOPE);
         }
         this.governance.serviceEnabled(target, StringUtils.equals(action, "enable"));
-        return "SAVED  service configuration saved; use service info to check effective state";
+        return "SAVED  " + ConsoleI18n.getMessage(ConsoleMessageKey.TELNET_SERVICE_SAVED);
     }
 }

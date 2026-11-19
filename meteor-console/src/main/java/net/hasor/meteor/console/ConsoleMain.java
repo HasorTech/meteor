@@ -12,7 +12,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.util.function.Supplier;
 import net.hasor.boot.Boot;
 import net.hasor.boot.BootApplication;
 import net.hasor.cobble.StringUtils;
@@ -36,8 +35,11 @@ import net.hasor.meteor.console.dao.ClusterDao;
 import net.hasor.meteor.console.global.MeteorConfig;
 import net.hasor.meteor.console.global.auth.ConsoleCookies;
 import net.hasor.meteor.console.global.auth.SessionService;
-import net.hasor.meteor.console.global.http.ConsoleApiFilter;
+import net.hasor.meteor.console.global.error.ConsoleExceptionHandler;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.http.ConsoleApiInterceptor;
 import net.hasor.meteor.console.global.http.ConsoleJsonRender;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.utils.JsonUtils;
 import net.hasor.meteor.registry.RegistryConfiguration;
 import net.hasor.web.WebApiBinder;
@@ -63,7 +65,7 @@ public class ConsoleMain implements Module {
         }
 
         if (!settings.getBoolean(MeteorConfig.TELNET_ENABLED_KEY, false) && !settings.getBoolean(MeteorConfig.RPC_ENABLED_KEY, false)) {
-            throw new IllegalArgumentException("Headless Console requires Telnet or a registry management listener");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_HEADLESS_LISTENER_REQUIRED);
         }
 
         return new Boot().arguments(arguments).sources(ConsoleMain.class).hconfigFile(config).property("hasor.boot.web.enabled", false).start();
@@ -112,10 +114,8 @@ public class ConsoleMain implements Module {
             binder.bindType(ConsoleCookies.class).asEagerSingleton();
             web.setEncodingCharacter("UTF-8", "UTF-8");
             web.addRender("json").to(ConsoleJsonRender.class);
-            Supplier<SessionService> sessions = binder.getProvider(SessionService.class);
-            Supplier<ConsoleCookies> cookies = binder.getProvider(ConsoleCookies.class);
-            binder.bindType(ConsoleApiFilter.class).toProvider(() -> new ConsoleApiFilter(sessions.get(), cookies.get())).asEagerSingleton();
-            web.filter("/api/*").through(binder.getBindInfo(ConsoleApiFilter.class));
+            web.bindInterceptor(new ConsoleApiInterceptor(binder.getProvider(SessionService.class), binder.getProvider(ConsoleCookies.class)));
+            web.addExceptionHandler(Exception.class, new ConsoleExceptionHandler());
         }
     }
 
@@ -125,7 +125,7 @@ public class ConsoleMain implements Module {
             if (argument.startsWith("--config=")) {
                 configured = argument.substring("--config=".length());
                 if (StringUtils.isBlank(configured)) {
-                    throw new IllegalArgumentException("--config 必须指定配置文件");
+                    throw new ErrorMessageException(ConsoleMessageKey.ERROR_CONFIG_REQUIRES_A_CONFIGURATION_FILE);
                 }
             }
         }

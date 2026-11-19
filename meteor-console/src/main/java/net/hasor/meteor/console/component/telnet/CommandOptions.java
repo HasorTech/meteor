@@ -8,6 +8,8 @@
 package net.hasor.meteor.console.component.telnet;
 import java.util.*;
 import net.hasor.cobble.StringUtils;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.model.fo.ManagementTarget;
 import net.hasor.meteor.console.service.ClusterService;
 import net.hasor.tconsole.TelSession;
@@ -26,13 +28,13 @@ public final class CommandOptions {
                 continue;
             }
             if (!accepted.contains(argument) || this.options.containsKey(argument)) {
-                throw new IllegalArgumentException("Unknown or repeated option: " + argument);
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_TELNET_UNKNOWN_OPTION, argument);
             }
             if (StringUtils.equals(argument, "--multiline")) {
                 this.options.put(argument, "true");
             } else {
                 if (++i >= input.size() || input.get(i).startsWith("--") || input.get(i).isBlank()) {
-                    throw new IllegalArgumentException("Missing value for " + argument);
+                    throw new ErrorMessageException(ConsoleMessageKey.ERROR_TELNET_MISSING_OPTION_VALUE, argument);
                 }
                 this.options.put(argument, input.get(i));
             }
@@ -54,7 +56,7 @@ public final class CommandOptions {
         }
         final String selected = cluster;
         if (StringUtils.isBlank(selected) || clusters.list().stream().noneMatch(c -> StringUtils.equals(c.getId(), selected))) {
-            throw new IllegalArgumentException("Select an existing cluster with clusters use <id> or --cluster <id>");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_TELNET_SELECT_CLUSTER);
         }
         ManagementTarget target = new ManagementTarget();
         target.setClusterId(cluster);
@@ -64,7 +66,11 @@ public final class CommandOptions {
         target.setApplicationName(this.options.get("--application"));
         target.setCursor(this.options.get("--cursor"));
         if (this.options.containsKey("--limit")) {
-            target.setLimit(Integer.parseInt(this.options.get("--limit")));
+            try {
+                target.setLimit(Integer.parseInt(this.options.get("--limit")));
+            } catch (NumberFormatException invalid) {
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_TELNET_INVALID_LIMIT);
+            }
         }
         target.directoryQuery(); // 在访问后端之前校验分页参数。
         return target;
@@ -74,17 +80,17 @@ public final class CommandOptions {
         switch (target.requireScope()) {
             case "cluster" -> {
                 if (StringUtils.isNotBlank(target.getInstanceId()) || StringUtils.isNotBlank(target.getServiceId())) {
-                    throw new IllegalArgumentException("Cluster scope does not accept instance or service");
+                    throw new ErrorMessageException(ConsoleMessageKey.ERROR_TELNET_CLUSTER_SCOPE);
                 }
             }
             case "instance" -> {
                 target.requireInstanceId();
                 if (StringUtils.isNotBlank(target.getServiceId())) {
-                    throw new IllegalArgumentException("Instance scope does not accept service");
+                    throw new ErrorMessageException(ConsoleMessageKey.ERROR_TELNET_INSTANCE_SCOPE);
                 }
             }
             case "service" -> target.requireServiceId();
-            default -> throw new IllegalArgumentException("Expected --scope cluster|instance|service");
+            default -> throw new ErrorMessageException(ConsoleMessageKey.ERROR_TELNET_INVALID_SCOPE);
         }
     }
 }

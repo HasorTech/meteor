@@ -177,6 +177,47 @@ public class ConsoleTelnetServiceTest {
     }
 
     @Test
+    public void languageSwitchLocalizesHelpAndRepliesForThisConnection() throws Exception {
+        // 启动无头 Console，建立两条独立的 Telnet 连接。
+        Path config = this.configuration(false, 0);
+        try (BootApplication application = ConsoleMain.start("--config=" + config); //
+             TelClient first = new TelClient(); //
+             TelClient second = new TelClient()) {
+            this.connect(first, application);
+            this.connect(second, application);
+            assertEquals("OK  Language: en-US", first.sendCommand("lang").strip());
+
+            // 切换后，同一连接的帮助、参数错误和操作确认使用中文。
+            assertEquals("OK  当前语言：zh-CN", first.sendCommand("lang zh-CN").strip());
+            assertTrue(first.sendCommand("help status").contains("查看控制台运行状态"));
+            assertTrue(first.sendCommand("services --unknown value").contains("选项未知或重复：--unknown"));
+            assertEquals("OK  已清除集群选择", first.sendCommand("clusters clear").strip());
+
+            // 另一条连接保持默认英文，当前连接也可切回英文。
+            assertEquals("OK  Language: en-US", second.sendCommand("lang").strip());
+            assertTrue(second.sendCommand("help status").contains("Console runtime"));
+            assertEquals("OK  Language: en-US", first.sendCommand("lang en-US").strip());
+        }
+    }
+
+    @Test
+    public void unsupportedLanguageKeepsTheActiveLanguage() throws Exception {
+        // 当前连接已切换为中文。
+        Path config = this.configuration(false, 0);
+        try (BootApplication application = ConsoleMain.start("--config=" + config); //
+             TelClient client = new TelClient()) {
+            this.connect(client, application);
+            client.sendCommand("lang zh-CN");
+
+            // 拒绝其他语言，错误仍按中文输出。
+            String rejected = client.sendCommand("lang fr-FR");
+            assertTrue(rejected.startsWith("ERROR INVALID_ARGUMENT"));
+            assertTrue(rejected.contains("不支持语言 fr-FR"));
+            assertEquals("OK  当前语言：zh-CN", client.sendCommand("lang").strip());
+        }
+    }
+
+    @Test
     public void wrongPasswordCannotExecuteCommands() throws Exception {
         try (BootApplication application = ConsoleMain.start("--config=" + this.configuration(false, 0)); Socket socket = new Socket()) {
             socket.connect(application.getAppContext().getInstance(ConsoleTelnetService.class).getListenAddress());

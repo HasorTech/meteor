@@ -14,6 +14,8 @@ import net.hasor.core.AppContext;
 import net.hasor.core.Init;
 import net.hasor.core.Inject;
 import net.hasor.core.Singleton;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.model.fo.ClusterProfile;
 import net.hasor.meteor.registry.RegistryTokenProvider;
 
@@ -32,13 +34,14 @@ public final class ProviderFactories {
             if (type == null || !ProviderFactory.class.isAssignableFrom(type)) {
                 continue;
             }
+
             ProviderFactory factory = this.appContext.getInstance(id);
             String name = factory.name();
             if (StringUtils.isBlank(name)) {
-                throw new IllegalArgumentException("注册中心工厂名称不能为空");
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_REGISTRY_FACTORY_NAME_MUST_NOT_BE);
             }
             if (this.factories.putIfAbsent(name, factory) != null) {
-                throw new IllegalArgumentException("注册中心工厂名称重复：" + name);
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_DUPLICATE_REGISTRY_FACTORY_NAME, name);
             }
         }
     }
@@ -46,7 +49,7 @@ public final class ProviderFactories {
     public ProviderConnection open(ClusterProfile profile, RegistryTokenProvider credentials) throws Exception {
         ProviderFactory factory = this.factories.get(profile.getType());
         if (factory == null) {
-            throw new IllegalArgumentException("不支持的注册中心类型");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_UNSUPPORTED_REGISTRY_TYPE);
         }
         return factory.open(profile, credentials);
     }

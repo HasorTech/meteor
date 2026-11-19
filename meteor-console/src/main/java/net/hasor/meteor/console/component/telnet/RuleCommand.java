@@ -13,6 +13,9 @@ import java.util.List;
 import java.util.Set;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.console.component.commands.CommandCredentials;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleI18n;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.model.fo.ManagementTarget;
 import net.hasor.meteor.console.service.ClusterService;
 import net.hasor.meteor.console.service.GovernanceService;
@@ -26,8 +29,8 @@ public final class RuleCommand extends AbstractGovernanceCommand {
     }
 
     @Override
-    public String helpInfo() {
-        return "rule show|validate|put|clear|enable|disable [serviceId] service|method|args|flow [XML|--multiline] " + "--scope cluster|instance|service [--instance id] [--cluster id]; end multiline with .end";
+    protected ConsoleMessageKey helpKey() {
+        return ConsoleMessageKey.TELNET_HELP_RULE;
     }
 
     @Override
@@ -62,25 +65,25 @@ public final class RuleCommand extends AbstractGovernanceCommand {
     protected String execute(TelCommand command, CommandOptions options, ManagementTarget target) throws Exception {
         List<String> args = new ArrayList<>(options.arguments());
         if (args.isEmpty()) {
-            throw new IllegalArgumentException("Rule operation is required");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_TELNET_RULE_OPERATION_REQUIRED);
         }
         String action = args.remove(0);
         if (StringUtils.equals(target.getScope(), "service")) {
             if (args.isEmpty()) {
-                throw new IllegalArgumentException("serviceId is required");
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_TELNET_SERVICE_ID_REQUIRED);
             }
             target.setServiceId(args.remove(0));
         }
         CommandOptions.requireScope(target);
         if (args.isEmpty()) {
-            throw new IllegalArgumentException("Rule type is required");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_TELNET_RULE_TYPE_REQUIRED);
         }
         MetRuleType type = switch (args.remove(0)) {
             case "service" -> MetRuleType.SERVICE_ROUTE;
             case "method" -> MetRuleType.METHOD_ROUTE;
             case "args" -> MetRuleType.ARGS_ROUTE;
             case "flow" -> MetRuleType.FLOW_CONTROL;
-            default -> throw new IllegalArgumentException("Expected service|method|args|flow");
+            default -> throw new ErrorMessageException(ConsoleMessageKey.ERROR_TELNET_INVALID_RULE_TYPE);
         };
         boolean multiline = options.option("--multiline") != null;
         if (StringUtils.equals(action, "put") || StringUtils.equals(action, "validate")) {
@@ -96,7 +99,7 @@ public final class RuleCommand extends AbstractGovernanceCommand {
         } else {
             requireCount(args, 0);
             if (multiline) {
-                throw new IllegalArgumentException("--multiline is only valid for put|validate");
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_TELNET_INVALID_MULTILINE);
             }
             switch (action) {
                 case "show":
@@ -111,9 +114,9 @@ public final class RuleCommand extends AbstractGovernanceCommand {
                     this.governance.ruleEnabled(target, type, false);
                     break;
                 default:
-                    throw new IllegalArgumentException("Unknown rule operation");
+                    throw new ErrorMessageException(ConsoleMessageKey.ERROR_TELNET_INVALID_RULE_OPERATION);
             }
         }
-        return "SAVED  rule configuration saved; use rule show to read current values";
+        return "SAVED  " + ConsoleI18n.getMessage(ConsoleMessageKey.TELNET_RULE_SAVED);
     }
 }

@@ -8,6 +8,8 @@ import net.hasor.meteor.console.component.commands.dto.service.ExampleTarget;
 import net.hasor.meteor.console.component.examples.ExampleConnections;
 import net.hasor.meteor.console.component.examples.ExampleDocument;
 import net.hasor.meteor.console.component.examples.ExampleTemplates;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.utils.JsonUtils;
 
 /** 原生 Java 二进制 SDK；请求字段和结果解码均依据当前提供者的线上类型图。 */
@@ -87,7 +89,7 @@ public final class BinaryJavaExampleGenerator {
         JsonNode type = BinaryContracts.required(types, reference);
         int wire = type.path("wireType").asInt();
         if (!parents.add(reference)) {
-            throw new IllegalArgumentException("Thrift 必填递归参数无法构造有限样本");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_NO_FINITE_SAMPLE_CAN_BE_CONSTRUCTED);
         }
         switch (wire) {
             case 2 -> code.append("            protocol.writeBool(false);\n");
@@ -117,7 +119,7 @@ public final class BinaryJavaExampleGenerator {
             case 14 -> code.append("            protocol.writeSetBegin(new TSet((byte) ").append(BinaryContracts.required(types, type.path("elementType").asText()).path("wireType").asInt()).append(", 0));\n            protocol.writeSetEnd();\n");
             case 15 -> code.append("            protocol.writeListBegin(new TList((byte) ").append(BinaryContracts.required(types, type.path("elementType").asText()).path("wireType").asInt()).append(", 0));\n            protocol.writeListEnd();\n");
             case 16 -> code.append("            protocol.writeUuid(new UUID(0, 1));\n");
-            default -> throw new IllegalArgumentException("未识别 Thrift 类型 " + wire);
+            default -> throw new ErrorMessageException(ConsoleMessageKey.ERROR_UNRECOGNIZED_THRIFT_TYPE, wire);
         }
     }
 
@@ -125,7 +127,7 @@ public final class BinaryJavaExampleGenerator {
         JsonNode type = BinaryContracts.required(types, reference);
         String kind = type.path("kind").asText();
         if (!parents.add(reference)) {
-            throw new IllegalArgumentException("XDR 必填递归参数无法构造有限样本");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_NO_FINITE_SAMPLE_CAN_BE_CONSTRUCTED_2);
         }
         String value = switch (kind) {
             case "string" -> "stream.xdrEncodeString(\"example\");";
@@ -159,7 +161,7 @@ public final class BinaryJavaExampleGenerator {
             if (type.path("fixed").asBoolean()) {
                 int count = type.path("length").asInt();
                 if (count > 1024) {
-                    throw new IllegalArgumentException("固定数组样本过大");
+                    throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_FIXED_LENGTH_SAMPLE_ARRAY_IS);
                 }
                 for (int index = 0; index < count; index++) {
                     this.xdrWrite(types, type.path("elementType").asText(), code, new HashSet<>(parents));
@@ -168,7 +170,7 @@ public final class BinaryJavaExampleGenerator {
                 code.append("                    stream.xdrEncodeInt(0);\n");
             }
         } else {
-            throw new IllegalArgumentException("该 XDR 类型需要显式业务样本：" + kind);
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_THIS_XDR_TYPE_REQUIRES_AN_EXPLICIT, kind);
         }
     }
 
@@ -209,7 +211,7 @@ public final class BinaryJavaExampleGenerator {
             }
             code.append("        return Base64.getEncoder().encodeToString(").append(read).append(");\n");
         } else {
-            throw new IllegalArgumentException("该 XDR 类型没有通用示例解码器：" + kind);
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_NO_GENERIC_EXAMPLE_DECODER_IS_AVAILABLE, kind);
         }
         return code.append("    }\n").toString();
     }
@@ -218,7 +220,7 @@ public final class BinaryJavaExampleGenerator {
         try {
             return JsonUtils.writeValueAsString(value);
         } catch (Exception failure) {
-            throw new IllegalArgumentException("无法编码 Java 示例", failure);
+            throw new ErrorMessageException(failure, ConsoleMessageKey.ERROR_COULD_NOT_ENCODE_THE_JAVA_EXAMPLE);
         }
     }
 }

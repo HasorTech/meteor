@@ -7,34 +7,37 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 
 /** 模板仅从固定类路径目录读取；替换一次，数据中的占位符不会被再次解释。 */
 public final class ExampleTemplates {
     private static final Pattern TOKEN = Pattern.compile("\\{\\{([A-Za-z][A-Za-z0-9_]*)}}");
 
-    private ExampleTemplates() { }
+    private ExampleTemplates() {
+    }
 
     public static String version() {
         try (InputStream input = ExampleTemplates.class.getResourceAsStream("/META-INF/invocation-examples/version.properties")) {
             if (input == null) {
-                throw new IllegalStateException("缺少示例依赖版本");
+                throw ErrorMessageException.state(null, ConsoleMessageKey.ERROR_MISSING_EXAMPLE_DEPENDENCY_VERSIONS);
             }
             Properties properties = new Properties();
             properties.load(input);
             return properties.getProperty("version");
         } catch (IOException failure) {
-            throw new IllegalStateException("无法读取示例依赖版本", failure);
+            throw ErrorMessageException.state(failure, ConsoleMessageKey.ERROR_COULD_NOT_LOAD_EXAMPLE_DEPENDENCY_VERSIONS);
         }
     }
 
     public static String render(String resource, Map<String, String> values) {
         if (!resource.matches("[A-Za-z0-9_./-]+") || resource.contains("..")) {
-            throw new IllegalArgumentException("示例模板路径不正确");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_INVALID_EXAMPLE_TEMPLATE_PATH);
         }
         String path = "/META-INF/invocation-examples/" + resource;
         try (InputStream input = ExampleTemplates.class.getResourceAsStream(path)) {
             if (input == null) {
-                throw new IllegalStateException("缺少示例模板：" + resource);
+                throw ErrorMessageException.state(null, ConsoleMessageKey.ERROR_MISSING_EXAMPLE_TEMPLATE, resource);
             }
             String source = new String(input.readAllBytes(), StandardCharsets.UTF_8);
             Matcher matcher = TOKEN.matcher(source);
@@ -42,14 +45,14 @@ public final class ExampleTemplates {
             while (matcher.find()) {
                 String value = values.get(matcher.group(1));
                 if (value == null) {
-                    throw new IllegalStateException("缺少模板参数：" + matcher.group(1));
+                    throw ErrorMessageException.state(null, ConsoleMessageKey.ERROR_MISSING_TEMPLATE_PARAMETER, matcher.group(1));
                 }
                 matcher.appendReplacement(result, Matcher.quoteReplacement(value));
             }
             matcher.appendTail(result);
             return result.toString();
         } catch (IOException failure) {
-            throw new IllegalStateException("无法读取示例模板：" + resource, failure);
+            throw ErrorMessageException.state(failure, ConsoleMessageKey.ERROR_COULD_NOT_READ_THE_EXAMPLE_TEMPLATE, resource);
         }
     }
 

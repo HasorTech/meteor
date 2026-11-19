@@ -8,7 +8,6 @@
 package net.hasor.meteor.console.component.commands;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
-import java.util.ConcurrentModificationException;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
@@ -18,6 +17,8 @@ import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.console.component.provider.ProviderConnection;
 import net.hasor.meteor.console.component.provider.ProviderFactories;
 import net.hasor.meteor.console.global.error.ConsoleOperationException;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.model.fo.ClusterProfile;
 import net.hasor.meteor.console.model.fo.ManagementTarget;
 import net.hasor.meteor.domain.MetException;
@@ -62,7 +63,7 @@ public final class CommandContext implements AutoCloseable {
     synchronized <R> R execute(CommandRequest<R> request, RegistryCommand<CommandRequest<R>, R> command) {
         return this.execute(() -> {
             if (request.getTarget().isDirect() && this.direct == null) {
-                throw new IllegalArgumentException("直连实例操作需要独立直连入口");
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_DIRECT_INSTANCE_OPERATIONS_REQUIRE_THE_DIRECT);
             }
             return command.execute(this, request);
         });
@@ -74,7 +75,7 @@ public final class CommandContext implements AutoCloseable {
 
     private <R> R execute(Callable<R> operation) {
         if (this.closed) {
-            throw new ConcurrentModificationException("连接配置已更改，请刷新后重试");
+            throw ErrorMessageException.conflict(ConsoleMessageKey.ERROR_THE_CONNECTION_SETTINGS_CHANGED_REFRESH_AND);
         }
         try {
             if (this.connection == null && this.opener != null) {
@@ -89,7 +90,7 @@ public final class CommandContext implements AutoCloseable {
     /** 返回借用的注册中心入口；生命周期由当前 Context 负责。 */
     public RegistryAdmin registry() {
         if (this.connection == null) {
-            throw new UnsupportedOperationException("控制台以直连模式启动，未连接注册中心");
+            throw ErrorMessageException.unsupported(ConsoleMessageKey.ERROR_THE_CONSOLE_STARTED_IN_DIRECT_MODE);
         }
         return this.connection.registry();
     }
@@ -123,7 +124,7 @@ public final class CommandContext implements AutoCloseable {
     public String scope(ManagementTarget request) {
         String scope = request.requireScope();
         if (StringUtils.equals("cluster", scope) && request.isDirect()) {
-            throw new UnsupportedOperationException("直连模式没有集群治理范围");
+            throw ErrorMessageException.unsupported(ConsoleMessageKey.ERROR_DIRECT_MODE_DOES_NOT_HAVE_CLUSTER);
         }
         return scope;
     }
@@ -132,8 +133,8 @@ public final class CommandContext implements AutoCloseable {
         return switch (this.scope(request)) {
             case "cluster" -> this.cluster().validateRule(type, rule);
             case "service" -> this.service(request).validateRule(type, rule);
-            case "instance" -> throw new UnsupportedOperationException("实例管理接口未提供独立规则校验");
-            default -> throw new IllegalArgumentException("未知治理范围");
+            case "instance" -> throw ErrorMessageException.unsupported(ConsoleMessageKey.ERROR_INSTANCE_MANAGEMENT_DOES_NOT_PROVIDE_STANDALONE);
+            default -> throw new ErrorMessageException(ConsoleMessageKey.ERROR_UNKNOWN_GOVERNANCE_SCOPE);
         };
     }
 
@@ -147,14 +148,17 @@ public final class CommandContext implements AutoCloseable {
             cause = cause.getCause();
         }
 
-        String message = visible.getMessage();
         if (cause instanceof MetException remote && remote.getStatus() == ProtocolStatus.Unauthorized) {
-            // 消息统一，但保留原始 401，让 RPC 级联和 HTTP 边界各自转换状态。
-            message = "Remote Console authentication failed";
+            // Both presentation boundaries retain the original RPC status.
+            ConsoleMessageKey message = this.direct == null ? //
+                    ConsoleMessageKey.ERROR_REMOTE_CONSOLE_AUTHENTICATION_FAILED : //
+                    ConsoleMessageKey.ERROR_INSTANCE_AUTHENTICATION_FAILED;
+            return new ConsoleOperationException(message, visible);
         }
-        if (StringUtils.isBlank(message)) {
-            message = visible.getClass().getSimpleName();
-        }
+        return new ConsoleOperationException(visible, this::redactMessage);
+    }
+
+    private String redactMessage(String message) {
         if (this.profile != null) {
             if (StringUtils.isNotBlank(this.profile.getPassword())) {
                 message = message.replace(this.profile.getPassword(), "***");
@@ -163,7 +167,7 @@ public final class CommandContext implements AutoCloseable {
                 message = message.replace(this.profile.getManagementToken(), "***");
             }
         }
-        return new ConsoleOperationException(message, visible);
+        return message;
     }
 
     @Override

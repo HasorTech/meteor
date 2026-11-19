@@ -11,9 +11,12 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.util.Locale;
 import java.util.Properties;
 import java.util.logging.Logger;
 import javax.sql.DataSource;
+import net.hasor.meteor.console.global.i18n.ConsoleI18n;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.model.fo.ClusterProfile;
 
 /** 控制台拥有的简单数据源，JDBC 提供者只借用连接；不建立控制台数据库。 */
@@ -95,7 +98,7 @@ final class JdbcDataSource implements DataSource {
         if (type.isInstance(this)) {
             return type.cast(this);
         }
-        throw new SQLException("Not a wrapper for " + type.getName());
+        throw new SQLException(ConsoleI18n.getMessage(ConsoleMessageKey.ERROR_JDBC_NOT_WRAPPER, Locale.US, type.getName()));
     }
 
     @Override

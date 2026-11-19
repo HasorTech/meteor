@@ -6,10 +6,12 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor.console.component.commands.action;
-import net.hasor.meteor.console.component.commands.SuccessResult;
 import net.hasor.meteor.console.component.commands.CommandContext;
 import net.hasor.meteor.console.component.commands.RegistryCommand;
+import net.hasor.meteor.console.component.commands.SuccessResult;
 import net.hasor.meteor.console.component.commands.dto.rule.ResetRuleRequest;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.model.fo.ManagementTarget;
 import net.hasor.meteor.registry.admin.MetRuleType;
 
@@ -23,7 +25,7 @@ public final class ResetRuleRegistryCmd implements RegistryCommand<ResetRuleRequ
             case "cluster" -> context.cluster().resetRule(type);
             case "instance" -> context.instance(target).resetRule(type);
             case "service" -> context.service(target).resetRule(type);
-            default -> throw new IllegalArgumentException("未知治理范围");
+            default -> throw new ErrorMessageException(ConsoleMessageKey.ERROR_UNKNOWN_GOVERNANCE_SCOPE);
         }
         return new SuccessResult(true);
     }

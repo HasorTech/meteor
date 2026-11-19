@@ -15,6 +15,8 @@ import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.console.component.commands.CommandCredentials;
 import net.hasor.meteor.console.component.commands.CommandDispatcher;
 import net.hasor.meteor.console.global.MeteorConfig;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.utils.JsonUtils;
 import net.hasor.meteor.registry.RegistryAdmin;
 
@@ -37,7 +39,7 @@ public final class RpcServer implements AutoCloseable {
         }
         String token = this.config.getManagementToken();
         if (StringUtils.isBlank(token)) {
-            throw new IllegalArgumentException("Set METEOR_REGISTRY_MANAGEMENT_TOKEN or meteor.rpc.token");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_RPC_TOKEN_REQUIRED);
         }
 
         MetContext context = null;

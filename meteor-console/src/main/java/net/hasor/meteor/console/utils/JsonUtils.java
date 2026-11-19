@@ -19,10 +19,12 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import net.hasor.meteor.MetContext;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.serialize.coder.JsonSerializeCoder;
 import net.hasor.meteor.serialize.coder.JsonSerializeDelegate;
 
@@ -41,7 +43,7 @@ public final class JsonUtils implements JsonSerializeDelegate {
     /** 管理 RPC 复用统一 JSON 读写，保留嵌套 null 并兼容 SDK DTO。 */
     public static void configureRpc(MetContext context) {
         if (!(context.getSerializeCoder("Json") instanceof JsonSerializeCoder coder)) {
-            throw new IllegalStateException("Console management requires the Json serializer");
+            throw ErrorMessageException.state(null, ConsoleMessageKey.ERROR_RPC_JSON_SERIALIZER_REQUIRED);
         }
         coder.setDelegate(INSTANCE);
     }
@@ -67,7 +69,7 @@ public final class JsonUtils implements JsonSerializeDelegate {
             JsonNode tree = MAPPER.valueToTree(value);
             return MAPPER.readerFor(type).without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).readValue(tree);
         } catch (IOException failure) {
-            throw new IllegalArgumentException("Cannot convert RPC value", failure);
+            throw new ErrorMessageException(failure, ConsoleMessageKey.ERROR_RPC_JSON_CONVERSION);
         }
     }
 

@@ -4,11 +4,7 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.meteor.console.component.examples.java;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.console.component.commands.dto.service.ExampleTarget;
 import net.hasor.meteor.console.component.examples.ExampleConnections;
@@ -16,30 +12,31 @@ import net.hasor.meteor.console.component.examples.ExampleDocument;
 import net.hasor.meteor.console.component.examples.ExampleRegistry;
 import net.hasor.meteor.console.component.examples.ExampleTemplates;
 import net.hasor.meteor.console.component.examples.nativeclient.BinaryContracts;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.utils.JsonUtils;
 import net.hasor.meteor.registry.admin.MetServiceEndpoint;
 import net.hasor.meteor.registry.admin.description.MetProtocolDescription;
 
 /** 以实际业务接口和端点生成简短文档，不复制接口实现或构建完整工程。 */
 public final class JavaExampleGenerator {
-    private static final Set<String> PROTOCOLS = Set.of("rsf", "dubbo", "thrift", "thrift-http", "oncrpc", "oncrpc-udp",
-            "hprose", "jsonrpc", "xmlrpc", "hessian", "soap", "grpc", "grpc-web", "connect", "triple");
+    private static final Set<String> PROTOCOLS = Set.of("rsf", "dubbo", "thrift", "thrift-http", "oncrpc", "oncrpc-udp", "hprose", "jsonrpc", "xmlrpc", "hessian", "soap", "grpc", "grpc-web", "connect", "triple");
 
     public List<ExampleDocument> generate(ExampleTarget target, ExampleRegistry registry, String address) {
         MetServiceEndpoint endpoint = target.getEndpoint();
         if (endpoint == null || endpoint.getProtocolName() == null || !PROTOCOLS.contains(endpoint.getProtocolName())) {
-            throw new IllegalArgumentException("没有此协议的 Meteor Java 模板");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_NO_METEOR_JAVA_TEMPLATE_IS_AVAILABLE);
         }
         ExampleConnections.validate(target);
         if (StringUtils.isBlank(target.getAddress())) {
-            throw new IllegalArgumentException("提供者未上报可调用地址");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_PROVIDER_HAS_NOT_REPORTED_A);
         }
         MetProtocolDescription contract = endpoint.getDescription();
         if (contract == null || StringUtils.isBlank(contract.getName())) {
-            throw new IllegalArgumentException("当前端点缺少完整的协议契约");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_ENDPOINT_IS_MISSING_A_COMPLETE);
         }
-        if (registry != null && (StringUtils.isBlank(registry.getAddress()) || StringUtils.isBlank(registry.getType())
-                || !Set.of("jdbc", "nacos", "zookeeper").contains(registry.getType()))) {
+
+        if (registry != null && (StringUtils.isBlank(registry.getAddress()) || StringUtils.isBlank(registry.getType()) || !Set.of("jdbc", "nacos", "zookeeper").contains(registry.getType()))) {
             registry = null;
         }
         JavaContractSources sources = new JavaContractSources( //
@@ -48,8 +45,7 @@ public final class JavaExampleGenerator {
         List<ExampleDocument> documents = new ArrayList<>();
         String serviceAddress = StringUtils.defaultIfBlank(address, "请填写服务地址");
         ExampleDocument direct = this.document(target, contract, sources, null, "direct", serviceAddress);
-        documents.add(new ExampleDocument(direct.getId(), direct.getLanguage(), direct.getRole(),
-                direct.getMarkdown() + this.registryUsage(target, contract, sources, registry)));
+        documents.add(new ExampleDocument(direct.getId(), direct.getLanguage(), direct.getRole(), direct.getMarkdown() + this.registryUsage(target, contract, sources, registry)));
         documents.add(this.document(target, contract, sources, registry, "provider", serviceAddress));
         documents.add(this.document(target, contract, sources, registry, "consumer", serviceAddress));
         return documents;
@@ -80,16 +76,14 @@ public final class JavaExampleGenerator {
         return new ExampleDocument("java-" + role, "java", role, ExampleTemplates.render("java/document.md.tpl", values));
     }
 
-    private String registryUsage(ExampleTarget target, MetProtocolDescription contract, JavaContractSources sources,
-            ExampleRegistry registry) {
+    private String registryUsage(ExampleTarget target, MetProtocolDescription contract, JavaContractSources sources, ExampleRegistry registry) {
         if (registry == null) {
             return "\n## 使用注册中心\n\n直连由调用方指定服务地址；注册中心由调用方配置连接参数，再按同一服务 ID 发现提供者。当前连接没有可复用的注册中心配置。\n";
         }
         Map<String, String> values = new LinkedHashMap<>();
         values.put("dependencies", this.dependencies(target.getEndpoint().getProtocolName(), registry));
         values.put("description", this.registryDescription(registry, "consumer"));
-        values.put("configuration", ExampleTemplates.codeBlock("java",
-                this.connectors(target, contract, false, true) + this.registry(registry)));
+        values.put("configuration", ExampleTemplates.codeBlock("java", this.connectors(target, contract, false, true) + this.registry(registry)));
         values.put("serviceType", sources.serviceType());
         String resourceClose = "";
         if (StringUtils.equals(registry.getType(), "jdbc")) {
@@ -103,7 +97,7 @@ public final class JavaExampleGenerator {
         MetServiceEndpoint endpoint = target.getEndpoint();
         String protocol = endpoint.getProtocolName();
         if (!Set.of("tcp", "udp", "http").contains(endpoint.getTransport())) {
-            throw new IllegalArgumentException("当前传输没有 Meteor Java 示例模板");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_NO_METEOR_JAVA_EXAMPLE_TEMPLATE_IS);
         }
         StringBuilder code = new StringBuilder("        configuration.connector(").append(literal(endpoint.getTransport())).append(')');
         if (provider || discovery && StringUtils.equals(protocol, "rsf")) {
@@ -125,11 +119,10 @@ public final class JavaExampleGenerator {
         if (StringUtils.equals(protocol, "thrift")) {
             Object framed = contract.getExtensions().get("framed");
             if (!(framed instanceof Boolean)) {
-                throw new IllegalArgumentException("Thrift 端点未上报 framed 传输配置，不能生成可靠的 Java 客户端");
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_THRIFT_ENDPOINT_HAS_NOT_REPORTED);
             }
             code.append(" //\n                .option(\"framed\", ").append(framed).append(')');
-            code.append(" //\n                .option(\"multiplexed\", ")
-                    .append(contract.getExtensions().getOrDefault("multiplexed", false)).append(')');
+            code.append(" //\n                .option(\"multiplexed\", ").append(contract.getExtensions().getOrDefault("multiplexed", false)).append(')');
         }
         code.append(";\n");
         if (discovery && !StringUtils.equals(protocol, "rsf")) {
@@ -140,8 +133,7 @@ public final class JavaExampleGenerator {
         return code.toString();
     }
 
-    private String body(ExampleTarget target, MetProtocolDescription contract, JavaContractSources sources, String role,
-            ExampleRegistry registry, String address) {
+    private String body(ExampleTarget target, MetProtocolDescription contract, JavaContractSources sources, String role, ExampleRegistry registry, String address) {
         String type = sources.serviceType();
         String protocol = target.getEndpoint().getProtocolName();
         boolean provider = StringUtils.equals(role, "provider");
@@ -171,17 +163,13 @@ public final class JavaExampleGenerator {
             code.append(')');
         }
         if (Set.of("thrift", "thrift-http").contains(protocol)) {
-            code.append(" //\n                    .bindResource(").append(literal(protocol))
-                    .append(", new net.hasor.meteor.protocol.thrift.ThriftIdlResource(contract.toUri().toURL()).selectService(")
-                    .append(literal(BinaryContracts.thriftServiceName(contract))).append("))");
+            code.append(" //\n                    .bindResource(").append(literal(protocol)).append(", new net.hasor.meteor.protocol.thrift.ThriftIdlResource(contract.toUri().toURL()).selectService(").append(literal(BinaryContracts.thriftServiceName(contract))).append("))");
         } else if (Set.of("oncrpc", "oncrpc-udp").contains(protocol)) {
             Object version = contract.getExtensions().get("version");
             if (!(version instanceof Number)) {
-                throw new IllegalArgumentException("ONC RPC 缺少实际程序版本");
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_MISSING_ONC_RPC_PROGRAM_VERSION);
             }
-            code.append(" //\n                    .bindResource(").append(literal(protocol))
-                    .append(", new net.hasor.meteor.protocol.oncrpc.binding.OncRpcIdlResource(contract.toUri().toURL()).selectProgram(")
-                    .append(literal(contract.getName())).append(", ").append(((Number) version).longValue()).append("L))");
+            code.append(" //\n                    .bindResource(").append(literal(protocol)).append(", new net.hasor.meteor.protocol.oncrpc.binding.OncRpcIdlResource(contract.toUri().toURL()).selectProgram(").append(literal(contract.getName())).append(", ").append(((Number) version).longValue()).append("L))");
         }
         code.append(" //\n                    .register();\n");
         if (provider) {
@@ -195,18 +183,16 @@ public final class JavaExampleGenerator {
             code.append("            new java.util.concurrent.CountDownLatch(1).await();\n");
         } else {
             if (StringUtils.equals(role, "direct")) {
-                code.append("            ").append(type).append(" service = context.getRsfClient(new InterAddress(")
-                        .append(literal(address)).append(")).getRemote(binding);\n");
+                code.append("            ").append(type).append(" service = context.getRsfClient(new InterAddress(").append(literal(address)).append(")).getRemote(binding);\n");
             } else {
                 if (discovery) {
                     code.append("            long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(15);\n");
                     code.append("            while (context.getUpdater().queryAvailableAddresses(binding.getBindID()).isEmpty()) {\n");
-                    code.append("                if (System.nanoTime() >= deadline) throw new IllegalStateException(\"没有可用的服务提供者\");\n");
+                    code.append("                if (System.nanoTime() >= deadline) throw new IllegalStateException(\"No service provider is available\");\n");
                     code.append("                Thread.sleep(100);\n");
                     code.append("            }\n");
                 } else {
-                    code.append("            context.getUpdater().appendStaticAddress(binding.getBindID(), java.util.List.of(new InterAddress(")
-                            .append(literal(address)).append(")));\n");
+                    code.append("            context.getUpdater().appendStaticAddress(binding.getBindID(), java.util.List.of(new InterAddress(").append(literal(address)).append(")));\n");
                 }
                 code.append("            ").append(type).append(" service = context.getRsfClient().getRemote(binding);\n");
             }
@@ -228,11 +214,7 @@ public final class JavaExampleGenerator {
             return "";
         }
         String text = content.replace("\\", "\\\\").replace("\"\"\"", "\\\"\\\"\\\"");
-        return "            java.nio.file.Path contract = context.getSettings().getDataHome().resolve(" + literal(name) + ");\n"
-                + "            java.nio.file.Files.createDirectories(contract.getParent());\n"
-                + "            java.nio.file.Files.writeString(contract, \"\"\"\n"
-                + "                    " + text.replace("\n", "\n                    ")
-                + "\"\"\", java.nio.charset.StandardCharsets.UTF_8);\n";
+        return "            java.nio.file.Path contract = context.getSettings().getDataHome().resolve(" + literal(name) + ");\n" + "            java.nio.file.Files.createDirectories(contract.getParent());\n" + "            java.nio.file.Files.writeString(contract, \"\"\"\n" + "                    " + text.replace("\n", "\n                    ") + "\"\"\", java.nio.charset.StandardCharsets.UTF_8);\n";
     }
 
     private String registry(ExampleRegistry registry) {
@@ -242,13 +224,12 @@ public final class JavaExampleGenerator {
         StringBuilder code = new StringBuilder();
         code.append("        String publishHost = System.getenv(\"METEOR_PUBLISH_HOST\");\n");
         code.append("        if (publishHost == null || publishHost.isBlank()) {\n");
-        code.append("            throw new IllegalStateException(\"请设置 METEOR_PUBLISH_HOST 为本机可被其他应用访问的地址\");\n");
+        code.append("            throw new IllegalStateException(\"Set METEOR_PUBLISH_HOST to a local address reachable by other applications\");\n");
         code.append("        }\n");
         if (StringUtils.equals(registry.getType(), "jdbc")) {
             code.append("        org.apache.commons.dbcp2.BasicDataSource source = new org.apache.commons.dbcp2.BasicDataSource();\n");
             code.append("        source.setUrl(").append(literal(registry.getAddress())).append(");\n");
-            code.append("        source.setUsername(System.getenv().getOrDefault(\"METEOR_REGISTRY_USERNAME\", ")
-                    .append(literal(StringUtils.defaultIfBlank(registry.getUsername(), ""))).append("));\n");
+            code.append("        source.setUsername(System.getenv().getOrDefault(\"METEOR_REGISTRY_USERNAME\", ").append(literal(StringUtils.defaultIfBlank(registry.getUsername(), ""))).append("));\n");
             code.append("        source.setPassword(System.getenv().getOrDefault(\"METEOR_REGISTRY_PASSWORD\", \"\"));\n");
             code.append("        var registry = new net.hasor.meteor.registry.jdbc.JdbcRegistryConfiguration().setDataSource(source);\n");
         } else {
@@ -257,8 +238,7 @@ public final class JavaExampleGenerator {
                 className = "net.hasor.meteor.registry.nacos.NacosRegistryConfiguration";
             }
             code.append("        var registry = new ").append(className).append("() //\n                .setAddress(").append(literal(registry.getAddress())).append(");\n");
-            code.append("        String username = System.getenv().getOrDefault(\"METEOR_REGISTRY_USERNAME\", ")
-                    .append(literal(StringUtils.defaultIfBlank(registry.getUsername(), null))).append(");\n");
+            code.append("        String username = System.getenv().getOrDefault(\"METEOR_REGISTRY_USERNAME\", ").append(literal(StringUtils.defaultIfBlank(registry.getUsername(), null))).append(");\n");
             code.append("        if (username != null) {\n");
             code.append("            registry.setUsername(username);\n");
             code.append("            registry.setPassword(System.getenv().getOrDefault(\"METEOR_REGISTRY_PASSWORD\", \"\"));\n");
@@ -322,7 +302,7 @@ public final class JavaExampleGenerator {
                     case "postgresql" -> "org.postgresql:postgresql:42.7.4";
                     case "sqlserver" -> "com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre8";
                     case "oracle" -> "com.oracle.database.jdbc:ojdbc8:21.1.0.0";
-                    default -> throw new IllegalArgumentException("没有此 JDBC 数据库的驱动模板");
+                    default -> throw new ErrorMessageException(ConsoleMessageKey.ERROR_NO_DRIVER_TEMPLATE_IS_AVAILABLE_FOR);
                 };
                 dependencies.add("`" + driver + "`");
             }
@@ -334,7 +314,7 @@ public final class JavaExampleGenerator {
         try {
             return JsonUtils.writeValueAsString(value);
         } catch (Exception failure) {
-            throw new IllegalArgumentException("无法生成 Java 字面量", failure);
+            throw new ErrorMessageException(failure, ConsoleMessageKey.ERROR_COULD_NOT_GENERATE_A_JAVA_LITERAL);
         }
     }
 }

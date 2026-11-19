@@ -8,6 +8,8 @@
 package net.hasor.meteor.console.global;
 import net.hasor.cobble.StringUtils;
 import net.hasor.core.InjectSettings;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 
 /** 控制台运行配置，由 Hasor 统一注入。 */
 public final class MeteorConfig {
@@ -121,7 +123,7 @@ public final class MeteorConfig {
         if (StringUtils.equalsIgnoreCase(this.security, "false")) {
             return false;
         }
-        throw new IllegalArgumentException("meteor.web.auth.enabled 必须为 true 或 false");
+        throw new ErrorMessageException(ConsoleMessageKey.ERROR_METEOR_WEB_AUTH_ENABLED_MUST_BE);
     }
 
     public String getSecurityAccount() {

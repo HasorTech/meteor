@@ -17,9 +17,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.console.component.rpc.RpcManagement;
+import net.hasor.meteor.console.component.rpc.RpcManagementErrors;
 import net.hasor.meteor.console.component.rpc.RpcTarget;
 import net.hasor.meteor.console.global.error.ConsoleOperationException;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.utils.JsonUtils;
+import net.hasor.meteor.domain.MetException;
 import net.hasor.meteor.domain.MetServiceType;
 import net.hasor.meteor.registry.RegistryAdmin;
 import net.hasor.meteor.registry.admin.*;
@@ -61,7 +65,7 @@ final class RemoteConnection implements RegistryAdmin {
     public MetServiceAdmin getServiceAdmin(String serviceId, String instanceId) {
         requireOpen();
         if (StringUtils.isBlank(instanceId)) {
-            throw new IllegalArgumentException("Instance ID must not be blank");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_INSTANCE_ID_BLANK);
         }
         return new ServiceAdmin(RpcTarget.service(this.clusterId, serviceId, instanceId));
     }
@@ -76,7 +80,7 @@ final class RemoteConnection implements RegistryAdmin {
 
     private void requireOpen() {
         if (this.closed) {
-            throw new IllegalStateException("Remote registry administration is closed");
+            throw ErrorMessageException.state(null, ConsoleMessageKey.ERROR_REMOTE_ADMINISTRATION_CLOSED);
         }
     }
 
@@ -90,25 +94,27 @@ final class RemoteConnection implements RegistryAdmin {
             while ((cause instanceof UndeclaredThrowableException || cause instanceof InvocationTargetException || cause instanceof ExecutionException || cause instanceof CompletionException) && cause.getCause() != null) {
                 cause = cause.getCause();
             }
-            String message = cause.getMessage();
-            if (StringUtils.isBlank(message)) {
-                message = cause.getClass().getSimpleName();
+
+            if (cause instanceof MetException remote) {
+                throw RpcManagementErrors.receive(remote, this::redact);
             }
-            if (StringUtils.isNotBlank(this.managementToken)) {
-                message = message.replace(this.managementToken, "***");
-            }
-            throw new ConsoleOperationException(message, cause);
+            throw new ConsoleOperationException(cause, this::redact);
         }
+    }
+
+    private String redact(String message) {
+        return StringUtils.isBlank(this.managementToken) ? message : message.replace(this.managementToken, "***");
     }
 
     /** 与注册中心相同的输入约束，在 JSON 编码前拒绝会被省略的 null 元信息。 */
     private void validateMetadata(Map<String, Object> values) {
         if (values == null || values.size() > MetBindInfo.MAX_METADATA_SIZE) {
-            throw new IllegalArgumentException("Metadata map is required and cannot exceed " + MetBindInfo.MAX_METADATA_SIZE);
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_INVALID_METADATA_MAP_SIZE, MetBindInfo.MAX_METADATA_SIZE);
         }
+
         for (Map.Entry<String, Object> entry : values.entrySet()) {
             if (StringUtils.isBlank(entry.getKey()) || entry.getValue() == null) {
-                throw new IllegalArgumentException("Metadata key must be nonblank and value must not be null");
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_INVALID_METADATA_ENTRY);
             }
         }
     }

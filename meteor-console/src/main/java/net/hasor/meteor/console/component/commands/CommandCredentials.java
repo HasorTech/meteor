@@ -13,6 +13,8 @@ import net.hasor.core.Inject;
 import net.hasor.core.Singleton;
 import net.hasor.meteor.console.global.MeteorConfig;
 import net.hasor.meteor.console.global.auth.SessionService;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.registry.RegistryTokenProvider;
 
 /** 管理连接按本次调用取凭据，缓存连接不捕获某个 Telnet 或浏览器会话。 */
@@ -26,8 +28,9 @@ public final class CommandCredentials implements RegistryTokenProvider {
 
     public <T> T withToken(String value, Callable<T> operation) throws Exception {
         if (StringUtils.isBlank(value)) {
-            throw new IllegalArgumentException("Management credentials must not be blank");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_CREDENTIALS_BLANK);
         }
+
         String previous = this.token.get();
         this.token.set(value);
         try {
@@ -47,8 +50,9 @@ public final class CommandCredentials implements RegistryTokenProvider {
         if (current != null) {
             return current;
         }
+
         if (!this.config.isWebEnabled()) {
-            throw new IllegalStateException("No management credentials in current call");
+            throw ErrorMessageException.state(null, ConsoleMessageKey.ERROR_CREDENTIALS_MISSING);
         }
         return this.appContext.getInstance(SessionService.class).getToken();
     }

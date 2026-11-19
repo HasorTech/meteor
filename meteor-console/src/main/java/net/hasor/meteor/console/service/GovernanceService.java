@@ -23,9 +23,9 @@ import net.hasor.meteor.console.component.commands.dto.rule.*;
 import net.hasor.meteor.console.component.commands.dto.service.*;
 import net.hasor.meteor.console.model.fo.ManagementTarget;
 import net.hasor.meteor.domain.MetServiceType;
+import net.hasor.meteor.registry.admin.MetDirectoryQuery;
 import net.hasor.meteor.registry.admin.MetRuleType;
 import net.hasor.meteor.registry.admin.MetServiceMethodPage;
-import net.hasor.meteor.registry.admin.MetDirectoryQuery;
 
 /** 按管理目标选择命令入口，上层业务不接触具体提供者。 */
 @Singleton
@@ -57,8 +57,7 @@ public final class GovernanceService {
         return this.dispatcher.execute(target.getClusterId(), new InstanceInfoRequest(target));
     }
 
-    public MetServiceMethodPage methods(ManagementTarget target, String methodName,
-            MetDirectoryQuery query) {
+    public MetServiceMethodPage methods(ManagementTarget target, String methodName, MetDirectoryQuery query) {
         return this.dispatcher.execute(target.getClusterId(), new ServiceMethodsRequest(target, methodName, query));
     }
 

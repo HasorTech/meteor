@@ -10,6 +10,8 @@ import net.hasor.meteor.console.component.examples.ExampleConnections;
 import net.hasor.meteor.console.component.examples.ExampleDocument;
 import net.hasor.meteor.console.component.examples.ExampleTemplates;
 import net.hasor.meteor.console.component.examples.nativeclient.HttpExampleGenerator;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.utils.JsonUtils;
 
 /** 原生 Java 客户端只引用对应 RPC SDK 和业务 API，不引入 Meteor。 */
@@ -22,11 +24,12 @@ public final class NativeJavaExampleGenerator {
         if (!Set.of("hessian", "hprose", "jsonrpc", "xmlrpc", "dubbo").contains(protocol)) {
             return List.of();
         }
+
         ExampleConnections.validate(target);
         JavaContractSources source = new JavaContractSources(target.getDescription());
         var method = target.getDescription().getMethods().get(0);
         var contract = target.getEndpoint().getDescription();
-        var operation = contract.getMethods().stream().filter(item -> ObjectUtils.equals(method.getJavaSignature(), item.get("javaSignature"))).findFirst().orElseThrow(() -> new IllegalArgumentException("端点未上报该 Java 方法的线上名称"));
+        var operation = contract.getMethods().stream().filter(item -> ObjectUtils.equals(method.getJavaSignature(), item.get("javaSignature"))).findFirst().orElseThrow(() -> new ErrorMessageException(ConsoleMessageKey.ERROR_THE_ENDPOINT_HAS_NOT_REPORTED_THE));
         String wireName = Objects.toString(operation.get("name"), method.getJavaName());
         String http = this.httpAddress(target, address);
         String nativeArguments = source.invocationArguments();
@@ -38,6 +41,7 @@ public final class NativeJavaExampleGenerator {
             }
             nativeArguments = String.join(", ", arguments);
         }
+
         String body;
         String imports;
         String dependencies;
@@ -59,7 +63,7 @@ public final class NativeJavaExampleGenerator {
             }
             case "hessian" -> {
                 if (!StringUtils.equals(wireName, method.getJavaName())) {
-                    throw new IllegalArgumentException("Hessian 原生接口代理需要使用线上方法名声明的业务 API");
+                    throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_NATIVE_HESSIAN_PROXY_REQUIRES_A);
                 }
                 imports = "import com.caucho.hessian.client.HessianProxyFactory;";
                 dependencies = "`com.caucho:hessian:4.0.66`";
@@ -149,7 +153,7 @@ public final class NativeJavaExampleGenerator {
         try {
             return JsonUtils.writeValueAsString(text);
         } catch (Exception failure) {
-            throw new IllegalArgumentException("无法编码 Java 示例", failure);
+            throw new ErrorMessageException(failure, ConsoleMessageKey.ERROR_COULD_NOT_ENCODE_THE_JAVA_EXAMPLE);
         }
     }
 }

@@ -11,11 +11,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import com.fasterxml.jackson.core.type.TypeReference;
 import net.hasor.core.Init;
 import net.hasor.core.Inject;
 import net.hasor.meteor.console.global.MeteorConfig;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.model.fo.ClusterProfile;
 import net.hasor.meteor.console.utils.JsonUtils;
 
@@ -49,7 +54,7 @@ public final class ClusterDao {
     public synchronized ClusterProfile get(String id) {
         ClusterProfile profile = this.profiles.get(id);
         if (profile == null) {
-            throw new NoSuchElementException("集群连接不存在或已被移除");
+            throw ErrorMessageException.missing(ConsoleMessageKey.ERROR_CLUSTER_CONNECTION_REMOVED);
         }
         return profile;
     }
@@ -64,7 +69,7 @@ public final class ClusterDao {
     public synchronized void remove(String id) throws IOException {
         Map<String, ClusterProfile> next = new LinkedHashMap<>(this.profiles);
         if (next.remove(id) == null) {
-            throw new NoSuchElementException("集群连接不存在");
+            throw ErrorMessageException.missing(ConsoleMessageKey.ERROR_CLUSTER_CONNECTION_NOT_FOUND);
         }
 
         this.persist(next);

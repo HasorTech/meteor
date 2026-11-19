@@ -8,21 +8,40 @@
 package net.hasor.meteor.console.component.telnet;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import net.hasor.meteor.console.global.error.ConsoleErrorMessages;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleI18n;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.utils.JsonUtils;
 import net.hasor.tconsole.TelCommand;
 import net.hasor.tconsole.TelExecutor;
 
 /** 仅负责 Console 命令语法和错误输出，不执行治理。 */
 public abstract class AbstractCommand implements TelExecutor {
+    protected abstract ConsoleMessageKey helpKey();
+
+    @Override
+    public final String helpInfo() {
+        return ConsoleI18n.getMessage(this.helpKey(), ConsoleI18n.getLocale(Locale.US));
+    }
+
     @Override
     public final String doCommand(TelCommand command) {
+        return ConsoleI18n.withLocale(() -> {
+            return LanguageCommand.locale(command.getSession());
+        }, () -> this.executeCommand(command));
+    }
+
+    private String executeCommand(TelCommand command) {
         try {
             return this.execute(command, parseArguments(command));
         } catch (IllegalArgumentException invalid) {
-            return "ERROR INVALID_ARGUMENT  " + invalid.getMessage();
+            return "ERROR INVALID_ARGUMENT  " + ConsoleErrorMessages.getMessage(invalid);
         } catch (Exception failure) {
-            // 不输出配置、脚本或底层异常消息中的凭据。
-            return "ERROR OPERATION_FAILED  " + failure.getClass().getSimpleName();
+            // 未知的底层异常可能包含配置或脚本中的凭据，只输出类型。
+            String details = ConsoleErrorMessages.messageOf(failure) == null ? ConsoleI18n.getMessage(ConsoleMessageKey.ERROR_TELNET_OPERATION_FAILED, failure.getClass().getSimpleName()) : ConsoleErrorMessages.getMessage(failure);
+            return "ERROR OPERATION_FAILED  " + details;
         }
     }
 
@@ -69,7 +88,7 @@ public abstract class AbstractCommand implements TelExecutor {
             }
         }
         if (escaped || quote != 0) {
-            throw new IllegalArgumentException("Unclosed quote or escape");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_TELNET_UNCLOSED_QUOTE);
         }
         if (started) {
             result.add(token.toString());
@@ -79,7 +98,7 @@ public abstract class AbstractCommand implements TelExecutor {
 
     protected static void requireCount(List<String> args, int count) {
         if (args.size() != count) {
-            throw new IllegalArgumentException("Unexpected argument count; use help");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_TELNET_ARGUMENT_COUNT);
         }
     }
 }

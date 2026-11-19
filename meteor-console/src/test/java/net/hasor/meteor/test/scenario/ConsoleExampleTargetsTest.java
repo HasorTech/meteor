@@ -4,8 +4,8 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.meteor.test.scenario;
-import java.net.URI;
 import java.net.InetAddress;
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
@@ -13,9 +13,9 @@ import java.util.UUID;
 import net.hasor.boot.Boot;
 import net.hasor.boot.BootApplication;
 import net.hasor.meteor.MetContext;
-import net.hasor.meteor.bootstrap.MetConfiguration;
-import net.hasor.meteor.annotation.MetService;
 import net.hasor.meteor.address.InterAddress;
+import net.hasor.meteor.annotation.MetService;
+import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.console.ConsoleMain;
 import net.hasor.meteor.domain.MetServiceType;
 import net.hasor.meteor.registry.RegistryConfiguration;
@@ -203,6 +203,10 @@ public class ConsoleExampleTargetsTest {
             assertEquals(1, result.path("warnings").size());
             assertTrue(result.at("/warnings/0").asText().contains("缺少服务描述"));
             assertTrue(result.at("/warnings/0").asText().contains("legacy-instance"));
+
+            api.acceptLanguage("en-US");
+            var english = api.get("examples/targets?" + scope);
+            assertEquals("legacy-service / legacy-instance has no service description for generating invocation examples", english.at("/warnings/0").asText());
         }
     }
 }

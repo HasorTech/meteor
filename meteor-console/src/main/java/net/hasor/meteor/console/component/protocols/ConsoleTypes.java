@@ -11,6 +11,8 @@ import net.hasor.cobble.setting.Settings;
 import net.hasor.cobble.setting.provider.StreamType;
 import net.hasor.core.Init;
 import net.hasor.core.Singleton;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 
 /** 从各协议包的同路径 XML 读取参数编辑提示。 */
 @Singleton
@@ -33,11 +35,12 @@ public final class ConsoleTypes {
         for (SettingNode node : settings.getNodeArray("defaults")) {
             readTypes(node, defaults);
         }
+
         this.protocols.clear();
         for (SettingNode node : settings.getNodeArray("protocols.protocol")) {
             String name = node.getSubValue("name");
             if (StringUtils.isBlank(name)) {
-                throw new IllegalArgumentException("console-types protocol 缺少 name");
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_CONSOLE_TYPES_PROTOCOL_ENTRY_IS);
             }
             Map<String, ConsoleParameterType> types = this.protocols.computeIfAbsent(name, key -> new LinkedHashMap<>(defaults));
             readTypes(node, types);
@@ -54,7 +57,7 @@ public final class ConsoleTypes {
             String label = type.getSubValue("type");
             String component = type.getSubValue("component");
             if (StringUtils.isBlank(name) || StringUtils.isBlank(label) || !(StringUtils.equals(component, "input") || StringUtils.equals(component, "textarea") || StringUtils.equals(component, "json"))) {
-                throw new IllegalArgumentException("console-types type 配置无效：" + name);
+                throw new ErrorMessageException(ConsoleMessageKey.ERROR_INVALID_CONSOLE_TYPES_TYPE_CONFIGURATION, name);
             }
             types.put(name, new ConsoleParameterType(label, component, type.getSubValue("default")));
         }

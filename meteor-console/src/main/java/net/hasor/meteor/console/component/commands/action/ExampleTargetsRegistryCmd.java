@@ -7,30 +7,19 @@ package net.hasor.meteor.console.component.commands.action;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.console.component.commands.CommandContext;
 import net.hasor.meteor.console.component.commands.RegistryCommand;
 import net.hasor.meteor.console.component.commands.dto.service.ExampleTarget;
 import net.hasor.meteor.console.component.commands.dto.service.ExampleTargetsRequest;
 import net.hasor.meteor.console.component.commands.dto.service.ExampleTargetsResult;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleI18n;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.model.fo.ManagementTarget;
 import net.hasor.meteor.domain.MetServiceType;
-import net.hasor.meteor.registry.admin.MetDirectoryQuery;
-import net.hasor.meteor.registry.admin.MetEndpointFilter;
-import net.hasor.meteor.registry.admin.MetInstanceAdmin;
-import net.hasor.meteor.registry.admin.MetInstanceInfo;
-import net.hasor.meteor.registry.admin.MetPage;
-import net.hasor.meteor.registry.admin.MetServiceAdmin;
-import net.hasor.meteor.registry.admin.MetServiceEndpoint;
-import net.hasor.meteor.registry.admin.MetServiceInfo;
-import net.hasor.meteor.registry.admin.MetServiceMember;
-import net.hasor.meteor.registry.admin.description.MetProtocolDescription;
+import net.hasor.meteor.registry.admin.*;
 import net.hasor.meteor.registry.admin.description.MetServiceDescription;
 
 /** 从当前提供者登记和端点契约收集示例目标，不猜测协议名称或业务地址。 */
@@ -39,17 +28,19 @@ public final class ExampleTargetsRegistryCmd implements RegistryCommand<ExampleT
     public ExampleTargetsResult execute(CommandContext context, ExampleTargetsRequest request) {
         ManagementTarget target = request.getTarget();
         if (StringUtils.isBlank(request.getProtocol()) && StringUtils.isBlank(target.getInstanceId()) && !target.isDirect()) {
-            throw new IllegalArgumentException("读取全部协议接入点需要指定实例");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_AN_INSTANCE_IS_REQUIRED_TO_LIST);
         }
+
         boolean scoped = StringUtils.isNotBlank(target.getServiceId()) || StringUtils.isNotBlank(target.getInstanceId());
         if (!target.isDirect() && !scoped) {
-            throw new IllegalArgumentException("调用示例需要指定服务或实例");
+            throw new ErrorMessageException(ConsoleMessageKey.ERROR_A_SERVICE_OR_INSTANCE_IS_REQUIRED);
         }
 
         ExampleTargetsResult result = new ExampleTargetsResult();
         if (!target.isDirect()) {
             result.setRegistry(context.cluster().info());
         }
+
         Set<String> warnings = new LinkedHashSet<>();
         for (String serviceId : this.services(context, request)) {
             ManagementTarget serviceTarget = target.atInstance(target.getInstanceId());
@@ -136,12 +127,13 @@ public final class ExampleTargetsRegistryCmd implements RegistryCommand<ExampleT
         MetServiceInfo service = member.getService();
         String identity = service.getServiceId() + " / " + instance.getInstanceId();
         if (description == null) {
-            warnings.add(identity + " 缺少服务描述，无法生成调用示例");
+            warnings.add(ConsoleI18n.getMessage(ConsoleMessageKey.ERROR_EXAMPLE_MISSING_SERVICE_DESCRIPTION, identity));
             return;
         }
+
         if (endpoint.getDescription() == null) {
             String mount = endpoint.getProtocolName() + " / " + this.address(endpoint, source);
-            warnings.add(identity + " 缺少 " + mount + " 的端点契约");
+            warnings.add(ConsoleI18n.getMessage(ConsoleMessageKey.ERROR_EXAMPLE_MISSING_ENDPOINT_CONTRACT, identity, mount));
             return;
         }
 
@@ -182,7 +174,7 @@ public final class ExampleTargetsRegistryCmd implements RegistryCommand<ExampleT
             return new URI(address.getScheme(), address.getUserInfo(), source.getTarget().getHost(), //
                     address.getPort(), address.getPath(), address.getQuery(), address.getFragment()).toASCIIString();
         } catch (URISyntaxException invalid) {
-            throw new IllegalArgumentException("实例的直连业务地址格式不正确", invalid);
+            throw new ErrorMessageException(invalid, ConsoleMessageKey.ERROR_INVALID_DIRECT_SERVICE_ADDRESS_FOR_THE);
         }
     }
 }

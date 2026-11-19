@@ -2,19 +2,28 @@
 package net.hasor.meteor.console.web;
 
 import net.hasor.core.Inject;
+import net.hasor.meteor.console.global.http.ConsoleRequest;
+import net.hasor.meteor.console.global.i18n.ConsoleI18n;
 import net.hasor.meteor.console.service.ConsoleSettingsService;
+import net.hasor.web.Invoker;
 import net.hasor.web.annotation.Get;
 import net.hasor.web.annotation.MappingTo;
 
-/** 登录后的控制台能力和界面定义；沿用统一认证边界。 */
+/** 控制台能力与登录前可用的界面语言包。 */
 @MappingTo("/api")
 public class ConsoleSettingsController {
     @Inject
     private ConsoleSettingsService settings;
 
     @Get
+    @MappingTo("/i18n")
+    public Object i18n() {
+        return this.settings.languageBundle(ConsoleI18n.getLocale());
+    }
+
+    @Get
     @MappingTo("/settings")
-    public Object settings() {
-        return this.settings.settings();
+    public Object settings(Invoker invoker) {
+        return this.settings.settings(ConsoleRequest.from(invoker).locale());
     }
 }

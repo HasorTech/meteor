@@ -5,8 +5,8 @@ import net.hasor.meteor.console.global.http.ConsoleRequest;
 import net.hasor.meteor.console.service.ServiceDebugService;
 import net.hasor.web.Invoker;
 import net.hasor.web.annotation.Get;
-import net.hasor.web.annotation.Post;
 import net.hasor.web.annotation.MappingTo;
+import net.hasor.web.annotation.Post;
 
 /** 读取实例契约与显式发起一次业务调用；沿用控制台会话及写操作认证。 */
 @MappingTo("/api/service/debug")
@@ -22,6 +22,6 @@ public class ServiceDebugController {
     @Post
     public Object invoke(Invoker invoker) {
         ConsoleRequest request = ConsoleRequest.from(invoker);
-        return this.debugging.invoke(request.target(), request.body());
+        return this.debugging.invoke(request.target(), request.body(), request.locale());
     }
 }

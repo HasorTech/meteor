@@ -10,6 +10,9 @@ import net.hasor.core.Init;
 import net.hasor.core.Singleton;
 import net.hasor.meteor.connector.ProtocolProvider;
 import net.hasor.meteor.connector.transport.TransportFactory;
+import net.hasor.meteor.console.global.error.ConsoleHttpException;
+import net.hasor.meteor.console.global.error.ErrorMessageException;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.console.model.vo.ConsoleCapability;
 
 /** 只检查当前进程的 SPI 和 JDBC 驱动；不建立远程连接，也不代表远端服务的协议支持。 */
@@ -25,12 +28,14 @@ public final class ConsoleCapabilities {
         for (TransportFactory<?> transport : ServiceLoader.load(TransportFactory.class, loader)) {
             transports.add(transport.name());
         }
+
         Set<String> protocols = new TreeSet<>();
         for (ProtocolProvider<?> protocol : ServiceLoader.load(ProtocolProvider.class, loader)) {
             if (transports.contains(protocol.transportType())) {
                 protocols.add(protocol.name());
             }
         }
+
         this.debugProtocols = List.copyOf(protocols);
 
         // 顺序决定连接页面的数据库选项顺序，优先展示常用的外部注册中心数据库。
@@ -47,13 +52,15 @@ public final class ConsoleCapabilities {
         return this.debugProtocols;
     }
 
-    public List<ConsoleCapability> jdbcDatabases() {
-        return this.jdbcDatabases;
+    public List<ConsoleCapability> jdbcDatabases(Locale locale) {
+        return this.jdbcDatabases.stream().map(capability -> {
+            return capability.isAvailable() ? capability : new ConsoleCapability(capability.getKey(), capability.getLabel(), capability.reasonKey(), locale);
+        }).toList();
     }
 
     public void requireDebugProtocol(String protocol) {
         if (!this.debugProtocols.contains(protocol)) {
-            throw new UnsupportedOperationException("当前控制台未安装 " + protocol + " 协议插件，无法调试");
+            throw new ConsoleHttpException(409, ConsoleMessageKey.ERROR_DEBUG_PROTOCOL_UNAVAILABLE, protocol);
         }
     }
 
@@ -61,21 +68,21 @@ public final class ConsoleCapabilities {
         for (ConsoleCapability capability : this.jdbcDatabases) {
             if (StringUtils.equals(capability.getKey(), database)) {
                 if (!capability.isAvailable()) {
-                    throw new UnsupportedOperationException(capability.getReason());
+                    throw new ConsoleHttpException(409, capability.reasonKey(), capability.getLabel());
                 }
                 return;
             }
         }
-        throw new IllegalArgumentException("不支持的数据库类型：" + database);
+        throw new ErrorMessageException(ConsoleMessageKey.ERROR_UNSUPPORTED_DATABASE_TYPE, database);
     }
 
     private static ConsoleCapability database(String key, String label, String driver, String url, ClassLoader loader) {
         try {
             Class<?> type = ClassUtils.getClass(loader, driver, true);
             boolean available = Driver.class.isAssignableFrom(type) && DriverManager.getDriver(url) != null;
-            return new ConsoleCapability(key, label, available, available ? "" : "当前控制台未安装 " + label + " 驱动");
+            return new ConsoleCapability(key, label, available ? null : ConsoleMessageKey.ERROR_JDBC_DRIVER_MISSING, Locale.US);
         } catch (ClassNotFoundException | LinkageError | SQLException failure) {
-            return new ConsoleCapability(key, label, false, "当前控制台未安装可用的 " + label + " 驱动");
+            return new ConsoleCapability(key, label, ConsoleMessageKey.ERROR_JDBC_DRIVER_UNAVAILABLE, Locale.US);
         }
     }
 }

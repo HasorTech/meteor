@@ -10,36 +10,41 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.net.SocketTimeoutException;
 import java.util.ConcurrentModificationException;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.console.global.auth.AuthenticationException;
-import net.hasor.meteor.console.utils.JsonUtils;
+import net.hasor.meteor.console.global.i18n.ConsoleI18n;
+import net.hasor.meteor.console.global.i18n.ConsoleMessageKey;
 import net.hasor.meteor.domain.MetException;
 import net.hasor.meteor.domain.ProtocolStatus;
+import net.hasor.web.ExceptionHandler;
 import net.hasor.web.Invoker;
 
 /** 将边界、业务及存储异常统一转换成 HTTP JSON 错误。 */
-public final class ConsoleExceptionHandler {
-    public void handle(Invoker invoker, Throwable failure) throws Exception {
+public final class ConsoleExceptionHandler implements ExceptionHandler<Exception> {
+    @Override
+    public Map<String, Object> handleException(Invoker invoker, Exception failure) {
+        if (!invoker.getRequestPath().startsWith("/api/")) {
+            return null; // Other MVC mappings keep Hasor's default exception handling.
+        }
+
+        Locale locale = ConsoleI18n.getLocale();
         Throwable visible = failure;
         while ((visible instanceof InvocationTargetException || visible instanceof UndeclaredThrowableException || visible instanceof ExecutionException || visible instanceof CompletionException) && visible.getCause() != null) {
             visible = visible.getCause();
         }
         int status = status(visible);
-        String message = visible.getMessage();
-        if (StringUtils.isBlank(message)) {
-            message = visible.getClass().getSimpleName();
-        }
+        String message = visible instanceof JsonProcessingException ?//
+                ConsoleI18n.getMessage(ConsoleMessageKey.ERROR_MALFORMED_JSON) ://
+                ConsoleErrorMessages.getMessage(visible, locale);
 
         invoker.getHttpResponse().setStatus(status);
-        invoker.getHttpResponse().setContentType("application/json;charset=UTF-8");
-        JsonUtils.writeValue(invoker.getHttpResponse().getOutputStream(), Map.of("error", message, "status", status));
-        invoker.setSkipRender();
+        return Map.of("error", message, "status", status);
     }
 
     private static int status(Throwable failure) {
