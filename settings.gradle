@@ -67,9 +67,13 @@ project(':meteor-registry-dubbo').projectDir = file('meteor-integration/registry
 //
 include 'meteor-hasor'
 include 'meteor-spring'
+include 'meteor-spring-starter'
 include 'meteor-solon'
+include 'meteor-telnet'
+project(':meteor-telnet').projectDir = file('meteor-integration/meteor-telnet')
 project(':meteor-hasor').projectDir = file('meteor-integration/meteor-hasor')
 project(':meteor-spring').projectDir = file('meteor-integration/meteor-spring')
+project(':meteor-spring-starter').projectDir = file('meteor-integration/meteor-spring-starter')
 project(':meteor-solon').projectDir = file('meteor-integration/meteor-solon')
 
 //
