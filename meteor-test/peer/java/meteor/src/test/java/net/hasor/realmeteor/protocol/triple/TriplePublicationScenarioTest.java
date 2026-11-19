@@ -6,36 +6,25 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.triple;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import com.google.protobuf.Empty;
-import io.grpc.CallOptions;
-import io.grpc.ManagedChannel;
-import io.grpc.MethodDescriptor;
-import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
+import io.grpc.*;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.protobuf.ProtoUtils;
 import io.grpc.stub.ClientCalls;
-import net.hasor.example.protocol.triple.TripleAmbiguousService;
-import net.hasor.example.protocol.triple.TripleAmbiguousServiceImpl;
-import net.hasor.example.protocol.triple.TripleFlowService;
-import net.hasor.example.protocol.triple.TripleFlowServiceImpl;
-import net.hasor.example.protocol.triple.TripleMessage;
-import net.hasor.example.protocol.triple.TripleNotificationService;
-import net.hasor.example.protocol.triple.TripleUnaryService;
-import net.hasor.example.protocol.triple.TripleUnaryServiceImpl;
+import net.hasor.example.protocol.triple.*;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.rpc.MetCaller;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 协议不支持的声明只跳过 Triple 挂载，本地服务仍保留。 */
 @NxnRpc(name = "triple")
@@ -132,23 +121,19 @@ public class TriplePublicationScenarioTest {
 
     @Test
     @Timeout(value = 10000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
-    public void indistinguishableWireSignaturesRemainCallableThroughTheLocalClient() throws Exception {
-        // Java 的 String 与 Flow<String> 参数不同，但 wrapper 中都只声明 String 消息。
+    public void duplicatePublicMethodNamesRejectTriplePublication() throws Exception {
+        // 两个 Java 声明均暴露为同一个 RPC 名称。
         MetConfiguration configuration = this.configuration("grpc");
         try (MetContext context = configuration.buildContext()) {
             context.start();
 
-            // 歧义签名不进入 Triple 端点，服务仍可作为本地声明存在。
-            MetBindInfo<TripleAmbiguousService> service = context.publisher() //
+            var publication = context.publisher() //
                     .rsfService(TripleAmbiguousService.class, new TripleAmbiguousServiceImpl()) //
                     .aliasName("triple", "meteor.triple.demo.TripleAmbiguousService") //
-                    .serialize("Hessian2").register();
-            assertNotNull(context.getServiceInfo(service.getBindID()));
-
-            // 本地代理按真实 Java 参数类型选择重载，无需线协议签名消歧。
-            TripleAmbiguousService local = context.getRsfClient().getRemote(service);
-            assertEquals("local", local.exchange("local"));
-            assertEquals("stream", local.exchange(MetCaller.fromIterable(List.of("item"))));
+                    .serialize("Hessian2");
+            IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, publication::register);
+            assertTrue(failure.getMessage().contains("Duplicate RPC method name 'exchange'"));
+            assertNull(context.getServiceInfo(TripleAmbiguousService.class));
         }
     }
 

@@ -22,12 +22,12 @@ public final class DubboWrappedServiceImpl implements DubboWrappedService {
     }
 
     @Override
-    public String overloaded(String value) {
+    public String overloadedText(String value) {
         return "string:" + value;
     }
 
     @Override
-    public String overloaded(int value) {
+    public String overloadedNumber(int value) {
         return "int:" + value;
     }
 

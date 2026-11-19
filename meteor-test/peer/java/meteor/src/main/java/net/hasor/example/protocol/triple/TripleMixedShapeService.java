@@ -7,14 +7,17 @@
  */
 package net.hasor.example.protocol.triple;
 import java.util.concurrent.Flow;
+import net.hasor.meteor.annotation.MetMethod;
 
-/** 同名方法可具有不同流形状，前提是 wrapper 的消息类型可以区分它们。 */
+/** 不同流形状使用独立的对外操作名。 */
 public interface TripleMixedShapeService {
     String source(int value);
 
+    @MetMethod(name = "sourceStream")
     Flow.Publisher<String> source(String prefix);
 
     String sink(int value);
 
+    @MetMethod(name = "sinkStream")
     String sink(Flow.Publisher<String> values);
 }

@@ -6,42 +6,26 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.peer.protocol.dubbo;
-import net.hasor.example.protocol.dubbo.interop.DubboInteropPerson;
-import net.hasor.example.protocol.dubbo.interop.DubboInteropService;
-import org.apache.dubbo.config.ApplicationConfig;
-import org.apache.dubbo.common.Version;
-import org.apache.dubbo.config.MethodConfig;
-import org.apache.dubbo.config.ProtocolConfig;
-import org.apache.dubbo.config.ReferenceConfig;
-import org.apache.dubbo.config.RegistryConfig;
-import org.apache.dubbo.config.ServiceConfig;
-import org.apache.dubbo.config.SslConfig;
-import org.apache.dubbo.config.bootstrap.DubboBootstrap;
-import org.apache.dubbo.rpc.RpcContext;
-import org.apache.dubbo.rpc.Invoker;
-import org.apache.dubbo.rpc.cluster.ClusterInvoker;
-import org.apache.dubbo.rpc.cluster.Directory;
-import org.apache.dubbo.rpc.AppResponse;
-import org.apache.dubbo.rpc.FutureContext;
-import org.apache.dubbo.rpc.service.GenericService;
-
-import java.lang.reflect.Array;
-import java.lang.reflect.Method;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.lang.reflect.Array;
+import java.lang.reflect.Method;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
+import net.hasor.example.protocol.dubbo.interop.DubboInteropPerson;
+import net.hasor.example.protocol.dubbo.interop.DubboInteropService;
+import org.apache.dubbo.common.Version;
+import org.apache.dubbo.config.*;
+import org.apache.dubbo.config.bootstrap.DubboBootstrap;
+import org.apache.dubbo.rpc.AppResponse;
+import org.apache.dubbo.rpc.FutureContext;
+import org.apache.dubbo.rpc.Invoker;
+import org.apache.dubbo.rpc.RpcContext;
+import org.apache.dubbo.rpc.cluster.ClusterInvoker;
+import org.apache.dubbo.rpc.cluster.Directory;
+import org.apache.dubbo.rpc.service.GenericService;
 
 /** 用相同业务契约启动隔离的官方 Dubbo 2.7 或 3.3 JVM。 */
 public final class DubboPeer {
@@ -404,8 +388,8 @@ public final class DubboPeer {
             case "echo" -> service.echo("Dubbo 中文 \uD83D\uDE42");
             case "unicode" -> service.echo("中文-\uD83D\uDE80");
             case "combine" -> service.combine("hello", 3);
-            case "string-overload" -> service.overloaded("hello");
-            case "int-overload" -> service.overloaded(7);
+            case "string-overload" -> service.overloadedText("hello");
+            case "int-overload" -> service.overloadedNumber(7);
             case "no-args" -> service.noArgs();
             case "binary" -> Base64.getEncoder().encodeToString(service.binary(new byte[] { 0, 1, 2, -1 }));
             case "person" -> service.person(new DubboInteropPerson("Ada", 41));

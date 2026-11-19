@@ -6,8 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.triple;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -15,15 +13,17 @@ import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.triple.TripleDemoService;
 import net.hasor.example.protocol.triple.TripleDemoServiceImpl;
 import net.hasor.example.protocol.triple.TripleMessage;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetFuture;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcStatusException;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 无 proto 的 Java 接口通过 Triple wrapper 直接调用。 */
 @NxnRpc(name = "triple")
@@ -70,7 +70,7 @@ public class TriplePojoScenarioTest {
                     .serialize("Hessian2").register();
             TripleDemoService remote = client.getRsfClient(server.getListenAddress("triple")).getRemote(service);
             // 同名方法通过完整参数类型选择，不以 JSON 值猜测业务重载。
-            assertEquals("text:42", remote.overloaded("42"));
+            assertEquals("text:42", remote.overloadedText("42"));
         }
     }
 
@@ -93,7 +93,7 @@ public class TriplePojoScenarioTest {
                     .serialize("Hessian2").register();
             TripleDemoService remote = client.getRsfClient(server.getListenAddress("triple")).getRemote(service);
             // primitive 参数签名不能错误匹配字符串重载。
-            assertEquals("number:42", remote.overloaded(42));
+            assertEquals("number:42", remote.overloadedNumber(42));
         }
     }
 

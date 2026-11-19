@@ -9,11 +9,14 @@ package net.hasor.meteor.bootstrap;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.ObjLongConsumer;
+import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.cobble.concurrent.future.Future;
 import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
-import net.hasor.meteor.connector.*;
+import net.hasor.meteor.connector.ProtocolSession;
+import net.hasor.meteor.connector.ProtocolSessionContext;
+import net.hasor.meteor.connector.RouteTable;
 import net.hasor.meteor.connector.transport.*;
 import net.hasor.meteor.domain.ProtocolBinding;
 import net.hasor.meteor.domain.ProtocolConfig;
@@ -202,6 +205,10 @@ public class ConnectorSpiTest {
 
         public String transportType() {
             return "custom";
+        }
+
+        @Override
+        public void prepareOperation(ProtocolConfig config, JsonNode contract, Target target, Binding<Object> binding) {
         }
 
         @Override

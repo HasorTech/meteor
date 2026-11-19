@@ -13,9 +13,9 @@ public interface TripleInteropWrappedService {
 
     String combine(String text, int number);
 
-    String overloaded(String text);
+    String overloadedText(String text);
 
-    String overloaded(int number);
+    String overloadedNumber(int number);
 
     String noArgs();
 

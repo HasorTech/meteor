@@ -9,6 +9,7 @@ package net.hasor.realmeteor.protocol.hprose.bootstrap.spi;
 import java.util.List;
 import java.util.Set;
 import java.util.function.ObjLongConsumer;
+import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.connector.ProtocolSession;
@@ -40,6 +41,10 @@ public class TestHproseProtocolA implements HttpProtocolProvider {
 
     public String defaultSerialize() {
         return "Hprose";
+    }
+
+    @Override
+    public void prepareOperation(ProtocolConfig config, JsonNode contract, Target target, Binding<Object> binding) {
     }
 
     @Override

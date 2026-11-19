@@ -23,11 +23,11 @@ public class TripleDemoServiceImpl implements TripleDemoService {
         return name.repeat(times);
     }
 
-    public String overloaded(String value) {
+    public String overloadedText(String value) {
         return "text:" + value;
     }
 
-    public String overloaded(int value) {
+    public String overloadedNumber(int value) {
         return "number:" + value;
     }
 

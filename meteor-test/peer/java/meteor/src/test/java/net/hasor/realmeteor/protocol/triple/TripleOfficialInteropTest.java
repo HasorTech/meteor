@@ -165,7 +165,7 @@ public class TripleOfficialInteropTest {
                 TripleInteropWrappedService remote = client.getRsfClient(address).getRemote(service);
 
                 // 通过正式客户端入口调用，验证本场景的对端结果。
-                assertEquals("string:hello", remote.overloaded("hello"));
+                assertEquals("string:hello", remote.overloadedText("hello"));
             }
         }
     }
@@ -210,7 +210,7 @@ public class TripleOfficialInteropTest {
                 TripleInteropWrappedService remote = client.getRsfClient(address).getRemote(service);
 
                 // 通过正式客户端入口调用，验证本场景的对端结果。
-                assertEquals("int:7", remote.overloaded(7));
+                assertEquals("int:7", remote.overloadedNumber(7));
             }
         }
     }

@@ -14,9 +14,9 @@ public interface TripleDemoService {
 
     String greet(String name, int times);
 
-    String overloaded(String value);
+    String overloadedText(String value);
 
-    String overloaded(int value);
+    String overloadedNumber(int value);
 
     List<TripleMessage> list(List<TripleMessage> requests);
 

@@ -10,10 +10,10 @@ import java.util.List;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropPerson;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropService;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
-import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 
 /** 普通 Java 接口通过 Dubbo 二进制协议调用，默认使用 Hessian2，不需要 Dubbo SDK。 */
@@ -49,7 +49,7 @@ public final class DubboExample {
             DubboInteropService remote = caller.getRemote(service);
             System.out.println("echo: " + remote.echo("Hello Dubbo"));
             System.out.println("multiple arguments: " + remote.combine("hello", 2));
-            System.out.println("overload: " + remote.overloaded(42));
+            System.out.println("overload: " + remote.overloadedNumber(42));
             List<DubboInteropPerson> people = List.of(new DubboInteropPerson("Meteor", 18));
             System.out.println("DTO: " + remote.people(people).get(0).getAge());
         }

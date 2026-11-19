@@ -14,9 +14,9 @@ public interface DubboWrappedService {
 
     String combine(String value, int count);
 
-    String overloaded(String value);
+    String overloadedText(String value);
 
-    String overloaded(int value);
+    String overloadedNumber(int value);
 
     String noArgs();
 

@@ -16,9 +16,9 @@ public interface HessianInteropDemo {
 
     String overloaded();
 
-    String overloaded(String value);
+    String overloadedText(String value);
 
-    String overloaded(int value);
+    String overloadedNumber(int value);
 
     HessianInteropPerson person(HessianInteropPerson value);
 

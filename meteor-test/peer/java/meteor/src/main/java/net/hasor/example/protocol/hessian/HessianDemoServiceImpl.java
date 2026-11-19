@@ -61,12 +61,12 @@ public class HessianDemoServiceImpl implements HessianDemoService {
     }
 
     @Override
-    public String overloaded(String value) {
+    public String overloadedText(String value) {
         return "text:" + value;
     }
 
     @Override
-    public String overloaded(int value) {
+    public String overloadedNumber(int value) {
         return "number:" + value;
     }
 

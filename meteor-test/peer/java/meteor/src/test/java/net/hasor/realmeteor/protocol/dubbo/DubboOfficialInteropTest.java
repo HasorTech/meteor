@@ -18,7 +18,6 @@ import net.hasor.example.protocol.dubbo.interop.DubboInteropPerson;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropService;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropServiceImpl;
 import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.*;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.domain.MetTimeoutException;
@@ -162,7 +161,7 @@ public class DubboOfficialInteropTest {
                 DubboInteropService remote = client.getRsfClient(address).getRemote(service);
 
                 // 通过公开代理调用并验证本场景的结果。
-                assertEquals("string:hello", remote.overloaded("hello"));
+                assertEquals("string:hello", remote.overloadedText("hello"));
             }
         }
     }
@@ -207,7 +206,7 @@ public class DubboOfficialInteropTest {
                 DubboInteropService remote = client.getRsfClient(address).getRemote(service);
 
                 // 通过公开代理调用并验证本场景的结果。
-                assertEquals("int:7", remote.overloaded(7));
+                assertEquals("int:7", remote.overloadedNumber(7));
             }
         }
     }
@@ -749,7 +748,7 @@ public class DubboOfficialInteropTest {
                 DubboInteropService remote = client.getRsfClient(address).getRemote(service);
 
                 // 通过公开代理调用并验证本场景的结果。
-                assertEquals("string:hello", remote.overloaded("hello"));
+                assertEquals("string:hello", remote.overloadedText("hello"));
             }
         }
     }
@@ -796,7 +795,7 @@ public class DubboOfficialInteropTest {
                 DubboInteropService remote = client.getRsfClient(address).getRemote(service);
 
                 // 通过公开代理调用并验证本场景的结果。
-                assertEquals("int:7", remote.overloaded(7));
+                assertEquals("int:7", remote.overloadedNumber(7));
             }
         }
     }

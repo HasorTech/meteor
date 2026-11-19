@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.dubbo;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -16,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropPerson;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropService;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
@@ -23,8 +23,8 @@ import net.hasor.meteor.MetFuture;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 普通 Java 方法通过真实 Dubbo TCP 通道传递业务值。 */
 @NxnRpc(name = "dubbo")
@@ -71,7 +71,7 @@ public class DubboPojoScenarioTest {
             DubboInteropService remote = caller.getRemote(service);
 
             // 相同方法名按 String 参数签名选择实现。
-            assertEquals("string:42", remote.overloaded("42"));
+            assertEquals("string:42", remote.overloadedText("42"));
         }
     }
 
@@ -94,7 +94,7 @@ public class DubboPojoScenarioTest {
             DubboInteropService remote = caller.getRemote(service);
 
             // primitive 参数不会被错误当作包装对象或字符串重载。
-            assertEquals("int:42", remote.overloaded(42));
+            assertEquals("int:42", remote.overloadedNumber(42));
         }
     }
 

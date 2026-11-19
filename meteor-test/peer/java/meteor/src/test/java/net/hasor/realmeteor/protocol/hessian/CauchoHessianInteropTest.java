@@ -62,7 +62,8 @@ public class CauchoHessianInteropTest {
             // 服务容器启动后发布普通 Java 接口，官方代理直接连接公开服务地址。
             server.start();
             server.publisher().rsfService(HessianInteropDemo.class, new HessianInteropDemoImpl()) //
-                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             int port = server.getListenAddress("hessian").getPort();
             String endpoint = "http://" + ContainerProcess.runnerHost() + ":" + port + "/hessian/demo";
             HessianInteropDemo remote = this.officialProxy(endpoint);
@@ -89,12 +90,13 @@ public class CauchoHessianInteropTest {
             // 服务容器启动后发布普通 Java 接口，官方代理直接连接公开服务地址。
             server.start();
             server.publisher().rsfService(HessianInteropDemo.class, new HessianInteropDemoImpl()) //
-                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             int port = server.getListenAddress("hessian").getPort();
             String endpoint = "http://" + ContainerProcess.runnerHost() + ":" + port + "/hessian/demo";
             HessianInteropDemo remote = this.officialProxy(endpoint);
 
-            // 零参数重载的官方名称就是原方法名，不能误选其他有参重载。
+            // 零参数调用使用原有的对外名称。
             String result = remote.overloaded();
             assertEquals("zero-args", result);
         }
@@ -115,13 +117,14 @@ public class CauchoHessianInteropTest {
             // 服务容器启动后发布普通 Java 接口，官方代理直接连接公开服务地址。
             server.start();
             server.publisher().rsfService(HessianInteropDemo.class, new HessianInteropDemoImpl()) //
-                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             int port = server.getListenAddress("hessian").getPort();
             String endpoint = "http://" + ContainerProcess.runnerHost() + ":" + port + "/hessian/demo";
             HessianInteropDemo remote = this.officialProxy(endpoint);
 
             // 验证同名字符串重载。
-            String result = remote.overloaded("overload");
+            String result = remote.overloadedText("overload");
             assertEquals("string:overload", result);
         }
     }
@@ -141,13 +144,14 @@ public class CauchoHessianInteropTest {
             // 服务容器启动后发布普通 Java 接口，官方代理直接连接公开服务地址。
             server.start();
             server.publisher().rsfService(HessianInteropDemo.class, new HessianInteropDemoImpl()) //
-                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             int port = server.getListenAddress("hessian").getPort();
             String endpoint = "http://" + ContainerProcess.runnerHost() + ":" + port + "/hessian/demo";
             HessianInteropDemo remote = this.officialProxy(endpoint);
 
             // 验证同名整数重载。
-            String result = remote.overloaded(37);
+            String result = remote.overloadedNumber(37);
             assertEquals("int:37", result);
         }
     }
@@ -167,7 +171,8 @@ public class CauchoHessianInteropTest {
             // 服务容器启动后发布普通 Java 接口，官方代理直接连接公开服务地址。
             server.start();
             server.publisher().rsfService(HessianInteropDemo.class, new HessianInteropDemoImpl()) //
-                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             int port = server.getListenAddress("hessian").getPort();
             String endpoint = "http://" + ContainerProcess.runnerHost() + ":" + port + "/hessian/demo";
             HessianInteropDemo remote = this.officialProxy(endpoint);
@@ -196,7 +201,8 @@ public class CauchoHessianInteropTest {
             // 服务容器启动后发布普通 Java 接口，官方代理直接连接公开服务地址。
             server.start();
             server.publisher().rsfService(HessianInteropDemo.class, new HessianInteropDemoImpl()) //
-                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             int port = server.getListenAddress("hessian").getPort();
             String endpoint = "http://" + ContainerProcess.runnerHost() + ":" + port + "/hessian/demo";
             HessianInteropDemo remote = this.officialProxy(endpoint);
@@ -221,7 +227,8 @@ public class CauchoHessianInteropTest {
             // 服务容器启动后发布普通 Java 接口，官方代理直接连接公开服务地址。
             server.start();
             server.publisher().rsfService(HessianInteropDemo.class, new HessianInteropDemoImpl()) //
-                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             int port = server.getListenAddress("hessian").getPort();
             String endpoint = "http://" + ContainerProcess.runnerHost() + ":" + port + "/hessian/demo";
             HessianInteropDemo remote = this.officialProxy(endpoint);
@@ -248,7 +255,8 @@ public class CauchoHessianInteropTest {
             // 服务容器启动后发布普通 Java 接口，官方代理直接连接公开服务地址。
             server.start();
             server.publisher().rsfService(HessianInteropDemo.class, new HessianInteropDemoImpl()) //
-                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             int port = server.getListenAddress("hessian").getPort();
             String endpoint = "http://" + ContainerProcess.runnerHost() + ":" + port + "/hessian/demo";
             HessianInteropDemo remote = this.officialProxy(endpoint);
@@ -281,7 +289,8 @@ public class CauchoHessianInteropTest {
             // 服务容器启动后发布普通 Java 接口，官方代理直接连接公开服务地址。
             server.start();
             server.publisher().rsfService(HessianInteropDemo.class, new HessianInteropDemoImpl()) //
-                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             int port = server.getListenAddress("hessian").getPort();
             String endpoint = "http://" + ContainerProcess.runnerHost() + ":" + port + "/hessian/demo";
             HessianInteropDemo remote = this.officialProxy(endpoint);
@@ -317,7 +326,8 @@ public class CauchoHessianInteropTest {
             // 服务容器启动后发布普通 Java 接口，官方代理直接连接公开服务地址。
             server.start();
             server.publisher().rsfService(HessianInteropDemo.class, new HessianInteropDemoImpl()) //
-                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             int port = server.getListenAddress("hessian").getPort();
             String endpoint = "http://" + ContainerProcess.runnerHost() + ":" + port + "/hessian/demo";
             HessianInteropDemo remote = this.officialProxy(endpoint);
@@ -343,7 +353,8 @@ public class CauchoHessianInteropTest {
             // 从 bootstrap 启动后订阅接口，通过真实网络连接官方实现。
             client.start();
             MetBindInfo<HessianInteropDemo> service = client.publisher().rsfService(HessianInteropDemo.class) //
-                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             InterAddress address = new InterAddress("hessian", server.host(), server.getPort());
             HessianInteropDemo remote = client.getRsfClient(address).getRemote(service);
 
@@ -369,11 +380,12 @@ public class CauchoHessianInteropTest {
             // 从 bootstrap 启动后订阅接口，通过真实网络连接官方实现。
             client.start();
             MetBindInfo<HessianInteropDemo> service = client.publisher().rsfService(HessianInteropDemo.class) //
-                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             InterAddress address = new InterAddress("hessian", server.host(), server.getPort());
             HessianInteropDemo remote = client.getRsfClient(address).getRemote(service);
 
-            // 零参数重载的官方名称就是原方法名，不能误选其他有参重载。
+            // 零参数调用使用原有的对外名称。
             String result = remote.overloaded();
             assertEquals("zero-args", result);
         }
@@ -394,12 +406,13 @@ public class CauchoHessianInteropTest {
             // 从 bootstrap 启动后订阅接口，通过真实网络连接官方实现。
             client.start();
             MetBindInfo<HessianInteropDemo> service = client.publisher().rsfService(HessianInteropDemo.class) //
-                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             InterAddress address = new InterAddress("hessian", server.host(), server.getPort());
             HessianInteropDemo remote = client.getRsfClient(address).getRemote(service);
 
             // 验证同名字符串重载。
-            String result = remote.overloaded("overload");
+            String result = remote.overloadedText("overload");
             assertEquals("string:overload", result);
         }
     }
@@ -419,12 +432,13 @@ public class CauchoHessianInteropTest {
             // 从 bootstrap 启动后订阅接口，通过真实网络连接官方实现。
             client.start();
             MetBindInfo<HessianInteropDemo> service = client.publisher().rsfService(HessianInteropDemo.class) //
-                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             InterAddress address = new InterAddress("hessian", server.host(), server.getPort());
             HessianInteropDemo remote = client.getRsfClient(address).getRemote(service);
 
             // 验证同名整数重载。
-            String result = remote.overloaded(37);
+            String result = remote.overloadedNumber(37);
             assertEquals("int:37", result);
         }
     }
@@ -444,7 +458,8 @@ public class CauchoHessianInteropTest {
             // 从 bootstrap 启动后订阅接口，通过真实网络连接官方实现。
             client.start();
             MetBindInfo<HessianInteropDemo> service = client.publisher().rsfService(HessianInteropDemo.class) //
-                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             InterAddress address = new InterAddress("hessian", server.host(), server.getPort());
             HessianInteropDemo remote = client.getRsfClient(address).getRemote(service);
 
@@ -472,7 +487,8 @@ public class CauchoHessianInteropTest {
             // 从 bootstrap 启动后订阅接口，通过真实网络连接官方实现。
             client.start();
             MetBindInfo<HessianInteropDemo> service = client.publisher().rsfService(HessianInteropDemo.class) //
-                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             InterAddress address = new InterAddress("hessian", server.host(), server.getPort());
             HessianInteropDemo remote = client.getRsfClient(address).getRemote(service);
 
@@ -496,7 +512,8 @@ public class CauchoHessianInteropTest {
             // 从 bootstrap 启动后订阅接口，通过真实网络连接官方实现。
             client.start();
             MetBindInfo<HessianInteropDemo> service = client.publisher().rsfService(HessianInteropDemo.class) //
-                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             InterAddress address = new InterAddress("hessian", server.host(), server.getPort());
             HessianInteropDemo remote = client.getRsfClient(address).getRemote(service);
 
@@ -522,7 +539,8 @@ public class CauchoHessianInteropTest {
             // 从 bootstrap 启动后订阅接口，通过真实网络连接官方实现。
             client.start();
             MetBindInfo<HessianInteropDemo> service = client.publisher().rsfService(HessianInteropDemo.class) //
-                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             InterAddress address = new InterAddress("hessian", server.host(), server.getPort());
             HessianInteropDemo remote = client.getRsfClient(address).getRemote(service);
 
@@ -554,7 +572,8 @@ public class CauchoHessianInteropTest {
             // 从 bootstrap 启动后订阅接口，通过真实网络连接官方实现。
             client.start();
             MetBindInfo<HessianInteropDemo> service = client.publisher().rsfService(HessianInteropDemo.class) //
-                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             InterAddress address = new InterAddress("hessian", server.host(), server.getPort());
             HessianInteropDemo remote = client.getRsfClient(address).getRemote(service);
 
@@ -589,7 +608,8 @@ public class CauchoHessianInteropTest {
             // 从 bootstrap 启动后订阅接口，通过真实网络连接官方实现。
             client.start();
             MetBindInfo<HessianInteropDemo> service = client.publisher().rsfService(HessianInteropDemo.class) //
-                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             InterAddress address = new InterAddress("hessian", server.host(), server.getPort());
             MetFuture result = client.getRsfClient(address).asyncInvoke(service, "fail", //
                     new Class<?>[] { String.class }, new Object[] { "拒绝访问" });
@@ -618,7 +638,8 @@ public class CauchoHessianInteropTest {
             // 服务发布仍走公开入口，正文来自 Caucho 的完整 Hessian 1 调用信封。
             server.start();
             server.publisher().rsfService(HessianInteropDemo.class, new HessianInteropDemoImpl()) //
-                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             int port = server.getListenAddress("hessian").getPort();
             String address = "http://" + ContainerProcess.runnerHost() + ":" + port + "/hessian/demo";
             HessianInteropPerson person = this.person("Hessian 1", 18);
@@ -650,7 +671,8 @@ public class CauchoHessianInteropTest {
             // 服务容器启动后发布普通 Java 接口，官方代理直接连接公开服务地址。
             server.start();
             server.publisher().rsfService(HessianInteropDemo.class, new HessianInteropDemoImpl()) //
-                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             int port = server.getListenAddress("hessian").getPort();
             String endpoint = "http://" + ContainerProcess.runnerHost() + ":" + port + "/hessian/demo";
             HessianInteropDemo remote = this.officialProxy(endpoint);
@@ -677,7 +699,8 @@ public class CauchoHessianInteropTest {
             // 从 bootstrap 启动后订阅接口，通过真实网络连接官方实现。
             client.start();
             MetBindInfo<HessianInteropDemo> service = client.publisher().rsfService(HessianInteropDemo.class) //
-                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             InterAddress address = new InterAddress("hessian", server.host(), server.getPort());
             MetFuture result = client.getRsfClient(address).asyncInvoke(service, "failIo", //
                     new Class<?>[] { String.class }, new Object[] { "读取失败" });

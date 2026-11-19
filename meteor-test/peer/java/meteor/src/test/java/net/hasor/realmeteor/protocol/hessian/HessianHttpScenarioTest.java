@@ -6,26 +6,25 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hessian;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.hasor.example.protocol.hessian.HessianDemoService;
 import net.hasor.example.protocol.hessian.HessianDemoServiceImpl;
 import net.hasor.example.protocol.hessian.HessianPerson;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 @NxnRpc(name = "hessian", version = "2")
 public class HessianHttpScenarioTest {
-
 
     @Test
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
@@ -262,8 +261,8 @@ public class HessianHttpScenarioTest {
 
             // 使用独立客户端上下文发起实际网络请求，验证调用结果。
             HessianDemoService remote = client.getRsfClient(server.getListenAddress("hessian")).getRemote(service);
-            assertEquals("text:17", remote.overloaded("17"));
-            assertEquals("number:17", remote.overloaded(17));
+            assertEquals("text:17", remote.overloadedText("17"));
+            assertEquals("number:17", remote.overloadedNumber(17));
         }
     }
 
@@ -311,7 +310,7 @@ public class HessianHttpScenarioTest {
             ExecutionException failure = assertThrows(ExecutionException.class, () -> {
                 remote.syncInvoke(service, "fail", types, arguments);
             });
-            assertTrue(failure.getCause() instanceof IllegalArgumentException);
+            assertInstanceOf(IllegalArgumentException.class, failure.getCause());
             assertEquals("business rejected", failure.getCause().getMessage());
         }
     }
@@ -342,8 +341,6 @@ public class HessianHttpScenarioTest {
             assertEquals(1, filtered.get());
         }
     }
-
-
 
     private MetConfiguration serverConfiguration() {
         MetConfiguration configuration = TestConfigurationUtils.create() //

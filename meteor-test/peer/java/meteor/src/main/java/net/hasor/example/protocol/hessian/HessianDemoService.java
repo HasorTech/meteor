@@ -32,9 +32,9 @@ public interface HessianDemoService {
 
     String nullable(String value);
 
-    String overloaded(String value);
+    String overloadedText(String value);
 
-    String overloaded(int value);
+    String overloadedNumber(int value);
 
     String fail(String message);
 

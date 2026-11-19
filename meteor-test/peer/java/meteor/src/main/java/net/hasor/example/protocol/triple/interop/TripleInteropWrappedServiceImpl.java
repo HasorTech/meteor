@@ -17,11 +17,11 @@ public class TripleInteropWrappedServiceImpl implements TripleInteropWrappedServ
         return text + ":" + number;
     }
 
-    public String overloaded(String text) {
+    public String overloadedText(String text) {
         return "string:" + text;
     }
 
-    public String overloaded(int number) {
+    public String overloadedNumber(int number) {
         return "int:" + number;
     }
 
