@@ -1,0 +1,34 @@
+plugins {
+    id 'application'
+}
+
+description = 'Independent JVM, real-network Meteor RPC load testing.'
+
+dependencies {
+    implementation project(':meteor')
+    implementation project(':meteor-protocol-connect')
+    implementation project(':meteor-protocol-dubbo')
+    implementation project(':meteor-protocol-grpc')
+    implementation project(':meteor-protocol-hessian')
+    implementation project(':meteor-protocol-hprose')
+    implementation project(':meteor-protocol-jsonrpc')
+    implementation project(':meteor-protocol-oncrpc')
+    implementation project(':meteor-protocol-soap')
+    implementation project(':meteor-protocol-thrift')
+    implementation project(':meteor-protocol-triple')
+    implementation project(':meteor-protocol-xmlrpc')
+    implementation 'org.hdrhistogram:HdrHistogram:2.2.2'
+    runtimeOnly "ognl:ognl:${property('lib.ognl')}"
+}
+
+application {
+    mainClass = 'net.hasor.meteor.performance.PerformanceMain'
+    applicationDefaultJvmArgs = ['-Xms256m', '-Xmx512m', '-XX:ActiveProcessorCount=4',
+                                 '--add-opens=java.base/java.io=ALL-UNNAMED',
+                                 "-Dmeteor.performance.version=${project.version}"]
+}
+
+// 全协议生命周期测试与 application 使用相同的 Hprose JDK 访问条件。
+tasks.named('test') {
+    jvmArgs '--add-opens=java.base/java.io=ALL-UNNAMED'
+}
