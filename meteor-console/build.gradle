@@ -94,6 +94,7 @@ tasks.named('jar') {
 // Hprose 在 JDK 17 的 DTO 反序列化需要访问 java.io。
 tasks.named('test') {
     jvmArgs '--add-opens=java.base/java.io=ALL-UNNAMED'
+    systemProperty 'meteor.console.runtimeClasspath', sourceSets.main.runtimeClasspath.asPath
 }
 
 // Frontend tooling writes downloads, diagnostics and temporary files into this module.
