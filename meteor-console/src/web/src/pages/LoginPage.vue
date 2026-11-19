@@ -1,6 +1,7 @@
 <script setup>
 import { inject, ref } from 'vue';
 import { useFeedback } from '../useFeedback';
+import LanguageSelect from '../components/LanguageSelect.vue';
 import Feedback from '../components/Feedback.vue';
 defineProps({ connectionError: String });
 const emit = defineEmits(['login']);
@@ -21,6 +22,7 @@ function login() {
 </script>
 <template>
   <main class="login-page">
+    <LanguageSelect />
     <a
       class="login-brand"
       href="#"
@@ -31,11 +33,11 @@ function login() {
       class="login-form"
       @submit.prevent="login"
     >
-      <h1>登录控制台</h1>
+      <h1>{{ $t('ui.sign-in-to-the-console') }}</h1>
       <input
         v-model="username"
-        aria-label="账号"
-        placeholder="账号"
+        :aria-label="$t('ui.username-2')"
+        :placeholder="$t('ui.username-2')"
         autocomplete="username"
         required
         maxlength="100"
@@ -43,8 +45,8 @@ function login() {
       />
       <input
         v-model="password"
-        aria-label="密码"
-        placeholder="密码"
+        :aria-label="$t('ui.password')"
+        :placeholder="$t('ui.password')"
         type="password"
         autocomplete="current-password"
         required
@@ -55,7 +57,7 @@ function login() {
         class="primary"
         :disabled="busy"
       >
-        {{ busy ? '登录中…' : '登录' }}
+        {{ busy ? $t('ui.signing-in') : $t('ui.sign-in') }}
       </button>
     </form>
   </main>

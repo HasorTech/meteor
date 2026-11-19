@@ -1,3 +1,4 @@
+import { t } from './i18n';
 import { inject, onMounted, onBeforeUnmount, ref, watch } from 'vue';
 
 // 游标随搜索条件重置；旧请求不能覆盖用户刚切换到的新查询。
@@ -28,7 +29,7 @@ export function useDirectory(endpoint, parameters, enabled = () => true) {
       if (current === generation) {
         items.value = [];
         nextCursor.value = null;
-        error.value = failure.message || '读取目录失败';
+        error.value = failure.message || t('ui.failed-to-read-the-directory');
       }
       return false;
     } finally {

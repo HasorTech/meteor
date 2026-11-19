@@ -1,3 +1,4 @@
+import { locale, t } from './i18n';
 export function createApi(onUnauthorized, directCredential = () => undefined) {
   return async function api(path, params = {}, method = 'GET', body, options = {}) {
     const query = new URLSearchParams();
@@ -7,10 +8,10 @@ export function createApi(onUnauthorized, directCredential = () => undefined) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), options.timeout ?? 30000);
     try {
-      const headers = { 'Content-Type': 'application/json' };
+      const headers = { 'Content-Type': 'application/json', 'Accept-Language': locale.value };
       if (params.mode === 'direct') {
         const token = options.managementToken ?? directCredential(params.target);
-        if (!token) throw new Error('请返回直连页面填写目标实例的管理凭据。');
+        if (!token) throw new Error(t('ui.return-to-direct-connection-and-enter'));
         const bytes = new TextEncoder().encode(token);
         headers['X-Meteor-Management-Token'] = btoa(String.fromCharCode(...bytes));
       }
@@ -27,14 +28,14 @@ export function createApi(onUnauthorized, directCredential = () => undefined) {
       } catch (error) {
         if (error.name === 'AbortError') throw error;
         if (response.status === 404) {
-          throw new Error('控制台接口不存在（404）。');
+          throw new Error(t('ui.the-console-endpoint-was-not-found'));
         }
         // 开发代理在后端未启动时可能返回空白或 HTML 错误页。
-        throw new Error('控制台服务不可用。');
+        throw new Error(t('ui.the-console-is-unavailable'));
       }
       if (!response.ok) {
         if (response.status === 401 && path !== 'auth/login') onUnauthorized?.();
-        const error = new Error(result.error || `操作失败（${response.status}）`);
+        const error = new Error(result.error || t('ui.operation-failed', response.status));
         error.status = response.status;
         throw error;
       }
@@ -42,12 +43,12 @@ export function createApi(onUnauthorized, directCredential = () => undefined) {
     } catch (error) {
       if (error.name === 'AbortError') {
         if (method === 'GET') {
-          throw new Error('控制台服务不可用。');
+          throw new Error(t('ui.the-console-is-unavailable'));
         }
-        throw new Error('请求超时。写入可能已完成，请刷新后确认。');
+        throw new Error(t('ui.the-request-timed-out-the-write'));
       }
       if (error instanceof TypeError) {
-        throw new Error('控制台服务不可用。');
+        throw new Error(t('ui.the-console-is-unavailable'));
       }
       throw error;
     } finally {

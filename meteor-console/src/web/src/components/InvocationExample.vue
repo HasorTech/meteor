@@ -1,4 +1,5 @@
 <script setup>
+import { t } from '../i18n';
 import { computed, inject, onBeforeUnmount, ref, useId, watch } from 'vue';
 import Feedback from './Feedback.vue';
 import MarkdownDocument from './MarkdownDocument.vue';
@@ -18,10 +19,10 @@ const target = ref(null);
 const documents = ref([]);
 const language = ref(languageId(props.request.language || 'java'));
 const role = ref('caller');
-const roles = [
-  { id: 'provider', label: '提供者' },
-  { id: 'caller', label: '消费者' }
-];
+const roles = computed(() => [
+  { id: 'provider', label: t('ui.providers') },
+  { id: 'caller', label: t('ui.consumers') }
+]);
 const targetWarnings = ref([]);
 const renderWarnings = ref([]);
 const loadingTargets = ref(false);
@@ -122,7 +123,7 @@ async function loadDocument() {
     }
     renderWarnings.value = result.warnings || [];
     if (!supportsRole(role.value)) {
-      role.value = roles.find((item) => supportsRole(item.id))?.id || 'caller';
+      role.value = roles.value.find((item) => supportsRole(item.id))?.id || 'caller';
     }
   } catch (failure) {
     if (active && sequence === renderSequence) renderError.value = failure.message;
@@ -166,20 +167,20 @@ onBeforeUnmount(() => {
       class="empty"
       role="status"
     >
-      正在读取可用服务…
+      {{ $t('ui.loading-available-services') }}
     </p>
     <template v-else>
       <div
         v-if="targetError"
         class="actions"
       >
-        <button @click="loadTargets">重试</button>
+        <button @click="loadTargets">{{ $t('ui.retry') }}</button>
       </div>
       <p
         v-else-if="!target"
         class="empty"
       >
-        没有可生成示例的服务提供者
+        {{ $t('ui.no-service-providers-available-for-generating') }}
       </p>
       <template v-else>
         <p
@@ -187,13 +188,13 @@ onBeforeUnmount(() => {
           class="empty"
           role="status"
         >
-          正在生成示例…
+          {{ $t('ui.generating-example') }}
         </p>
         <div
           v-else-if="renderError"
           class="actions"
         >
-          <button @click="loadDocument">重试生成</button>
+          <button @click="loadDocument">{{ $t('ui.regenerate') }}</button>
         </div>
         <template v-else>
           <div
@@ -204,7 +205,7 @@ onBeforeUnmount(() => {
               v-if="showLanguages"
               class="tabs examples-language-tabs"
               role="tablist"
-              aria-label="示例语言"
+              :aria-label="$t('ui.example-language')"
             >
               <button
                 v-for="item in orderedLanguages"
@@ -215,7 +216,7 @@ onBeforeUnmount(() => {
                 :aria-selected="language === item.id"
                 :tabindex="language === item.id ? 0 : -1"
                 :disabled="!supportsLanguage(item.id)"
-                :title="supportsLanguage(item.id) ? undefined : '当前服务暂无此语言示例'"
+                :title="supportsLanguage(item.id) ? undefined : $t('ui.no-examples-in-this-language-for')"
                 :aria-controls="panelId"
                 @click="selectLanguage(item.id)"
                 @keydown="moveTab"
@@ -226,7 +227,7 @@ onBeforeUnmount(() => {
             <div
               class="tabs examples-role-tabs"
               role="tablist"
-              aria-label="调用角色"
+              :aria-label="$t('ui.invocation-role')"
             >
               <button
                 v-for="item in roles"
@@ -238,7 +239,9 @@ onBeforeUnmount(() => {
                 :aria-selected="role === item.id"
                 :tabindex="role === item.id ? 0 : -1"
                 :disabled="!supportsRole(item.id)"
-                :title="supportsRole(item.id) ? undefined : `当前语言暂无${item.label}示例`"
+                :title="
+                  supportsRole(item.id) ? undefined : $t('ui.no-example-in-the-current-language', item.label)
+                "
                 :aria-controls="panelId"
                 @click="selectRole(item.id)"
                 @keydown="moveTab"
@@ -250,7 +253,7 @@ onBeforeUnmount(() => {
           <section
             :id="panelId"
             role="tabpanel"
-            aria-label="调用示例文档"
+            :aria-label="$t('ui.invocation-example-document')"
             tabindex="0"
           >
             <MarkdownDocument
@@ -262,7 +265,7 @@ onBeforeUnmount(() => {
               v-else
               class="empty"
             >
-              当前语言的示例待补充
+              {{ $t('ui.examples-in-this-language-are-pending') }}
             </p>
           </section>
         </template>

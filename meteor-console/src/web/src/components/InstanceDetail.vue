@@ -1,4 +1,5 @@
 <script setup>
+import { t } from '../i18n';
 import BreadcrumbTrail from './BreadcrumbTrail.vue';
 import { usePageTab } from '../navigation';
 import { computed, inject, onMounted, ref } from 'vue';
@@ -19,12 +20,12 @@ const { selected: tab, select } = usePageTab('instance', ['instance', 'services'
 const search = ref('');
 const field = ref('id');
 const { busy, error, success, run } = useFeedback();
-const tabs = [
-  ['instance', '实例'],
-  ['services', '服务清单'],
-  ['flow', '流量控制'],
-  ['route', '路由策略']
-];
+const tabs = computed(() => [
+  ['instance', t('ui.instance')],
+  ['services', t('ui.services')],
+  ['flow', t('ui.traffic-control')],
+  ['route', t('ui.routing-policies')]
+]);
 const instance = computed(() => data.value?.instance);
 const managementEndpoints = computed(() => [
   ...new Set(
@@ -59,7 +60,7 @@ function toggle() {
   run(async () => {
     await api('instance/block', props.scope, 'PUT', { blocked: !data.value.blocked });
     await load();
-  }, '已更新');
+  }, t('ui.updated'));
 }
 function service(info) {
   navigate({
@@ -78,7 +79,7 @@ onMounted(() => run(load));
         class="text-button"
         @click="navigate({ view: 'applications', clusterId: scope.clusterId })"
       >
-        应用列表
+        {{ $t('ui.applications') }}
       </button>
       <span>/</span>
       <button
@@ -91,7 +92,7 @@ onMounted(() => run(load));
           })
         "
       >
-        {{ instance?.applicationName || '应用' }}
+        {{ instance?.applicationName || $t('ui.application') }}
       </button>
     </template>
     <button
@@ -99,7 +100,7 @@ onMounted(() => run(load));
       class="text-button"
       @click="navigate({ view: 'direct' })"
     >
-      直连实例
+      {{ $t('ui.direct-connection') }}
     </button>
     <span>/</span>
     <strong
@@ -112,13 +113,13 @@ onMounted(() => run(load));
       v-if="scope.mode === 'direct'"
       class="badge"
     >
-      直连
+      {{ $t('ui.direct-connection-2') }}
     </span>
   </BreadcrumbTrail>
   <div class="tabbar detail-tabbar page-actionbar">
     <nav
       class="tabs"
-      aria-label="实例详情"
+      :aria-label="$t('ui.instance-details')"
     >
       <button
         v-for="[key, name] in tabs"
@@ -137,17 +138,17 @@ onMounted(() => run(load));
       <template v-if="tab === 'services'">
         <select
           v-model="field"
-          aria-label="搜索条件"
+          :aria-label="$t('ui.search-by')"
         >
-          <option value="id">服务 ID</option>
-          <option value="role">关系</option>
-          <option value="protocol">协议</option>
+          <option value="id">{{ $t('ui.service-id') }}</option>
+          <option value="role">{{ $t('ui.role') }}</option>
+          <option value="protocol">{{ $t('ui.protocol') }}</option>
         </select>
         <input
           v-model="search"
-          aria-label="搜索服务"
+          :aria-label="$t('ui.search-services')"
           type="search"
-          placeholder="搜索"
+          :placeholder="$t('ui.search')"
         />
       </template>
       <button
@@ -155,7 +156,7 @@ onMounted(() => run(load));
         :disabled="busy"
         @click="tab === 'services' ? directory.refresh() : run(load)"
       >
-        刷新
+        {{ $t('ui.refresh') }}
       </button>
     </div>
   </div>
@@ -168,43 +169,43 @@ onMounted(() => run(load));
       <section class="instance-info-panel">
         <aside
           class="instance-sidebar"
-          aria-label="实例信息"
+          :aria-label="$t('ui.instance-information')"
         >
           <dl class="details-grid instance-facts">
             <div>
-              <dt>实例 IP</dt>
-              <dd>{{ instance.ipAddress || '未上报' }}</dd>
+              <dt>{{ $t('ui.instance-ip') }}</dt>
+              <dd>{{ instance.ipAddress || $t('ui.not-reported') }}</dd>
             </div>
             <div>
-              <dt>进程 ID</dt>
-              <dd>{{ instance.processId ?? '未上报' }}</dd>
+              <dt>{{ $t('ui.process-id') }}</dt>
+              <dd>{{ instance.processId ?? $t('ui.not-reported') }}</dd>
             </div>
             <div>
-              <dt>应用</dt>
+              <dt>{{ $t('ui.application') }}</dt>
               <dd>{{ instance.applicationName }}</dd>
             </div>
             <div>
-              <dt>单元</dt>
+              <dt>{{ $t('ui.unit') }}</dt>
               <dd>{{ instance.unitName || '—' }}</dd>
             </div>
             <div>
-              <dt>实例 ID</dt>
+              <dt>{{ $t('ui.instance-id') }}</dt>
               <dd>{{ instance.instanceId }}</dd>
             </div>
             <div>
-              <dt>在线状态</dt>
+              <dt>{{ $t('ui.online-status') }}</dt>
               <dd>
                 <StatusBadge
                   v-if="data.online !== null"
                   :enabled="data.online"
-                  on="在线"
-                  off="离线"
+                  :on="$t('ui.online')"
+                  :off="$t('ui.offline')"
                 />
-                <span v-else>未知</span>
+                <span v-else>{{ $t('ui.unknown') }}</span>
               </dd>
             </div>
             <div>
-              <dt>管理 Endpoint</dt>
+              <dt>{{ $t('ui.management-endpoint') }}</dt>
               <dd>
                 <template v-if="managementEndpoints.length">
                   <div
@@ -222,12 +223,12 @@ onMounted(() => run(load));
             v-if="scope.mode === 'registry' || data.online"
             class="instance-control"
           >
-            <span>阻断调用</span>
+            <span>{{ $t('ui.block-calls') }}</span>
             <label class="switch-label">
-              <span>{{ data.blocked ? '已阻断' : '已放行' }}</span>
+              <span>{{ data.blocked ? $t('ui.blocked') : $t('ui.allowed') }}</span>
               <button
                 role="switch"
-                aria-label="阻断调用"
+                :aria-label="$t('ui.block-calls')"
                 class="switch"
                 :class="{ checked: data.blocked }"
                 :aria-checked="data.blocked"
@@ -243,14 +244,14 @@ onMounted(() => run(load));
           v-if="data.online"
           class="endpoint-section"
           role="region"
-          aria-label="实例接入点"
+          :aria-label="$t('ui.instance-endpoints')"
         >
           <EndpointTable :endpoints="instance.endpoints || []" />
           <p
             v-if="!instance.endpoints?.length"
             class="empty"
           >
-            此实例仅发起出站调用
+            {{ $t('ui.this-instance-only-makes-outbound-calls') }}
           </p>
         </div>
         <div
@@ -258,7 +259,11 @@ onMounted(() => run(load));
           class="instance-endpoints-empty"
           role="status"
         >
-          {{ data.online === false ? '实例已离线，接入点暂不可用' : '暂时无法获取实例接入点，请刷新重试' }}
+          {{
+            data.online === false
+              ? $t('ui.the-instance-is-offline-its-endpoints')
+              : $t('ui.could-not-load-the-instance-endpoints')
+          }}
         </div>
       </section>
     </template>
@@ -267,9 +272,9 @@ onMounted(() => run(load));
         <table class="instance-services-table">
           <thead>
             <tr>
-              <th>服务 ID</th>
-              <th>支持协议</th>
-              <th>身份</th>
+              <th>{{ $t('ui.service-id') }}</th>
+              <th>{{ $t('ui.supported-protocols') }}</th>
+              <th>{{ $t('ui.role-2') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -288,7 +293,7 @@ onMounted(() => run(load));
               <td>
                 <ProtocolSummary :protocols="info.protocols" />
               </td>
-              <td>{{ info.role === 'Provider' ? '提供者' : '消费者' }}</td>
+              <td>{{ info.role === 'Provider' ? $t('ui.providers') : $t('ui.consumers') }}</td>
             </tr>
           </tbody>
         </table>
@@ -297,11 +302,11 @@ onMounted(() => run(load));
         v-if="!filtered.length"
         class="empty"
       >
-        没有匹配的服务
+        {{ $t('ui.no-matching-services') }}
       </p>
       <DirectoryPager
         :count="filtered.length"
-        label="服务"
+        :label="$t('ui.services-count-label')"
         :busy="directory.busy.value"
         :previous="directory.history.value.length > 0"
         :next="!!directory.nextCursor.value"
@@ -323,6 +328,6 @@ onMounted(() => run(load));
     v-else-if="busy"
     class="empty"
   >
-    正在读取…
+    {{ $t('ui.loading') }}
   </p>
 </template>

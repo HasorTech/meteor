@@ -23,14 +23,14 @@ function open(service) {
     <input
       v-model="search"
       type="search"
-      aria-label="搜索服务 ID"
-      placeholder="搜索服务 ID"
+      :aria-label="$t('ui.search-service-id')"
+      :placeholder="$t('ui.search-service-id')"
     />
     <button
       :disabled="busy"
       @click="refresh"
     >
-      刷新
+      {{ $t('ui.refresh') }}
     </button>
   </WorkspaceTabs>
   <Feedback :error="error" />
@@ -38,11 +38,11 @@ function open(service) {
     <table class="service-directory-table">
       <thead>
         <tr>
-          <th>服务 ID</th>
-          <th>支持协议</th>
-          <th>提供者</th>
-          <th>消费者</th>
-          <th>状态</th>
+          <th>{{ $t('ui.service-id') }}</th>
+          <th>{{ $t('ui.supported-protocols') }}</th>
+          <th>{{ $t('ui.providers') }}</th>
+          <th>{{ $t('ui.consumers') }}</th>
+          <th>{{ $t('ui.status') }}</th>
         </tr>
       </thead>
       <tbody>
@@ -72,11 +72,11 @@ function open(service) {
     v-if="!filtered.length"
     class="empty"
   >
-    {{ busy ? '正在读取…' : '没有匹配的服务' }}
+    {{ busy ? $t('ui.loading') : $t('ui.no-matching-services') }}
   </p>
   <DirectoryPager
     :count="filtered.length"
-    label="服务"
+    :label="$t('ui.services-count-label')"
     :busy="busy"
     :previous="directory.history.value.length > 0"
     :next="!!directory.nextCursor.value"

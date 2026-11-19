@@ -17,6 +17,7 @@
   --success: #15803d;
   --danger: #dc2626;
   --panel-title-height: 48px;
+  --topbar-height: 48px;
 }
 * {
   box-sizing: border-box;
@@ -164,7 +165,7 @@ code {
   background: white;
 }
 .topbar {
-  height: 48px;
+  height: var(--topbar-height);
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
@@ -220,9 +221,14 @@ code {
   gap: 18px;
   align-items: center;
 }
+.cluster-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .dismiss-picker {
   position: fixed;
-  inset: 48px 0 0;
+  inset: var(--topbar-height) 0 0;
   z-index: 1;
 }
 .cluster-menu {
@@ -1539,21 +1545,37 @@ summary.method-field-heading:focus-visible {
   }
 }
 @media (max-width: 700px) {
+  :root {
+    --topbar-height: 82px;
+  }
   .topbar {
+    display: grid;
+    grid-template: 44px 38px / auto minmax(0, 1fr);
     padding: 0 16px;
-    gap: 16px;
+    gap: 0 12px;
   }
   .top-navigation {
+    grid-row: 2;
+    grid-column: 1 / -1;
     gap: 4px;
   }
   .top-navigation button {
     font-size: 12px;
   }
   .header-actions {
+    grid-row: 1;
+    grid-column: 2;
     gap: 8px;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .header-actions .cluster-picker {
+    min-width: 0;
   }
   .cluster-select {
-    min-width: 70px;
+    min-width: 0;
+    width: 100%;
+    gap: 8px;
     max-width: 150px;
     font-size: 12px;
   }
@@ -1884,16 +1906,16 @@ summary.method-field-heading:focus-visible {
 .workspace-layout.with-sidebar {
   display: grid;
   grid-template-columns: 176px minmax(0, 1fr);
-  min-height: calc(100vh - 48px);
+  min-height: calc(100vh - var(--topbar-height));
 }
 .with-sidebar > .workspace {
   padding: 8px 12px 24px;
 }
 .workspace-sidebar {
   position: sticky;
-  top: 48px;
+  top: var(--topbar-height);
   align-self: start;
-  height: calc(100vh - 48px);
+  height: calc(100vh - var(--topbar-height));
   padding: 8px 4px;
   border-right: 1px solid var(--border);
 }
@@ -1962,17 +1984,19 @@ summary.method-field-heading:focus-visible {
   }
   .workspace-sidebar a {
     padding: 10px 8px;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 }
 
 .workspace-content {
   min-width: 0;
   background: #e9eef5;
-  min-height: calc(100vh - 48px);
+  min-height: calc(100vh - var(--topbar-height));
 }
 #breadcrumb-bar {
   position: sticky;
-  top: 48px;
+  top: var(--topbar-height);
   z-index: 15;
   min-height: 40px;
   padding: 0 12px;
@@ -2658,4 +2682,31 @@ summary.method-field-heading:focus-visible {
 .debug-provider-mode .mode-active {
   color: var(--brand);
   font-weight: 600;
+}
+
+.language-picker {
+  position: relative;
+}
+
+.language-picker select {
+  min-height: 32px;
+}
+
+.login-page .language-picker {
+  position: absolute;
+  top: 28px;
+  right: 36px;
+}
+
+.language-error {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 4;
+  width: max-content;
+  max-width: 240px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
 }

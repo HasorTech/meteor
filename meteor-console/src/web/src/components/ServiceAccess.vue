@@ -70,11 +70,11 @@ function moveProtocol(event) {
     class="service-access"
   >
     <aside class="access-sidebar">
-      <h2>协议支持</h2>
+      <h2>{{ $t('ui.protocol-support') }}</h2>
       <nav
         class="access-protocols"
         role="tablist"
-        aria-label="服务协议"
+        :aria-label="$t('ui.service-protocols')"
         aria-orientation="vertical"
       >
         <button
@@ -94,7 +94,7 @@ function moveProtocol(event) {
             v-if="protocol.isDefault"
             class="muted"
           >
-            （默认）
+            {{ $t('ui.default') }}
           </span>
         </button>
       </nav>
@@ -103,15 +103,15 @@ function moveProtocol(event) {
       id="access-content"
       class="access-content"
       role="tabpanel"
-      :aria-label="`${selected} 接入点与示例`"
+      :aria-label="$t('ui.endpoints-and-examples', selected)"
       tabindex="0"
     >
       <section
         v-if="endpoints.length"
         class="access-endpoints"
-        aria-label="当前协议接入点"
+        :aria-label="$t('ui.endpoints-for-the-current-protocol')"
       >
-        <h2>接入点</h2>
+        <h2>{{ $t('ui.endpoints') }}</h2>
         <div class="access-section-body">
           <template
             v-for="(endpoint, index) in endpoints"
@@ -127,16 +127,16 @@ function moveProtocol(event) {
       </section>
       <section
         class="access-examples"
-        aria-label="当前协议调用示例"
+        :aria-label="$t('ui.invocation-examples-for-the-current-protocol')"
       >
-        <h2>示例</h2>
+        <h2>{{ $t('ui.examples') }}</h2>
         <div class="access-section-body">
           <Feedback :error="error" />
           <button
             v-if="error"
             @click="run(loadLanguages)"
           >
-            重试读取语言
+            {{ $t('ui.retry-loading-languages') }}
           </button>
           <div class="example-language-links">
             <button
@@ -158,6 +158,6 @@ function moveProtocol(event) {
     v-else
     class="empty"
   >
-    暂无服务接入点与示例
+    {{ $t('ui.no-service-endpoints-or-examples') }}
   </p>
 </template>

@@ -2,6 +2,7 @@
 import SideNavigation from './components/SideNavigation.vue';
 import { computed, onMounted, provide, ref, watch } from 'vue';
 import { createApi } from './api';
+import { locale } from './i18n';
 import { useNavigation } from './navigation';
 import { provideNavigationGuard } from './useNavigationGuard';
 import { useFeedback } from './useFeedback';
@@ -14,6 +15,7 @@ import GlobalPage from './pages/GlobalPage.vue';
 import DirectPage from './pages/DirectPage.vue';
 import InstanceDetail from './components/InstanceDetail.vue';
 import ServiceDetail from './components/ServiceDetail.vue';
+import LanguageSelect from './components/LanguageSelect.vue';
 import Feedback from './components/Feedback.vue';
 import ExamplesDrawer from './components/ExamplesDrawer.vue';
 const user = ref(null);
@@ -46,6 +48,15 @@ provide('openExamples', (request) => {
   examples.value = { key: ++examplesKey, request: { ...request } };
 });
 watch(route, () => (examples.value = null));
+watch(locale, async (language) => {
+  if (!user.value) return;
+  try {
+    const definitions = await api('settings');
+    if (user.value && locale.value === language) settings.value = definitions;
+  } catch (failure) {
+    if (locale.value === language) error.value = failure.message;
+  }
+});
 watch(user, (value) => {
   if (!value) examples.value = null;
 });
@@ -105,7 +116,7 @@ onMounted(async () => {
     class="login-page"
     role="status"
   >
-    正在加载控制台…
+    {{ $t('ui.loading-the-console') }}
   </main>
   <LoginPage
     v-else-if="!user"
@@ -125,7 +136,7 @@ onMounted(async () => {
       </button>
       <nav
         class="top-navigation"
-        aria-label="主要导航"
+        :aria-label="$t('ui.main-navigation')"
       >
         <button
           class="selected"
@@ -133,16 +144,17 @@ onMounted(async () => {
             navigate(selected ? { view: 'applications', clusterId: selected.id } : { view: 'clusters' })
           "
         >
-          服务治理
+          {{ $t('ui.service-governance') }}
         </button>
         <button
           disabled
-          title="暂未开放"
+          :title="$t('ui.coming-soon')"
         >
-          可观测性
+          {{ $t('ui.observability') }}
         </button>
       </nav>
       <div class="header-actions">
+        <LanguageSelect />
         <div
           class="cluster-picker"
           @keydown.esc="picker = false"
@@ -153,9 +165,15 @@ onMounted(async () => {
             aria-haspopup="true"
             @click="picker = !picker"
           >
-            {{
-              selected ? `集群 ${selected.name}` : route.target || view === 'direct' ? '直连实例' : '所有集群'
-            }}
+            <span class="cluster-label">
+              {{
+                selected
+                  ? $t('ui.cluster', selected.name)
+                  : route.target || view === 'direct'
+                    ? $t('ui.direct-connection')
+                    : $t('ui.all-clusters')
+              }}
+            </span>
             <span aria-hidden="true">⌄</span>
           </button>
           <template v-if="picker">
@@ -165,13 +183,13 @@ onMounted(async () => {
             />
             <div
               class="cluster-menu"
-              aria-label="切换集群"
+              :aria-label="$t('ui.switch-cluster')"
             >
               <button
                 :class="{ active: !selected }"
                 @click="choose(null)"
               >
-                所有集群
+                {{ $t('ui.all-clusters') }}
               </button>
               <button
                 v-for="cluster in clusters"
@@ -179,7 +197,7 @@ onMounted(async () => {
                 :class="{ active: selected?.id === cluster.id }"
                 @click="choose(cluster.id)"
               >
-                <strong>集群 {{ cluster.name }}</strong>
+                <strong>{{ $t('ui.cluster-2') }} {{ cluster.name }}</strong>
                 <small>{{ cluster.address }}</small>
               </button>
               <button
@@ -189,7 +207,7 @@ onMounted(async () => {
                   navigate({ view: 'direct' });
                 "
               >
-                直连实例
+                {{ $t('ui.direct-connection') }}
               </button>
             </div>
           </template>
@@ -199,9 +217,9 @@ onMounted(async () => {
           class="logout text-button"
           :disabled="busy"
           @click="logout"
-          :title="user.userName + ' · 退出登录'"
+          :title="user.userName + $t('ui.sign-out')"
         >
-          退出
+          {{ $t('ui.sign-out-2') }}
         </button>
       </div>
     </header>
@@ -213,7 +231,7 @@ onMounted(async () => {
       <div class="workspace-content">
         <nav
           id="breadcrumb-bar"
-          aria-label="面包屑导航"
+          :aria-label="$t('ui.breadcrumb')"
         >
           <div
             v-if="!['instance', 'service', 'connection', 'application'].includes(view)"
@@ -222,12 +240,12 @@ onMounted(async () => {
             <strong>
               {{
                 {
-                  applications: '应用列表',
-                  services: '服务目录',
-                  global: '全局配置',
-                  clusters: '集群连接',
-                  direct: '直连实例'
-                }[view] || '控制台'
+                  applications: $t('ui.applications'),
+                  services: $t('ui.service-directory'),
+                  global: $t('ui.global-settings'),
+                  clusters: $t('ui.cluster-connections'),
+                  direct: $t('ui.direct-connection')
+                }[view] || $t('ui.console')
               }}
             </strong>
           </div>
@@ -277,16 +295,16 @@ onMounted(async () => {
               v-else
               class="empty-state"
             >
-              <h2>页面不存在</h2>
-              <button @click="navigate({ view: 'clusters' })">集群连接</button>
+              <h2>{{ $t('ui.page-not-found') }}</h2>
+              <button @click="navigate({ view: 'clusters' })">{{ $t('ui.cluster-connections') }}</button>
             </div>
           </template>
           <div
             v-else
             class="empty-state"
           >
-            <h2>集群连接已被移除</h2>
-            <button @click="navigate({ view: 'clusters' })">查看集群连接</button>
+            <h2>{{ $t('ui.the-cluster-connection-was-removed') }}</h2>
+            <button @click="navigate({ view: 'clusters' })">{{ $t('ui.view-cluster-connections') }}</button>
           </div>
         </main>
       </div>

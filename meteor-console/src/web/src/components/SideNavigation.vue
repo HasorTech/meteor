@@ -1,12 +1,13 @@
 <script setup>
+import { t } from '../i18n';
 import { computed, inject } from 'vue';
 const route = inject('route');
 const navigate = inject('navigate');
-const entries = [
-  ['applications', '应用列表'],
-  ['services', '服务目录'],
-  ['global', '全局配置']
-];
+const entries = computed(() => [
+  ['applications', t('ui.applications')],
+  ['services', t('ui.service-directory')],
+  ['global', t('ui.global-settings')]
+]);
 const active = computed(() => {
   if (['services', 'service'].includes(route.value.view)) return 'services';
   if (route.value.view === 'global') return 'global';
@@ -21,7 +22,7 @@ function href(view) {
 </script>
 <template>
   <aside class="workspace-sidebar">
-    <nav aria-label="服务治理">
+    <nav :aria-label="$t('ui.service-governance')">
       <a
         v-for="[key, title] in entries"
         :key="key"

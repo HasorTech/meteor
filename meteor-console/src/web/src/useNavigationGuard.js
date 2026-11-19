@@ -1,9 +1,10 @@
+import { t } from './i18n';
 import { inject, onBeforeUnmount, provide } from 'vue';
 
 export function provideNavigationGuard() {
   const drafts = new Set();
   const dirty = () => [...drafts].some((check) => check());
-  const canLeave = () => !dirty() || window.confirm('有未保存的修改，确定离开并丢弃修改吗？');
+  const canLeave = () => !dirty() || window.confirm(t('ui.discard-your-unsaved-changes-and-leave'));
   provide('canLeave', canLeave);
   provide('registerDraft', (check) => {
     drafts.add(check);

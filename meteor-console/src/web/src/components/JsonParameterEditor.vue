@@ -26,8 +26,8 @@ function format() {
     <button
       class="json-format-button"
       type="button"
-      aria-label="格式化"
-      title="格式化 JSON"
+      :aria-label="$t('ui.format')"
+      :title="$t('ui.format-json')"
       :disabled="disabled"
       @click="format"
     >

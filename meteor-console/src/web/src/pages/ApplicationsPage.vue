@@ -1,50 +1,56 @@
 <script setup>
 import BreadcrumbTrail from '../components/BreadcrumbTrail.vue';
-import { inject, onMounted, ref } from 'vue';
-import { useDirectory } from '../useDirectory';
+import {inject, onMounted, ref} from 'vue';
+import {useDirectory} from '../useDirectory';
 import DirectoryPager from '../components/DirectoryPager.vue';
-import { instanceRole } from '../display';
+import {instanceRole} from '../display';
 import Feedback from '../components/Feedback.vue';
 import WorkspaceTabs from '../components/WorkspaceTabs.vue';
 import ViewToggle from '../components/ViewToggle.vue';
 import ProtocolSummary from '../components/ProtocolSummary.vue';
 import InstanceStatus from '../components/InstanceStatus.vue';
-const props = defineProps({ scope: Object, application: String });
+
+const props = defineProps({scope: Object, application: String});
 const api = inject('api');
 const navigate = inject('navigate');
 const search = ref('');
 const unit = ref('');
 const display = ref(
-  localStorage.getItem(props.application ? 'meteor.instances.view' : 'meteor.applications.view') ||
+    localStorage.getItem(props.application ? 'meteor.instances.view' : 'meteor.applications.view') ||
     (props.application ? 'list' : 'cards')
 );
 const units = ref([]);
 const directory = useDirectory(
-  () => (props.application ? 'instances' : 'applications'),
-  () => ({ ...props.scope, applicationName: props.application, filter: search.value, unitName: unit.value })
+    () => (props.application ? 'instances' : 'applications'),
+    () => ({...props.scope, applicationName: props.application, filter: search.value, unitName: unit.value})
 );
-const { items, busy, error, refresh } = directory;
+const {items, busy, error, refresh} = directory;
 const applications = items;
 const filtered = items;
+
 async function loadUnits() {
   if (props.application) {
     try {
-      units.value = await api('units', { ...props.scope, applicationName: props.application });
+      units.value = await api('units', {...props.scope, applicationName: props.application});
     } catch (failure) {
       error.value = failure.message;
     }
   }
 }
+
 function viewMode(value) {
   display.value = value;
   localStorage.setItem(props.application ? 'meteor.instances.view' : 'meteor.applications.view', value);
 }
+
 function openApp(name) {
-  navigate({ view: 'application', clusterId: props.scope.clusterId, application: name });
+  navigate({view: 'application', clusterId: props.scope.clusterId, application: name});
 }
+
 function instanceProtocols(instance) {
   return (instance.endpoints || []).map((endpoint) => endpoint.protocolName);
 }
+
 function openInstance(instance) {
   navigate({
     view: 'instance',
@@ -53,153 +59,156 @@ function openInstance(instance) {
     application: props.application
   });
 }
+
 onMounted(loadUnits);
 </script>
 <template>
   <BreadcrumbTrail v-if="application">
     <button
-      class="text-button"
-      @click="navigate({ view: 'applications', clusterId: scope.clusterId })"
+        class="text-button"
+        @click="navigate({ view: 'applications', clusterId: scope.clusterId })"
     >
-      应用列表
+      {{ $t('ui.applications') }}
     </button>
     <span>/</span>
     <strong>{{ application }}</strong>
   </BreadcrumbTrail>
   <WorkspaceTabs>
     <select
-      v-if="application"
-      v-model="unit"
-      aria-label="筛选单元"
+        v-if="application"
+        v-model="unit"
+        :aria-label="$t('ui.filter-by-unit')"
     >
-      <option value="">全部单元</option>
+      <option value="">{{ $t('ui.all-units') }}</option>
       <option
-        v-for="item in units"
-        :key="item"
+          v-for="item in units"
+          :key="item"
       >
         {{ item }}
       </option>
     </select>
     <input
-      v-model="search"
-      type="search"
-      :aria-label="application ? '搜索 IP、进程 ID 或实例 ID' : '搜索应用名称'"
-      :placeholder="application ? '搜索 IP、进程 ID 或实例 ID' : '搜索应用名称'"
+        v-model="search"
+        type="search"
+        :aria-label="application ? $t('ui.search-ip-process-id-or-instance') : $t('ui.search-application-name')"
+        :placeholder="
+        application ? $t('ui.search-ip-process-id-or-instance') : $t('ui.search-application-name')
+      "
     />
     <button
-      :disabled="busy"
-      @click="refresh"
+        :disabled="busy"
+        @click="refresh"
     >
-      刷新
+      {{ $t('ui.refresh') }}
     </button>
     <ViewToggle
-      :model-value="display"
-      @update:model-value="viewMode"
+        :model-value="display"
+        @update:model-value="viewMode"
     />
   </WorkspaceTabs>
-  <Feedback :error="error" />
+  <Feedback :error="error"/>
   <template v-if="!application">
     <div
-      v-if="display === 'cards'"
-      class="cards"
+        v-if="display === 'cards'"
+        class="cards"
     >
       <button
-        type="button"
-        class="card application-card"
-        v-for="app in applications"
-        :key="app.name"
-        :aria-label="app.name"
-        @click="openApp(app.name)"
+          type="button"
+          class="card application-card"
+          v-for="app in applications"
+          :key="app.name"
+          :aria-label="app.name"
+          @click="openApp(app.name)"
       >
         <strong
-          class="application-title"
-          :title="app.name"
+            class="application-title"
+            :title="app.name"
         >
           {{ app.name }}
         </strong>
       </button>
     </div>
     <div
-      v-else
-      class="table-scroll"
+        v-else
+        class="table-scroll"
     >
       <table>
         <thead>
-          <tr>
-            <th>应用名称</th>
-            <th class="operation">操作</th>
-          </tr>
+        <tr>
+          <th>{{ $t('ui.application-name') }}</th>
+          <th class="operation">{{ $t('ui.actions') }}</th>
+        </tr>
         </thead>
         <tbody>
-          <tr
+        <tr
             v-for="app in applications"
             :key="app.name"
-          >
-            <td>
-              <button
+        >
+          <td>
+            <button
                 class="text-button dark"
                 @click="openApp(app.name)"
-              >
-                {{ app.name }}
-              </button>
-            </td>
-            <td>
-              <button
+            >
+              {{ app.name }}
+            </button>
+          </td>
+          <td>
+            <button
                 class="text-button"
                 @click="openApp(app.name)"
-              >
-                详情
-              </button>
-            </td>
-          </tr>
+            >
+              {{ $t('ui.details') }}
+            </button>
+          </td>
+        </tr>
         </tbody>
       </table>
     </div>
     <p
-      v-if="!applications.length"
-      class="empty"
+        v-if="!applications.length"
+        class="empty"
     >
-      {{ busy ? '正在读取…' : '没有匹配的应用' }}
+      {{ busy ? $t('ui.loading') : $t('ui.no-matching-applications') }}
     </p>
   </template>
   <template v-else>
     <div
-      v-if="display === 'cards'"
-      class="cards"
+        v-if="display === 'cards'"
+        class="cards"
     >
       <article
-        class="card instance-card"
-        v-for="instance in filtered"
-        :key="instance.instanceId"
-        @click="openInstance(instance)"
+          class="card instance-card"
+          v-for="instance in filtered"
+          :key="instance.instanceId"
+          @click="openInstance(instance)"
       >
         <span class="card-heading">
           <span class="instance-identity">
             <button
-              class="text-button dark instance-primary"
-              @click.stop="openInstance(instance)"
+                class="text-button dark instance-primary"
+                @click.stop="openInstance(instance)"
             >
               {{ instance.ipAddress || '—' }}
             </button>
             <span class="instance-process">PID {{ instance.processId ?? '—' }}</span>
           </span>
           <InstanceStatus
-            :online="instance.online"
-            :blocked="instance.block"
+              :online="instance.online"
+              :blocked="instance.block"
           />
         </span>
         <span class="card-detail">
-          <span class="muted">单元</span>
+          <span class="muted">{{ $t('ui.unit') }}</span>
           <span>{{ instance.unitName || '—' }}</span>
         </span>
         <span class="card-actions">
           <ProtocolSummary
-            v-if="instance.endpoints?.length"
-            :protocols="instanceProtocols(instance)"
+              v-if="instance.endpoints?.length"
+              :protocols="instanceProtocols(instance)"
           />
           <span
-            v-if="instance.roles?.length"
-            class="badge instance-role"
+              v-if="instance.roles?.length"
+              class="badge instance-role"
           >
             {{ instanceRole(instance) }}
           </span>
@@ -207,82 +216,82 @@ onMounted(loadUnits);
       </article>
     </div>
     <div
-      v-else
-      class="table-scroll"
+        v-else
+        class="table-scroll"
     >
       <table class="instance-directory-table">
         <thead>
-          <tr>
-            <th>实例</th>
-            <th>PID</th>
-            <th>状态</th>
-            <th>单元</th>
-            <th>协议入口</th>
-            <th>身份</th>
-            <th class="operation">操作</th>
-          </tr>
+        <tr>
+          <th>{{ $t('ui.instance') }}</th>
+          <th>PID</th>
+          <th>{{ $t('ui.status') }}</th>
+          <th>{{ $t('ui.unit') }}</th>
+          <th>{{ $t('ui.protocol-endpoints') }}</th>
+          <th>{{ $t('ui.role-2') }}</th>
+          <th class="operation">{{ $t('ui.actions') }}</th>
+        </tr>
         </thead>
         <tbody>
-          <tr
+        <tr
             v-for="instance in filtered"
             :key="instance.instanceId"
-          >
-            <td>
+        >
+          <td>
               <span class="instance-identity">
                 <button
-                  class="text-button dark instance-primary"
-                  @click="openInstance(instance)"
+                    class="text-button dark instance-primary"
+                    @click="openInstance(instance)"
                 >
                   {{ instance.ipAddress || '—' }}
                 </button>
               </span>
-            </td>
-            <td class="instance-pid">{{ instance.processId ?? '—' }}</td>
-            <td>
-              <!-- 实例档案持久保留，当前会话决定在线状态。 -->
-              <InstanceStatus
+          </td>
+          <td class="instance-pid">{{ instance.processId ?? '—' }}</td>
+          <td>
+            <!-- 实例档案持久保留，当前会话决定在线状态。 -->
+            <InstanceStatus
                 :online="instance.online"
                 :blocked="instance.block"
-              />
-            </td>
-            <td>{{ instance.unitName || '—' }}</td>
-            <td>
-              <ProtocolSummary :protocols="instanceProtocols(instance)" />
-            </td>
-            <td>
+            />
+          </td>
+          <td>{{ instance.unitName || '—' }}</td>
+          <td>
+            <ProtocolSummary :protocols="instanceProtocols(instance)"/>
+          </td>
+          <td>
               <span
-                v-if="instance.roles?.length"
-                class="badge instance-role"
+                  v-if="instance.roles?.length"
+                  class="badge instance-role"
               >
                 {{ instanceRole(instance) }}
               </span>
-            </td>
-            <td>
-              <button
+          </td>
+          <td>
+            <button
                 class="text-button"
                 @click="openInstance(instance)"
-              >
-                详情
-              </button>
-            </td>
-          </tr>
+            >
+              {{ $t('ui.details') }}
+            </button>
+          </td>
+        </tr>
         </tbody>
       </table>
     </div>
     <p
-      v-if="!filtered.length"
-      class="empty"
+        v-if="!filtered.length"
+        class="empty"
     >
-      {{ busy ? '正在读取…' : '没有匹配的实例' }}
+      {{ busy ? $t('ui.loading') : $t('ui.no-matching-instances') }}
     </p>
   </template>
   <DirectoryPager
-    :count="items.length"
-    :label="application ? '实例' : '应用'"
-    :busy="busy"
-    :previous="directory.history.value.length > 0"
-    :next="!!directory.nextCursor.value"
-    @previous="directory.previous"
-    @next="directory.next"
+      :count="items.length"
+      :label="application ? $t('ui.instances-count-label') : $t('ui.applications-count-label')"
+      :busy="busy"
+      :previous="directory.history.value.length > 0"
+      :next="!!directory.nextCursor.value"
+      @previous="directory.previous"
+      @next="directory.next"
   />
 </template>

@@ -1,8 +1,10 @@
 <script setup>
-import { computed, inject, onBeforeUnmount, ref, watch } from 'vue';
-import { useFeedback } from '../useFeedback';
-import { trackDraft } from '../useNavigationGuard';
+import {t} from '../i18n';
+import {computed, inject, onBeforeUnmount, ref, watch} from 'vue';
+import {useFeedback} from '../useFeedback';
+import {trackDraft} from '../useNavigationGuard';
 import Feedback from './Feedback.vue';
+
 const props = defineProps({ scope: Object, type: String });
 const api = inject('api');
 const { busy, error, success, run } = useFeedback();
@@ -32,7 +34,7 @@ async function load() {
     original.value = rule.value;
     ready.value = true;
   } catch (failure) {
-    if (active && sequence === loadSequence) error.value = failure.message || '读取规则失败';
+    if (active && sequence === loadSequence) error.value = failure.message || t('ui.failed-to-read-the-rule');
   } finally {
     if (active && sequence === loadSequence) loading.value = false;
   }
@@ -44,18 +46,18 @@ function save() {
     await api('rule', query.value, 'PUT', { rule: rule.value });
     if (!active || sequence !== loadSequence) return;
     original.value = rule.value;
-    success.value = '已保存';
+    success.value = t('ui.saved');
   });
 }
 function deleteRule() {
   if (!ready.value) return;
-  if (!window.confirm('删除当前规则？将清除已保存的规则正文。')) return;
+  if (!window.confirm(t('ui.delete-the-current-rule-this-clears'))) return;
   const sequence = loadSequence;
   run(async () => {
     await api('rule', query.value, 'DELETE');
     if (!active || sequence !== loadSequence) return;
     await load();
-    success.value = '已删除';
+    success.value = t('ui.deleted');
   });
 }
 function toggle() {
@@ -65,7 +67,7 @@ function toggle() {
     await api('rule/enabled', query.value, 'PUT', { enabled: !loaded.value.enabled });
     if (!active || sequence !== loadSequence) return;
     loaded.value.enabled = !loaded.value.enabled;
-    success.value = loaded.value.enabled ? '已启用' : '已禁用';
+    success.value = loaded.value.enabled ? t('ui.enabled') : t('ui.disabled');
   });
 }
 watch(query, load, { immediate: true });
@@ -86,26 +88,26 @@ onBeforeUnmount(() => {
     >
       <div class="rule-script-toolbar">
         <div class="rule-script-title">
-          <strong>规则脚本</strong>
+          <strong>{{ $t('ui.rule-script') }}</strong>
           <span
             v-if="loading"
             class="muted small"
             role="status"
           >
-            正在读取…
+            {{ $t('ui.loading') }}
           </span>
           <button
             v-else-if="!ready"
             class="text-button"
             @click="load"
           >
-            重新读取
+            {{ $t('ui.reload') }}
           </button>
           <span
             v-if="dirty"
             class="muted small"
           >
-            未保存
+            {{ $t('ui.unsaved') }}
           </span>
         </div>
         <div class="rule-script-controls">
@@ -113,11 +115,11 @@ onBeforeUnmount(() => {
             v-if="loaded?.switchSupported"
             class="switch-label"
           >
-            <span>{{ loaded.enabled ? '已启用' : '已禁用' }}</span>
+            <span>{{ loaded.enabled ? $t('ui.enabled') : $t('ui.disabled') }}</span>
             <button
               class="switch"
               role="switch"
-              aria-label="启用规则"
+              :aria-label="$t('ui.enable-rule')"
               :aria-checked="loaded.enabled"
               :class="{ checked: loaded.enabled }"
               :disabled="busy || !ready"
@@ -139,7 +141,7 @@ onBeforeUnmount(() => {
         <div class="rule-script-content">
           <textarea
             v-model="rule"
-            aria-label="规则正文"
+            :aria-label="$t('ui.rule-content')"
             class="code-editor"
             spellcheck="false"
             :disabled="busy"
@@ -158,14 +160,14 @@ onBeforeUnmount(() => {
               :disabled="busy || !ready"
               @click="save"
             >
-              保存
+              {{ $t('ui.save') }}
             </button>
             <button
               class="danger rule-delete"
               :disabled="busy || !ready"
               @click="deleteRule"
             >
-              删除
+              {{ $t('ui.delete') }}
             </button>
           </div>
         </div>

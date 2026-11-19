@@ -5,30 +5,30 @@ defineProps({
   busy: Boolean,
   previous: Boolean,
   next: Boolean,
-  showControls: { type: Boolean, default: true }
+  showControls: {type: Boolean, default: true}
 });
 defineEmits(['previous', 'next']);
 </script>
 <template>
   <div class="directory-pager">
     <span class="muted">
-      <slot>本页 {{ count }} 个{{ label }}</slot>
+      <slot>{{ $t('ui.directory-page-count', count, label) }}</slot>
     </span>
     <div
-      v-if="showControls"
-      class="toolbar"
+        v-if="showControls"
+        class="toolbar"
     >
       <button
-        :disabled="busy || !previous"
-        @click="$emit('previous')"
+          :disabled="busy || !previous"
+          @click="$emit('previous')"
       >
-        上一页
+        {{ $t('ui.previous') }}
       </button>
       <button
-        :disabled="busy || !next"
-        @click="$emit('next')"
+          :disabled="busy || !next"
+          @click="$emit('next')"
       >
-        下一页
+        {{ $t('ui.next') }}
       </button>
     </div>
   </div>

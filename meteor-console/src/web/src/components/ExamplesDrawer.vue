@@ -1,7 +1,8 @@
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue';
+import {onBeforeUnmount, onMounted, ref} from 'vue';
 import InvocationExample from './InvocationExample.vue';
-const props = defineProps({ request: { type: Object, required: true } });
+
+const props = defineProps({request: {type: Object, required: true}});
 const emit = defineEmits(['close']);
 const dialog = ref(null);
 let previousFocus;
@@ -20,31 +21,33 @@ onBeforeUnmount(() => {
 </script>
 <template>
   <dialog
-    ref="dialog"
-    class="examples-drawer"
-    aria-labelledby="examples-title"
-    @cancel.prevent="emit('close')"
-    @click="$event.target === dialog && emit('close')"
+      ref="dialog"
+      class="examples-drawer"
+      aria-labelledby="examples-title"
+      @cancel.prevent="emit('close')"
+      @click="$event.target === dialog && emit('close')"
   >
     <section class="examples-panel">
       <header class="examples-header">
         <h2
-          id="examples-title"
-          class="examples-title"
+            id="examples-title"
+            class="examples-title"
         >
           <span class="badge">{{ request.protocol }}</span>
           <span class="examples-service-id">{{ request.serviceId }}</span>
         </h2>
         <button
-          type="button"
-          aria-label="关闭协议示例"
-          autofocus
-          @click="emit('close')"
+            type="button"
+            :aria-label="$t('ui.close-protocol-examples')"
+            autofocus
+            @click="emit('close')"
         >
-          关闭
+          {{ $t('ui.close') }}
         </button>
       </header>
-      <div class="examples-body"><InvocationExample :request="props.request" /></div>
+      <div class="examples-body">
+        <InvocationExample :request="props.request"/>
+      </div>
     </section>
   </dialog>
 </template>

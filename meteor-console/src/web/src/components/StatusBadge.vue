@@ -1,11 +1,11 @@
 <script setup>
-defineProps({ enabled: Boolean, on: { default: '启用' }, off: { default: '禁用' } });
+defineProps({ enabled: Boolean, on: String, off: String });
 </script>
 <template>
   <span
     class="status"
     :class="enabled ? 'positive' : 'negative'"
   >
-    {{ enabled ? on : off }}
+    {{ enabled ? (on ?? $t('ui.enable')) : (off ?? $t('ui.disable')) }}
   </span>
 </template>

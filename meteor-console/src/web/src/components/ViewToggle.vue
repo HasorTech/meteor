@@ -5,8 +5,8 @@ defineEmits(['update:modelValue']);
 <template>
   <button
     class="icon-button"
-    :aria-label="modelValue === 'list' ? '切换为卡片' : '切换为列表'"
-    :title="modelValue === 'list' ? '切换为卡片' : '切换为列表'"
+    :aria-label="modelValue === 'list' ? $t('ui.switch-to-cards') : $t('ui.switch-to-list')"
+    :title="modelValue === 'list' ? $t('ui.switch-to-cards') : $t('ui.switch-to-list')"
     @click="$emit('update:modelValue', modelValue === 'list' ? 'cards' : 'list')"
   >
     <span

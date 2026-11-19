@@ -26,8 +26,8 @@ function connect() {
 <template>
   <div class="tabbar">
     <div>
-      <h1>直连实例</h1>
-      <p class="direct-introduction">连接目标实例，查看实例状态、服务清单并进行服务治理。</p>
+      <h1>{{ $t('ui.direct-connection') }}</h1>
+      <p class="direct-introduction">{{ $t('ui.connect-to-an-instance-to-view') }}</p>
     </div>
   </div>
   <div class="direct-layout">
@@ -37,9 +37,9 @@ function connect() {
       :aria-busy="busy"
       @submit.prevent="connect"
     >
-      <h2 id="direct-form-title">连接信息</h2>
+      <h2 id="direct-form-title">{{ $t('ui.connection-details') }}</h2>
       <div class="field">
-        <label for="direct-endpoint">实例 Endpoint</label>
+        <label for="direct-endpoint">{{ $t('ui.instance-endpoint') }}</label>
         <input
           id="direct-endpoint"
           v-model="target"
@@ -55,11 +55,11 @@ function connect() {
           id="direct-endpoint-hint"
           class="field-hint"
         >
-          填写实例对外提供的完整 Endpoint 地址。
+          {{ $t('ui.enter-the-full-endpoint-address-exposed') }}
         </p>
       </div>
       <div class="field">
-        <label for="direct-token">管理凭据</label>
+        <label for="direct-token">{{ $t('ui.management-token') }}</label>
         <input
           id="direct-token"
           v-model="managementToken"
@@ -68,25 +68,25 @@ function connect() {
           :disabled="busy"
           required
           maxlength="4096"
-          placeholder="请输入目标实例的管理凭据"
+          :placeholder="$t('ui.enter-the-target-instance-s-management')"
           aria-describedby="direct-token-hint"
         />
         <p
           id="direct-token-hint"
           class="field-hint"
         >
-          使用目标实例配置的管理凭据。
+          {{ $t('ui.use-the-token-configured-on-the') }}
         </p>
       </div>
       <Feedback :error="error" />
       <div class="direct-form-footer">
-        <span class="muted">连接成功后进入实例详情</span>
+        <span class="muted">{{ $t('ui.on-success-opens-the-instance-details') }}</span>
         <button
           type="submit"
           class="primary"
           :disabled="busy"
         >
-          {{ busy ? '连接中…' : '连接' }}
+          {{ busy ? $t('ui.connecting') : $t('ui.connect') }}
         </button>
       </div>
     </form>
@@ -94,14 +94,14 @@ function connect() {
       class="direct-help"
       aria-labelledby="direct-help-title"
     >
-      <h2 id="direct-help-title">连接准备</h2>
+      <h2 id="direct-help-title">{{ $t('ui.before-connecting') }}</h2>
       <section>
-        <h3>获取实例 Endpoint</h3>
-        <p>在已登记实例的详情页中，复制 Endpoint 字段的完整地址。</p>
+        <h3>{{ $t('ui.get-the-instance-endpoint') }}</h3>
+        <p>{{ $t('ui.copy-the-full-address-from-the') }}</p>
       </section>
       <section>
-        <h3>准备管理凭据</h3>
-        <p>凭据由目标实例配置，仅在当前页面会话中使用。刷新页面后需要重新填写。</p>
+        <h3>{{ $t('ui.get-the-management-token') }}</h3>
+        <p>{{ $t('ui.the-target-instance-provides-the-token') }}</p>
       </section>
     </aside>
   </div>

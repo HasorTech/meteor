@@ -5,7 +5,7 @@ import MethodField from './MethodField.vue';
 const props = defineProps({
   description: Object,
   definitions: Array,
-  emptyText: { type: String, default: '暂无方法描述' },
+  emptyText: String,
   debuggable: Boolean
 });
 const emit = defineEmits(['debug']);
@@ -26,10 +26,10 @@ function signature(method) {
   <section
     class="info-panel service-methods"
     role="region"
-    aria-label="方法"
+    :aria-label="$t('ui.method-2')"
   >
     <header class="methods-header">
-      <h3 class="methods-title">方法清单</h3>
+      <h3 class="methods-title">{{ $t('ui.methods') }}</h3>
       <slot name="tools" />
     </header>
     <p
@@ -43,7 +43,7 @@ function signature(method) {
       v-if="!entries.length"
       class="empty"
     >
-      {{ emptyText }}
+      {{ emptyText ?? $t('ui.no-method-description') }}
     </p>
     <article
       v-else
@@ -66,7 +66,7 @@ function signature(method) {
             v-if="method.message"
             class="badge"
           >
-            单向消息
+            {{ $t('ui.one-way-message') }}
           </span>
           <button
             v-if="debuggable && method.javaSignature"
@@ -74,7 +74,7 @@ function signature(method) {
             class="text-button method-debug"
             @click.stop.prevent="emit('debug', method)"
           >
-            调试
+            {{ $t('ui.debug-2') }}
           </button>
         </summary>
         <div class="method-detail-body">
@@ -87,14 +87,14 @@ function signature(method) {
           <div class="method-io">
             <section
               class="method-inputs"
-              aria-label="方法请求"
+              :aria-label="$t('ui.method-request')"
             >
               <details
                 class="method-structure"
                 open
               >
                 <summary class="method-io-heading">
-                  <span>请求</span>
+                  <span>{{ $t('ui.request') }}</span>
                   <code
                     v-for="(field, fieldIndex) in method.parameters || []"
                     :key="fieldIndex"
@@ -103,13 +103,13 @@ function signature(method) {
                     <template v-if="method.parameters.length > 1">
                       {{ field.name || field.javaName || `arg${field.argIndex ?? fieldIndex}` }}:
                     </template>
-                    {{ field.type || '未上报类型' }}
+                    {{ field.type || $t('ui.type-not-reported') }}
                   </code>
                 </summary>
                 <ul
                   v-if="method.parameters?.length"
                   class="method-fields"
-                  aria-label="请求结构"
+                  :aria-label="$t('ui.request-structure')"
                 >
                   <MethodField
                     v-for="(field, fieldIndex) in method.parameters"
@@ -123,28 +123,28 @@ function signature(method) {
                   v-else
                   class="muted"
                 >
-                  无参数
+                  {{ $t('ui.no-parameters') }}
                 </p>
               </details>
             </section>
             <section
               class="method-returns"
-              aria-label="方法响应"
+              :aria-label="$t('ui.method-response')"
             >
               <details
                 class="method-structure"
                 open
               >
                 <summary class="method-io-heading">
-                  <span>响应</span>
+                  <span>{{ $t('ui.response-2') }}</span>
                   <code class="method-field-type">
-                    {{ method.returns?.type || (method.message ? 'void' : '未上报类型') }}
+                    {{ method.returns?.type || (method.message ? 'void' : $t('ui.type-not-reported')) }}
                   </code>
                 </summary>
                 <ul
                   v-if="method.returns?.type && method.returns.type !== 'void'"
                   class="method-fields"
-                  aria-label="响应结构"
+                  :aria-label="$t('ui.response-structure')"
                 >
                   <MethodField
                     :field="method.returns"
@@ -157,13 +157,17 @@ function signature(method) {
                   v-else
                   class="muted"
                 >
-                  {{ method.returns?.type === 'void' || method.message ? '无响应内容' : '未上报响应描述' }}
+                  {{
+                    method.returns?.type === 'void' || method.message
+                      ? $t('ui.no-response-content')
+                      : $t('ui.response-description-not-reported')
+                  }}
                 </p>
               </details>
             </section>
           </div>
           <template v-if="method.exceptions?.length">
-            <h4>声明异常</h4>
+            <h4>{{ $t('ui.declared-exceptions') }}</h4>
             <ul class="method-exceptions">
               <li
                 v-for="exception in method.exceptions"

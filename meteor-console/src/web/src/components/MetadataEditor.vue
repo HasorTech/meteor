@@ -1,4 +1,5 @@
 <script setup>
+import { t } from '../i18n';
 import { computed, inject, onMounted, ref } from 'vue';
 import { useFeedback } from '../useFeedback';
 import { trackDraft } from '../useNavigationGuard';
@@ -49,40 +50,40 @@ function save() {
     const creating = draft.value.original === null;
     const key = creating ? draft.value.key.trim() : draft.value.original;
     if (!key) {
-      throw new Error('请填写元信息键。');
+      throw new Error(t('ui.enter-a-metadata-key'));
     }
     if (creating && Object.hasOwn(metadata.value, key)) {
-      throw new Error('该键已存在，请编辑对应行。');
+      throw new Error(t('ui.this-key-already-exists-edit-its'));
     }
     if (creating && Object.keys(metadata.value).length >= 1000) {
-      throw new Error('最多保存 1000 个元信息键。');
+      throw new Error(t('ui.you-can-save-up-to-1'));
     }
 
     let value;
     try {
       value = JSON.parse(draft.value.value);
     } catch {
-      throw new Error('请输入有效 JSON 值，字符串需要双引号。');
+      throw new Error(t('ui.enter-a-valid-json-value-use'));
     }
     if (value === null) {
-      throw new Error('值不能为 null，请使用删除操作。');
+      throw new Error(t('ui.the-value-cannot-be-null-use'));
     }
 
     // 每次只提交当前行，其他键仍由后端保留。
     await api('metadata', props.scope, 'PUT', { values: { [key]: value } });
     draft.value = null;
     await load();
-  }, '已保存');
+  }, t('ui.saved'));
 }
 
 function remove(key) {
-  if (!window.confirm(`删除元信息“${key}”？`)) {
+  if (!window.confirm(t('ui.delete-metadata-key', key))) {
     return;
   }
   run(async () => {
     await api('metadata', props.scope, 'DELETE', { keys: [key] });
     await load();
-  }, '已保存');
+  }, t('ui.saved'));
 }
 
 onMounted(() => run(load));
@@ -95,14 +96,14 @@ onMounted(() => run(load));
         :disabled="busy || !!draft"
         @click="run(load)"
       >
-        刷新
+        {{ $t('ui.refresh') }}
       </button>
       <button
         class="primary"
         :disabled="busy || !!draft || !metadata"
         @click="edit(null)"
       >
-        新增
+        {{ $t('ui.add') }}
       </button>
     </Teleport>
     <Feedback
@@ -112,7 +113,7 @@ onMounted(() => run(load));
     <div class="table-scroll">
       <table
         class="metadata-table"
-        aria-label="元信息"
+        :aria-label="$t('ui.metadata')"
       >
         <colgroup>
           <col class="metadata-key" />
@@ -121,9 +122,9 @@ onMounted(() => run(load));
         </colgroup>
         <thead>
           <tr>
-            <th scope="col">键</th>
-            <th scope="col">值（JSON）</th>
-            <th scope="col">操作</th>
+            <th scope="col">{{ $t('ui.key') }}</th>
+            <th scope="col">{{ $t('ui.value-json') }}</th>
+            <th scope="col">{{ $t('ui.actions') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -135,8 +136,8 @@ onMounted(() => run(load));
               <input
                 v-if="row.isNew"
                 v-model="draft.key"
-                aria-label="元信息键"
-                placeholder="例如 region"
+                :aria-label="$t('ui.metadata-key')"
+                :placeholder="$t('ui.e-g-region')"
                 :disabled="busy"
               />
               <code v-else>{{ row.key }}</code>
@@ -145,7 +146,7 @@ onMounted(() => run(load));
               <textarea
                 v-if="isEditing(row)"
                 v-model="draft.value"
-                aria-label="元信息值（JSON）"
+                :aria-label="$t('ui.metadata-value-json')"
                 rows="2"
                 spellcheck="false"
                 :disabled="busy"
@@ -167,14 +168,14 @@ onMounted(() => run(load));
                   :disabled="busy"
                   @click="save"
                 >
-                  保存
+                  {{ $t('ui.save') }}
                 </button>
                 <button
                   class="text-button"
                   :disabled="busy"
                   @click="cancel"
                 >
-                  取消
+                  {{ $t('ui.cancel') }}
                 </button>
               </div>
               <div
@@ -186,14 +187,14 @@ onMounted(() => run(load));
                   :disabled="busy || !!draft"
                   @click="edit(row)"
                 >
-                  编辑
+                  {{ $t('ui.edit') }}
                 </button>
                 <button
                   class="text-button"
                   :disabled="busy || !!draft"
                   @click="remove(row.key)"
                 >
-                  删除
+                  {{ $t('ui.delete') }}
                 </button>
               </div>
             </td>
@@ -203,7 +204,13 @@ onMounted(() => run(load));
               colspan="3"
               class="empty"
             >
-              {{ busy ? '正在读取…' : metadata ? '暂无元信息' : '元信息尚未加载' }}
+              {{
+                busy
+                  ? $t('ui.loading')
+                  : metadata
+                    ? $t('ui.no-metadata')
+                    : $t('ui.metadata-has-not-been-loaded')
+              }}
             </td>
           </tr>
         </tbody>

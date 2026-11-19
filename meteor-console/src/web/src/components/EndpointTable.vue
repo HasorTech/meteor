@@ -61,11 +61,11 @@ function safeHttpAddress(address) {
     >
       <thead>
         <tr>
-          <th class="endpoint-protocol-column">协议</th>
-          <th v-if="service">接入点</th>
+          <th class="endpoint-protocol-column">{{ $t('ui.protocol') }}</th>
+          <th v-if="service">{{ $t('ui.endpoints') }}</th>
           <template v-else>
-            <th class="endpoint-family-column">家族</th>
-            <th class="endpoint-port-column">端口</th>
+            <th class="endpoint-family-column">{{ $t('ui.family') }}</th>
+            <th class="endpoint-port-column">{{ $t('ui.port') }}</th>
             <th title="Context Path">Context Path</th>
           </template>
         </tr>
@@ -91,7 +91,7 @@ function safeHttpAddress(address) {
                   v-if="defaultProtocol"
                   class="endpoint-default muted"
                 >
-                  （默认）
+                  {{ $t('ui.default') }}
                 </span>
               </div>
             </div>

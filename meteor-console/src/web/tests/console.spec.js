@@ -57,6 +57,48 @@ async function addMeta(page, key, value) {
   await page.locator('.metadata-panel').getByRole('button', { name: '保存', exact: true }).click();
 }
 
+test('the public language packs match and do not open authenticated APIs', async ({ request }) => {
+  const chinese = await request.get('/api/i18n', { headers: { 'Accept-Language': 'zh-CN' } });
+  const english = await request.get('/api/i18n', { headers: { 'Accept-Language': 'fr, en-GB;q=0.8' } });
+  expect(chinese.ok()).toBe(true);
+  expect(english.ok()).toBe(true);
+  expect(english.headers()['content-language']).toBe('en-US');
+  const zh = await chinese.json();
+  const en = await english.json();
+  expect(zh.locale).toBe('zh-CN');
+  expect(en.locale).toBe('en-US');
+  expect(Object.keys(en.messages).sort()).toEqual(Object.keys(zh.messages).sort());
+  expect(en.messages['ui.sign-in-to-the-console']).toBe('Sign in to the console');
+  expect(zh.messages['ui.sign-in-to-the-console']).toBe('登录控制台');
+  expect((await request.get('/api/settings')).status()).toBe(401);
+});
+
+test('language switching keeps form input, localizes server feedback, and survives reload', async ({
+  page
+}) => {
+  await page.goto('/');
+  await page.getByLabel('账号', { exact: true }).fill('admin');
+  await page.getByRole('combobox', { name: '语言' }).selectOption('en-US');
+  await expect(page.getByRole('heading', { name: 'Sign in to the console' })).toBeVisible();
+  await expect(page.getByLabel('Username', { exact: true })).toHaveValue('admin');
+
+  await page.getByLabel('Password', { exact: true }).fill('wrong');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page.getByRole('alert')).toHaveText('Incorrect username or password');
+
+  await page.getByLabel('Password', { exact: true }).fill('test-password');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Service governance' })).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 840 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  await page.reload();
+  await expect(page.getByRole('combobox', { name: 'Language' })).toHaveValue('en-US');
+  await page.getByRole('combobox', { name: 'Language' }).selectOption('zh-CN');
+  await expect(page.getByRole('navigation', { name: '主要导航' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '服务治理' })).toBeVisible();
+});
+
 test('authenticated refresh does not flash the login form while restoring session', async ({ page }) => {
   await login(page);
   let releaseSession;
@@ -2917,7 +2959,7 @@ test('direct management uses real RPC without a selected registry', async ({ pag
   await expect(page.getByRole('alert')).toContainText('管理地址格式');
   await page.getByLabel('实例 Endpoint', { exact: true }).fill('rsf://127.0.0.1:18767');
   await page.getByRole('button', { name: '连接', exact: true }).click();
-  await expect(page.getByRole('alert')).toContainText('authentication failed');
+  await expect(page.getByRole('alert')).toContainText('管理凭据无效');
   await page.getByLabel('管理凭据', { exact: true }).fill('browser-direct-令牌+secret');
   const request = page.waitForRequest(
     (request) => request.url().includes('/api/instance?') && request.url().includes('mode=direct')
@@ -3016,7 +3058,7 @@ test('Remote connects through authenticated RPC and hides storage credentials', 
   await page.getByLabel('远端集群 ID').fill('saved-registry');
   await page.getByLabel('管理凭据', { exact: true }).fill('wrong-secret');
   await page.getByRole('button', { name: '测试连接', exact: true }).click();
-  await expect(page.getByRole('alert')).toContainText('authentication failed');
+  await expect(page.getByRole('alert')).toContainText('远端控制台管理凭据无效');
   await expect(page.getByRole('button', { name: '保存并进入' })).toBeDisabled();
 
   await page.getByLabel('管理凭据', { exact: true }).fill('browser-remote-secret');

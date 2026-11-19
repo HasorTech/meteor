@@ -1,8 +1,9 @@
 <script setup>
+import {t} from '../i18n';
 import BreadcrumbTrail from './BreadcrumbTrail.vue';
-import { usePageTab } from '../navigation';
-import { computed, inject, onMounted, ref } from 'vue';
-import { useFeedback } from '../useFeedback';
+import {usePageTab} from '../navigation';
+import {computed, inject, onMounted, ref} from 'vue';
+import {useFeedback} from '../useFeedback';
 import Feedback from './Feedback.vue';
 import ServiceAccess from './ServiceAccess.vue';
 import ServiceMethods from './ServiceMethods.vue';
@@ -13,6 +14,7 @@ import RuleEditor from './RuleEditor.vue';
 import RouteEditor from './RouteEditor.vue';
 import MetadataEditor from './MetadataEditor.vue';
 import StatusBadge from './StatusBadge.vue';
+
 const props = defineProps({ scope: Object });
 const api = inject('api');
 const route = inject('route');
@@ -31,12 +33,12 @@ const tab = computed(() =>
 const { busy, error, success, run } = useFeedback();
 const tabs = computed(() =>
   [
-    ['info', '服务信息'],
-    ['providers', '提供者'],
-    ['consumers', '消费者'],
-    ['flow', '流量控制'],
-    ['route', '路由策略'],
-    ['metadata', '元信息']
+    ['info', t('ui.service-information')],
+    ['providers', t('ui.providers')],
+    ['consumers', t('ui.consumers')],
+    ['flow', t('ui.traffic-control')],
+    ['route', t('ui.routing-policies')],
+    ['metadata', t('ui.metadata')]
   ].filter(([key]) => allowedTabs.includes(key))
 );
 const debugMethodName = computed(() => (route.value.method || '').split('(')[0]);
@@ -45,7 +47,9 @@ function serviceInformation() {
 }
 const query = computed(() => ({ ...props.scope, scope: 'service' }));
 const info = computed(() => data.value?.info);
-const serviceRole = computed(() => ({ Provider: '提供者', Consumer: '消费者' })[info.value?.role] || '—');
+const serviceRole = computed(
+  () => ({ Provider: t('ui.providers'), Consumer: t('ui.consumers') })[info.value?.role] || '—'
+);
 function debug(method) {
   navigate({
     ...props.scope,
@@ -68,7 +72,7 @@ function toggle() {
     const enabled = !data.value.enabled;
     await api('service/enabled', props.scope, 'PUT', { enabled });
     await load();
-  }, '已更新');
+  }, t('ui.updated'));
 }
 onMounted(() => run(load));
 </script>
@@ -79,7 +83,7 @@ onMounted(() => run(load));
         class="text-button"
         @click="navigate({ view: 'services', clusterId: scope.clusterId })"
       >
-        服务目录
+        {{ $t('ui.service-directory') }}
       </button>
       <span>/</span>
       <template v-if="scopedToInstance">
@@ -116,7 +120,7 @@ onMounted(() => run(load));
         class="text-button"
         @click="navigate({ view: 'direct' })"
       >
-        直连实例
+        {{ $t('ui.direct-connection') }}
       </button>
       <span>/</span>
       <button
@@ -142,17 +146,17 @@ onMounted(() => run(load));
       >
         {{ info?.serviceId || scope.serviceId }}
       </component>
-      <span class="badge">直连</span>
+      <span class="badge">{{ $t('ui.direct-connection-2') }}</span>
     </template>
     <template v-if="tab === 'debug'">
       <span>/</span>
-      <strong>调试({{ debugMethodName }})</strong>
+      <strong>{{ $t('ui.debug-method', debugMethodName) }}</strong>
     </template>
   </BreadcrumbTrail>
   <div class="tabbar detail-tabbar page-actionbar">
     <nav
       class="tabs"
-      aria-label="服务详情"
+      :aria-label="$t('ui.service-details')"
     >
       <button
         v-for="[key, name] in tabs"
@@ -172,7 +176,7 @@ onMounted(() => run(load));
         :disabled="busy"
         @click="run(load)"
       >
-        刷新
+        {{ $t('ui.refresh') }}
       </button>
     </div>
   </div>
@@ -196,45 +200,45 @@ onMounted(() => run(load));
               'service-id-only': scopedToInstance && !data.description?.javaType
             }"
           >
-            <dt>服务 ID</dt>
+            <dt>{{ $t('ui.service-id') }}</dt>
             <dd>{{ info.serviceId }}</dd>
           </div>
           <div
             class="service-primary-field"
             v-if="scopedToInstance && data.description?.javaType"
           >
-            <dt>接口</dt>
+            <dt>{{ $t('ui.interface') }}</dt>
             <dd>
               <code>{{ data.description.javaType }}</code>
             </dd>
           </div>
           <div>
-            <dt>分组</dt>
+            <dt>{{ $t('ui.group') }}</dt>
             <dd>{{ info.group || '—' }}</dd>
           </div>
           <div>
-            <dt>名称</dt>
+            <dt>{{ $t('ui.name') }}</dt>
             <dd>{{ info.name }}</dd>
           </div>
           <div>
-            <dt>版本</dt>
+            <dt>{{ $t('ui.version') }}</dt>
             <dd>{{ info.version || '—' }}</dd>
           </div>
           <div v-if="scopedToInstance">
-            <dt>身份</dt>
+            <dt>{{ $t('ui.role-2') }}</dt>
             <dd>{{ serviceRole }}</dd>
           </div>
           <div>
-            <dt>状态</dt>
+            <dt>{{ $t('ui.status') }}</dt>
             <dd><StatusBadge :enabled="data.enabled" /></dd>
           </div>
           <div v-if="scopedToInstance">
-            <dt>启用服务</dt>
+            <dt>{{ $t('ui.enable-service') }}</dt>
             <dd>
               <button
                 class="switch"
                 role="switch"
-                aria-label="启用服务"
+                :aria-label="$t('ui.enable-service')"
                 :class="{ checked: data.enabled }"
                 :aria-checked="data.enabled"
                 :disabled="busy"
@@ -249,15 +253,15 @@ onMounted(() => run(load));
           v-if="!scopedToInstance"
           class="service-control-panel"
           role="group"
-          aria-label="服务启用操作"
+          :aria-label="$t('ui.service-status-controls')"
         >
           <div class="actions governance-actions">
             <label class="switch-label">
-              <span>{{ data.enabled ? '已启用' : '已禁用' }}</span>
+              <span>{{ data.enabled ? $t('ui.enabled') : $t('ui.disabled') }}</span>
               <button
                 class="switch"
                 role="switch"
-                aria-label="启用服务"
+                :aria-label="$t('ui.enable-service')"
                 :class="{ checked: data.enabled }"
                 :aria-checked="data.enabled"
                 :disabled="busy"
@@ -272,7 +276,7 @@ onMounted(() => run(load));
       <section
         class="service-overview-access"
         role="region"
-        :aria-label="scopedToInstance ? '服务接入点' : '服务示例'"
+        :aria-label="scopedToInstance ? $t('ui.service-endpoints') : $t('ui.service-examples')"
       >
         <ServiceAccess
           :scope="scope"
@@ -323,6 +327,6 @@ onMounted(() => run(load));
     v-else-if="busy"
     class="empty"
   >
-    正在读取…
+    {{ $t('ui.loading') }}
   </p>
 </template>

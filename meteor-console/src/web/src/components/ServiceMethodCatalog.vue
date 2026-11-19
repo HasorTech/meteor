@@ -1,4 +1,5 @@
 <script setup>
+import { t } from '../i18n';
 import { computed, inject, onBeforeUnmount, ref, watch } from 'vue';
 import ServiceMethods from './ServiceMethods.vue';
 import Feedback from './Feedback.vue';
@@ -24,10 +25,10 @@ const filteredDefinitions = computed(() => {
     .filter((definition) => definition.methods.length);
 });
 const emptyText = computed(() => {
-  if (busy.value) return '正在加载方法…';
-  if (error.value) return '方法未完整加载，请刷新重试。';
-  if (!listingSupported.value) return '请输入完整方法名查询';
-  return methodName.value.trim() ? '暂无匹配的方法' : '暂无已上报的方法';
+  if (busy.value) return t('ui.loading-methods');
+  if (error.value) return t('ui.the-method-list-did-not-load');
+  if (!listingSupported.value) return t('ui.enter-the-full-method-name');
+  return methodName.value.trim() ? t('ui.no-matching-methods') : t('ui.no-reported-methods');
 });
 async function load() {
   const requestGeneration = ++generation;
@@ -49,14 +50,14 @@ async function load() {
       listingSupported.value = page.listingSupported;
       loaded.push(...page.definitions);
       cursor = page.nextCursor;
-      if (cursor && cursors.has(cursor)) throw new Error('方法分页未推进，请刷新重试。');
+      if (cursor && cursors.has(cursor)) throw new Error(t('ui.method-pagination-did-not-advance-refresh'));
       if (cursor) cursors.add(cursor);
     } while (cursor);
     // 全部分页成功后才展示，避免把不完整列表当成完整的本地搜索结果。
     definitions.value = loaded;
   } catch (failure) {
     if (requestGeneration !== generation) return;
-    error.value = failure.message || '方法加载失败';
+    error.value = failure.message || t('ui.failed-to-load-methods');
   } finally {
     if (requestGeneration === generation) busy.value = false;
   }
@@ -85,13 +86,13 @@ watch(
     <template #tools>
       <form
         class="actions"
-        aria-label="方法查询"
+        :aria-label="$t('ui.search-methods')"
         @submit.prevent="!listingSupported && load()"
       >
         <input
           v-model="methodName"
-          aria-label="方法名"
-          :placeholder="listingSupported ? '搜索方法名' : '完整方法名'"
+          :aria-label="$t('ui.method-name')"
+          :placeholder="listingSupported ? $t('ui.search-method-names') : $t('ui.full-method-name')"
           :disabled="busy"
         />
         <button
@@ -99,13 +100,13 @@ watch(
           :disabled="busy"
           type="submit"
         >
-          查询
+          {{ $t('ui.find') }}
         </button>
         <span
           v-if="!listingSupported"
           class="muted"
         >
-          此注册中心支持按完整方法名查询。
+          {{ $t('ui.this-registry-supports-search-by-full') }}
         </span>
       </form>
     </template>

@@ -1,4 +1,5 @@
 <script setup>
+import { t } from '../i18n';
 import { computed, inject, ref } from 'vue';
 import Feedback from './Feedback.vue';
 const props = defineProps({ addresses: { type: Object, default: () => ({}) } });
@@ -34,7 +35,7 @@ async function copyAddress(address) {
     await navigator.clipboard.writeText(address);
     copied.value = address;
   } catch {
-    copyError.value = '无法自动复制，请选择地址文本手动复制。';
+    copyError.value = t('ui.automatic-copy-failed-select-the-address');
   }
 }
 </script>
@@ -58,7 +59,7 @@ async function copyAddress(address) {
         :href="target"
         target="_blank"
         rel="noopener noreferrer"
-        :aria-label="`打开 ${label}（新标签页）`"
+        :aria-label="$t('ui.open-new-tab', label)"
       >
         <code :title="target">
           {{ target }}
@@ -81,8 +82,8 @@ async function copyAddress(address) {
         v-else-if="target"
         type="button"
         class="endpoint-copy"
-        :title="copied === target ? '已复制地址' : '点击复制地址'"
-        :aria-label="`复制 ${label} 地址`"
+        :title="copied === target ? $t('ui.address-copied') : $t('ui.click-to-copy-the-address')"
+        :aria-label="$t('ui.copy-address', label)"
         @click="copyAddress(target)"
       >
         <code>{{ target }}</code>
@@ -98,13 +99,13 @@ async function copyAddress(address) {
       v-if="!details.length"
       class="muted"
     >
-      暂无接入点
+      {{ $t('ui.no-endpoints-available') }}
     </span>
     <span
       class="sr-only"
       role="status"
     >
-      {{ copied ? '地址已复制到剪贴板' : '' }}
+      {{ copied ? $t('ui.address-copied-to-the-clipboard') : '' }}
     </span>
     <Feedback :error="copyError" />
   </div>

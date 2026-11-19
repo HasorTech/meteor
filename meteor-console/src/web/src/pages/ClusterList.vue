@@ -1,4 +1,5 @@
 <script setup>
+import { t } from '../i18n';
 import { computed, inject, ref } from 'vue';
 import { useFeedback } from '../useFeedback';
 import Feedback from '../components/Feedback.vue';
@@ -37,10 +38,10 @@ function copyClusterId(id) {
       await navigator.clipboard.writeText(id);
     } catch {
       if (!copyWithSelection(id)) {
-        throw new Error(`无法自动复制，请手动复制集群 ID：${id}`);
+        throw new Error(t('ui.automatic-copy-failed-copy-the-cluster', id));
       }
     }
-  }, '集群 ID 已复制');
+  }, t('ui.cluster-id-copied'));
 }
 function remove() {
   run(async () => {
@@ -52,20 +53,20 @@ function remove() {
 </script>
 <template>
   <div class="tabbar page-actionbar">
-    <h1>集群连接</h1>
+    <h1>{{ $t('ui.cluster-connections') }}</h1>
     <div class="toolbar">
       <input
         v-if="clusters.length"
         v-model="query"
-        aria-label="搜索集群"
-        placeholder="搜索集群"
+        :aria-label="$t('ui.search-clusters')"
+        :placeholder="$t('ui.search-clusters')"
         type="search"
       />
       <button
         class="primary"
         @click="navigate({ view: 'connection' })"
       >
-        连接注册中心
+        {{ $t('ui.connect-to-a-registry') }}
       </button>
     </div>
   </div>
@@ -83,13 +84,13 @@ function remove() {
     >
       ◇
     </span>
-    <h2>连接到注册中心</h2>
-    <p>选择注册中心，开始管理服务。</p>
+    <h2>{{ $t('ui.connect-to-a-registry-2') }}</h2>
+    <p>{{ $t('ui.select-a-registry-to-start-managing') }}</p>
     <button
       class="primary"
       @click="navigate({ view: 'connection' })"
     >
-      连接注册中心
+      {{ $t('ui.connect-to-a-registry') }}
     </button>
   </div>
   <div
@@ -127,25 +128,25 @@ function remove() {
           :disabled="busy"
           @click="copyClusterId(cluster.id)"
         >
-          复制集群 ID
+          {{ $t('ui.copy-cluster-id') }}
         </button>
         <button
           class="text-button"
           @click="navigate({ view: 'connection', id: cluster.id })"
         >
-          编辑
+          {{ $t('ui.edit') }}
         </button>
         <button
           class="text-button"
           @click="removal = cluster"
         >
-          移除
+          {{ $t('ui.remove') }}
         </button>
         <button
           class="text-button push-right"
           @click="navigate({ view: 'applications', clusterId: cluster.id })"
         >
-          进入
+          {{ $t('ui.open') }}
         </button>
       </div>
     </article>
@@ -154,13 +155,13 @@ function remove() {
     class="total"
     v-if="clusters.length"
   >
-    共 {{ filtered.length }} 个集群
+    {{ $t('ui.cluster-count', filtered.length) }}
   </p>
   <div
     v-if="clusters.length && !filtered.length"
     class="empty"
   >
-    没有匹配的集群
+    {{ $t('ui.no-matching-clusters') }}
   </div>
   <div
     v-if="removal"
@@ -174,21 +175,21 @@ function remove() {
       aria-modal="true"
       aria-labelledby="remove-title"
     >
-      <h2 id="remove-title">移除连接</h2>
-      <p>移除“{{ removal.name }}”的本地连接？注册中心数据不受影响。</p>
+      <h2 id="remove-title">{{ $t('ui.remove-connection') }}</h2>
+      <p>{{ $t('ui.confirm-remove-connection', removal.name) }}</p>
       <div class="actions">
         <button
           :disabled="busy"
           @click="removal = null"
         >
-          取消
+          {{ $t('ui.cancel') }}
         </button>
         <button
           class="danger"
           :disabled="busy"
           @click="remove"
         >
-          移除
+          {{ $t('ui.remove') }}
         </button>
       </div>
     </section>
