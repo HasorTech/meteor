@@ -414,7 +414,7 @@ public class ThriftAnnotatedContractScenarioTest {
             server.start();
             server.publisher().rsfService(AnnotatedInteropService.class, new AnnotatedInteropServiceImpl()) //
                     .aliasName("thrift-http", "ExtendedInteropService") //
-                    .contextPathByPrefix("thrift-http", "/thrift") //
+                    .contextPathByPrefix("thrift-http", "/") //
                     .bindResource("thrift-http", this.contract()).register();
 
             // 官方 THttpClient 直接访问协议挂载路径。

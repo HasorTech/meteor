@@ -6,19 +6,19 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc.web;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.hasor.example.echo.TextEchoService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.protocol.connect.ConnectJavaProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** 官方 Connect JVM SDK 的 gRPC-Web 模式，由 Java 源码调用同协议提供者。 */
 @NxnRpc(name = "grpc-web")
@@ -44,6 +44,7 @@ public class GrpcWebJavaInteropTest {
             };
             server.publisher().rsfService(TextEchoService.class, implementation) //
                     .aliasName("grpc-web", "meteor.java.sdk.TextEchoService").serialize("Protobuf") //
+                    .contextPathByPrefix("grpc-web", "/") //
                     .bindResource("grpc-web", resource).register();
 
             // 显式选择 SDK 的 GRPC_WEB，不借用普通 gRPC-Java 调用冒充覆盖。

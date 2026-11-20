@@ -6,28 +6,28 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.jsonrpc.python;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.junit.jupiter.api.io.TempDir;
+import java.util.concurrent.TimeUnit;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.test.nxn.NxnRpc;
+import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import net.hasor.realmeteor.environment.container.ContainerProcess;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
 
 /** Meteor 提供者与独立 Python 标准库消费者使用同一份订单向量；直连不经过注册中心。 */
 @NxnRpc(name = "jsonrpc", version = "2.0")
 public class PythonJsonRpcProviderOrderTest {
     @TempDir
-    public Path data;
-    private      MetContext      provider;
-    private      String          endpoint;
+    public  Path       data;
+    private MetContext provider;
+    private String     endpoint;
 
     @BeforeEach
     public void publishOrderService() throws Exception {
@@ -45,6 +45,7 @@ public class PythonJsonRpcProviderOrderTest {
         // 容器启动后发布原有用户示例接口，没有为跨语言更改业务对象或实现。
         this.provider.publisher().rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                 .aliasName("jsonrpc", "orders") //
+                .contextPathByPrefix("jsonrpc", "/") //
                 .protocol("jsonrpc") //
                 .register();
         int port = this.provider.getListenAddress("jsonrpc").getPort();

@@ -70,7 +70,7 @@ static void provide(void) {
     xmlrpc_server_abyss_create(&env, &options, XMLRPC_APSIZE(uri_path), &server);
     require_success(&env);
     const char *host = getenv("METEOR_TEST_PEER_HOST");
-    printf("READY xmlrpc://%s:%hu/default\n", host == NULL ? "127.0.0.1" : host, port);
+    printf("READY xmlrpc://%s:%hu%s\n", host == NULL ? "127.0.0.1" : host, port, options.uri_path);
     fflush(stdout);
     xmlrpc_server_abyss_run_server(&env, server);
     require_success(&env);

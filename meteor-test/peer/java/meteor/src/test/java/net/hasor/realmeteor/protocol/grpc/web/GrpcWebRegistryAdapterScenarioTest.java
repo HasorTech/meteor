@@ -6,15 +6,12 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc.web;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import java.nio.file.Files;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.protocol.grpc.web.GrpcWebService;
@@ -25,15 +22,17 @@ import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
 import net.hasor.meteor.registry.RegistryConfiguration;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.discovery.RegistryAddressResolver;
 import net.hasor.realmeteor.environment.discovery.RegistryDiscoveryEnvironment;
 import org.junit.jupiter.api.Test;
-
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 /** 官方浏览器消费者通过显式存储适配发现 Meteor，Java 不代发业务请求。 */
 @ParameterizedClass(autoCloseArguments = false, name = "grpc-web/javascript-browser/adapter/{0}", quoteTextArguments = false)
@@ -69,6 +68,7 @@ public class GrpcWebRegistryAdapterScenarioTest {
                 MetBindInfo<GrpcWebService> service = provider.publisher() //
                         .rsfService(GrpcWebService.class, new GrpcWebServiceImpl()) //
                         .name("browser-echo").aliasName("grpc-web", "web.Echo").protocol("grpc-web") //
+                        .contextPathByPrefix("grpc-web", "/") //
                         .serialize("Protobuf").bindResource("grpc-web", proto).register();
 
                 // 仅按服务 ID 订阅存储地址；完整 URL 由注册端点提供，没有读取本地监听器。
@@ -105,6 +105,7 @@ public class GrpcWebRegistryAdapterScenarioTest {
                 MetBindInfo<GrpcWebService> service = provider.publisher() //
                         .rsfService(GrpcWebService.class, new GrpcWebServiceImpl()) //
                         .name("browser-echo").aliasName("grpc-web", "web.Echo").protocol("grpc-web") //
+                        .contextPathByPrefix("grpc-web", "/") //
                         .serialize("Protobuf").bindResource("grpc-web", proto).register();
 
                 // 发现适配只交付服务完整 URL；base64 封帧、请求与响应都在浏览器中处理。

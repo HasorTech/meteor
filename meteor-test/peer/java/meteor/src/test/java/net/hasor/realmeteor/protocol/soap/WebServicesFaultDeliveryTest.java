@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -18,13 +17,14 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.hasor.example.protocol.soap.EchoService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.Timeout;
 
 /** 并发新连接上的即时 Fault 必须全部送达，不能依赖业务执行延迟完成网络初始化。 */
 @NxnRpc(name = "soap", version = "1.1")
@@ -43,9 +43,10 @@ public class WebServicesFaultDeliveryTest {
         try (MetContext context = configuration.buildContext()) {
             context.start();
             context.publisher().rsfService(EchoService.class, value -> {
-                invocations.incrementAndGet();
-                return value;
-            }).aliasName("soap", "EchoService").protocol("soap").register();
+                        invocations.incrementAndGet();
+                        return value;
+                    }).aliasName("soap", "EchoService").protocol("soap") //
+                    .contextPathByPrefix("soap", "/").register();
 
             // 同时建立独立连接，以首个请求触发不经过 Dispatcher 的 VersionMismatch。
             int port = context.getListenAddress("soap").getPort();
@@ -95,9 +96,10 @@ public class WebServicesFaultDeliveryTest {
         try (MetContext context = configuration.buildContext()) {
             context.start();
             context.publisher().rsfService(EchoService.class, value -> {
-                invocations.incrementAndGet();
-                return value;
-            }).aliasName("soap", "EchoService").protocol("soap").register();
+                        invocations.incrementAndGet();
+                        return value;
+                    }).aliasName("soap", "EchoService").protocol("soap") //
+                    .contextPathByPrefix("soap", "/").register();
 
             // 每个新连接的首个请求都携带 Envelope 上不允许的 encodingStyle。
             int port = context.getListenAddress("soap").getPort();

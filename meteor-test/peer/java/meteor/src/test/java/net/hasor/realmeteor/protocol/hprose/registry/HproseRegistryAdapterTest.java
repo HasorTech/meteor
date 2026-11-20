@@ -7,20 +7,18 @@
  */
 package net.hasor.realmeteor.protocol.hprose.registry;
 import java.nio.file.Files;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
-import net.hasor.example.discovery.RegistryDiscoveryExample;
-import net.hasor.example.matrix.OrderMatrixVectors;
 import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.OrderQuery;
+import net.hasor.example.discovery.RegistryDiscoveryExample;
+import net.hasor.example.matrix.OrderMatrixVectors;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
@@ -28,19 +26,16 @@ import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.registry.RegistryConfiguration;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
 import net.hasor.meteor.test.nxn.NxnRpc;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
+import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.discovery.ForeignServiceRegistrar;
 import net.hasor.realmeteor.environment.discovery.RegistryAddressResolver;
 import net.hasor.realmeteor.environment.discovery.RegistryDiscoveryEnvironment;
-import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** Node 官方 Hprose SDK 的显式注册适配，不把辅助进程的存储发现标记为 SDK 原生发现。 */
 @ParameterizedClass(autoCloseArguments = false, name = "registry-adapter/{0}", quoteTextArguments = false)
@@ -82,7 +77,8 @@ public class HproseRegistryAdapterTest {
                 provider.start();
                 MetBindInfo<OrderDemoService> service = provider.publisher() //
                         .rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
-                        .name("orders").protocol("hprose").aliasName("Hprose", "orders").register();
+                        .name("orders").protocol("hprose").aliasName("Hprose", "orders") //
+                        .contextPathByPrefix("hprose", "/").register();
 
                 // Node 启动没有 URL；resolver 订阅服务后提供完整端点，Java 不代发业务请求。
                 Path logs = Files.createDirectory(this.data.resolve("node-consumer"));
@@ -117,7 +113,8 @@ public class HproseRegistryAdapterTest {
                 consumer.start();
                 MetBindInfo<OrderDemoService> service = consumer.publisher() //
                         .rsfService(OrderDemoService.class) //
-                        .name("orders").protocol("hprose").aliasName("Hprose", "orders").register();
+                        .name("orders").protocol("hprose").aliasName("Hprose", "orders") //
+                        .contextPathByPrefix("hprose", "/").register();
                 assertNull(consumer.getListenAddress("hprose"));
                 assertTrue(consumer.getUpdater().queryAvailableAddresses(service.getBindID()).isEmpty());
 
@@ -128,7 +125,6 @@ public class HproseRegistryAdapterTest {
                     InterAddress address = provider.address(consumer.getSettings().getUnitName());
                     registrar.register(service, provider.processId(), "node", "hprose", "http", address, "/orders");
                     RegistryDiscoveryExample.awaitDiscovery(consumer, service);
-                    AddressSelectionAwaiter.await(consumer, service, "save");
                     var discovered = consumer.getUpdater().queryAvailableAddresses(service.getBindID());
                     assertEquals(1, discovered.size());
                     assertEquals(address.getPort(), discovered.get(0).getPort());
@@ -163,7 +159,8 @@ public class HproseRegistryAdapterTest {
                 provider.start();
                 MetBindInfo<OrderDemoService> service = provider.publisher() //
                         .rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
-                        .name("orders").protocol("hprose").aliasName("Hprose", "orders").register();
+                        .name("orders").protocol("hprose").aliasName("Hprose", "orders") //
+                        .contextPathByPrefix("hprose", "/").register();
 
                 // Node 启动没有 URL；resolver 订阅服务后提供完整端点，Java 不代发业务请求。
                 Path logs = Files.createDirectory(this.data.resolve("node-consumer"));
@@ -198,7 +195,8 @@ public class HproseRegistryAdapterTest {
                 consumer.start();
                 MetBindInfo<OrderDemoService> service = consumer.publisher() //
                         .rsfService(OrderDemoService.class) //
-                        .name("orders").protocol("hprose").aliasName("Hprose", "orders").register();
+                        .name("orders").protocol("hprose").aliasName("Hprose", "orders") //
+                        .contextPathByPrefix("hprose", "/").register();
                 assertNull(consumer.getListenAddress("hprose"));
                 assertTrue(consumer.getUpdater().queryAvailableAddresses(service.getBindID()).isEmpty());
 
@@ -209,7 +207,6 @@ public class HproseRegistryAdapterTest {
                     InterAddress address = provider.address(consumer.getSettings().getUnitName());
                     registrar.register(service, provider.processId(), "node", "hprose", "http", address, "/orders");
                     RegistryDiscoveryExample.awaitDiscovery(consumer, service);
-                    AddressSelectionAwaiter.await(consumer, service, "save");
                     var discovered = consumer.getUpdater().queryAvailableAddresses(service.getBindID());
                     assertEquals(1, discovered.size());
                     assertEquals(address.getPort(), discovered.get(0).getPort());
@@ -244,7 +241,8 @@ public class HproseRegistryAdapterTest {
                 provider.start();
                 MetBindInfo<OrderDemoService> service = provider.publisher() //
                         .rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
-                        .name("orders").protocol("hprose").aliasName("Hprose", "orders").register();
+                        .name("orders").protocol("hprose").aliasName("Hprose", "orders") //
+                        .contextPathByPrefix("hprose", "/").register();
 
                 // Node 启动没有 URL；resolver 订阅服务后提供完整端点，Java 不代发业务请求。
                 Path logs = Files.createDirectory(this.data.resolve("node-consumer"));
@@ -279,7 +277,8 @@ public class HproseRegistryAdapterTest {
                 consumer.start();
                 MetBindInfo<OrderDemoService> service = consumer.publisher() //
                         .rsfService(OrderDemoService.class) //
-                        .name("orders").protocol("hprose").aliasName("Hprose", "orders").register();
+                        .name("orders").protocol("hprose").aliasName("Hprose", "orders") //
+                        .contextPathByPrefix("hprose", "/").register();
                 assertNull(consumer.getListenAddress("hprose"));
                 assertTrue(consumer.getUpdater().queryAvailableAddresses(service.getBindID()).isEmpty());
 
@@ -290,7 +289,6 @@ public class HproseRegistryAdapterTest {
                     InterAddress address = provider.address(consumer.getSettings().getUnitName());
                     registrar.register(service, provider.processId(), "node", "hprose", "http", address, "/orders");
                     RegistryDiscoveryExample.awaitDiscovery(consumer, service);
-                    AddressSelectionAwaiter.await(consumer, service, "save");
                     var discovered = consumer.getUpdater().queryAvailableAddresses(service.getBindID());
                     assertEquals(1, discovered.size());
                     assertEquals(address.getPort(), discovered.get(0).getPort());

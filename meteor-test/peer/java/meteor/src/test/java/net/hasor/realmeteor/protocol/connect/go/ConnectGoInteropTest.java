@@ -60,8 +60,10 @@ public class ConnectGoInteropTest {
             server.start();
             server.publisher().rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize("Protobuf") //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
-            String target = this.scheme() + "://" + server.getListenAddress("connect").getHostPort();
+            InterAddress address = server.getListenAddress("connect");
+            String target = this.scheme() + "://" + address.getHostPort() + address.getPath();
 
             // 独立 Go 客户端执行本场景的保存和查询，Java 侧核对进程成功退出后的结果。
             try (GoPeerProcess peer = GoPeerProcess.start("connect", "client", this.tlsMode, "unicode", target)) {
@@ -84,6 +86,7 @@ public class ConnectGoInteropTest {
             client.start();
             MetBindInfo<OrderDemoService> subscription = client.publisher().rsfService(OrderDemoService.class) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize("Protobuf") //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
             String host = endpoint.getHost();
             InterAddress target = new InterAddress(endpoint.getScheme(), host, endpoint.getPort());
@@ -115,8 +118,10 @@ public class ConnectGoInteropTest {
             server.start();
             server.publisher().rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize("Protobuf") //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
-            String target = this.scheme() + "://" + server.getListenAddress("connect").getHostPort();
+            InterAddress address = server.getListenAddress("connect");
+            String target = this.scheme() + "://" + address.getHostPort() + address.getPath();
 
             // 独立 Go 客户端执行本场景的保存和查询，Java 侧核对进程成功退出后的结果。
             try (GoPeerProcess peer = GoPeerProcess.start("connect", "client", this.tlsMode, "boundary", target)) {
@@ -139,6 +144,7 @@ public class ConnectGoInteropTest {
             client.start();
             MetBindInfo<OrderDemoService> subscription = client.publisher().rsfService(OrderDemoService.class) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize("Protobuf") //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
             String host = endpoint.getHost();
             InterAddress target = new InterAddress(endpoint.getScheme(), host, endpoint.getPort());
@@ -170,8 +176,10 @@ public class ConnectGoInteropTest {
             server.start();
             server.publisher().rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize("Protobuf") //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
-            String target = this.scheme() + "://" + server.getListenAddress("connect").getHostPort();
+            InterAddress address = server.getListenAddress("connect");
+            String target = this.scheme() + "://" + address.getHostPort() + address.getPath();
 
             // 独立 Go 客户端执行本场景的保存和查询，Java 侧核对进程成功退出后的结果。
             String scenario = "negative-boundary";
@@ -195,6 +203,7 @@ public class ConnectGoInteropTest {
             client.start();
             MetBindInfo<OrderDemoService> subscription = client.publisher().rsfService(OrderDemoService.class) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize("Protobuf") //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
             String host = endpoint.getHost();
             InterAddress target = new InterAddress(endpoint.getScheme(), host, endpoint.getPort());
@@ -227,8 +236,10 @@ public class ConnectGoInteropTest {
             server.start();
             server.publisher().rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize("Protobuf") //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
-            String target = this.scheme() + "://" + server.getListenAddress("connect").getHostPort();
+            InterAddress address = server.getListenAddress("connect");
+            String target = this.scheme() + "://" + address.getHostPort() + address.getPath();
 
             // 独立 Go 客户端执行本场景的保存和查询，Java 侧核对进程成功退出后的结果。
             try (GoPeerProcess peer = GoPeerProcess.start("connect", "client", this.tlsMode, "empty", target)) {
@@ -251,6 +262,7 @@ public class ConnectGoInteropTest {
             client.start();
             MetBindInfo<OrderDemoService> subscription = client.publisher().rsfService(OrderDemoService.class) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize("Protobuf") //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
             String host = endpoint.getHost();
             InterAddress target = new InterAddress(endpoint.getScheme(), host, endpoint.getPort());
@@ -283,8 +295,10 @@ public class ConnectGoInteropTest {
             server.start();
             server.publisher().rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize("Protobuf") //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
-            String target = this.scheme() + "://" + server.getListenAddress("connect").getHostPort();
+            InterAddress address = server.getListenAddress("connect");
+            String target = this.scheme() + "://" + address.getHostPort() + address.getPath();
 
             // 独立 Go 客户端执行不存在订单的查询并检查实际业务错误。
             try (GoPeerProcess peer = GoPeerProcess.start("connect", "client", this.tlsMode, "missing", target)) {
@@ -310,6 +324,7 @@ public class ConnectGoInteropTest {
             client.start();
             MetBindInfo<OrderDemoService> subscription = client.publisher().rsfService(OrderDemoService.class) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize("Protobuf") //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
             String host = endpoint.getHost();
             InterAddress target = new InterAddress(endpoint.getScheme(), host, endpoint.getPort());

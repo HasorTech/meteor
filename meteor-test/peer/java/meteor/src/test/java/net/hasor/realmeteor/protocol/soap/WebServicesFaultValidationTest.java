@@ -55,6 +55,7 @@ public class WebServicesFaultValidationTest {
                         .rsfService(EchoService.class) //
                         .aliasName("soap", "EchoService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 调用方获得明确的格式错误，不能把畸形结构解释成有效远端 Fault。
@@ -99,6 +100,7 @@ public class WebServicesFaultValidationTest {
                         .rsfService(EchoService.class) //
                         .aliasName("soap", "EchoService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 调用方获得明确的格式错误，不能把畸形结构解释成有效远端 Fault。
@@ -143,6 +145,7 @@ public class WebServicesFaultValidationTest {
                         .rsfService(EchoService.class) //
                         .aliasName("soap", "EchoService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 调用方获得明确的格式错误，不能把畸形结构解释成有效远端 Fault。
@@ -188,6 +191,7 @@ public class WebServicesFaultValidationTest {
                         .rsfService(EchoService.class) //
                         .aliasName("soap", "EchoService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 调用方获得明确的格式错误，不能把畸形结构解释成有效远端 Fault。
@@ -232,6 +236,7 @@ public class WebServicesFaultValidationTest {
                         .rsfService(EchoService.class) //
                         .aliasName("soap", "EchoService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 调用方获得明确的格式错误，不能把畸形结构解释成有效远端 Fault。
@@ -278,6 +283,7 @@ public class WebServicesFaultValidationTest {
                         .rsfService(EchoService.class) //
                         .aliasName("soap", "EchoService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 调用方获得明确的格式错误，不能把畸形结构解释成有效远端 Fault。

@@ -18,7 +18,7 @@ import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.OrderQuery;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
+import net.hasor.example.discovery.RegistryDiscoveryExample;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
@@ -107,7 +107,7 @@ public class PythonThriftRegistryAdapterScenarioTest {
                     String unit = consumer.getSettings().getUnitName();
                     InterAddress address = new InterAddress("thrift", provider.host(), port);
                     registrar.register(service, provider.processId(), "python", "thrift", "tcp", address, "/");
-                    AddressSelectionAwaiter.await(consumer, service, "save");
+                    RegistryDiscoveryExample.awaitDiscovery(consumer, service);
 
                     // 普通订单 DTO 直接送入 Python，不创建生成 DTO 或经过 Java 中继。
                     Order expected;

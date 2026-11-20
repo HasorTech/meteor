@@ -6,23 +6,23 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.xmlrpc;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.hasor.example.protocol.xmlrpc.XmlRpcDemoService;
 import net.hasor.example.protocol.xmlrpc.XmlRpcDemoServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 @NxnRpc(name = "xmlrpc")
 public class XmlRpcContextScenarioTest {
@@ -55,12 +55,12 @@ public class XmlRpcContextScenarioTest {
                     <param><value><string>selected</string></value></param>
                     </params></methodCall>
                     """;
-            HttpRequest selected = this.post(port, "/rpc", body);
+            HttpRequest selected = this.post(port, "/rpc/default/1.0.0", body);
             HttpResponse<String> accepted = this.http.send(selected, HttpResponse.BodyHandlers.ofString());
             assertEquals(200, accepted.statusCode());
             assertTrue(accepted.body().contains("<string>selected</string>"));
 
-            HttpRequest other = this.post(port, "/private", body);
+            HttpRequest other = this.post(port, "/rpc/private", body);
             HttpResponse<String> rejected = this.http.send(other, HttpResponse.BodyHandlers.ofString());
             assertTrue(rejected.body().contains("<fault>"));
             assertEquals(1, calls.get());
@@ -95,7 +95,7 @@ public class XmlRpcContextScenarioTest {
                     <param><value><string>selected</string></value></param>
                     </params></methodCall>
                     """;
-            HttpRequest selected = this.post(port, "/private", body);
+            HttpRequest selected = this.post(port, "/rpc/private", body);
             HttpResponse<String> accepted = this.http.send(selected, HttpResponse.BodyHandlers.ofString());
             assertEquals(200, accepted.statusCode());
             assertTrue(accepted.body().contains("<string>selected</string>"));
@@ -117,7 +117,7 @@ public class XmlRpcContextScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
-                    .contextPathByPrefix("xmlrpc", "/rpc", "/private") //
+                    .contextPathByPrefix("xmlrpc", "/", "/private") //
                     .register();
 
             // 两个挂载地址共享端口，均调用同一个已发布服务。
@@ -130,7 +130,7 @@ public class XmlRpcContextScenarioTest {
             assertEquals(200, defaults.statusCode());
             assertTrue(defaults.body().contains("<string>ready</string>"));
 
-            HttpRequest extraRequest = this.post(port, "/private", body);
+            HttpRequest extraRequest = this.post(port, "/rpc/private", body);
             HttpResponse<String> extra = this.http.send(extraRequest, HttpResponse.BodyHandlers.ofString());
             assertEquals(200, extra.statusCode());
             assertTrue(extra.body().contains("<string>ready</string>"));
@@ -153,6 +153,7 @@ public class XmlRpcContextScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "calculator") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
 
             // 标准 XML-RPC 客户端无需了解 Meteor 的服务分组或版本。
@@ -177,7 +178,7 @@ public class XmlRpcContextScenarioTest {
                 .bind("127.0.0.1", 0) //
                 .protocol("xmlrpc") //
                 .contextPath("/rpc") //
-                .addContextPath("/private");
+                .addContextPath("/rpc/private");
         return configuration;
     }
 

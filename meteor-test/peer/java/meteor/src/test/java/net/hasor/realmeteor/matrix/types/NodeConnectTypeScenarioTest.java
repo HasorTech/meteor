@@ -74,19 +74,20 @@ public class NodeConnectTypeScenarioTest {
 
     private void meteorProvides() throws Exception {
         // 通过 bootstrap 启动仅监听 HTTP/1 的 Connect 端点，再发布真实 Java 服务。
-        MetConfiguration configuration = this.configuration(true);
+        MetConfiguration configuration = this.configuration(true, "/types") //
+                .addExtension(PublishedTypeEndpoint.registry());
+        configuration.connector("tcp").protocol("rsf");
         GrpcProtoResource resource = new GrpcProtoResource(getClass().getResource("/protocol/proto/types/types.proto"));
         try (MetContext server = configuration.buildContext(); //
              TypeNodePeerProcess peer = TypeNodePeerProcess.connect("consumer", this.format)) {
             peer.awaitReady();
-            server.start();
-            server.publisher().rsfService(TypeEchoService.class, new TypeEchoServiceImpl()) //
+            var service = server.publisher().rsfService(TypeEchoService.class, new TypeEchoServiceImpl()) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
                     .bindResource("connect", resource).register();
+            server.start();
 
             // 官方 SDK 在自己的容器中构造原生值并直接调用 Meteor，控制通道只返回观察结果。
-            int port = server.getListenAddress("connect").getPort();
-            String target = "http://" + ContainerProcess.runnerHost() + ":" + port + "/types";
+            String target = PublishedTypeEndpoint.httpAddress(server, service, "connect");
             JsonNode result = peer.invoke(Map.of("target", target, "vector", this.vector));
             TypeValue actual = JSON.treeToValue(result.required("value"), TypeValue.class);
             this.assertVector(TypeValueVectors.value(this.vector), actual);
@@ -95,22 +96,25 @@ public class NodeConnectTypeScenarioTest {
 
     private void meteorConsumes() throws Exception {
         // 独立官方 Node 提供者拥有监听；Meteor 只启用出站通道并订阅普通 Java 接口。
-        MetConfiguration configuration = this.configuration(false);
         GrpcProtoResource resource = new GrpcProtoResource(getClass().getResource("/protocol/proto/types/types.proto"));
-        try (TypeNodePeerProcess peer = TypeNodePeerProcess.connect("provider", this.format); //
-             MetContext client = configuration.buildContext()) {
-            int port = peer.awaitReady().required("port").intValue();
-            client.start();
-            MetBindInfo<TypeEchoService> info = client.publisher().rsfService(TypeEchoService.class) //
-                    .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
-                    .bindResource("connect", resource).register();
-            InterAddress target = new InterAddress("connect", peer.host(), port);
-            TypeEchoService remote = client.getRsfClient(target).getRemote(info);
+        try (TypeNodePeerProcess peer = TypeNodePeerProcess.connect("provider", this.format)) {
+            JsonNode endpoint = peer.awaitReady();
+            int port = endpoint.required("port").intValue();
+            String path = endpoint.required("path").textValue();
+            MetConfiguration configuration = this.configuration(false, path);
+            try (MetContext client = configuration.buildContext()) {
+                client.start();
+                MetBindInfo<TypeEchoService> info = client.publisher().rsfService(TypeEchoService.class) //
+                        .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
+                        .contextPathByPrefix("connect", "/").bindResource("connect", resource).register();
+                InterAddress target = new InterAddress("connect", peer.host(), port, path);
+                TypeEchoService remote = client.getRsfClient(target).getRemote(info);
 
-            // 每次只断言当前向量的字段和服务端收据，整数、浮点位模式不经过字符串 RPC 代替。
-            TypeValue expected = TypeValueVectors.value(this.vector);
-            TypeValue actual = remote.echo(expected);
-            this.assertVector(expected, actual);
+                // 每次只断言当前向量的字段和服务端收据，整数、浮点位模式不经过字符串 RPC 代替。
+                TypeValue expected = TypeValueVectors.value(this.vector);
+                TypeValue actual = remote.echo(expected);
+                this.assertVector(expected, actual);
+            }
         }
     }
 
@@ -135,7 +139,7 @@ public class NodeConnectTypeScenarioTest {
         TypeValueAssertions.assertVector(this.vector, expected, actual);
     }
 
-    private MetConfiguration configuration(boolean listening) {
+    private MetConfiguration configuration(boolean listening, String path) {
         MetConfiguration configuration = TestConfigurationUtils.create() //
                 .setRequestTimeout(10000);
         var connector = configuration.connector("http") //
@@ -144,7 +148,7 @@ public class NodeConnectTypeScenarioTest {
             connector.bind(ContainerProcess.runnerHost(), 0);
         }
         connector.protocol("connect") //
-                .contextPath("/types");
+                .contextPath(path);
         return configuration;
     }
 }

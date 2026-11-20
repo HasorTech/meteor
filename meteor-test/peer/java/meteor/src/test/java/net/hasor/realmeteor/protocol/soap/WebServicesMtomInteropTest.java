@@ -58,6 +58,7 @@ public class WebServicesMtomInteropTest {
                     MetBindInfo<MetroBinaryService> subscribed = context.publisher() //
                             .rsfService(MetroBinaryService.class) //
                             .aliasName("soap", "BinaryService") //
+                            .contextPathByPrefix("soap", "/") //
                             .protocol("soap") //
                             .register();
 
@@ -116,6 +117,7 @@ public class WebServicesMtomInteropTest {
                     MetBindInfo<MetroBinaryService> subscribed = context.publisher() //
                             .rsfService(MetroBinaryService.class) //
                             .aliasName("soap", "BinaryService") //
+                            .contextPathByPrefix("soap", "/") //
                             .protocol("soap") //
                             .register();
 

@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -20,14 +19,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.hasor.example.protocol.soap.BlockingSignalServiceImpl;
 import net.hasor.example.protocol.soap.SignalService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 @NxnRpc(name = "soap", version = "1.1")
 public class WebServicesNotificationTest {
@@ -48,6 +48,7 @@ public class WebServicesNotificationTest {
                     .rsfService(SignalService.class, service) //
                     .aliasName("soap", "SignalService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 原始 SOAP 客户端发送 one-way 请求，HTTP 完成不等待业务方法结束。
@@ -89,11 +90,13 @@ public class WebServicesNotificationTest {
                     .rsfService(SignalService.class, service) //
                     .aliasName("soap", "SignalService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetBindInfo<SignalService> subscribed = client.publisher() //
                     .rsfService(SignalService.class) //
                     .aliasName("soap", "SignalService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .bindFilter("observe-message", (request, response, chain) -> {
                         observedMessage.set(request.isMessage());
                         chain.doFilter(request, response);

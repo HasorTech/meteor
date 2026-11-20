@@ -4,16 +4,16 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.protocol.hessian;
-import net.hasor.example.support.TestConfigurationUtils;
+import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.hessian.HessianInteropDemo;
 import net.hasor.example.protocol.hessian.HessianInteropDemoImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.python.PythonSdkPeerProcess;
 import org.junit.jupiter.api.Test;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
 
 /** python-hessian 的公开能力是 HTTP 客户端，本类只记录 Python 到 Meteor 方向。 */
@@ -33,7 +33,8 @@ public class HessianPythonInteropTest {
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
             provider.publisher().rsfService(HessianInteropDemo.class, new HessianInteropDemoImpl()) //
-                    .protocol("hessian").aliasName("hessian", "demo").serialize("Hessian").register();
+                    .protocol("hessian").aliasName("hessian", "demo").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
 
             // 独立 python-hessian 代理负责 HTTP 调用和响应断言。
             int port = provider.getListenAddress("hessian").getPort();

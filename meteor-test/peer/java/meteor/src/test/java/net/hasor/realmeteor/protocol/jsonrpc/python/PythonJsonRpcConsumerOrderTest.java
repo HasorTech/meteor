@@ -56,6 +56,7 @@ public class PythonJsonRpcConsumerOrderTest {
         // 启动后订阅用户示例的原有接口，消费者不监听也不发布本地业务实现。
         this.subscription = this.consumer.publisher().rsfService(OrderDemoService.class) //
                 .aliasName("jsonrpc", "orders") //
+                .contextPathByPrefix("jsonrpc", "/") //
                 .protocol("jsonrpc") //
                 .register();
         InterAddress address = new InterAddress("jsonrpc", this.provider.host(), port);

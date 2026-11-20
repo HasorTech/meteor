@@ -28,6 +28,7 @@ import net.hasor.meteor.protocol.jsonrpc.JsonRpcException;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.matrix.types.ForeignTypePeer;
+import net.hasor.realmeteor.matrix.types.PublishedTypeEndpoint;
 import net.hasor.realmeteor.matrix.types.TypeValueAssertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -69,14 +70,15 @@ public class NodeJsonRpcTypeTest {
                 .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("jsonrpc") //
                 .contextPath("/types");
+        configuration.addExtension(PublishedTypeEndpoint.registry());
+        configuration.connector("tcp").protocol("rsf");
         try (MetContext provider = configuration.buildContext()) {
-            provider.start();
-            provider.publisher().rsfService(TypeEchoService.class, new TypeEchoServiceImpl()) //
+            var service = provider.publisher().rsfService(TypeEchoService.class, new TypeEchoServiceImpl()) //
                     .aliasName("jsonrpc", "types").protocol("jsonrpc").register();
+            provider.start();
 
             // 官方 Jayson 发真实 HTTP 请求；限制实例报告 LIMIT，不能计为精确类型通过。
-            int port = provider.getListenAddress("jsonrpc").getPort();
-            String endpoint = "http://" + ContainerProcess.runnerHost() + ":" + port + "/types";
+            String endpoint = PublishedTypeEndpoint.httpAddress(provider, service, "jsonrpc");
             String marker = "OK";
             if (this.unsafeInteger()) {
                 marker = "LIMIT integer-precision";
@@ -104,7 +106,8 @@ public class NodeJsonRpcTypeTest {
             try (MetContext consumer = configuration.buildContext()) {
                 consumer.start();
                 MetBindInfo<TypeEchoService> info = consumer.publisher().rsfService(TypeEchoService.class) //
-                        .aliasName("jsonrpc", "types").protocol("jsonrpc").register();
+                        .aliasName("jsonrpc", "types").protocol("jsonrpc") //
+                        .contextPathByPrefix("jsonrpc", "/").register();
                 InterAddress address = new InterAddress("jsonrpc", peer.host(), port);
                 MetClient client = consumer.getRsfClient(address);
                 TypeValue expected = TypeValueVectors.value(this.vector);

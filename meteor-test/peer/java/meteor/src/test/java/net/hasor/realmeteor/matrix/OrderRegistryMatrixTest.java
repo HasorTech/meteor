@@ -6,27 +6,29 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.matrix;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import net.hasor.example.Order;
+import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.discovery.RegistryDiscoveryExample;
 import net.hasor.example.matrix.OrderMatrixVectors;
 import net.hasor.example.matrix.OrderProtocol;
-import net.hasor.example.Order;
-import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.registry.RegistryConfiguration;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 
 /** 注册场景只通过自动订阅地址调用；普通直连订单由标准能力矩阵执行。 */
 @ParameterizedClass(autoCloseArguments = false, name = "self/{0}/{1}", quoteTextArguments = false)
@@ -46,11 +48,11 @@ import java.util.concurrent.TimeUnit;
 @NxnRpc(name = "oncrpc", version = "2", cases = "self/oncrpc/*")
 public class OrderRegistryMatrixTest {
     @TempDir
-    public static Path environmentData;
-    private static      OrderRegistryEnvironment environment;
+    public static  Path                     environmentData;
+    private static OrderRegistryEnvironment environment;
 
     @TempDir
-    public Path data;
+    public        Path             data;
     private final OrderProtocol    protocol;
     private final OrderDiscovery   discovery;
     private       String           scope;
@@ -61,6 +63,7 @@ public class OrderRegistryMatrixTest {
         this.protocol = protocol;
         this.discovery = discovery;
     }
+
     public static Collection<Object[]> registryConfigurations() {
         // 共享协议与发现筛选规则，排除已交给标准能力矩阵的普通直连场景。
         List<Object[]> configurations = new ArrayList<>();
@@ -154,7 +157,6 @@ public class OrderRegistryMatrixTest {
         var addresses = consumer.getUpdater().queryAvailableAddresses(subscription.getBindID());
         assertEquals(1, addresses.size());
         assertEquals(this.protocol.protocolName(), addresses.get(0).getSchema());
-        AddressSelectionAwaiter.await(consumer, subscription, "save");
         return consumer.getRsfClient();
     }
 }

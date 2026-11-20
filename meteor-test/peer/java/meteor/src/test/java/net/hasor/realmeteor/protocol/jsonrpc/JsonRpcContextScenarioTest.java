@@ -6,25 +6,25 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.jsonrpc;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.hasor.example.protocol.jsonrpc.JsonRpcDemoService;
 import net.hasor.example.protocol.jsonrpc.JsonRpcDemoServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 @NxnRpc(name = "jsonrpc", version = "2.0")
 public class JsonRpcContextScenarioTest {
@@ -56,11 +56,11 @@ public class JsonRpcContextScenarioTest {
             String body = """
                     {"jsonrpc":"2.0","method":"echo.echo","params":["selected"],"id":1}
                     """;
-            HttpRequest selected = this.post(port, "/rpc", body);
+            HttpRequest selected = this.post(port, "/rpc/default/1.0.0", body);
             HttpResponse<String> accepted = this.http.send(selected, HttpResponse.BodyHandlers.ofString());
             assertEquals("selected", JSON.readTree(accepted.body()).path("result").asText());
 
-            HttpRequest other = this.post(port, "/private", body);
+            HttpRequest other = this.post(port, "/rpc/private", body);
             HttpResponse<String> rejected = this.http.send(other, HttpResponse.BodyHandlers.ofString());
             JsonNode denied = JSON.readTree(rejected.body());
             assertTrue(denied.has("error"));
@@ -94,7 +94,7 @@ public class JsonRpcContextScenarioTest {
             String body = """
                     {"jsonrpc":"2.0","method":"echo.echo","params":["selected"],"id":1}
                     """;
-            HttpRequest selected = this.post(port, "/private", body);
+            HttpRequest selected = this.post(port, "/rpc/private", body);
             HttpResponse<String> accepted = this.http.send(selected, HttpResponse.BodyHandlers.ofString());
             assertEquals("selected", JSON.readTree(accepted.body()).path("result").asText());
 
@@ -116,7 +116,7 @@ public class JsonRpcContextScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                     .aliasName("jsonrpc", "echo") //
-                    .contextPathByPrefix("jsonrpc", "/rpc", "/private") //
+                    .contextPathByPrefix("jsonrpc", "/", "/private") //
                     .register();
 
             // 两个挂载地址共享端口，均调用同一个已发布服务。
@@ -128,7 +128,7 @@ public class JsonRpcContextScenarioTest {
             HttpResponse<String> defaults = this.http.send(defaultRequest, HttpResponse.BodyHandlers.ofString());
             assertEquals("ready", JSON.readTree(defaults.body()).path("result").asText());
 
-            HttpRequest extraRequest = this.post(port, "/private", body);
+            HttpRequest extraRequest = this.post(port, "/rpc/private", body);
             HttpResponse<String> extra = this.http.send(extraRequest, HttpResponse.BodyHandlers.ofString());
             assertEquals("ready", JSON.readTree(extra.body()).path("result").asText());
         }
@@ -150,6 +150,7 @@ public class JsonRpcContextScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                     .aliasName("jsonrpc", "calculator") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 标准 JSON-RPC 客户端无需了解 Meteor 的服务分组或版本。
@@ -170,7 +171,7 @@ public class JsonRpcContextScenarioTest {
                 .bind("127.0.0.1", 0) //
                 .protocol("jsonrpc") //
                 .contextPath("/rpc") //
-                .addContextPath("/private");
+                .addContextPath("/rpc/private");
         return configuration;
     }
 

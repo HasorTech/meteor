@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hessian;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
@@ -23,6 +22,7 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocket;
 import net.hasor.example.protocol.hessian.HessianDemoService;
 import net.hasor.example.protocol.hessian.HessianDemoServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
@@ -32,8 +32,8 @@ import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.domain.MetTimeoutException;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** Hessian 的 HTTP 版本、安全握手及证书校验从公开发布入口验证。 */
 @NxnRpc(name = "hessian", version = "2")
@@ -51,9 +51,11 @@ public class HessianSecureScenarioTest {
             server.start();
             client.start();
             server.publisher().rsfService(HessianDemoService.class, new HessianDemoServiceImpl()) //
-                    .aliasName("hessian", "demo").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             MetBindInfo<HessianDemoService> service = client.publisher().rsfService(HessianDemoService.class) //
-                    .aliasName("hessian", "demo").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
 
             // 协议适配根据服务别名选定路径，调用方只提供实际监听地址。
             HessianDemoService remote = client.getRsfClient(server.getListenAddress("hessian")).getRemote(service);
@@ -73,9 +75,11 @@ public class HessianSecureScenarioTest {
             server.start();
             client.start();
             server.publisher().rsfService(HessianDemoService.class, new HessianDemoServiceImpl()) //
-                    .aliasName("hessian", "demo").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             MetBindInfo<HessianDemoService> service = client.publisher().rsfService(HessianDemoService.class) //
-                    .aliasName("hessian", "demo").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
 
             // 协议适配根据服务别名选定路径，调用方只提供实际监听地址。
             HessianDemoService remote = client.getRsfClient(server.getListenAddress("hessian")).getRemote(service);
@@ -95,9 +99,11 @@ public class HessianSecureScenarioTest {
             server.start();
             client.start();
             server.publisher().rsfService(HessianDemoService.class, new HessianDemoServiceImpl()) //
-                    .aliasName("hessian", "demo").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             MetBindInfo<HessianDemoService> service = client.publisher().rsfService(HessianDemoService.class) //
-                    .aliasName("hessian", "demo").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
 
             // 协议适配根据服务别名选定路径，调用方只提供实际监听地址。
             HessianDemoService remote = client.getRsfClient(server.getListenAddress("hessian")).getRemote(service);
@@ -118,9 +124,11 @@ public class HessianSecureScenarioTest {
             server.start();
             client.start();
             server.publisher().rsfService(HessianDemoService.class, new HessianDemoServiceImpl()) //
-                    .aliasName("hessian", "demo").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             MetBindInfo<HessianDemoService> service = client.publisher().rsfService(HessianDemoService.class) //
-                    .aliasName("hessian", "demo").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
 
             // 协议适配根据服务别名选定路径，调用方只提供实际监听地址。
             HessianDemoService remote = client.getRsfClient(server.getListenAddress("hessian")).getRemote(service);
@@ -140,9 +148,11 @@ public class HessianSecureScenarioTest {
             server.start();
             client.start();
             server.publisher().rsfService(HessianDemoService.class, new HessianDemoServiceImpl()) //
-                    .aliasName("hessian", "demo").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             MetBindInfo<HessianDemoService> service = client.publisher().rsfService(HessianDemoService.class) //
-                    .aliasName("hessian", "demo").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
 
             // 协议适配根据服务别名选定路径，调用方只提供实际监听地址。
             HessianDemoService remote = client.getRsfClient(server.getListenAddress("hessian")).getRemote(service);
@@ -162,9 +172,11 @@ public class HessianSecureScenarioTest {
             server.start();
             client.start();
             server.publisher().rsfService(HessianDemoService.class, new HessianDemoServiceImpl()) //
-                    .aliasName("hessian", "demo").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             MetBindInfo<HessianDemoService> service = client.publisher().rsfService(HessianDemoService.class) //
-                    .aliasName("hessian", "demo").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
 
             // 协议适配根据服务别名选定路径，调用方只提供实际监听地址。
             HessianDemoService remote = client.getRsfClient(server.getListenAddress("hessian")).getRemote(service);
@@ -180,7 +192,8 @@ public class HessianSecureScenarioTest {
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(HessianDemoService.class, new HessianDemoServiceImpl()) //
-                    .aliasName("hessian", "demo").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
 
             // JDK 的 HTTP/2 明文客户端先发送 Upgrade，响应版本证明升级成功。
             HttpClient client = HttpClient.newBuilder().version(HttpClient.Version.HTTP_2).build();
@@ -204,7 +217,8 @@ public class HessianSecureScenarioTest {
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(HessianDemoService.class, new HessianDemoServiceImpl()) //
-                    .aliasName("hessian", "demo").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
 
             // 独立 JDK 客户端严格验证测试 CA，用官方 Hessian 数据完成业务调用。
             HttpClient client = HttpClient.newBuilder() //
@@ -230,7 +244,8 @@ public class HessianSecureScenarioTest {
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(HessianDemoService.class, new HessianDemoServiceImpl()) //
-                    .aliasName("hessian", "demo").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
 
             // 控制 TLS 握手，避免 HTTP 客户端自动重试把证书拒绝掩盖为超时。
             SSLContext client = HessianTlsUtils.clientContext("trust", null);
@@ -266,7 +281,8 @@ public class HessianSecureScenarioTest {
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(HessianDemoService.class, new HessianDemoServiceImpl()) //
-                    .aliasName("hessian", "demo").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
 
             // 真实 Hessian 调用必须在身份校验时失败，不能以业务超时代表拒绝。
             HttpClient client = HttpClient.newBuilder() //
@@ -292,7 +308,8 @@ public class HessianSecureScenarioTest {
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(HessianDemoService.class, new HessianDemoServiceImpl()) //
-                    .aliasName("hessian", "demo").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
 
             // 通过独立客户端观察握手异常，避免将网络拒绝等同于 RPC 超时。
             HttpClient client = HttpClient.newBuilder() //
@@ -326,7 +343,8 @@ public class HessianSecureScenarioTest {
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(HessianDemoService.class, new HessianDemoServiceImpl()) //
-                    .aliasName("hessian", "demo").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
 
             // 不关闭主机名校验，业务调用须以证书身份错误结束。
             HttpClient client = HttpClient.newBuilder() //
@@ -356,9 +374,11 @@ public class HessianSecureScenarioTest {
             server.start();
             client.start();
             server.publisher().rsfService(HessianDemoService.class, new HessianDemoServiceImpl()) //
-                    .aliasName("hessian", "demo").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             MetBindInfo<HessianDemoService> service = client.publisher().rsfService(HessianDemoService.class) //
-                    .aliasName("hessian", "demo").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
 
             // Caller 应收到传输层错误，而不是等到十秒调用期限。
             MetClient remote = client.getRsfClient(server.getListenAddress("hessian"));

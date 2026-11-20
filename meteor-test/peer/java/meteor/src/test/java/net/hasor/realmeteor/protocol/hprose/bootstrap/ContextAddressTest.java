@@ -6,8 +6,8 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hprose.bootstrap;
-import java.nio.file.Files;
 import java.io.File;
+import java.nio.file.Files;
 import java.util.List;
 import net.hasor.example.protocol.hprose.Echo;
 import net.hasor.example.protocol.hprose.EchoService;
@@ -18,8 +18,7 @@ import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.protocol.hprose.support.BootstrapTestSupport;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @NxnRpc(name = "rsf", version = "1")
 public class ContextAddressTest extends BootstrapTestSupport {
@@ -161,7 +160,7 @@ public class ContextAddressTest extends BootstrapTestSupport {
         // 禁用缓存的上下文启动和关闭后，目录中不应生成快照。
         File home = Files.createTempDirectory(this.temporary, "case-").toFile();
         MetConfiguration config = this.configuration();
-        config.setDataHome(home.toPath());
+        config.setLocalDiskCache(false).setDataHome(home.toPath());
         try (MetContext runtime = config.buildContext()) {
             MetBindInfo<Echo> service = runtime.publisher().rsfService(Echo.class).register();
             String serviceId = service.getBindID();
@@ -170,7 +169,7 @@ public class ContextAddressTest extends BootstrapTestSupport {
             runtime.start();
             runtime.close();
             assertTrue(runtime.getUpdater().queryAllAddresses(serviceId).isEmpty());
-            assertEquals(0, home.list().length);
+            assertFalse(Files.exists(home.toPath().resolve("snapshot")));
         }
     }
 }

@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -17,15 +16,16 @@ import java.util.concurrent.TimeUnit;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.protocol.soap.EchoService;
 import net.hasor.example.protocol.soap.EchoServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
-import net.hasor.realmeteor.protocol.soap.support.SoapResponseUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
+import net.hasor.realmeteor.protocol.soap.support.SoapResponseUtils;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @NxnRpc(name = "soap", version = "1.1")
 public class WebServicesHttpVersionTest {
@@ -171,6 +171,7 @@ public class WebServicesHttpVersionTest {
                 .rsfService(EchoService.class, new EchoServiceImpl()) //
                 .aliasName("soap", "EchoService") //
                 .protocol("soap") //
+                .contextPathByPrefix("soap", "/") //
                 .register();
     }
 
@@ -179,6 +180,7 @@ public class WebServicesHttpVersionTest {
                 .rsfService(EchoService.class) //
                 .aliasName("soap", "EchoService") //
                 .protocol("soap") //
+                .contextPathByPrefix("soap", "/") //
                 .register();
     }
 

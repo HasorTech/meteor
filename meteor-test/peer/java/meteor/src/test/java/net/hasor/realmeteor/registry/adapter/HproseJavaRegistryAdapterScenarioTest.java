@@ -6,40 +6,36 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.registry.adapter;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import java.nio.file.Files;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import net.hasor.example.discovery.RegistryDiscoveryExample;
-import net.hasor.example.matrix.OrderMatrixVectors;
+import java.util.concurrent.TimeUnit;
 import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.OrderQuery;
+import net.hasor.example.discovery.RegistryDiscoveryExample;
+import net.hasor.example.matrix.OrderMatrixVectors;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.registry.RegistryConfiguration;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
+import net.hasor.meteor.test.nxn.NxnRpc;
+import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.discovery.ForeignServiceRegistrar;
 import net.hasor.realmeteor.environment.discovery.RegistryAddressResolver;
 import net.hasor.realmeteor.environment.discovery.RegistryDiscoveryEnvironment;
-import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 官方 Java Hprose SDK 与 Meteor 双向互通，发现方式明确为公开存储适配。 */
 @ParameterizedClass(autoCloseArguments = false, name = "Hprose-java/storage-adapter/{0}", quoteTextArguments = false)
@@ -87,7 +83,8 @@ public class HproseJavaRegistryAdapterScenarioTest {
                 provider.start();
                 MetBindInfo<OrderDemoService> service = provider.publisher() //
                         .rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
-                        .name("orders").protocol("hprose").aliasName("Hprose", "orders").register();
+                        .name("orders").protocol("hprose").aliasName("Hprose", "orders") //
+                        .contextPathByPrefix("hprose", "/").register();
 
                 // 官方客户端先独立启动，再从存储订阅获得 URL，测试线程不代发业务 RPC。
                 Path logs = Files.createDirectory(this.data.resolve("hprose-java-consumer"));
@@ -133,7 +130,8 @@ public class HproseJavaRegistryAdapterScenarioTest {
             try (MetContext consumer = configuration.buildContext()) {
                 consumer.start();
                 MetBindInfo<OrderDemoService> service = consumer.publisher().rsfService(OrderDemoService.class) //
-                        .name("orders").protocol("hprose").aliasName("Hprose", "orders").register();
+                        .name("orders").protocol("hprose").aliasName("Hprose", "orders") //
+                        .contextPathByPrefix("hprose", "/").register();
                 assertNull(consumer.getListenAddress("hprose"));
                 assertTrue(consumer.getUpdater().queryAvailableAddresses(service.getBindID()).isEmpty());
 
@@ -144,7 +142,6 @@ public class HproseJavaRegistryAdapterScenarioTest {
                     InterAddress address = provider.address(consumer.getSettings().getUnitName());
                     registrar.register(service, provider.processId(), "java", "hprose", "http", address, "/orders");
                     RegistryDiscoveryExample.awaitDiscovery(consumer, service);
-                    AddressSelectionAwaiter.await(consumer, service, "save");
                     List<InterAddress> discovered = consumer.getUpdater().queryAvailableAddresses(service.getBindID());
                     assertEquals(1, discovered.size());
                     assertEquals(address.getPort(), discovered.get(0).getPort());

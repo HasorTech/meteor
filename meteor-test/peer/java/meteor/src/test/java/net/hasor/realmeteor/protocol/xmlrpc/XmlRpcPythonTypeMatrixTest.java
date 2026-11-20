@@ -22,6 +22,7 @@ import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
+import net.hasor.realmeteor.matrix.types.PublishedTypeEndpoint;
 import net.hasor.realmeteor.matrix.types.TypeValueAssertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -62,13 +63,14 @@ public class XmlRpcPythonTypeMatrixTest {
                 .protocol("xmlrpc") //
                 .option("allowNil", true) //
                 .contextPath("/rpc");
+        configuration.addExtension(PublishedTypeEndpoint.registry());
+        configuration.connector("tcp").protocol("rsf");
         try (MetContext server = configuration.buildContext()) {
-            // 启动容器后发布共享接口，Python 使用 types.echo 标准方法名访问。
-            server.start();
-            server.publisher().rsfService(TypeEchoService.class, new TypeEchoServiceImpl()) //
+            // 发布共享接口后启动容器，Python 使用 types.echo 标准方法名访问。
+            var service = server.publisher().rsfService(TypeEchoService.class, new TypeEchoServiceImpl()) //
                     .aliasName("xmlrpc", "types").protocol("xmlrpc").register();
-            int port = server.getListenAddress("xmlrpc").getPort();
-            String target = "http://" + ContainerProcess.runnerHost() + ":" + port + "/rpc";
+            server.start();
+            String target = PublishedTypeEndpoint.httpAddress(server, service, "xmlrpc");
 
             // 独立 Python 消费者验证本向量的原生类型、精确值和提供者业务收据。
             try (XmlRpcTypePeerProcess peer = XmlRpcTypePeerProcess.consumer(target, this.vector)) {
@@ -92,7 +94,8 @@ public class XmlRpcPythonTypeMatrixTest {
             int port = peer.awaitPort();
             client.start();
             MetBindInfo<TypeEchoService> service = client.publisher().rsfService(TypeEchoService.class) //
-                    .aliasName("xmlrpc", "types").protocol("xmlrpc").register();
+                    .aliasName("xmlrpc", "types").protocol("xmlrpc") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
             InterAddress address = new InterAddress("xmlrpc", peer.host(), port);
             TypeEchoService remote = client.getRsfClient(address).getRemote(service);
 

@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.LockSupport;
 import com.fasterxml.jackson.databind.JsonNode;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
+import net.hasor.example.discovery.RegistryDiscoveryExample;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropService;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropServiceImpl;
 import net.hasor.meteor.MetBindInfo;
@@ -128,7 +128,7 @@ public class DubboRegistryAdapterScenarioTest {
                     InterAddress address = new InterAddress("dubbo", peer.host(), port);
                     registrar.register(service, peer.processId(), "java", "dubbo", "tcp", address, "/");
                     awaitAddress(consumer, service, address);
-                    AddressSelectionAwaiter.await(consumer, service, "echo");
+                    RegistryDiscoveryExample.awaitDiscovery(consumer, service);
 
                     // 自动地址本选择官方提供者，公开客户端真实执行二进制协议的远程调用。
                     DubboInteropService remote = consumer.getRsfClient().getRemote(service);

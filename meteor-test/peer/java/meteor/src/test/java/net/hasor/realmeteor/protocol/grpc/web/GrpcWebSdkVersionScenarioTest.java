@@ -4,25 +4,25 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.protocol.grpc.web;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.example.protocol.grpc.web.GrpcWebService;
 import net.hasor.example.protocol.grpc.web.GrpcWebServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.node.NodeRpcPeer;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 /** 两代官方 grpc-web 客户端在真实 Chromium 中分别使用二进制和文本模式。 */
 @ParameterizedClass(autoCloseArguments = false, name = "sdk/browser/grpc-web/{0}@{1}/{2}-{4}/{3}", quoteTextArguments = false)
@@ -36,11 +36,12 @@ public class GrpcWebSdkVersionScenarioTest {
         this.profile = profile;
         this.format = format;
     }
+
     public static List<Object[]> versions() throws Exception {
         List<Object[]> cases = new ArrayList<>();
         for (Object[] profile : NodeRpcPeer.compatibilityCases("grpc-web")) {
             for (String format : List.of("binary", "text")) {
-                cases.add(new Object[] {profile[0], profile[1], profile[2], profile[3], format});
+                cases.add(new Object[] { profile[0], profile[1], profile[2], profile[3], format });
             }
         }
         return cases;
@@ -67,6 +68,7 @@ public class GrpcWebSdkVersionScenarioTest {
                 GrpcProtoResource proto = new GrpcProtoResource(getClass().getResource("/protocol/proto/grpc/web.proto"));
                 provider.publisher().rsfService(GrpcWebService.class, new GrpcWebServiceImpl()) //
                         .aliasName("grpc-web", "web.Echo").protocol("grpc-web") //
+                        .contextPathByPrefix("grpc-web", "/") //
                         .serialize("Protobuf").bindResource("grpc-web", proto).register();
 
                 // 当前版本官方客户端在浏览器内发送请求并解释业务响应。

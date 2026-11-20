@@ -55,6 +55,7 @@ public class GrpcGoInteropTest {
             server.start();
             server.publisher().rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                     .name(SERVICE).protocol("grpc").aliasName("grpc", SERVICE) //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf").bindResource("grpc", this.resource()).register();
 
             // grpc-go 客户端经真实网络保存并查询中文、补充平面字符和二进制字段。
@@ -75,6 +76,7 @@ public class GrpcGoInteropTest {
             server.start();
             server.publisher().rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                     .name(SERVICE).protocol("grpc").aliasName("grpc", SERVICE) //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf").bindResource("grpc", this.resource()).register();
 
             // grpc-go 客户端经真实网络保存并查询 int32 最大值及二进制字节边界。
@@ -95,6 +97,7 @@ public class GrpcGoInteropTest {
             server.start();
             server.publisher().rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                     .name(SERVICE).protocol("grpc").aliasName("grpc", SERVICE) //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf").bindResource("grpc", this.resource()).register();
 
             // grpc-go 客户端经真实网络保存并查询 int32 最小值及二进制字节边界。
@@ -116,6 +119,7 @@ public class GrpcGoInteropTest {
             server.start();
             server.publisher().rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                     .name(SERVICE).protocol("grpc").aliasName("grpc", SERVICE) //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf").bindResource("grpc", this.resource()).register();
 
             // grpc-go 客户端经真实网络保存并查询 proto3 默认值和空字段。
@@ -136,6 +140,7 @@ public class GrpcGoInteropTest {
             server.start();
             server.publisher().rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                     .name(SERVICE).protocol("grpc").aliasName("grpc", SERVICE) //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf").bindResource("grpc", this.resource()).register();
 
             // grpc-go 必须收到可读业务错误，不能将连接失败当成缺失订单。
@@ -160,6 +165,7 @@ public class GrpcGoInteropTest {
             client.start();
             MetBindInfo<OrderDemoService> subscription = client.publisher().rsfService(OrderDemoService.class) //
                     .name(SERVICE).protocol("grpc").aliasName("grpc", SERVICE) //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf").bindResource("grpc", this.resource()).register();
 
             // 通过公开代理保存并查询中文、补充平面字符和二进制字段。
@@ -190,6 +196,7 @@ public class GrpcGoInteropTest {
             client.start();
             MetBindInfo<OrderDemoService> subscription = client.publisher().rsfService(OrderDemoService.class) //
                     .name(SERVICE).protocol("grpc").aliasName("grpc", SERVICE) //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf").bindResource("grpc", this.resource()).register();
 
             // 通过公开代理保存并查询 int32 最大值及二进制字节边界。
@@ -220,6 +227,7 @@ public class GrpcGoInteropTest {
             client.start();
             MetBindInfo<OrderDemoService> subscription = client.publisher().rsfService(OrderDemoService.class) //
                     .name(SERVICE).protocol("grpc").aliasName("grpc", SERVICE) //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf").bindResource("grpc", this.resource()).register();
 
             // 通过公开代理保存并查询 int32 最小值及二进制字节边界。
@@ -251,6 +259,7 @@ public class GrpcGoInteropTest {
             client.start();
             MetBindInfo<OrderDemoService> subscription = client.publisher().rsfService(OrderDemoService.class) //
                     .name(SERVICE).protocol("grpc").aliasName("grpc", SERVICE) //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf").bindResource("grpc", this.resource()).register();
 
             // 通过公开代理保存并查询 proto3 默认值和空字段。
@@ -281,6 +290,7 @@ public class GrpcGoInteropTest {
             client.start();
             MetBindInfo<OrderDemoService> subscription = client.publisher().rsfService(OrderDemoService.class) //
                     .name(SERVICE).protocol("grpc").aliasName("grpc", SERVICE) //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf").bindResource("grpc", this.resource()).register();
             InterAddress address = new InterAddress(this.scheme() + "://" + target);
             OrderDemoService remote = client.getRsfClient(address).getRemote(subscription);

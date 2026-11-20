@@ -6,30 +6,32 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.matrix;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import net.hasor.example.Order;
+import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.discovery.RegistryDiscoveryExample;
 import net.hasor.example.matrix.OrderMatrixVectors;
 import net.hasor.example.matrix.OrderProtocol;
-import net.hasor.example.Order;
-import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.registry.RegistryConfiguration;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
-import org.junit.jupiter.api.*;
+import net.hasor.meteor.test.nxn.NxnRpc;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 
 /** 第一层 Unicode 订单矩阵；ONC RPC 标准 XDR string 的 ASCII 范围由独立拒绝场景验证。 */
 @ParameterizedClass(autoCloseArguments = false, name = "unicode/{0}/{1}", quoteTextArguments = false)
@@ -48,18 +50,19 @@ import java.util.concurrent.TimeUnit;
 @NxnRpc(name = "thrift", cases = "unicode/thrift/*")
 public class OrderUnicodeMatrixTest {
     @TempDir
-    public static Path environmentData;
-    private static      OrderRegistryEnvironment environment;
+    public static  Path                     environmentData;
+    private static OrderRegistryEnvironment environment;
 
     @TempDir
-    public Path data;
-    private final OrderProtocol   protocol;
-    private final OrderDiscovery  discovery;
+    public        Path           data;
+    private final OrderProtocol  protocol;
+    private final OrderDiscovery discovery;
 
     public OrderUnicodeMatrixTest(OrderProtocol protocol, OrderDiscovery discovery) {
         this.protocol = protocol;
         this.discovery = discovery;
     }
+
     public static Collection<Object[]> configurations() {
         // 复用同一份协议与发现选择规则；标准 XDR string 不属于 Unicode 正向配置。
         List<Object[]> configurations = new ArrayList<>();
@@ -131,7 +134,6 @@ public class OrderUnicodeMatrixTest {
                     remote = consumer.getRsfClient(provider.getListenAddress(this.protocol.protocolName()));
                 } else {
                     RegistryDiscoveryExample.awaitDiscovery(consumer, subscription);
-                    AddressSelectionAwaiter.await(consumer, subscription, "save");
                     remote = consumer.getRsfClient();
                 }
 

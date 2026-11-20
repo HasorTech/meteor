@@ -42,6 +42,7 @@ public class GrpcWebGoInteropTest {
             server.start();
             server.publisher().rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                     .protocol("grpc-web").aliasName("grpc-web", SERVICE).serialize("Protobuf") //
+                    .contextPathByPrefix("grpc-web", "/") //
                     .bindResource("grpc-web", resource).register();
             String target = "http://" + server.getListenAddress("grpc-web").getHostPort();
 
@@ -65,6 +66,7 @@ public class GrpcWebGoInteropTest {
             client.start();
             MetBindInfo<OrderDemoService> service = client.publisher().rsfService(OrderDemoService.class) //
                     .protocol("grpc-web").aliasName("grpc-web", SERVICE).serialize("Protobuf") //
+                    .contextPathByPrefix("grpc-web", "/") //
                     .bindResource("grpc-web", resource).register();
             InterAddress address = new InterAddress("http", endpoint.getHost(), endpoint.getPort());
             OrderDemoService remote = client.getRsfClient(address).getRemote(service);

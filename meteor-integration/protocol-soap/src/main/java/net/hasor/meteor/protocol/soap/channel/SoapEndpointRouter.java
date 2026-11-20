@@ -77,10 +77,13 @@ public final class SoapEndpointRouter {
         if (!exact.isEmpty()) {
             return List.copyOf(exact);
         }
+
         List<String> paths = new ArrayList<>();
-        for (RouteMount mount : routes.mounts()) {
-            String endpoint = mount.prefix() + alias;
-            if (routes.accepts(service, mount) && routes.match(endpoint) == mount) {
+        // 服务的有效挂载包含分组、版本和相对子路径，目录需从实际绑定读取它们。
+        for (String path : routes.contextPaths(service)) {
+            String endpoint = (path.endsWith("/") ? path : path + "/") + alias;
+            RouteMount configured = routes.match(endpoint);
+            if (configured != null && configured.path().length() <= path.length()) {
                 paths.add(endpoint);
             }
         }

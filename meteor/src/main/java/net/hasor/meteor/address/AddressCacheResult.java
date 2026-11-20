@@ -19,6 +19,11 @@ class AddressCacheResult {
         this.addressPool = addressPool;
     }
 
+    List<InterAddress> getAvailableAddresses(String serviceId) {
+        BucketSnapshot snapshot = this.buckets.get(serviceId);
+        return snapshot == null ? null : snapshot.availableAddresses;
+    }
+
     List<InterAddress> getAddressList(RouteContext input) {
         BucketSnapshot snapshot = this.buckets.get(input.getServiceId());
         if (snapshot == null) {
@@ -81,7 +86,7 @@ class AddressCacheResult {
             this.unitAddresses = bucket.getUnitAddresses(unitName);
             this.units = bucket.getAddressesByUnit();
             this.addresses = bucket.getLocalUnitAddresses();
-            this.availableAddresses = bucket.getAvailableAddresses();
+            this.availableAddresses = List.copyOf(bucket.getAvailableAddresses());
             this.unitFlowControl = bucket.getFlowControlRef().unitFlowControl;
             RuleRef ref = bucket.getRuleRef();
             // 候选地址依次经过服务级、方法级和参数级规则，不可交换筛选层级。

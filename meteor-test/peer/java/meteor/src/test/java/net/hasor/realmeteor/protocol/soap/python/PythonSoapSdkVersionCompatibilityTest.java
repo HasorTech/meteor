@@ -3,13 +3,10 @@
  * Licensed under the Apache License, Version 2.0. See LICENSE.txt.
  */
 package net.hasor.realmeteor.protocol.soap.python;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.Base64;
+import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.hasor.cobble.StringUtils;
@@ -17,16 +14,19 @@ import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.OrderQuery;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.soap.definition.SoapWsdlResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 /** 两代 Zeep 消费者和当前 soapfish2 提供者使用各自 SDK 的 XML 映射。 */
 @ParameterizedClass(autoCloseArguments = false, name = "sdk/python/soap/{0}@{1}/soap11/{2}", quoteTextArguments = false)
@@ -40,6 +40,7 @@ public class PythonSoapSdkVersionCompatibilityTest {
         this.version = version;
         this.direction = direction;
     }
+
     public static Object[][] versions() {
         return new Object[][] { // Zeep 只提供消费者；soapfish2 独立提供真实 SOAP 服务。
                 { "zeep", "3.4.0", "SDK-to-Meteor" }, //
@@ -68,7 +69,8 @@ public class PythonSoapSdkVersionCompatibilityTest {
                  PythonSoapPeer consumer = PythonSoapPeer.versionConsumer(this.version)) {
                 provider.start();
                 provider.publisher().rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
-                        .name("orders").protocol("soap").aliasName("soap", "orders").register();
+                        .name("orders").protocol("soap").aliasName("soap", "orders") //
+                        .contextPathByPrefix("soap", "/").register();
                 InterAddress address = provider.getListenAddress("soap");
                 URI wsdl = new URI("http", null, address.getHost(), address.getPort(), "/soap/orders", "wsdl", null);
 
@@ -92,6 +94,7 @@ public class PythonSoapSdkVersionCompatibilityTest {
             var contract = Path.of(System.getProperty("python.soap.contract", defaultContract)).toUri().toURL();
             var service = consumer.publisher().rsfService(OrderDemoService.class) //
                     .name("orders").protocol("soap").aliasName("soap", "orders") //
+                    .contextPathByPrefix("soap", "/") //
                     .bindResource("soap", new SoapWsdlResource(contract)).register();
             OrderDemoService remote = consumer.getRsfClient(provider.address("default")).getRemote(service);
 

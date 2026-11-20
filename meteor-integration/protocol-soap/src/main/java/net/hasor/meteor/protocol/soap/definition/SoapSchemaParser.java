@@ -603,6 +603,15 @@ final class SoapSchemaParser {
     }
 
     private void indexSchema(SchemaView view) throws IOException {
+        SoapXmlResource standard = this.standardSchema(view.namespace());
+        if (standard != null) {
+            Element canonical = standard.document().getDocumentElement();
+            // 自包含 WSDL 中原样内嵌的标准 Schema 与内置资源共用索引。
+            if (view.schema() != canonical && canonical.isEqualNode(view.schema())) {
+                view = new SchemaView(standard, canonical, view.namespace());
+            }
+        }
+
         if (!this.markIndexed(view)) {
             return;
         }

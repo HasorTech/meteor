@@ -6,11 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.connect.registry;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.nio.file.Files;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -20,11 +16,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.hasor.example.matrix.OrderMatrixVectors;
 import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.OrderQuery;
+import net.hasor.example.discovery.RegistryDiscoveryExample;
+import net.hasor.example.matrix.OrderMatrixVectors;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
@@ -32,17 +29,17 @@ import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
 import net.hasor.meteor.registry.RegistryConfiguration;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
+import net.hasor.meteor.test.nxn.NxnRpc;
+import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.discovery.ForeignServiceRegistrar;
 import net.hasor.realmeteor.environment.discovery.RegistryAddressResolver;
 import net.hasor.realmeteor.environment.discovery.RegistryDiscoveryEnvironment;
-import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** Connect 官方 Node SDK 的显式注册适配，不宣称对端原生理解 Meteor 注册数据。 */
 @ParameterizedClass(autoCloseArguments = false, name = "adapter-discovery={0}", quoteTextArguments = false)
@@ -60,6 +57,7 @@ public class ConnectNodeRegistryInteropTest {
     public ConnectNodeRegistryInteropTest(String backend) {
         this.backend = backend;
     }
+
     public static Collection<Object[]> backends() {
         List<Object[]> result = new ArrayList<>();
         result.add(new Object[] { "jdbc" });
@@ -86,6 +84,7 @@ public class ConnectNodeRegistryInteropTest {
                 MetBindInfo<OrderDemoService> service = provider.publisher() //
                         .rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                         .name(SERVICE_NAME).protocol("connect").aliasName("connect", SERVICE_NAME) //
+                        .contextPathByPrefix("connect", "/") //
                         .bindResource("connect", this.proto()).register();
 
                 // Node 启动参数没有 URL；订阅返回的端点才通过控制管道送给官方客户端。
@@ -123,6 +122,7 @@ public class ConnectNodeRegistryInteropTest {
                 MetBindInfo<OrderDemoService> service = provider.publisher() //
                         .rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                         .name(SERVICE_NAME).protocol("connect").aliasName("connect", SERVICE_NAME) //
+                        .contextPathByPrefix("connect", "/") //
                         .bindResource("connect", this.proto()).register();
 
                 // Node 启动参数没有 URL；订阅返回的端点才通过控制管道送给官方客户端。
@@ -159,6 +159,7 @@ public class ConnectNodeRegistryInteropTest {
                 MetBindInfo<OrderDemoService> service = provider.publisher() //
                         .rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                         .name(SERVICE_NAME).protocol("connect").aliasName("connect", SERVICE_NAME) //
+                        .contextPathByPrefix("connect", "/") //
                         .bindResource("connect", this.proto()).register();
 
                 // Node 启动参数没有 URL；订阅返回的端点才通过控制管道送给官方客户端。
@@ -195,6 +196,7 @@ public class ConnectNodeRegistryInteropTest {
                 MetBindInfo<OrderDemoService> service = consumer.publisher() //
                         .rsfService(OrderDemoService.class) //
                         .name(SERVICE_NAME).protocol("connect").aliasName("connect", SERVICE_NAME) //
+                        .contextPathByPrefix("connect", "/") //
                         .bindResource("connect", this.proto()).register();
                 assertTrue(consumer.getUpdater().queryAvailableAddresses(service.getBindID()).isEmpty());
 
@@ -236,6 +238,7 @@ public class ConnectNodeRegistryInteropTest {
                 MetBindInfo<OrderDemoService> service = consumer.publisher() //
                         .rsfService(OrderDemoService.class) //
                         .name(SERVICE_NAME).protocol("connect").aliasName("connect", SERVICE_NAME) //
+                        .contextPathByPrefix("connect", "/") //
                         .bindResource("connect", this.proto()).register();
                 assertTrue(consumer.getUpdater().queryAvailableAddresses(service.getBindID()).isEmpty());
 
@@ -276,6 +279,7 @@ public class ConnectNodeRegistryInteropTest {
                 MetBindInfo<OrderDemoService> service = consumer.publisher() //
                         .rsfService(OrderDemoService.class) //
                         .name(SERVICE_NAME).protocol("connect").aliasName("connect", SERVICE_NAME) //
+                        .contextPathByPrefix("connect", "/") //
                         .bindResource("connect", this.proto()).register();
                 assertTrue(consumer.getUpdater().queryAvailableAddresses(service.getBindID()).isEmpty());
 
@@ -316,6 +320,7 @@ public class ConnectNodeRegistryInteropTest {
                 MetBindInfo<OrderDemoService> service = consumer.publisher() //
                         .rsfService(OrderDemoService.class) //
                         .name(SERVICE_NAME).protocol("connect").aliasName("connect", SERVICE_NAME) //
+                        .contextPathByPrefix("connect", "/") //
                         .bindResource("connect", this.proto()).register();
                 try (ConnectOrderRegistryPeer provider = ConnectOrderRegistryPeer.provider(); //
                      ForeignServiceRegistrar registrar = new ForeignServiceRegistrar(registry)) {
@@ -360,7 +365,7 @@ public class ConnectNodeRegistryInteropTest {
             boolean single = expectedPort > 0 && addresses.size() == 1;
             if (empty || single && addresses.get(0).getPort() == expectedPort) {
                 if (expectedPort > 0) {
-                    AddressSelectionAwaiter.await(context, service, "save");
+                    RegistryDiscoveryExample.awaitDiscovery(context, service);
                 }
                 return;
             }

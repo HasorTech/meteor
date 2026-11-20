@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
@@ -17,18 +16,19 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import javax.xml.namespace.QName;
 import jakarta.xml.soap.*;
 import net.hasor.example.protocol.soap.DocumentBareService;
 import net.hasor.example.protocol.soap.DocumentBareServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 @NxnRpc(name = "soap", version = "1.1")
 public class WebServicesDocumentBareTest {
@@ -46,6 +46,7 @@ public class WebServicesDocumentBareTest {
                     .rsfService(DocumentBareService.class, service) //
                     .aliasName("soap", "DocumentBareService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // bare 参数各自作为 Body 的直接子元素，不增加操作包装。
@@ -86,6 +87,7 @@ public class WebServicesDocumentBareTest {
                     .rsfService(DocumentBareService.class, service) //
                     .aliasName("soap", "DocumentBareService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // bare 参数各自作为 Body 的直接子元素，不增加操作包装。
@@ -125,6 +127,7 @@ public class WebServicesDocumentBareTest {
                     .rsfService(DocumentBareService.class, service) //
                     .aliasName("soap", "DocumentBareService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 无参数消息没有 Body 子元素，由 action 选择 status 操作。
@@ -162,6 +165,7 @@ public class WebServicesDocumentBareTest {
                     .rsfService(DocumentBareService.class, service) //
                     .aliasName("soap", "DocumentBareService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 无参数消息没有 Body 子元素，由 action 选择 status 操作。
@@ -198,6 +202,7 @@ public class WebServicesDocumentBareTest {
                     .rsfService(DocumentBareService.class, service) //
                     .aliasName("soap", "DocumentBareService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // accept 是普通双向 void 方法，请求携带唯一的 bare 参数元素。
@@ -234,6 +239,7 @@ public class WebServicesDocumentBareTest {
                     .rsfService(DocumentBareService.class, service) //
                     .aliasName("soap", "DocumentBareService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // accept 是普通双向 void 方法，请求携带唯一的 bare 参数元素。

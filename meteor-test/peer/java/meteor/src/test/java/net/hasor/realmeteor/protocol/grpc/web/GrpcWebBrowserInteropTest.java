@@ -6,8 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc.web;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
@@ -18,14 +16,16 @@ import net.hasor.cobble.StringUtils;
 import net.hasor.example.protocol.grpc.Message;
 import net.hasor.example.protocol.grpc.web.GrpcWebService;
 import net.hasor.example.protocol.grpc.web.GrpcWebServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 官方 grpc-web 生成客户端在真实 Chromium 中调用公开 bootstrap 发布的服务。 */
 @NxnRpc(name = "grpc-web")
@@ -52,11 +52,12 @@ public class GrpcWebBrowserInteropTest {
                 GrpcProtoResource proto = new GrpcProtoResource(getClass().getResource("/protocol/proto/grpc/web.proto"));
                 server.publisher().rsfService(GrpcWebService.class, new GrpcWebServiceImpl()) //
                         .aliasName("grpc-web", "web.Echo").protocol("grpc-web") //
+                        .contextPathByPrefix("grpc-web", "/") //
                         .serialize("Protobuf").bindResource("grpc-web", proto).register();
 
                 // 浏览器使用二进制 Protobuf 普通调用。
-                int port = server.getListenAddress("grpc-web").getPort();
-                String target = "http://" + ContainerProcess.runnerHost() + ":" + port + "/web";
+                var address = server.getListenAddress("grpc-web");
+                String target = "http://" + address.getHostPort() + address.getPath();
                 JsonNode result = peer.invoke(target, "binary");
                 assertEquals("中文🙂 <&>", result.path("value").asText());
                 assertEquals(7, result.path("count").asInt());
@@ -86,11 +87,12 @@ public class GrpcWebBrowserInteropTest {
                 GrpcProtoResource proto = new GrpcProtoResource(getClass().getResource("/protocol/proto/grpc/web.proto"));
                 server.publisher().rsfService(GrpcWebService.class, new GrpcWebServiceImpl()) //
                         .aliasName("grpc-web", "web.Echo").protocol("grpc-web") //
+                        .contextPathByPrefix("grpc-web", "/") //
                         .serialize("Protobuf").bindResource("grpc-web", proto).register();
 
                 // 浏览器使用 base64 文本 Protobuf 普通调用。
-                int port = server.getListenAddress("grpc-web").getPort();
-                String target = "http://" + ContainerProcess.runnerHost() + ":" + port + "/web";
+                var address = server.getListenAddress("grpc-web");
+                String target = "http://" + address.getHostPort() + address.getPath();
                 JsonNode result = peer.invoke(target, "text");
                 assertEquals("中文🙂 <&>", result.path("value").asText());
                 assertEquals(7, result.path("count").asInt());
@@ -119,11 +121,12 @@ public class GrpcWebBrowserInteropTest {
                 GrpcProtoResource proto = new GrpcProtoResource(getClass().getResource("/protocol/proto/grpc/web.proto"));
                 server.publisher().rsfService(GrpcWebService.class, new GrpcWebServiceImpl()) //
                         .aliasName("grpc-web", "web.Echo").protocol("grpc-web") //
+                        .contextPathByPrefix("grpc-web", "/") //
                         .serialize("Protobuf").bindResource("grpc-web", proto).register();
 
                 // 官方客户端按消息接收文本响应流及结束状态。
-                int port = server.getListenAddress("grpc-web").getPort();
-                String target = "http://" + ContainerProcess.runnerHost() + ":" + port + "/web";
+                var address = server.getListenAddress("grpc-web");
+                String target = "http://" + address.getHostPort() + address.getPath();
                 JsonNode result = peer.invoke(target, "stream");
                 JsonNode values = result.path("values");
                 assertEquals(3, values.size());
@@ -158,11 +161,12 @@ public class GrpcWebBrowserInteropTest {
                 GrpcProtoResource proto = new GrpcProtoResource(getClass().getResource("/protocol/proto/grpc/web.proto"));
                 server.publisher().rsfService(GrpcWebService.class, new GrpcWebServiceImpl()) //
                         .aliasName("grpc-web", "web.Echo").protocol("grpc-web") //
+                        .contextPathByPrefix("grpc-web", "/") //
                         .serialize("Protobuf").bindResource("grpc-web", proto).register();
 
                 // 协议错误以标准状态码和 Unicode 描述交付浏览器。
-                int port = server.getListenAddress("grpc-web").getPort();
-                String target = "http://" + ContainerProcess.runnerHost() + ":" + port + "/web";
+                var address = server.getListenAddress("grpc-web");
+                String target = "http://" + address.getHostPort() + address.getPath();
                 JsonNode result = peer.invoke(target, "fault");
                 assertEquals(7, result.path("error").path("code").asInt());
                 assertEquals("拒绝访问", result.path("error").path("message").asText());
@@ -191,11 +195,12 @@ public class GrpcWebBrowserInteropTest {
                 GrpcProtoResource proto = new GrpcProtoResource(getClass().getResource("/protocol/proto/grpc/web.proto"));
                 server.publisher().rsfService(GrpcWebService.class, new GrpcWebServiceImpl()) //
                         .aliasName("grpc-web", "web.Echo").protocol("grpc-web") //
+                        .contextPathByPrefix("grpc-web", "/") //
                         .serialize("Protobuf").bindResource("grpc-web", proto).register();
 
                 // 流中已收到的消息与结束时的错误均保留。
-                int port = server.getListenAddress("grpc-web").getPort();
-                String target = "http://" + ContainerProcess.runnerHost() + ":" + port + "/web";
+                var address = server.getListenAddress("grpc-web");
+                String target = "http://" + address.getHostPort() + address.getPath();
                 JsonNode result = peer.invoke(target, "broken");
                 assertEquals(1, result.path("values").size());
                 assertEquals("中文🙂", result.path("values").get(0).path("value").asText());
@@ -227,11 +232,12 @@ public class GrpcWebBrowserInteropTest {
                 GrpcProtoResource proto = new GrpcProtoResource(getClass().getResource("/protocol/proto/grpc/web.proto"));
                 server.publisher().rsfService(GrpcWebService.class, new GrpcWebServiceImpl()) //
                         .aliasName("grpc-web", "web.Echo").protocol("grpc-web") //
+                        .contextPathByPrefix("grpc-web", "/") //
                         .serialize("Protobuf").bindResource("grpc-web", proto).register();
 
                 // 真实跨域凭证模式按精确 origin 通过预检并成功调用。
-                int port = server.getListenAddress("grpc-web").getPort();
-                String target = "http://" + ContainerProcess.runnerHost() + ":" + port + "/web";
+                var address = server.getListenAddress("grpc-web");
+                String target = "http://" + address.getHostPort() + address.getPath();
                 JsonNode result = peer.invoke(target, "credentials");
                 assertEquals("中文🙂 <&>", result.path("value").asText());
                 assertEquals(7, result.path("count").asInt());
@@ -268,11 +274,12 @@ public class GrpcWebBrowserInteropTest {
                 GrpcProtoResource proto = new GrpcProtoResource(getClass().getResource("/protocol/proto/grpc/web.proto"));
                 server.publisher().rsfService(GrpcWebService.class, implementation) //
                         .aliasName("grpc-web", "web.Echo").protocol("grpc-web") //
+                        .contextPathByPrefix("grpc-web", "/") //
                         .serialize("Protobuf").bindResource("grpc-web", proto).register();
 
                 // 未配置的来源被浏览器拒绝，业务不能被执行。
-                int port = server.getListenAddress("grpc-web").getPort();
-                String target = "http://" + ContainerProcess.runnerHost() + ":" + port + "/web";
+                var address = server.getListenAddress("grpc-web");
+                String target = "http://" + address.getHostPort() + address.getPath();
                 JsonNode result = peer.invoke(target, "denied");
                 assertTrue(result.has("error"));
                 assertNotEquals(0, result.path("error").path("code").asInt());
@@ -311,11 +318,12 @@ public class GrpcWebBrowserInteropTest {
                 GrpcProtoResource proto = new GrpcProtoResource(getClass().getResource("/protocol/proto/grpc/web.proto"));
                 server.publisher().rsfService(GrpcWebService.class, implementation) //
                         .aliasName("grpc-web", "web.Echo").protocol("grpc-web") //
+                        .contextPathByPrefix("grpc-web", "/") //
                         .serialize("Protobuf").bindResource("grpc-web", proto).register();
 
                 // 预检拒绝未允许的 custom-header，业务不能被执行。
-                int port = server.getListenAddress("grpc-web").getPort();
-                String target = "http://" + ContainerProcess.runnerHost() + ":" + port + "/web";
+                var address = server.getListenAddress("grpc-web");
+                String target = "http://" + address.getHostPort() + address.getPath();
                 JsonNode result = peer.invoke(target, "denied");
                 assertTrue(result.has("error"));
                 assertNotEquals(0, result.path("error").path("code").asInt());
@@ -366,11 +374,12 @@ public class GrpcWebBrowserInteropTest {
                 GrpcProtoResource proto = new GrpcProtoResource(getClass().getResource("/protocol/proto/grpc/web.proto"));
                 server.publisher().rsfService(GrpcWebService.class, implementation) //
                         .aliasName("grpc-web", "web.Echo").protocol("grpc-web") //
+                        .contextPathByPrefix("grpc-web", "/") //
                         .serialize("Protobuf").bindResource("grpc-web", proto).register();
 
                 // 验证本地取消与最终期限回收；HTTP/1 半关闭不等同于立即取消远端订阅。
-                int port = server.getListenAddress("grpc-web").getPort();
-                String target = "http://" + ContainerProcess.runnerHost() + ":" + port + "/web";
+                var address = server.getListenAddress("grpc-web");
+                String target = "http://" + address.getHostPort() + address.getPath();
                 JsonNode result = peer.invoke(target, "cancel");
                 assertTrue(result.path("cancelled").asBoolean());
                 assertEquals(1, result.path("values").size());
@@ -423,11 +432,12 @@ public class GrpcWebBrowserInteropTest {
                 GrpcProtoResource proto = new GrpcProtoResource(getClass().getResource("/protocol/proto/grpc/web.proto"));
                 server.publisher().rsfService(GrpcWebService.class, implementation) //
                         .aliasName("grpc-web", "web.Echo").protocol("grpc-web") //
+                        .contextPathByPrefix("grpc-web", "/") //
                         .serialize("Protobuf").bindResource("grpc-web", proto).register();
 
                 // 浏览器记录必须确认实际 HTTP/2，取消回收发生在 10s 默认期限之前。
-                int port = server.getListenAddress("grpc-web").getPort();
-                String target = "https://" + ContainerProcess.runnerHost() + ":" + port + "/web";
+                var address = server.getListenAddress("grpc-web");
+                String target = "https://" + address.getHostPort() + address.getPath();
                 JsonNode result = peer.invoke(target, "h2cancel");
                 assertTrue(result.path("cancelled").asBoolean());
                 assertEquals(1, result.path("values").size());
@@ -480,11 +490,12 @@ public class GrpcWebBrowserInteropTest {
                 GrpcProtoResource proto = new GrpcProtoResource(getClass().getResource("/protocol/proto/grpc/web.proto"));
                 server.publisher().rsfService(GrpcWebService.class, implementation) //
                         .aliasName("grpc-web", "web.Echo").protocol("grpc-web") //
+                        .contextPathByPrefix("grpc-web", "/") //
                         .serialize("Protobuf").bindResource("grpc-web", proto).register();
 
                 // 标准 DeadlineExceeded 状态和服务订阅释放共同证明期限生效。
-                int port = server.getListenAddress("grpc-web").getPort();
-                String target = "http://" + ContainerProcess.runnerHost() + ":" + port + "/web";
+                var address = server.getListenAddress("grpc-web");
+                String target = "http://" + address.getHostPort() + address.getPath();
                 JsonNode result = peer.invoke(target, "deadline");
                 assertEquals(4, result.path("error").path("code").asInt());
                 assertTrue(cancelled.await(5, TimeUnit.SECONDS));

@@ -18,7 +18,6 @@ import jakarta.xml.soap.SOAPBodyElement;
 import jakarta.xml.soap.SOAPConstants;
 import jakarta.xml.soap.SOAPMessage;
 import net.hasor.cobble.StringUtils;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
 import net.hasor.example.discovery.RegistryDiscoveryExample;
 import net.hasor.example.protocol.soap.EchoService;
 import net.hasor.example.protocol.soap.EchoServiceImpl;
@@ -88,7 +87,8 @@ public class MetroRegistryAdapterTest {
             try (MetContext provider = configuration.buildContext()) {
                 provider.start();
                 var publication = provider.publisher().rsfService(EchoService.class, new EchoServiceImpl()) //
-                        .aliasName("soap", "EchoService").protocol("soap");
+                        .aliasName("soap", "EchoService").protocol("soap") //
+                        .contextPathByPrefix("soap", "/");
                 if (StringUtils.equals(this.version, "1.1")) {
                     publication.bindResource("soap", this.wsdlResource());
                 }
@@ -140,7 +140,8 @@ public class MetroRegistryAdapterTest {
             try (MetContext consumer = configuration.buildContext()) {
                 consumer.start();
                 var subscription = consumer.publisher().rsfService(EchoService.class) //
-                        .aliasName("soap", "EchoService").protocol("soap");
+                        .aliasName("soap", "EchoService").protocol("soap") //
+                        .contextPathByPrefix("soap", "/");
                 if (StringUtils.equals(this.version, "1.1")) {
                     subscription.bindResource("soap", this.wsdlResource());
                 }
@@ -155,7 +156,6 @@ public class MetroRegistryAdapterTest {
                     registrar.register(service, provider.processId(), "java", "soap", "http", address, //
                             "/services/EchoService");
                     RegistryDiscoveryExample.awaitDiscovery(consumer, service);
-                    AddressSelectionAwaiter.await(consumer, service, "echo");
 
                     // Meteor 代理通过自动选址直接连接 Metro，不由适配器转发 SOAP 报文。
                     EchoService remote = consumer.getRsfClient().getRemote(service);

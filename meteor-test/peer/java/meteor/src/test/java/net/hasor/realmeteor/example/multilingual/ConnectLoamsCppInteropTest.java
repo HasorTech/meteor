@@ -4,20 +4,20 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.example.multilingual;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.hasor.example.echo.TextEchoService;
-import net.hasor.meteor.MetContext;
 import net.hasor.example.support.TestConfigurationUtils;
+import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 /** Loams 0.1.3 源码 SDK 的客户端；本类记录通用 Unary API 的单向基础证据。 */
 @NxnRpc(name = "connect", version = "1")
@@ -44,11 +44,10 @@ public class ConnectLoamsCppInteropTest {
             };
             provider.publisher().rsfService(TextEchoService.class, implementation) //
                     .aliasName("connect", "meteor.java.sdk.TextEchoService").serialize("Protobuf") //
-                    .bindResource("connect", resource).register();
+                    .bindResource("connect", resource).contextPathByPrefix("connect", "/").register();
 
             // 独立 C++ 进程直接使用未修改 SDK 的 Unary、默认 HTTP Transport 与 Protobuf。
-            int port = provider.getListenAddress("connect").getPort();
-            String target = "http://" + ContainerProcess.runnerHost() + ":" + port;
+            String target = "http://" + provider.getListenAddress("connect").getHostPort();
             String message = "Loams Connect → Meteor 中文 <&>";
             String executable = "/opt/meteor-peer/native/connect/cpp/echo-peer";
             try (OrderPeerProcess consumer = OrderPeerProcess.start("native", List.of(executable, message), target)) {

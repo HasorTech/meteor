@@ -31,7 +31,7 @@ import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.OrderQuery;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
+import net.hasor.example.discovery.RegistryDiscoveryExample;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
@@ -87,6 +87,7 @@ public class GrpcJavaRegistryAdapterScenarioTest {
                 MetBindInfo<OrderDemoService> service = provider.publisher() //
                         .rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                         .name(SERVICE).protocol("grpc").aliasName("grpc", SERVICE) //
+                        .contextPathByPrefix("grpc", "/") //
                         .serialize("Protobuf").bindResource("grpc", this.resource()).register();
 
                 // 官方客户端仅从公开存储订阅中取得地址，不读取 Meteor 监听端口。
@@ -131,6 +132,7 @@ public class GrpcJavaRegistryAdapterScenarioTest {
                 consumer.start();
                 MetBindInfo<OrderDemoService> service = consumer.publisher().rsfService(OrderDemoService.class) //
                         .name(SERVICE).protocol("grpc").aliasName("grpc", SERVICE) //
+                        .contextPathByPrefix("grpc", "/") //
                         .serialize("Protobuf").bindResource("grpc", this.resource()).register();
                 assertTrue(consumer.getUpdater().queryAvailableAddresses(service.getBindID()).isEmpty());
 
@@ -142,7 +144,7 @@ public class GrpcJavaRegistryAdapterScenarioTest {
                     String unit = consumer.getSettings().getUnitName();
                     InterAddress address = new InterAddress("http", "127.0.0.1", server.getPort());
                     registrar.register(service, ProcessHandle.current().pid(), "java", "grpc", "http", address, "/");
-                    AddressSelectionAwaiter.await(consumer, service, "save");
+                    RegistryDiscoveryExample.awaitDiscovery(consumer, service);
 
                     // Meteor 使用自动地址本发起调用，官方服务端持有独立的统一订单业务实例。
                     OrderDemoService orders = consumer.getRsfClient().getRemote(service);

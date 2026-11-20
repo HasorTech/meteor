@@ -63,6 +63,7 @@ public class PythonGrpcSdkVersionCompatibilityTest {
                 provider.start();
                 provider.publisher().rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                         .protocol("grpc").aliasName("grpc", "meteor.example.OrderDemoService") //
+                        .contextPathByPrefix("grpc", "/") //
                         .serialize("Protobuf").bindResource("grpc", resource).register();
                 int port = provider.getListenAddress("grpc").getPort();
                 try (PythonGrpcPeer peer = PythonGrpcPeer.versionConsumer( //
@@ -83,6 +84,7 @@ public class PythonGrpcSdkVersionCompatibilityTest {
             consumer.start();
             var service = consumer.publisher().rsfService(OrderDemoService.class) //
                     .protocol("grpc").aliasName("grpc", "meteor.example.OrderDemoService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf").bindResource("grpc", resource).register();
             InterAddress address = new InterAddress("grpc", peer.host(), port);
             OrderDemoService remote = consumer.getRsfClient(address).getRemote(service);

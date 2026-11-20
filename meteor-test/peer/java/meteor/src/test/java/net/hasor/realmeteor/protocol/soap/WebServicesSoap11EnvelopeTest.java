@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -14,18 +13,19 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.xml.parsers.DocumentBuilderFactory;
 import net.hasor.example.protocol.soap.EchoService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 @NxnRpc(name = "soap", version = "1.1")
 public class WebServicesSoap11EnvelopeTest {
@@ -51,6 +51,7 @@ public class WebServicesSoap11EnvelopeTest {
                     }) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // Envelope 命名空间错误时返回标准 VersionMismatch。
@@ -91,6 +92,7 @@ public class WebServicesSoap11EnvelopeTest {
                     }) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 必选 Header 错误不能伪造 Body 处理的 detail。
@@ -131,6 +133,7 @@ public class WebServicesSoap11EnvelopeTest {
                     }) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // SOAP 1.1 的 mustUnderstand 只允许 0 或 1。
@@ -171,6 +174,7 @@ public class WebServicesSoap11EnvelopeTest {
                     }) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // SOAP 1.1 同样拒绝重复 Body。
@@ -211,6 +215,7 @@ public class WebServicesSoap11EnvelopeTest {
                     }) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // SOAP 1.1 不允许消息包含 processing instruction。
@@ -251,6 +256,7 @@ public class WebServicesSoap11EnvelopeTest {
                     }) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 扩展是 Envelope 的独立子元素，不增加或替代业务 Body。

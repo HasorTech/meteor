@@ -63,6 +63,7 @@ public class SoapNativeInteropTest {
             provider.start();
             provider.publisher().rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService").protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .bindResource("soap", new SoapWsdlResource(contract)).register();
 
             // 原生 SDK 调用真实网络端点，校验 Unicode 与 XML 特殊字符的往返。
@@ -92,6 +93,7 @@ public class SoapNativeInteropTest {
             consumer.start();
             MetBindInfo<EchoService> service = consumer.publisher().rsfService(EchoService.class) //
                     .aliasName("soap", "EchoService").protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .bindResource("soap", new SoapWsdlResource(contract)).register();
 
             // 公开代理向独立原生服务调用，返回内容由 gSOAP 的 XML 绑定产生。

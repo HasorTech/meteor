@@ -25,6 +25,7 @@ import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.matrix.types.ForeignTypePeer;
+import net.hasor.realmeteor.matrix.types.PublishedTypeEndpoint;
 import net.hasor.realmeteor.matrix.types.TypeValueAssertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -66,14 +67,15 @@ public class NodeHproseTypeTest {
                 .bind(ContainerProcess.runnerHost(), 0) //
                 .protocol("hprose") //
                 .contextPath("/types");
+        configuration.addExtension(PublishedTypeEndpoint.registry());
+        configuration.connector("tcp").protocol("rsf");
         try (MetContext provider = configuration.buildContext()) {
-            provider.start();
-            provider.publisher().rsfService(TypeEchoService.class, new TypeEchoServiceImpl()) //
+            var service = provider.publisher().rsfService(TypeEchoService.class, new TypeEchoServiceImpl()) //
                     .aliasName("Hprose", "types").protocol("hprose").register();
+            provider.start();
 
             // 独立 Node 官方 SDK 发起调用，并在自己的进程内断言当前字段。
-            int port = provider.getListenAddress("hprose").getPort();
-            String endpoint = "http://" + ContainerProcess.runnerHost() + ":" + port + "/types";
+            String endpoint = PublishedTypeEndpoint.httpAddress(provider, service, "hprose");
             try (ForeignTypePeer peer = ForeignTypePeer.consumer("node", "hprose", endpoint, this.vector)) {
                 peer.requireSuccess(this.expectedMarker());
             }
@@ -95,7 +97,8 @@ public class NodeHproseTypeTest {
             try (MetContext consumer = configuration.buildContext()) {
                 consumer.start();
                 MetBindInfo<TypeEchoService> info = consumer.publisher().rsfService(TypeEchoService.class) //
-                        .aliasName("Hprose", "types").protocol("hprose").register();
+                        .aliasName("Hprose", "types").protocol("hprose") //
+                        .contextPathByPrefix("hprose", "/").register();
                 InterAddress address = new InterAddress("hprose", peer.host(), port);
                 TypeEchoService remote = consumer.getRsfClient(address).getRemote(info);
 

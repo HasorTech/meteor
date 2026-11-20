@@ -14,7 +14,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
 import net.hasor.example.discovery.RegistryDiscoveryExample;
 import net.hasor.example.protocol.hessian.HessianInteropDemo;
 import net.hasor.example.protocol.hessian.HessianInteropDemoImpl;
@@ -91,7 +90,8 @@ public class CauchoHessianRegistryAdapterTest {
                 provider.start();
                 MetBindInfo<HessianInteropDemo> service = provider.publisher() //
                         .rsfService(HessianInteropDemo.class, new HessianInteropDemoImpl()) //
-                        .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian").register();
+                        .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian") //
+                        .contextPathByPrefix("hessian", "/").register();
 
                 // 适配器只订阅注册地址；官方 SDK 获得的 URL 由真实登记和固定合同别名组成。
                 try (StorageAccess storage = registry.openStorage(); //
@@ -134,7 +134,8 @@ public class CauchoHessianRegistryAdapterTest {
             try (MetContext consumer = configuration.buildContext()) {
                 consumer.start();
                 MetBindInfo<HessianInteropDemo> service = consumer.publisher().rsfService(HessianInteropDemo.class) //
-                        .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian").register();
+                        .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian") //
+                        .contextPathByPrefix("hessian", "/").register();
                 assertTrue(consumer.getUpdater().queryAvailableAddresses(service.getBindID()).isEmpty());
 
                 // 官方 Skeleton 进程先监听，显式 registrar 再登记实际 PID 与完整服务 URL。
@@ -145,7 +146,6 @@ public class CauchoHessianRegistryAdapterTest {
                     registrar.register(service, provider.processId(), "java", "hessian", "http", address, //
                             "/hessian/demo");
                     RegistryDiscoveryExample.awaitDiscovery(consumer, service);
-                    AddressSelectionAwaiter.await(consumer, service, "echo");
 
                     // 正式调用只通过自动地址本选址；对端 HTTP/Skeleton 完全属于官方独立 JVM。
                     HessianInteropDemo remote = consumer.getRsfClient().getRemote(service);

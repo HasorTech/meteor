@@ -50,6 +50,7 @@ public class GrpcFlowInteropTest {
             var publication = context.publisher().rsfService(Messages.class, new MessageService());
             publication //
                     .aliasName("grpc", "example.Messages") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", this.resource()) //
                     .register();
@@ -88,6 +89,7 @@ public class GrpcFlowInteropTest {
             var publication = context.publisher().rsfService(Messages.class, new MessageService());
             publication //
                     .aliasName("grpc", "example.Messages") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", this.resource()) //
                     .register();
@@ -127,6 +129,7 @@ public class GrpcFlowInteropTest {
             var publication = context.publisher().rsfService(Messages.class, new MessageService());
             publication //
                     .aliasName("grpc", "example.Messages") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", this.resource()) //
                     .register();
@@ -167,6 +170,7 @@ public class GrpcFlowInteropTest {
             var publication = context.publisher().rsfService(Messages.class, new MessageService());
             publication //
                     .aliasName("grpc", "example.Messages") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", this.resource()) //
                     .register();
@@ -218,6 +222,7 @@ public class GrpcFlowInteropTest {
             var publication = client.publisher().rsfService(Messages.class);
             MetBindInfo<Messages> info = publication //
                     .aliasName("grpc", "example.Messages") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", this.resource()) //
                     .register();
@@ -263,6 +268,7 @@ public class GrpcFlowInteropTest {
             var publication = client.publisher().rsfService(Messages.class);
             MetBindInfo<Messages> info = publication //
                     .aliasName("grpc", "example.Messages") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", this.resource()) //
                     .register();
@@ -306,6 +312,7 @@ public class GrpcFlowInteropTest {
             var publication = client.publisher().rsfService(Messages.class);
             MetBindInfo<Messages> info = publication //
                     .aliasName("grpc", "example.Messages") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", this.resource()) //
                     .register();

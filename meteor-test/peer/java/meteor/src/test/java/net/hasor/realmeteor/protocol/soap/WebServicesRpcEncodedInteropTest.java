@@ -46,6 +46,7 @@ public class WebServicesRpcEncodedInteropTest {
             context.publisher() //
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "RpcEchoService") //
+                    .contextPathByPrefix("soap", "/") //
                     .protocol("soap") //
                     .register();
 
@@ -87,6 +88,7 @@ public class WebServicesRpcEncodedInteropTest {
             context.publisher() //
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "RpcEchoService") //
+                    .contextPathByPrefix("soap", "/") //
                     .protocol("soap") //
                     .register();
 
@@ -127,6 +129,7 @@ public class WebServicesRpcEncodedInteropTest {
                 MetBindInfo<EchoService> subscribed = context.publisher() //
                         .rsfService(EchoService.class) //
                         .aliasName("soap", "RpcEchoService") //
+                        .contextPathByPrefix("soap", "/") //
                         .protocol("soap") //
                         .register();
 
@@ -160,6 +163,7 @@ public class WebServicesRpcEncodedInteropTest {
                 MetBindInfo<EchoService> subscribed = context.publisher() //
                         .rsfService(EchoService.class) //
                         .aliasName("soap", "RpcEchoService") //
+                        .contextPathByPrefix("soap", "/") //
                         .protocol("soap") //
                         .register();
 

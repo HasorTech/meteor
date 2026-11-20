@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -14,16 +13,17 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.protocol.soap.EchoService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 @NxnRpc(name = "soap", version = "1.1")
 public class WebServicesFaultTest {
@@ -46,6 +46,7 @@ public class WebServicesFaultTest {
                     .rsfService(EchoService.class, service) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 使用原始 SOAP 请求触发业务异常。
@@ -92,6 +93,7 @@ public class WebServicesFaultTest {
                     .rsfService(EchoService.class, message -> message) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 通过公开监听地址发起真实 SOAP 请求。
@@ -133,6 +135,7 @@ public class WebServicesFaultTest {
                     .rsfService(EchoService.class, message -> message) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 通过公开监听地址发起真实 SOAP 请求。

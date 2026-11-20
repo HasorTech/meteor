@@ -81,7 +81,8 @@ public class GrpcClientRetryPolicyInteropTest {
             // 从公开入口发布服务，官方客户端随后加载重试配置。
             context.start();
             var publication = context.publisher().rsfService(Echo.class, service);
-            publication.aliasName("grpc", "test.Policy").serialize("Json").register();
+            publication.aliasName("grpc", "test.Policy").serialize("Json") //
+                    .contextPathByPrefix("grpc", "/").register();
             Map<String, ?> policy = MAPPER.readValue(RETRY, new TypeReference<>() {
             });
             int port = context.getListenAddress("grpc").getPort();
@@ -132,7 +133,8 @@ public class GrpcClientRetryPolicyInteropTest {
             client.start();
             var binding = client.publisher() //
                     .rsfService(PolicyService.class) //
-                    .aliasName("grpc", "test.Policy");
+                    .aliasName("grpc", "test.Policy") //
+                    .contextPathByPrefix("grpc", "/");
             MetBindInfo<PolicyService> info = binding.serialize("Json").register();
             InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.server.getPort());
             var caller = client.getRsfClient(address);
@@ -164,7 +166,8 @@ public class GrpcClientRetryPolicyInteropTest {
             client.start();
             var binding = client.publisher() //
                     .rsfService(PolicyService.class) //
-                    .aliasName("grpc", "test.Policy");
+                    .aliasName("grpc", "test.Policy") //
+                    .contextPathByPrefix("grpc", "/");
             MetBindInfo<PolicyService> info = binding.serialize("Json").register();
             InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.server.getPort());
             var caller = client.getRsfClient(address);
@@ -198,7 +201,8 @@ public class GrpcClientRetryPolicyInteropTest {
             client.start();
             var binding = client.publisher() //
                     .rsfService(PolicyService.class) //
-                    .aliasName("grpc", "test.Policy");
+                    .aliasName("grpc", "test.Policy") //
+                    .contextPathByPrefix("grpc", "/");
             MetBindInfo<PolicyService> info = binding.serialize("Json").register();
             InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.server.getPort());
             var caller = client.getRsfClient(address);
@@ -237,7 +241,8 @@ public class GrpcClientRetryPolicyInteropTest {
             client.start();
             var binding = client.publisher() //
                     .rsfService(PolicyService.class) //
-                    .aliasName("grpc", "test.Policy");
+                    .aliasName("grpc", "test.Policy") //
+                    .contextPathByPrefix("grpc", "/");
             MetBindInfo<PolicyService> info = binding.serialize("Json").register();
             InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.server.getPort());
             var caller = client.getRsfClient(address);
@@ -277,7 +282,8 @@ public class GrpcClientRetryPolicyInteropTest {
             client.start();
             var binding = client.publisher() //
                     .rsfService(PolicyService.class) //
-                    .aliasName("grpc", "test.Policy");
+                    .aliasName("grpc", "test.Policy") //
+                    .contextPathByPrefix("grpc", "/");
             MetBindInfo<PolicyService> info = binding.serialize("Json").register();
             InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.server.getPort());
             var caller = client.getRsfClient(address);
@@ -317,7 +323,8 @@ public class GrpcClientRetryPolicyInteropTest {
             client.start();
             var binding = client.publisher() //
                     .rsfService(PolicyService.class) //
-                    .aliasName("grpc", "test.Policy");
+                    .aliasName("grpc", "test.Policy") //
+                    .contextPathByPrefix("grpc", "/");
             MetBindInfo<PolicyService> info = binding.serialize("Json").register();
             InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.server.getPort());
             var caller = client.getRsfClient(address);
@@ -357,7 +364,8 @@ public class GrpcClientRetryPolicyInteropTest {
             client.start();
             var binding = client.publisher() //
                     .rsfService(PolicyService.class) //
-                    .aliasName("grpc", "test.Policy");
+                    .aliasName("grpc", "test.Policy") //
+                    .contextPathByPrefix("grpc", "/");
             MetBindInfo<PolicyService> info = binding.serialize("Json").register();
             InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.server.getPort());
             var caller = client.getRsfClient(address);
@@ -401,7 +409,8 @@ public class GrpcClientRetryPolicyInteropTest {
             client.start();
             var binding = client.publisher() //
                     .rsfService(PolicyService.class) //
-                    .aliasName("grpc", "test.Policy");
+                    .aliasName("grpc", "test.Policy") //
+                    .contextPathByPrefix("grpc", "/");
             MetBindInfo<PolicyService> info = binding.serialize("Json").register();
             InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.server.getPort());
             var caller = client.getRsfClient(address);
@@ -440,7 +449,8 @@ public class GrpcClientRetryPolicyInteropTest {
             client.start();
             var binding = client.publisher() //
                     .rsfService(PolicyService.class) //
-                    .aliasName("grpc", "test.Policy");
+                    .aliasName("grpc", "test.Policy") //
+                    .contextPathByPrefix("grpc", "/");
             MetBindInfo<PolicyService> info = binding.serialize("Json").register();
             InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.server.getPort());
             var caller = client.getRsfClient(address);
@@ -481,7 +491,8 @@ public class GrpcClientRetryPolicyInteropTest {
             client.start();
             var binding = client.publisher() //
                     .rsfService(PolicyService.class) //
-                    .aliasName("grpc", "test.Policy");
+                    .aliasName("grpc", "test.Policy") //
+                    .contextPathByPrefix("grpc", "/");
             MetBindInfo<PolicyService> info = binding.serialize("Json").register();
             InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.server.getPort());
             var caller = client.getRsfClient(address);
@@ -549,7 +560,8 @@ public class GrpcClientRetryPolicyInteropTest {
             client.start();
             var binding = client.publisher() //
                     .rsfService(PolicyService.class) //
-                    .aliasName("grpc", "test.Policy");
+                    .aliasName("grpc", "test.Policy") //
+                    .contextPathByPrefix("grpc", "/");
             MetBindInfo<PolicyService> info = binding.serialize("Json").register();
             InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.server.getPort());
             var caller = client.getRsfClient(address);
@@ -589,7 +601,8 @@ public class GrpcClientRetryPolicyInteropTest {
             client.start();
             var binding = client.publisher() //
                     .rsfService(PolicyService.class) //
-                    .aliasName("grpc", "test.Policy");
+                    .aliasName("grpc", "test.Policy") //
+                    .contextPathByPrefix("grpc", "/");
             MetBindInfo<PolicyService> info = binding.serialize("Json").register();
             InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.server.getPort());
             var caller = client.getRsfClient(address);
@@ -630,7 +643,8 @@ public class GrpcClientRetryPolicyInteropTest {
             client.start();
             var binding = client.publisher() //
                     .rsfService(PolicyService.class) //
-                    .aliasName("grpc", "test.Policy");
+                    .aliasName("grpc", "test.Policy") //
+                    .contextPathByPrefix("grpc", "/");
             MetBindInfo<PolicyService> info = binding.serialize("Json").register();
             InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.server.getPort());
             var caller = client.getRsfClient(address);
@@ -665,7 +679,8 @@ public class GrpcClientRetryPolicyInteropTest {
             client.start();
             var binding = client.publisher() //
                     .rsfService(PolicyService.class) //
-                    .aliasName("grpc", "test.Policy");
+                    .aliasName("grpc", "test.Policy") //
+                    .contextPathByPrefix("grpc", "/");
             MetBindInfo<PolicyService> info = binding.serialize("Json").register();
             InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.server.getPort());
             var caller = client.getRsfClient(address);
@@ -712,7 +727,8 @@ public class GrpcClientRetryPolicyInteropTest {
             client.start();
             var binding = client.publisher() //
                     .rsfService(PolicyService.class) //
-                    .aliasName("grpc", "test.Policy");
+                    .aliasName("grpc", "test.Policy") //
+                    .contextPathByPrefix("grpc", "/");
             MetBindInfo<PolicyService> info = binding.serialize("Json").register();
             InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.server.getPort());
             var caller = client.getRsfClient(address);
@@ -751,7 +767,8 @@ public class GrpcClientRetryPolicyInteropTest {
             client.start();
             var binding = client.publisher() //
                     .rsfService(PolicyService.class) //
-                    .aliasName("grpc", "test.Policy");
+                    .aliasName("grpc", "test.Policy") //
+                    .contextPathByPrefix("grpc", "/");
             MetBindInfo<PolicyService> info = binding.serialize("Json").register();
             InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.server.getPort());
             var caller = client.getRsfClient(address);
@@ -794,7 +811,8 @@ public class GrpcClientRetryPolicyInteropTest {
             client.start();
             var binding = client.publisher() //
                     .rsfService(PolicyService.class) //
-                    .aliasName("grpc", "test.Policy");
+                    .aliasName("grpc", "test.Policy") //
+                    .contextPathByPrefix("grpc", "/");
             MetBindInfo<PolicyService> info = binding.serialize("Json").register();
             InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.server.getPort());
             var caller = client.getRsfClient(address);
@@ -833,7 +851,8 @@ public class GrpcClientRetryPolicyInteropTest {
             client.start();
             var binding = client.publisher() //
                     .rsfService(PolicyService.class) //
-                    .aliasName("grpc", "test.Policy");
+                    .aliasName("grpc", "test.Policy") //
+                    .contextPathByPrefix("grpc", "/");
             MetBindInfo<PolicyService> info = binding.serialize("Json").register();
             InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.server.getPort());
             var caller = client.getRsfClient(address);
@@ -864,7 +883,8 @@ public class GrpcClientRetryPolicyInteropTest {
             client.start();
             var binding = client.publisher() //
                     .rsfService(PolicyService.class) //
-                    .aliasName("grpc", "test.Policy");
+                    .aliasName("grpc", "test.Policy") //
+                    .contextPathByPrefix("grpc", "/");
             MetBindInfo<PolicyService> info = binding.serialize("Json").register();
             InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.server.getPort());
             var caller = client.getRsfClient(address);

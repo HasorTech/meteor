@@ -6,14 +6,11 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.registry.invocation;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.nio.file.Files;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 import net.hasor.cobble.StringUtils;
+import net.hasor.example.discovery.RegistryDiscoveryExample;
 import net.hasor.example.protocol.soap.BlockingSignalServiceImpl;
 import net.hasor.example.protocol.soap.SignalService;
 import net.hasor.meteor.MetBindInfo;
@@ -21,11 +18,14 @@ import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetFuture;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.registry.RegistryConfiguration;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.discovery.RegistryDiscoveryEnvironment;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 消息调用由方法注解决定，经真实注册发现与三种网络协议验证接收回执生命周期。 */
 @ParameterizedClass(autoCloseArguments = false, name = "message/{0}/{1}", quoteTextArguments = false)
@@ -50,6 +50,7 @@ public class RegistryMessageInvocationScenarioTest {
         this.backend = backend;
         this.protocol = protocol;
     }
+
     public static Object[][] combinations() {
         return new Object[][] { // 每一行是独立的注册发现与协议编码组合。
                 { "jdbc", "rsf" }, //
@@ -89,7 +90,7 @@ public class RegistryMessageInvocationScenarioTest {
                 }
                 publication.register();
                 MetBindInfo<SignalService> binding = subscription.register();
-                AddressSelectionAwaiter.await(consumer, binding, "signal");
+                RegistryDiscoveryExample.awaitDiscovery(consumer, binding);
 
                 // 业务由已有闩锁夹具保持阻塞；回执 Future 必须在显式放行业务之前完成。
                 String notice = "registered-notice-" + this.backend + "-" + this.protocol;

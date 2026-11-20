@@ -6,24 +6,23 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.example.discovery.zookeeper;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.junit.jupiter.api.io.TempDir;
 import java.util.concurrent.TimeUnit;
-import net.hasor.example.direct.DirectRpcExample;
-import net.hasor.example.discovery.RegistryDiscoveryExample;
 import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.OrderQuery;
+import net.hasor.example.direct.DirectRpcExample;
+import net.hasor.example.discovery.RegistryDiscoveryExample;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.registry.zookeeper.ZookeeperRegistryConfiguration;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.storage.ZookeeperTestServer;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -53,7 +52,6 @@ public class ZookeeperScenarioTest {
                 MetBindInfo<OrderDemoService> subscribed = DirectRpcExample.subscribe(consumer, "rsf");
                 DirectRpcExample.publish(provider, new OrderDemoServiceImpl());
                 RegistryDiscoveryExample.awaitDiscovery(consumer, subscribed);
-                AddressSelectionAwaiter.await(consumer, subscribed, "save");
                 String serviceId = subscribed.getBindID();
                 OrderDemoService orders = consumer.getRsfClient().getRemote(subscribed);
                 Order order = new Order();
@@ -76,7 +74,6 @@ public class ZookeeperScenarioTest {
                 // 重新上线后等待同一个订阅恢复，再远程读取下线前保存的订单。
                 provider.online();
                 RegistryDiscoveryExample.awaitDiscovery(consumer, subscribed);
-                AddressSelectionAwaiter.await(consumer, subscribed, "find");
                 OrderQuery query = new OrderQuery();
                 query.setId(order.getId());
                 Order found = orders.find(query);

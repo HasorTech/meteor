@@ -41,6 +41,7 @@ public class SoapNodeInteropTest {
             provider.start();
             provider.publisher().rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService").protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .bindResource("soap", new SoapWsdlResource(contract)).register();
 
             // node-soap 读取线上 WSDL，自己编码调用并断言 Unicode 与 XML 特殊字符。
@@ -70,6 +71,7 @@ public class SoapNodeInteropTest {
             consumer.start();
             MetBindInfo<EchoService> service = consumer.publisher().rsfService(EchoService.class) //
                     .aliasName("soap", "EchoService").protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .bindResource("soap", new SoapWsdlResource(contract)).register();
 
             // 普通 Meteor 代理经网络调用独立 Node 提供者并验证真实业务响应。

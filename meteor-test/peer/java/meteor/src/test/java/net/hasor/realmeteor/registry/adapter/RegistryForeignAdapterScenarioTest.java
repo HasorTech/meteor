@@ -6,12 +6,8 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.registry.adapter;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import java.nio.file.Files;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -25,25 +21,25 @@ import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.OrderQuery;
+import net.hasor.example.discovery.RegistryDiscoveryExample;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.registry.RegistryConfiguration;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
+import net.hasor.meteor.test.nxn.NxnRpc;
+import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.discovery.ForeignServiceRegistrar;
 import net.hasor.realmeteor.environment.discovery.PythonOrderPeer;
 import net.hasor.realmeteor.environment.discovery.RegistryAddressResolver;
 import net.hasor.realmeteor.environment.discovery.RegistryDiscoveryEnvironment;
-import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 外语显式注册适配矩阵；不宣称 Python SDK 原生理解 Meteor 注册数据。 */
 @ParameterizedClass(autoCloseArguments = false, name = "{0}", quoteTextArguments = false)
@@ -51,6 +47,7 @@ import org.junit.jupiter.api.Timeout;
 @NxnRpc(name = "xmlrpc")
 public class RegistryForeignAdapterScenarioTest {
     private static final ObjectMapper JSON = new ObjectMapper();
+
     public static Collection<Object[]> backends() {
         List<Object[]> result = new ArrayList<>();
         result.add(new Object[] { "jdbc" });
@@ -84,7 +81,8 @@ public class RegistryForeignAdapterScenarioTest {
                 provider.start();
                 MetBindInfo<OrderDemoService> service = provider.publisher() //
                         .rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
-                        .name("orders").protocol("xmlrpc").aliasName("xmlrpc", "orders").register();
+                        .name("orders").protocol("xmlrpc").aliasName("xmlrpc", "orders") //
+                        .contextPathByPrefix("xmlrpc", "/").register();
 
                 // Python 启动时没有 URL；显式 resolver 按服务 ID 订阅后提供真实端点与 context path。
                 String serviceId = service.getBindID();
@@ -116,7 +114,8 @@ public class RegistryForeignAdapterScenarioTest {
                 consumer.start();
                 MetBindInfo<OrderDemoService> service = consumer.publisher() //
                         .rsfService(OrderDemoService.class) //
-                        .name("orders").protocol("xmlrpc").aliasName("xmlrpc", "orders").register();
+                        .name("orders").protocol("xmlrpc").aliasName("xmlrpc", "orders") //
+                        .contextPathByPrefix("xmlrpc", "/").register();
                 assertTrue(consumer.getUpdater().queryAvailableAddresses(service.getBindID()).isEmpty());
 
                 // Python 报告实际监听成功后，registrar 通过公开存储 API 登记其真实进程与端点。
@@ -154,7 +153,8 @@ public class RegistryForeignAdapterScenarioTest {
                 consumer.start();
                 MetBindInfo<OrderDemoService> service = consumer.publisher() //
                         .rsfService(OrderDemoService.class) //
-                        .name("orders").protocol("xmlrpc").aliasName("xmlrpc", "orders").register();
+                        .name("orders").protocol("xmlrpc").aliasName("xmlrpc", "orders") //
+                        .contextPathByPrefix("xmlrpc", "/").register();
                 try (PythonOrderPeer provider = PythonOrderPeer.provider(0); //
                      ForeignServiceRegistrar registrar = new ForeignServiceRegistrar(registry)) {
                     InterAddress address = provider.address(consumer.getSettings().getUnitName());
@@ -189,7 +189,8 @@ public class RegistryForeignAdapterScenarioTest {
                 consumer.start();
                 MetBindInfo<OrderDemoService> service = consumer.publisher() //
                         .rsfService(OrderDemoService.class) //
-                        .name("orders").protocol("xmlrpc").aliasName("xmlrpc", "orders").register();
+                        .name("orders").protocol("xmlrpc").aliasName("xmlrpc", "orders") //
+                        .contextPathByPrefix("xmlrpc", "/").register();
                 OrderDemoService orders = consumer.getRsfClient().getRemote(service);
                 Order expected = JSON.treeToValue(vector(), Order.class);
                 int previousPort;
@@ -271,7 +272,7 @@ public class RegistryForeignAdapterScenarioTest {
             boolean single = expectedPort > 0 && addresses.size() == 1;
             if (empty || single && addresses.get(0).getPort() == expectedPort) {
                 if (expectedPort > 0) {
-                    AddressSelectionAwaiter.await(context, service, "save");
+                    RegistryDiscoveryExample.awaitDiscovery(context, service);
                 }
                 return;
             }

@@ -6,8 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.xmlrpc;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
@@ -24,6 +22,7 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocket;
 import net.hasor.example.protocol.xmlrpc.XmlRpcDemoService;
 import net.hasor.example.protocol.xmlrpc.XmlRpcDemoServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
@@ -32,9 +31,10 @@ import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.domain.MetTimeoutException;
 import net.hasor.meteor.protocol.xmlrpc.XmlRpcException;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** XML-RPC 在 HTTP/2、TLS 和客户端证书认证下仍通过公开入口执行真实业务。 */
 @NxnRpc(name = "xmlrpc")
@@ -65,9 +65,11 @@ public class XmlRpcTlsTest {
             server.start();
             client.start();
             server.publisher().rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
-                    .aliasName("xmlrpc", "demo").register();
+                    .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
             MetBindInfo<XmlRpcDemoService> service = client.publisher().rsfService(XmlRpcDemoService.class) //
-                    .aliasName("xmlrpc", "demo").register();
+                    .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
 
             // 通过动态监听地址完成真正的加密网络调用。
             XmlRpcDemoService remote = client.getRsfClient(server.getListenAddress("xmlrpc")).getRemote(service);
@@ -101,9 +103,11 @@ public class XmlRpcTlsTest {
             server.start();
             client.start();
             server.publisher().rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
-                    .aliasName("xmlrpc", "demo").register();
+                    .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
             MetBindInfo<XmlRpcDemoService> service = client.publisher().rsfService(XmlRpcDemoService.class) //
-                    .aliasName("xmlrpc", "demo").register();
+                    .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
 
             // 通过动态监听地址完成真正的加密网络调用。
             XmlRpcDemoService remote = client.getRsfClient(server.getListenAddress("xmlrpc")).getRemote(service);
@@ -137,9 +141,11 @@ public class XmlRpcTlsTest {
             server.start();
             client.start();
             server.publisher().rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
-                    .aliasName("xmlrpc", "demo").register();
+                    .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
             MetBindInfo<XmlRpcDemoService> service = client.publisher().rsfService(XmlRpcDemoService.class) //
-                    .aliasName("xmlrpc", "demo").register();
+                    .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
 
             // 通过动态监听地址完成真正的加密网络调用。
             XmlRpcDemoService remote = client.getRsfClient(server.getListenAddress("xmlrpc")).getRemote(service);
@@ -173,9 +179,11 @@ public class XmlRpcTlsTest {
             server.start();
             client.start();
             server.publisher().rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
-                    .aliasName("xmlrpc", "demo").register();
+                    .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
             MetBindInfo<XmlRpcDemoService> service = client.publisher().rsfService(XmlRpcDemoService.class) //
-                    .aliasName("xmlrpc", "demo").register();
+                    .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
 
             // 通过动态监听地址完成真正的加密网络调用。
             XmlRpcDemoService remote = client.getRsfClient(server.getListenAddress("xmlrpc")).getRemote(service);
@@ -209,9 +217,11 @@ public class XmlRpcTlsTest {
             server.start();
             client.start();
             server.publisher().rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
-                    .aliasName("xmlrpc", "demo").register();
+                    .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
             MetBindInfo<XmlRpcDemoService> service = client.publisher().rsfService(XmlRpcDemoService.class) //
-                    .aliasName("xmlrpc", "demo").register();
+                    .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
 
             // 二进制中的零值和高位字节必须在远程返回后保持一致。
             XmlRpcDemoService remote = client.getRsfClient(server.getListenAddress("xmlrpc")).getRemote(service);
@@ -246,9 +256,11 @@ public class XmlRpcTlsTest {
             server.start();
             client.start();
             server.publisher().rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
-                    .aliasName("xmlrpc", "demo").register();
+                    .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
             MetBindInfo<XmlRpcDemoService> service = client.publisher().rsfService(XmlRpcDemoService.class) //
-                    .aliasName("xmlrpc", "demo").register();
+                    .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
 
             // 客户端收到相同错误码及描述，不能将 fault 当作 HTTP 或 TLS 错误。
             MetClient remote = client.getRsfClient(server.getListenAddress("xmlrpc"));
@@ -256,7 +268,7 @@ public class XmlRpcTlsTest {
             Object[] arguments = { "业务拒绝" };
             MetFuture call = remote.asyncInvoke(service, "fail", parameterTypes, arguments);
             ExecutionException failure = assertThrows(ExecutionException.class, () -> call.get(5, TimeUnit.SECONDS));
-            assertTrue(failure.getCause() instanceof XmlRpcException);
+            assertInstanceOf(XmlRpcException.class, failure.getCause());
             XmlRpcException fault = (XmlRpcException) failure.getCause();
             assertEquals(42, fault.getCode());
             assertEquals("业务拒绝", fault.getMessage());
@@ -277,7 +289,8 @@ public class XmlRpcTlsTest {
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
-                    .aliasName("xmlrpc", "demo").register();
+                    .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
 
             // 不绕过证书校验，实际响应版本证明不是 HTTP/1.1 回退。
             HttpClient client = HttpClient.newBuilder() //
@@ -311,7 +324,8 @@ public class XmlRpcTlsTest {
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
-                    .aliasName("xmlrpc", "demo").register();
+                    .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
 
             // 独立客户端发送正常 XML-RPC 请求，证书问题应在业务调用之前被拒绝。
             HttpClient client = HttpClient.newBuilder() //
@@ -347,7 +361,8 @@ public class XmlRpcTlsTest {
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
-                    .aliasName("xmlrpc", "demo").register();
+                    .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
 
             // 直接控制 TLS 握手，避免 HTTP 客户端的重试和请求计时混入证书拒绝判定。
             SSLContext client = XmlRpcTlsUtils.clientContext("trust", null);
@@ -389,7 +404,8 @@ public class XmlRpcTlsTest {
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
-                    .aliasName("xmlrpc", "demo").register();
+                    .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
 
             // 独立客户端发送正常 XML-RPC 请求，证书问题应在业务调用之前被拒绝。
             HttpClient client = HttpClient.newBuilder() //
@@ -425,7 +441,8 @@ public class XmlRpcTlsTest {
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
-                    .aliasName("xmlrpc", "demo").register();
+                    .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
 
             // 独立客户端发送正常 XML-RPC 请求，证书问题应在业务调用之前被拒绝。
             HttpClient client = HttpClient.newBuilder() //
@@ -471,9 +488,11 @@ public class XmlRpcTlsTest {
             server.start();
             client.start();
             server.publisher().rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
-                    .aliasName("xmlrpc", "demo").register();
+                    .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
             MetBindInfo<XmlRpcDemoService> service = client.publisher().rsfService(XmlRpcDemoService.class) //
-                    .aliasName("xmlrpc", "demo").register();
+                    .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
 
             // 公共 Caller 应收到握手错误，不应等到十秒业务期限。
             MetClient remote = client.getRsfClient(server.getListenAddress("xmlrpc"));

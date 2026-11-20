@@ -18,7 +18,7 @@ import io.grpc.Server;
 import io.grpc.ServerServiceDefinition;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import io.grpc.stub.ServerCalls;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
+import net.hasor.example.discovery.RegistryDiscoveryExample;
 import net.hasor.example.protocol.grpc.Message;
 import net.hasor.example.protocol.grpc.web.GrpcWebService;
 import net.hasor.meteor.MetBindInfo;
@@ -88,6 +88,7 @@ public class GrpcWebEnvoyRegistryAdapterScenarioTest {
                     MetBindInfo<GrpcWebService> service = consumer.publisher() //
                             .rsfService(GrpcWebService.class).name("envoy-echo") //
                             .aliasName("grpc-web", "web.Echo").protocol("grpc-web") //
+                            .contextPathByPrefix("grpc-web", "/") //
                             .serialize("Protobuf").bindResource("grpc-web", proto).register();
                     assertTrue(consumer.getUpdater().queryAvailableAddresses(service.getBindID()).isEmpty());
 
@@ -96,7 +97,7 @@ public class GrpcWebEnvoyRegistryAdapterScenarioTest {
                         String unit = consumer.getSettings().getUnitName();
                         InterAddress address = new InterAddress("http", envoy.getHost(), envoy.getPort());
                         registrar.register(service, envoy.processId(), "cpp", "grpc-web", "http", address, "/web");
-                        AddressSelectionAwaiter.await(consumer, service, "echo");
+                        RegistryDiscoveryExample.awaitDiscovery(consumer, service);
 
                         // 无地址参数的正式代理从自动地址本选址，Envoy 原生过滤器完成反向协议转换。
                         GrpcWebService remote = consumer.getRsfClient().getRemote(service);

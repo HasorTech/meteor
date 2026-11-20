@@ -67,6 +67,7 @@ public class NodeConnectSdkVersionScenarioTest {
             provider.start();
             provider.publisher().rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                     .protocol("connect").aliasName("connect", OrderExampleUtils.SERVICE_NAME) //
+                    .contextPathByPrefix("connect", "/") //
                     .serialize("Protobuf").bindResource("connect", resource).register();
             int port = provider.getListenAddress("connect").getPort();
             String target = "http://" + ContainerProcess.runnerHost() + ":" + port + "/versions/connect";
@@ -96,6 +97,7 @@ public class NodeConnectSdkVersionScenarioTest {
             consumer.start();
             var service = consumer.publisher().rsfService(OrderDemoService.class) //
                     .protocol("connect").aliasName("connect", OrderExampleUtils.SERVICE_NAME) //
+                    .contextPathByPrefix("connect", "/") //
                     .serialize("Protobuf").bindResource("connect", resource).register();
             var address = new InterAddress("connect", peer.host(), port);
             OrderDemoService remote = consumer.getRsfClient(address).getRemote(service);

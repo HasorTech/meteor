@@ -40,6 +40,7 @@ public class PythonProviderScenarioTest {
             client.start();
             MetBindInfo<OrderDemoService> service = client.publisher().rsfService(OrderDemoService.class) //
                     .aliasName("grpc", "meteor.example.OrderDemoService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .bindResource("grpc", resource).register();
             String scheme = "grpc";
             InterAddress address = new InterAddress(scheme, peer.host(), port);
@@ -75,6 +76,7 @@ public class PythonProviderScenarioTest {
             client.start();
             MetBindInfo<OrderDemoService> service = client.publisher().rsfService(OrderDemoService.class) //
                     .aliasName("grpc", "meteor.example.OrderDemoService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .bindResource("grpc", resource).register();
             String scheme = "grpc";
             InterAddress address = new InterAddress(scheme, peer.host(), port);
@@ -110,6 +112,7 @@ public class PythonProviderScenarioTest {
             client.start();
             MetBindInfo<OrderDemoService> service = client.publisher().rsfService(OrderDemoService.class) //
                     .aliasName("grpc", "meteor.example.OrderDemoService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .bindResource("grpc", resource).register();
             String scheme = "grpc";
             InterAddress address = new InterAddress(scheme, peer.host(), port);
@@ -145,6 +148,7 @@ public class PythonProviderScenarioTest {
             client.start();
             MetBindInfo<OrderDemoService> service = client.publisher().rsfService(OrderDemoService.class) //
                     .aliasName("grpc", "meteor.example.OrderDemoService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .bindResource("grpc", resource).register();
             String scheme = "grpc";
             InterAddress address = new InterAddress(scheme, peer.host(), port);
@@ -180,6 +184,7 @@ public class PythonProviderScenarioTest {
             client.start();
             MetBindInfo<OrderDemoService> service = client.publisher().rsfService(OrderDemoService.class) //
                     .aliasName("grpc", "meteor.example.OrderDemoService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .bindResource("grpc", resource).register();
             String scheme = "grpc";
             InterAddress address = new InterAddress(scheme, peer.host(), port);
@@ -215,6 +220,7 @@ public class PythonProviderScenarioTest {
             client.start();
             MetBindInfo<OrderDemoService> service = client.publisher().rsfService(OrderDemoService.class) //
                     .aliasName("grpc", "meteor.example.OrderDemoService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .bindResource("grpc", resource).register();
             String scheme = "grpc";
             InterAddress address = new InterAddress(scheme, peer.host(), port);
@@ -248,6 +254,7 @@ public class PythonProviderScenarioTest {
             client.start();
             MetBindInfo<OrderDemoService> service = client.publisher().rsfService(OrderDemoService.class) //
                     .aliasName("grpc", "meteor.example.OrderDemoService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .bindResource("grpc", resource).register();
             String scheme = "https";
             InterAddress address = new InterAddress(scheme, peer.host(), port);
@@ -283,6 +290,7 @@ public class PythonProviderScenarioTest {
             client.start();
             MetBindInfo<OrderDemoService> service = client.publisher().rsfService(OrderDemoService.class) //
                     .aliasName("grpc", "meteor.example.OrderDemoService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .bindResource("grpc", resource).register();
             String scheme = "https";
             InterAddress address = new InterAddress(scheme, peer.host(), port);

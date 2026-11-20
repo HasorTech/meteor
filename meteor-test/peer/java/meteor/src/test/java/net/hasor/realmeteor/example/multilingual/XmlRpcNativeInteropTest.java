@@ -4,23 +4,23 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.example.multilingual;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import net.hasor.example.echo.TextEchoService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
-import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 /** xmlrpc-c 的 C 与现代 C++ API 各自验证一次基础双向文本互通。 */
 @ParameterizedClass(autoCloseArguments = false, name = "sdk/{0}/xmlrpc/xmlrpc-c@{1}/{2}", quoteTextArguments = false)
@@ -34,6 +34,7 @@ public class XmlRpcNativeInteropTest {
         this.language = language;
         this.executable = executable;
     }
+
     public static List<Object[]> languages() {
         // 发行包与上游 Super Stable 分别编译 C/C++，不能共用系统旧库。
         List<Object[]> versions = new ArrayList<>();
@@ -59,7 +60,8 @@ public class XmlRpcNativeInteropTest {
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
             provider.publisher().rsfService(TextEchoService.class, text -> text) //
-                    .aliasName("xmlrpc", "demo").protocol("xmlrpc").register();
+                    .aliasName("xmlrpc", "demo").protocol("xmlrpc") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
 
             // 原生 SDK 验证 Unicode、XML 转义及返回值，正常退出不能代替结果校验。
             String message = this.language + " → Meteor 中文 <&>";
@@ -89,7 +91,8 @@ public class XmlRpcNativeInteropTest {
             String target = provider.awaitReady("READY ");
             consumer.start();
             MetBindInfo<TextEchoService> service = consumer.publisher().rsfService(TextEchoService.class) //
-                    .aliasName("xmlrpc", "demo").protocol("xmlrpc").register();
+                    .aliasName("xmlrpc", "demo").protocol("xmlrpc") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
 
             // 没有本地实现的公开客户端必须经过网络并取得原生服务的回声。
             TextEchoService remote = consumer.getRsfClient(new InterAddress(target)).getRemote(service);

@@ -47,7 +47,7 @@ public class GrpcContextPathTest {
                 .bind("127.0.0.1", 0) //
                 .protocol("grpc") //
                 .contextPath("/rpc") //
-                .addContextPath("/admin");
+                .addContextPath("/rpc/admin");
         EchoImpl implementation = new EchoImpl();
         try (MetContext server = configuration.buildContext()) {
             // 从正式入口启动并发布 JSON 服务。
@@ -59,7 +59,7 @@ public class GrpcContextPathTest {
             int port = server.getListenAddress("grpc").getPort();
             ManagedChannel peer = NettyChannelBuilder.forAddress("127.0.0.1", port).usePlaintext().build();
             try {
-                var method = this.method("rpc/example.Echo/echo", MethodDescriptor.MethodType.UNARY);
+                var method = this.method("rpc/default/1.0.0/example.Echo/echo", MethodDescriptor.MethodType.UNARY);
                 CallOptions options = CallOptions.DEFAULT.withDeadlineAfter(5, TimeUnit.SECONDS);
                 Message result = ClientCalls.blockingUnaryCall(peer, method, options, Message.of("default", 3));
                 assertEquals("default", result.getValue());
@@ -80,7 +80,7 @@ public class GrpcContextPathTest {
                 .bind("127.0.0.1", 0) //
                 .protocol("grpc") //
                 .contextPath("/rpc") //
-                .addContextPath("/admin");
+                .addContextPath("/rpc/admin");
         EchoImpl implementation = new EchoImpl();
         try (MetContext server = configuration.buildContext()) {
             // 服务保持默认路径选择，通过公开发布入口注册。
@@ -92,14 +92,14 @@ public class GrpcContextPathTest {
             int port = server.getListenAddress("grpc").getPort();
             ManagedChannel peer = NettyChannelBuilder.forAddress("127.0.0.1", port).usePlaintext().build();
             try {
-                var method = this.method("admin/example.Echo/echo", MethodDescriptor.MethodType.UNARY);
+                var method = this.method("rpc/admin/example.Echo/echo", MethodDescriptor.MethodType.UNARY);
                 CallOptions options = CallOptions.DEFAULT.withDeadlineAfter(5, TimeUnit.SECONDS);
                 Message request = Message.of("hidden", 1);
                 StatusRuntimeException failure = assertThrows(StatusRuntimeException.class, () -> {
                     ClientCalls.blockingUnaryCall(peer, method, options, request);
                 });
                 assertEquals(Status.Code.UNIMPLEMENTED, failure.getStatus().getCode());
-                assertEquals("Service is not exposed on this protocol mount", failure.getStatus().getDescription());
+                assertEquals("Unknown gRPC service: example.Echo", failure.getStatus().getDescription());
                 assertEquals(0, implementation.getCalls());
             } finally {
                 peer.shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
@@ -116,7 +116,7 @@ public class GrpcContextPathTest {
                 .bind("127.0.0.1", 0) //
                 .protocol("grpc") //
                 .contextPath("/rpc") //
-                .addContextPath("/admin");
+                .addContextPath("/rpc/admin");
         EchoImpl implementation = new EchoImpl();
         try (MetContext server = configuration.buildContext()) {
             // 发布时将该服务的可见范围限定为 /admin。
@@ -129,7 +129,7 @@ public class GrpcContextPathTest {
             int port = server.getListenAddress("grpc").getPort();
             ManagedChannel peer = NettyChannelBuilder.forAddress("127.0.0.1", port).usePlaintext().build();
             try {
-                var method = this.method("admin/example.Echo/echo", MethodDescriptor.MethodType.UNARY);
+                var method = this.method("rpc/admin/example.Echo/echo", MethodDescriptor.MethodType.UNARY);
                 CallOptions options = CallOptions.DEFAULT.withDeadlineAfter(5, TimeUnit.SECONDS);
                 Message result = ClientCalls.blockingUnaryCall(peer, method, options, Message.of("selected", 6));
                 assertEquals("selected", result.getValue());
@@ -150,7 +150,7 @@ public class GrpcContextPathTest {
                 .bind("127.0.0.1", 0) //
                 .protocol("grpc") //
                 .contextPath("/rpc") //
-                .addContextPath("/admin");
+                .addContextPath("/rpc/admin");
         EchoImpl implementation = new EchoImpl();
         try (MetContext server = configuration.buildContext()) {
             // 服务只声明 /admin，保留协议自身的 /rpc 默认路径。
@@ -170,7 +170,7 @@ public class GrpcContextPathTest {
                     ClientCalls.blockingUnaryCall(peer, method, options, request);
                 });
                 assertEquals(Status.Code.UNIMPLEMENTED, failure.getStatus().getCode());
-                assertEquals("Service is not exposed on this protocol mount", failure.getStatus().getDescription());
+                assertEquals("Unknown gRPC service: example.Echo", failure.getStatus().getDescription());
                 assertEquals(0, implementation.getCalls());
             } finally {
                 peer.shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
@@ -187,20 +187,24 @@ public class GrpcContextPathTest {
                 .bind("127.0.0.1", 0) //
                 .protocol("grpc") //
                 .contextPath("/rpc") //
-                .addContextPath("/admin");
+                .addContextPath("/rpc/admin");
         EchoImpl implementation = new EchoImpl();
         try (MetContext server = configuration.buildContext()) {
             // 一次发布声明完整可见范围，不重复发布服务。
             server.start();
             server.publisher().rsfService(Echo.class, implementation) //
                     .aliasName("grpc", "example.Echo").serialize("Json") //
-                    .contextPathByPrefix("grpc", "/rpc", "/admin").register();
+                    .contextPathByPrefix("grpc", "/", "/admin").register();
 
             // 在同一通道来回切换允许路径，每次请求都应独立选择并到达同一实例。
             int port = server.getListenAddress("grpc").getPort();
             ManagedChannel peer = NettyChannelBuilder.forAddress("127.0.0.1", port).usePlaintext().build();
             try {
-                for (String path : List.of("rpc", "admin", "rpc")) {
+                List<String> paths = new ArrayList<>();
+                paths.add("rpc");
+                paths.add("rpc/admin");
+                paths.add("rpc");
+                for (String path : paths) {
                     var method = this.method(path + "/example.Echo/echo", MethodDescriptor.MethodType.UNARY);
                     CallOptions options = CallOptions.DEFAULT.withDeadlineAfter(5, TimeUnit.SECONDS);
                     Message result = ClientCalls.blockingUnaryCall(peer, method, options, Message.of(path, 4));
@@ -230,7 +234,7 @@ public class GrpcContextPathTest {
             server.start();
             server.publisher().rsfService(Echo.class, implementation) //
                     .aliasName("grpc", "example.Echo").serialize("Json") //
-                    .contextPathByPrefix("grpc", "/rpc/internal").register();
+                    .contextPathByPrefix("grpc", "/internal").register();
 
             // 请求 URI 同时拥有两个前缀，应正确去掉最长前缀并执行服务。
             int port = server.getListenAddress("grpc").getPort();
@@ -277,7 +281,7 @@ public class GrpcContextPathTest {
                     ClientCalls.blockingUnaryCall(peer, method, options, request);
                 });
                 assertEquals(Status.Code.UNIMPLEMENTED, failure.getStatus().getCode());
-                assertEquals("Service is not exposed on this protocol mount", failure.getStatus().getDescription());
+                assertEquals("Unknown gRPC service: example.Echo", failure.getStatus().getDescription());
                 assertEquals(0, implementation.getCalls());
             } finally {
                 peer.shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
@@ -288,23 +292,23 @@ public class GrpcContextPathTest {
     @Test
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void outboundUnaryUsesServiceSelectedContextPath() throws Exception {
-        // 官方服务端只注册 /admin 方法，客户端默认路径保持为 /rpc。
-        var method = this.method("admin/example.Echo/echo", MethodDescriptor.MethodType.UNARY);
+        // 官方服务端只注册 /rpc/admin 方法，客户端默认路径保持为 /rpc。
+        var method = this.method("rpc/admin/example.Echo/echo", MethodDescriptor.MethodType.UNARY);
         var handler = ServerCalls.<Message, Message>asyncUnaryCall((request, reply) -> {
             reply.onNext(Message.of(request.getValue(), request.getCount() + 5));
             reply.onCompleted();
         });
-        ServerServiceDefinition service = ServerServiceDefinition.builder("admin/example.Echo") //
+        ServerServiceDefinition service = ServerServiceDefinition.builder("rpc/admin/example.Echo") //
                 .addMethod(method, handler).build();
         MetConfiguration configuration = this.configuration();
         configuration.connector("http") //
                 .option("httpVersion", 2) //
                 .protocol("grpc") //
                 .contextPath("/rpc") //
-                .addContextPath("/admin");
+                .addContextPath("/rpc/admin");
         Server server = NettyServerBuilder.forPort(0).addService(service).build().start();
         try (MetContext client = configuration.buildContext()) {
-            // 消费者通过公开发布入口选择 /admin，路径不是由地址或协议默认值决定。
+            // 消费者通过公开发布入口选择子路径 /admin，路径不是由地址或协议默认值决定。
             client.start();
             MetBindInfo<Echo> info = client.publisher().rsfService(Echo.class) //
                     .aliasName("grpc", "example.Echo").serialize("Json") //
@@ -325,7 +329,7 @@ public class GrpcContextPathTest {
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void outboundServerStreamUsesServiceSelectedContextPath() throws Exception {
         // 官方服务端仅在额外路径注册响应流，避免默认路径掩盖出站选择错误。
-        var method = this.method("admin/example.Messages/list", MethodDescriptor.MethodType.SERVER_STREAMING);
+        var method = this.method("rpc/admin/example.Messages/list", MethodDescriptor.MethodType.SERVER_STREAMING);
         var handler = ServerCalls.<Message, Message>asyncServerStreamingCall((request, reply) -> {
             // 按请求顺序发送有限条消息，使调用方能验证整个响应流完成。
             for (int index = 0; index < request.getCount(); index++) {
@@ -333,18 +337,18 @@ public class GrpcContextPathTest {
             }
             reply.onCompleted();
         });
-        ServerServiceDefinition service = ServerServiceDefinition.builder("admin/example.Messages") //
+        ServerServiceDefinition service = ServerServiceDefinition.builder("rpc/admin/example.Messages") //
                 .addMethod(method, handler).build();
         MetConfiguration configuration = this.configuration();
         configuration.connector("http") //
                 .option("httpVersion", 2) //
                 .protocol("grpc") //
                 .contextPath("/rpc") //
-                .addContextPath("/admin") //
+                .addContextPath("/rpc/admin") //
                 .option("streamBody", true);
         Server server = NettyServerBuilder.forPort(0).addService(service).build().start();
         try (MetContext client = configuration.buildContext()) {
-            // 通过公开消费者声明将流式服务限定为 /admin。
+            // 通过公开消费者声明将流式服务限定为 /rpc/admin。
             client.start();
             MetBindInfo<Messages> info = client.publisher().rsfService(Messages.class) //
                     .aliasName("grpc", "example.Messages").serialize("Json") //

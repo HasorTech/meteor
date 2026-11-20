@@ -6,22 +6,19 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap.python;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import java.nio.file.Files;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.hasor.example.discovery.RegistryDiscoveryExample;
 import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.OrderQuery;
+import net.hasor.example.discovery.RegistryDiscoveryExample;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
@@ -30,15 +27,20 @@ import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.soap.definition.SoapWsdlResource;
 import net.hasor.meteor.registry.RegistryConfiguration;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
+import net.hasor.meteor.test.nxn.NxnRpc;
+import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.discovery.ForeignServiceRegistrar;
 import net.hasor.realmeteor.environment.discovery.RegistryAddressResolver;
 import net.hasor.realmeteor.matrix.OrderDiscovery;
 import net.hasor.realmeteor.matrix.OrderRegistryEnvironment;
-import org.junit.jupiter.api.*;
-import net.hasor.realmeteor.environment.container.ContainerProcess;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 
 /** 独立 Python SOAP SDK 的双向订单矩阵，注册模式明确使用存储发现和登记适配。 */
 @ParameterizedClass(autoCloseArguments = false, name = "soap/python/{0}", quoteTextArguments = false)
@@ -48,16 +50,17 @@ public class SoapPythonOrderInteropTest {
     private static final ObjectMapper JSON = new ObjectMapper();
 
     @TempDir
-    public static Path serverData;
-    private static      OrderRegistryEnvironment environment;
+    public static  Path                     serverData;
+    private static OrderRegistryEnvironment environment;
 
     @TempDir
-    public Path data;
-    private final OrderDiscovery  discovery;
+    public        Path           data;
+    private final OrderDiscovery discovery;
 
     public SoapPythonOrderInteropTest(OrderDiscovery discovery) {
         this.discovery = discovery;
     }
+
     public static Collection<Object[]> configurations() {
         List<Object[]> configurations = new ArrayList<>();
         for (OrderDiscovery discovery : OrderDiscovery.selected()) {
@@ -94,7 +97,8 @@ public class SoapPythonOrderInteropTest {
                 provider.start();
                 MetBindInfo<OrderDemoService> service = provider.publisher() //
                         .rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
-                        .name("orders").protocol("soap").aliasName("soap", "orders").register();
+                        .name("orders").protocol("soap").aliasName("soap", "orders") //
+                        .contextPathByPrefix("soap", "/").register();
                 JsonNode expected = this.vector();
                 JsonNode actual;
 
@@ -146,6 +150,7 @@ public class SoapPythonOrderInteropTest {
                 MetBindInfo<OrderDemoService> service = consumer.publisher() //
                         .rsfService(OrderDemoService.class).name("orders") //
                         .protocol("soap").aliasName("soap", "orders") //
+                        .contextPathByPrefix("soap", "/") //
                         .bindResource("soap", new SoapWsdlResource(contract)).register();
                 MetClient client;
 
@@ -157,7 +162,6 @@ public class SoapPythonOrderInteropTest {
                     long processId = provider.processId();
                     registrar.register(service, processId, "python", "soap", "http", address, "/soap/orders");
                     RegistryDiscoveryExample.awaitDiscovery(consumer, service);
-                    AddressSelectionAwaiter.await(consumer, service, "save");
                     client = consumer.getRsfClient();
                 }
 

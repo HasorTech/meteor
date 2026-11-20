@@ -156,7 +156,8 @@ public class GoScalarSdkVersionCompatibilityTest {
         if (StringUtils.equals("hprose", this.protocol)) {
             GoEchoService implementation = provider ? GoScalarSdkVersionCompatibilityTest::echo : null;
             return context.publisher().rsfService(GoEchoService.class, implementation) //
-                    .protocol("hprose").aliasName("Hprose", "sample").register();
+                    .protocol("hprose").aliasName("Hprose", "sample") //
+                    .contextPathByPrefix("hprose", "/").register();
         }
         TextEchoService implementation = provider ? GoScalarSdkVersionCompatibilityTest::echo : null;
         var builder = context.publisher().rsfService(TextEchoService.class, implementation).protocol(this.protocol);

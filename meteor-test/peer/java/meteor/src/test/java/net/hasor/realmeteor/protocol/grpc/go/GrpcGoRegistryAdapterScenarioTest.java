@@ -19,7 +19,7 @@ import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.OrderQuery;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
+import net.hasor.example.discovery.RegistryDiscoveryExample;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
@@ -81,6 +81,7 @@ public class GrpcGoRegistryAdapterScenarioTest {
                 MetBindInfo<OrderDemoService> service = provider.publisher() //
                         .rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                         .name(SERVICE).protocol("grpc").aliasName("grpc", SERVICE) //
+                        .contextPathByPrefix("grpc", "/") //
                         .serialize("Protobuf").bindResource("grpc", this.resource()).register();
 
                 // 地址只能由 StorageAccess 的订阅与目录查询产生，不能直接传递监听地址。
@@ -114,6 +115,7 @@ public class GrpcGoRegistryAdapterScenarioTest {
                 consumer.start();
                 MetBindInfo<OrderDemoService> service = consumer.publisher().rsfService(OrderDemoService.class) //
                         .name(SERVICE).protocol("grpc").aliasName("grpc", SERVICE) //
+                        .contextPathByPrefix("grpc", "/") //
                         .serialize("Protobuf").bindResource("grpc", this.resource()).register();
                 assertTrue(consumer.getUpdater().queryAvailableAddresses(service.getBindID()).isEmpty());
 
@@ -203,7 +205,7 @@ public class GrpcGoRegistryAdapterScenarioTest {
                 if (actual.getPort() == expected.getPort()) {
                     assertEquals(expected.getHost(), actual.getHost());
                     assertEquals(expected.getSchema(), actual.getSchema());
-                    AddressSelectionAwaiter.await(context, service, "save");
+                    RegistryDiscoveryExample.awaitDiscovery(context, service);
                     return;
                 }
             }

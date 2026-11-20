@@ -6,8 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.jsonrpc;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -19,11 +17,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.hasor.example.protocol.jsonrpc.JsonRpcDemoService;
 import net.hasor.example.protocol.jsonrpc.JsonRpcDemoServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 @NxnRpc(name = "jsonrpc", version = "2.0")
 public class JsonRpcWireScenarioTest {
@@ -40,6 +40,7 @@ public class JsonRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 外部客户端发送标准 JSON-RPC 报文，不依赖 Meteor 编解码器。
@@ -66,6 +67,7 @@ public class JsonRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 外部客户端发送标准 JSON-RPC 报文，不依赖 Meteor 编解码器。
@@ -92,6 +94,7 @@ public class JsonRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 外部客户端发送标准 JSON-RPC 报文，不依赖 Meteor 编解码器。
@@ -116,6 +119,7 @@ public class JsonRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 外部客户端发送标准 JSON-RPC 报文，不依赖 Meteor 编解码器。
@@ -142,6 +146,7 @@ public class JsonRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 外部客户端发送标准 JSON-RPC 报文，不依赖 Meteor 编解码器。
@@ -166,6 +171,7 @@ public class JsonRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 外部客户端发送标准 JSON-RPC 报文，不依赖 Meteor 编解码器。
@@ -190,6 +196,7 @@ public class JsonRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 外部客户端发送标准 JSON-RPC 报文，不依赖 Meteor 编解码器。
@@ -216,6 +223,7 @@ public class JsonRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 外部客户端发送标准 JSON-RPC 报文，不依赖 Meteor 编解码器。
@@ -241,6 +249,7 @@ public class JsonRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 外部客户端发送标准 JSON-RPC 报文，不依赖 Meteor 编解码器。
@@ -265,6 +274,7 @@ public class JsonRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 外部客户端发送标准 JSON-RPC 报文，不依赖 Meteor 编解码器。
@@ -289,6 +299,7 @@ public class JsonRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 外部客户端发送标准 JSON-RPC 报文，不依赖 Meteor 编解码器。
@@ -313,6 +324,7 @@ public class JsonRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 外部客户端发送标准 JSON-RPC 报文，不依赖 Meteor 编解码器。
@@ -338,6 +350,7 @@ public class JsonRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 外部客户端发送标准 JSON-RPC 报文，不依赖 Meteor 编解码器。
@@ -362,6 +375,7 @@ public class JsonRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 外部客户端调用抛出异常的业务方法。
@@ -389,6 +403,7 @@ public class JsonRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 外部客户端发送标准 JSON-RPC 报文，不依赖 Meteor 编解码器。
@@ -413,6 +428,7 @@ public class JsonRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 外部客户端发送标准 JSON-RPC 报文，不依赖 Meteor 编解码器。
@@ -439,6 +455,7 @@ public class JsonRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 外部客户端发送标准 JSON-RPC 报文，不依赖 Meteor 编解码器。
@@ -464,6 +481,7 @@ public class JsonRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 外部客户端发送标准 JSON-RPC 报文，不依赖 Meteor 编解码器。
@@ -490,6 +508,7 @@ public class JsonRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 外部客户端发送标准 JSON-RPC 报文，不依赖 Meteor 编解码器。
@@ -519,6 +538,7 @@ public class JsonRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, implementation) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 请求省略 id，明确采用 notification 语义。
@@ -544,6 +564,7 @@ public class JsonRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, implementation) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 请求省略 id，明确采用 notification 语义。
@@ -568,6 +589,7 @@ public class JsonRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, implementation) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 请求省略 id，明确采用 notification 语义。
@@ -592,6 +614,7 @@ public class JsonRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, implementation) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 通知、成功调用和未知方法共同组成一个批次。
@@ -639,6 +662,7 @@ public class JsonRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, implementation) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 发送两个通知，独立观察应用侧接收结果。

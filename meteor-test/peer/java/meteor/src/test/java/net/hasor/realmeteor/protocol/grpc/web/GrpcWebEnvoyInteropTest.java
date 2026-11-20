@@ -64,6 +64,7 @@ public class GrpcWebEnvoyInteropTest {
             client.start();
             MetBindInfo<GrpcWebService> service = client.publisher().rsfService(GrpcWebService.class) //
                     .aliasName("grpc-web", "web.Echo") //
+                    .contextPathByPrefix("grpc-web", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc-web", this.resource()) //
                     .register();
@@ -101,6 +102,7 @@ public class GrpcWebEnvoyInteropTest {
             client.start();
             MetBindInfo<GrpcWebService> service = client.publisher().rsfService(GrpcWebService.class) //
                     .aliasName("grpc-web", "web.Echo") //
+                    .contextPathByPrefix("grpc-web", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc-web", this.resource()) //
                     .register();
@@ -140,6 +142,7 @@ public class GrpcWebEnvoyInteropTest {
             client.start();
             MetBindInfo<GrpcWebService> service = client.publisher().rsfService(GrpcWebService.class) //
                     .aliasName("grpc-web", "web.Echo") //
+                    .contextPathByPrefix("grpc-web", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc-web", this.resource()) //
                     .register();
@@ -178,6 +181,7 @@ public class GrpcWebEnvoyInteropTest {
             client.start();
             MetBindInfo<GrpcWebService> service = client.publisher().rsfService(GrpcWebService.class) //
                     .aliasName("grpc-web", "web.Echo") //
+                    .contextPathByPrefix("grpc-web", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc-web", this.resource()) //
                     .register();
@@ -219,6 +223,7 @@ public class GrpcWebEnvoyInteropTest {
             client.start();
             MetBindInfo<GrpcWebService> service = client.publisher().rsfService(GrpcWebService.class) //
                     .aliasName("grpc-web", "web.Echo") //
+                    .contextPathByPrefix("grpc-web", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc-web", this.resource()) //
                     .register();

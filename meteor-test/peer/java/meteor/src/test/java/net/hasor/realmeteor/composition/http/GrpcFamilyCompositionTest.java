@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.composition.http;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,19 +16,18 @@ import java.util.concurrent.TimeUnit;
 import net.hasor.example.composition.http.grpc.GrpcFamilyMessage;
 import net.hasor.example.composition.http.grpc.GrpcFamilyService;
 import net.hasor.example.composition.http.grpc.GrpcFamilyServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
-import net.hasor.example.support.TestConfigurationUtils;
+import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
 import net.hasor.meteor.protocol.grpc.GrpcStatusException;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 同一监听上的 gRPC 家族挂载独立选择报文、上下文和服务可见范围。 */
 @NxnRpc(name = "grpc")
@@ -146,11 +144,13 @@ public class GrpcFamilyCompositionTest {
                     .bindResource("triple", resource).register();
             MetBindInfo<GrpcFamilyService> grpcBinding = grpc.publisher().rsfService(GrpcFamilyService.class) //
                     .aliasName("grpc", SERVICE).protocol("grpc") //
-                    .serialize("Protobuf").register();
+                    .serialize("Protobuf").contextPathByPrefix("grpc", "/").register();
             MetBindInfo<GrpcFamilyService> connectBinding = connect.publisher().rsfService(GrpcFamilyService.class) //
                     .aliasName("connect", SERVICE).protocol("connect") //
                     .serialize("Protobuf").register();
-            GrpcFamilyService hidden = grpc.getRsfClient(server.getListenAddress("grpc")).getRemote(grpcBinding);
+            InterAddress listen = server.getListenAddress("grpc");
+            InterAddress privateMount = new InterAddress(listen.getSchema(), listen.getHost(), listen.getPort(), "/grpc/private");
+            GrpcFamilyService hidden = grpc.getRsfClient(privateMount).getRemote(grpcBinding);
             GrpcFamilyService available = connect.getRsfClient(server.getListenAddress("connect")) //
                     .getRemote(connectBinding);
 

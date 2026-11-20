@@ -54,6 +54,7 @@ public class WebServicesHttpsInteropTest {
             context.publisher() //
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService") //
+                    .contextPathByPrefix("soap", "/") //
                     .protocol("soap") //
                     .bindResource("soap", new SoapWsdlResource(wsdl)) //
                     .register();
@@ -96,6 +97,7 @@ public class WebServicesHttpsInteropTest {
                 MetBindInfo<EchoService> subscription = context.publisher() //
                         .rsfService(EchoService.class) //
                         .aliasName("soap", "EchoService") //
+                        .contextPathByPrefix("soap", "/") //
                         .protocol("soap") //
                         .register();
 

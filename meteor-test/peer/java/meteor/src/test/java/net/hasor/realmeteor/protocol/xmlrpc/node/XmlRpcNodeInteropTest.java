@@ -35,7 +35,8 @@ public class XmlRpcNodeInteropTest {
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
             provider.publisher().rsfService(TextEchoService.class, text -> text) //
-                    .aliasName("xmlrpc", "demo").protocol("xmlrpc").register();
+                    .aliasName("xmlrpc", "demo").protocol("xmlrpc") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
 
             // node-xmlrpc 自行发送业务请求，并校验 XML 转义和 Unicode 字符不变。
             int port = provider.getListenAddress("xmlrpc").getPort();
@@ -61,7 +62,8 @@ public class XmlRpcNodeInteropTest {
             int port = provider.awaitPort();
             consumer.start();
             MetBindInfo<TextEchoService> service = consumer.publisher().rsfService(TextEchoService.class) //
-                    .aliasName("xmlrpc", "demo").protocol("xmlrpc").register();
+                    .aliasName("xmlrpc", "demo").protocol("xmlrpc") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
 
             // Meteor 的公开客户端直接调用 SDK 提供者，响应必须来自真实 HTTP 链路。
             InterAddress address = new InterAddress("xmlrpc", provider.host(), port);

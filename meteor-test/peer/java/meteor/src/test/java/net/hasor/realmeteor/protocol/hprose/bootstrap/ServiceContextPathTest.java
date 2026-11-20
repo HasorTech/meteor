@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hprose.bootstrap;
-import java.util.UUID;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
@@ -15,6 +14,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -46,7 +46,7 @@ public class ServiceContextPathTest extends BootstrapTestSupport {
                 .bind("127.0.0.1", 0) //
                 .protocol("hprose") //
                 .contextPath("/hprose") //
-                .addContextPath("/private");
+                .addContextPath("/hprose/private");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             AtomicInteger calls = new AtomicInteger();
@@ -62,11 +62,11 @@ public class ServiceContextPathTest extends BootstrapTestSupport {
             int port = server.getListenAddress("hprose").getPort();
             HttpClient http = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build();
             byte[] call = this.callFrame("echo_echo", "default");
-            HttpRequest allowedRequest = this.post(port, "/hprose", call);
+            HttpRequest allowedRequest = this.post(port, "/hprose/default/1.0.0", call);
             HttpResponse<byte[]> allowed = http.send(allowedRequest, HttpResponse.BodyHandlers.ofByteArray());
             assertEquals("default", this.readFrame(allowed, 'R', String.class));
 
-            HttpRequest deniedRequest = this.post(port, "/private", call);
+            HttpRequest deniedRequest = this.post(port, "/hprose/private", call);
             HttpResponse<byte[]> denied = http.send(deniedRequest, HttpResponse.BodyHandlers.ofByteArray());
             String error = this.readFrame(denied, 'E', String.class);
             assertEquals(ProtocolStatus.Forbidden, JSON_MAPPER.readTree(error).path("status").asInt());
@@ -84,7 +84,7 @@ public class ServiceContextPathTest extends BootstrapTestSupport {
                 .bind("127.0.0.1", 0) //
                 .protocol("hprose") //
                 .contextPath("/hprose") //
-                .addContextPath("/private");
+                .addContextPath("/hprose/private");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             AtomicInteger calls = new AtomicInteger();
@@ -101,7 +101,7 @@ public class ServiceContextPathTest extends BootstrapTestSupport {
             int port = server.getListenAddress("hprose").getPort();
             HttpClient http = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build();
             byte[] call = this.callFrame("echo_echo", "private");
-            HttpRequest allowedRequest = this.post(port, "/private", call);
+            HttpRequest allowedRequest = this.post(port, "/hprose/private", call);
             HttpResponse<byte[]> allowed = http.send(allowedRequest, HttpResponse.BodyHandlers.ofByteArray());
             assertEquals("private", this.readFrame(allowed, 'R', String.class));
 
@@ -123,7 +123,7 @@ public class ServiceContextPathTest extends BootstrapTestSupport {
                 .bind("127.0.0.1", 0) //
                 .protocol("hprose") //
                 .contextPath("/hprose") //
-                .addContextPath("/private");
+                .addContextPath("/hprose/private");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             AtomicInteger calls = new AtomicInteger();
@@ -133,7 +133,7 @@ public class ServiceContextPathTest extends BootstrapTestSupport {
                         return value;
                     }) //
                     .aliasName("Hprose", "echo") //
-                    .contextPathByPrefix("hprose", "/hprose", "/private") //
+                    .contextPathByPrefix("hprose", "/", "/private") //
                     .register();
 
             // 两个挂载都能调用同一实现，各自返回本次请求参数。
@@ -145,7 +145,7 @@ public class ServiceContextPathTest extends BootstrapTestSupport {
             assertEquals("default", this.readFrame(defaults, 'R', String.class));
 
             byte[] privateCall = this.callFrame("echo_echo", "private");
-            HttpRequest extraRequest = this.post(port, "/private", privateCall);
+            HttpRequest extraRequest = this.post(port, "/hprose/private", privateCall);
             HttpResponse<byte[]> extra = http.send(extraRequest, HttpResponse.BodyHandlers.ofByteArray());
             assertEquals("private", this.readFrame(extra, 'R', String.class));
             assertEquals(2, calls.get());
@@ -162,7 +162,7 @@ public class ServiceContextPathTest extends BootstrapTestSupport {
                 .bind("127.0.0.1", 0) //
                 .protocol("hprose") //
                 .contextPath("/hprose") //
-                .addContextPath("/private");
+                .addContextPath("/hprose/private");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher() //
@@ -179,11 +179,11 @@ public class ServiceContextPathTest extends BootstrapTestSupport {
             int port = server.getListenAddress("hprose").getPort();
             HttpClient http = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build();
             byte[] discovery = { 'z' };
-            HttpRequest defaultsRequest = this.post(port, "/hprose", discovery);
+            HttpRequest defaultsRequest = this.post(port, "/hprose/default/1.0.0", discovery);
             HttpResponse<byte[]> defaults = http.send(defaultsRequest, HttpResponse.BodyHandlers.ofByteArray());
             assertArrayEquals(new String[] { "public_echo" }, this.readFrame(defaults, 'F', String[].class));
 
-            HttpRequest extraRequest = this.post(port, "/private", discovery);
+            HttpRequest extraRequest = this.post(port, "/hprose/private", discovery);
             HttpResponse<byte[]> extra = http.send(extraRequest, HttpResponse.BodyHandlers.ofByteArray());
             assertArrayEquals(new String[] { "private_echo" }, this.readFrame(extra, 'F', String[].class));
         }
@@ -215,7 +215,7 @@ public class ServiceContextPathTest extends BootstrapTestSupport {
             int port = server.getListenAddress("hprose").getPort();
             HttpClient http = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build();
             byte[] call = this.callFrame("echo_echo", "nested");
-            HttpRequest allowedRequest = this.post(port, "/api/child", call);
+            HttpRequest allowedRequest = this.post(port, "/api/default/1.0.0/child", call);
             HttpResponse<byte[]> allowed = http.send(allowedRequest, HttpResponse.BodyHandlers.ofByteArray());
             assertEquals("nested", this.readFrame(allowed, 'R', String.class));
 
@@ -270,14 +270,14 @@ public class ServiceContextPathTest extends BootstrapTestSupport {
                 .bind("127.0.0.1", 0) //
                 .protocol("hprose") //
                 .contextPath("/hprose") //
-                .addContextPath("/private");
+                .addContextPath("/hprose/private");
         MetConfiguration outgoing = new MetConfiguration() //
                 .setDefaultProtocol("hprose");
         outgoing.setDataHome(this.temporary.resolve("meteor-" + UUID.randomUUID()));
         outgoing.connector("http") //
                 .protocol("hprose") //
                 .contextPath("/hprose") //
-                .addContextPath("/private");
+                .addContextPath("/hprose/private");
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();
@@ -313,8 +313,8 @@ public class ServiceContextPathTest extends BootstrapTestSupport {
             MetClient remote = client.getRsfClient(server.getListenAddress("hprose"));
             assertEquals("private", remote.getRemote(extra).echo("private"));
             assertEquals("default", remote.getRemote(defaults).echo("default"));
-            assertEquals("/private", observedPaths.get("private"));
-            assertEquals("/hprose", observedPaths.get("default"));
+            assertEquals("/hprose/private", observedPaths.get("private"));
+            assertEquals("/hprose/default/1.0.0", observedPaths.get("default"));
         }
     }
 

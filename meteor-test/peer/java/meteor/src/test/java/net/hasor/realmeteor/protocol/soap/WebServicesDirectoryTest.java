@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -15,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.hasor.cobble.StringUtils;
@@ -22,14 +22,14 @@ import net.hasor.example.protocol.soap.EchoService;
 import net.hasor.example.protocol.soap.EchoServiceImpl;
 import net.hasor.example.protocol.soap.SignalService;
 import net.hasor.example.protocol.soap.SignalServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 @NxnRpc(name = "soap", version = "1.1")
 public class WebServicesDirectoryTest {
@@ -61,8 +61,8 @@ public class WebServicesDirectoryTest {
             assertTrue(html.contains("EchoService"), html);
             assertTrue(html.contains("SignalService"), html);
             Set<URI> links = this.links(directory, html);
-            URI echoEndpoint = this.endpoint(context, "/services/EchoService");
-            URI signalEndpoint = this.endpoint(context, "/services/SignalService");
+            URI echoEndpoint = this.endpoint(context, "/services/default/1.0.0/EchoService");
+            URI signalEndpoint = this.endpoint(context, "/services/default/1.0.0/SignalService");
             URI echoWsdl = URI.create(echoEndpoint + "?wsdl");
             URI signalWsdl = URI.create(signalEndpoint + "?wsdl");
             assertTrue(html.contains(echoEndpoint.getPath()), html);
@@ -189,7 +189,7 @@ public class WebServicesDirectoryTest {
             assertEquals(200, response.statusCode());
             String html = new String(response.body(), StandardCharsets.UTF_8);
             Set<URI> links = this.links(directory, html);
-            assertTrue(links.contains(this.endpoint(context, "/services/EchoService?wsdl")), html);
+            assertTrue(links.contains(this.endpoint(context, "/services/default/1.0.0/EchoService?wsdl")), html);
             URI root = this.endpoint(context, "/services");
             HttpResponse<byte[]> absent = http.send(this.get(root), HttpResponse.BodyHandlers.ofByteArray());
             assertEquals(404, absent.statusCode());
@@ -221,7 +221,7 @@ public class WebServicesDirectoryTest {
             assertEquals(200, response.statusCode());
             String html = new String(response.body(), StandardCharsets.UTF_8);
             Set<URI> links = this.links(directory, html);
-            String publicEndpoint = "https://soap.example.test/gateway/services/EchoService";
+            String publicEndpoint = "https://soap.example.test/gateway/services/default/1.0.0/EchoService";
             assertTrue(html.contains(publicEndpoint), html);
             assertTrue(links.contains(URI.create(publicEndpoint + "?wsdl")), html);
         }
@@ -236,7 +236,7 @@ public class WebServicesDirectoryTest {
                 .bind("127.0.0.1", 0) //
                 .protocol("soap") //
                 .contextPath("/services") //
-                .addContextPath("/private") //
+                .addContextPath("/services/private") //
                 .option("directoryEnabled", true) //
                 .option("directoryPath", "/services");
         try (MetContext context = configuration.buildContext()) {
@@ -244,7 +244,7 @@ public class WebServicesDirectoryTest {
             context.publisher() //
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService").protocol("soap") //
-                    .contextPathByPrefix("soap", "/services", "/private").register();
+                    .contextPathByPrefix("soap", "/", "/private").register();
             context.publisher() //
                     .rsfService(SignalService.class, new SignalServiceImpl()) //
                     .aliasName("soap", "SignalService").protocol("soap") //
@@ -257,11 +257,11 @@ public class WebServicesDirectoryTest {
             assertEquals(200, response.statusCode());
             String html = new String(response.body(), StandardCharsets.UTF_8);
             Set<URI> links = this.links(directory, html);
-            URI privateWsdl = this.endpoint(context, "/private/EchoService?wsdl");
-            URI exactWsdl = this.endpoint(context, "/api/signal?wsdl");
+            URI privateWsdl = this.endpoint(context, "/services/private/EchoService?wsdl");
+            URI exactWsdl = this.endpoint(context, "/services/api/signal?wsdl");
             assertTrue(links.contains(this.endpoint(context, "/services/EchoService?wsdl")), html);
             assertTrue(links.contains(privateWsdl), html);
-            assertTrue(html.contains("/api/signal"), html);
+            assertTrue(html.contains("/services/api/signal"), html);
             assertTrue(links.contains(exactWsdl), html);
             assertFalse(html.contains("/services/SignalService"), html);
             assertFalse(html.contains("/api/signal/SignalService"), html);
@@ -278,21 +278,22 @@ public class WebServicesDirectoryTest {
 
     @Test
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
-    public void nestedContextHidesTheDefaultServiceEndpointFromDirectory() throws Exception {
-        // 更具体的子 context 占用 Echo 默认地址；另一个默认服务仍然可见。
+    public void nestedContextRejectsPublicationOfTheShadowedWsdl() throws Exception {
+        // 更具体的子挂载占用 Echo 的契约地址，另一服务仍可独立发布。
         MetConfiguration configuration = this.configuration();
         configuration.connector("http") //
                 .bind("127.0.0.1", 0) //
                 .protocol("soap") //
                 .contextPath("/services") //
-                .addContextPath("/services/EchoService") //
+                .addContextPath("/services/default/1.0.0/EchoService") //
                 .option("directoryEnabled", true) //
                 .option("directoryPath", "/services");
         try (MetContext context = configuration.buildContext()) {
             context.start();
-            context.publisher() //
+            IllegalArgumentException rejected = assertThrows(IllegalArgumentException.class, () -> context.publisher() //
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
-                    .aliasName("soap", "EchoService").protocol("soap").register();
+                    .aliasName("soap", "EchoService").protocol("soap").register());
+            assertTrue(rejected.getMessage().contains("/services/default/1.0.0/EchoService?wsdl"));
             context.publisher() //
                     .rsfService(SignalService.class, new SignalServiceImpl()) //
                     .aliasName("soap", "SignalService").protocol("soap").register();
@@ -305,10 +306,10 @@ public class WebServicesDirectoryTest {
             String html = new String(response.body(), StandardCharsets.UTF_8);
             Set<URI> links = this.links(directory, html);
             assertFalse(html.contains("EchoService"), html);
-            assertTrue(links.contains(this.endpoint(context, "/services/SignalService?wsdl")), html);
+            assertTrue(links.contains(this.endpoint(context, "/services/default/1.0.0/SignalService?wsdl")), html);
 
             // 真实 HTTP 路由命中子 context 后，默认 Echo 的契约确实不可访问。
-            HttpRequest hiddenRequest = this.get(this.endpoint(context, "/services/EchoService?wsdl"));
+            HttpRequest hiddenRequest = this.get(this.endpoint(context, "/services/default/1.0.0/EchoService?wsdl"));
             HttpResponse<byte[]> hidden = http.send(hiddenRequest, HttpResponse.BodyHandlers.ofByteArray());
             assertEquals(404, hidden.statusCode());
         }
@@ -316,38 +317,39 @@ public class WebServicesDirectoryTest {
 
     @Test
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
-    public void exactServicePathReplacesTheCoveredProviderInDirectory() throws Exception {
-        // Signal 的精确路径覆盖 Echo 的默认调用地址，服务别名仍各自独立。
+    public void exactServicePathCannotShadowAnAlreadyPublishedWsdl() throws Exception {
+        // 先发布 Echo，再尝试让另一服务占用同一个契约地址。
         MetConfiguration configuration = this.directoryConfiguration();
         try (MetContext context = configuration.buildContext()) {
             context.start();
             context.publisher() //
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService").protocol("soap").register();
-            context.publisher() //
+            IllegalArgumentException rejected = assertThrows(IllegalArgumentException.class, () -> context.publisher() //
                     .rsfService(SignalService.class, new SignalServiceImpl()) //
                     .aliasName("soap", "SignalService").protocol("soap") //
-                    .contextPathByExact("soap", "/services/EchoService").register();
+                    .contextPathByExact("soap", "/default/1.0.0/EchoService").register());
+            assertTrue(rejected.getMessage().contains("/services/default/1.0.0/EchoService?wsdl"));
 
-            // 目录保留实际可达的 Signal，不能把同一个地址继续归到 Echo 提供者。
+            // 冲突发布失败后，目录仍只列出原有的 Echo 接入点。
             URI directory = this.endpoint(context, "/services");
             HttpClient http = this.http();
             HttpResponse<byte[]> response = http.send(this.get(directory), HttpResponse.BodyHandlers.ofByteArray());
             assertEquals(200, response.statusCode());
             String html = new String(response.body(), StandardCharsets.UTF_8);
             Set<URI> links = this.links(directory, html);
-            URI actualWsdl = this.endpoint(context, "/services/EchoService?wsdl");
-            assertTrue(html.contains(">SignalService<"), html);
-            assertFalse(html.contains(">EchoService<"), html);
+            URI actualWsdl = this.endpoint(context, "/services/default/1.0.0/EchoService?wsdl");
+            assertFalse(html.contains(">SignalService<"), html);
+            assertTrue(html.contains(">EchoService<"), html);
             assertEquals(Set.of(actualWsdl), links);
 
-            // 跟随该地址得到 Signal 的真实契约，说明列表与精确路由的提供者一致。
+            // 跟随目录链接，仍能读取原提供者的契约。
             HttpRequest actualRequest = this.get(actualWsdl);
             HttpResponse<byte[]> definition = http.send(actualRequest, HttpResponse.BodyHandlers.ofByteArray());
             assertEquals(200, definition.statusCode());
             String wsdl = new String(definition.body(), StandardCharsets.UTF_8);
-            assertTrue(wsdl.contains("urn:hasor:meteor:soap:SignalService"), wsdl);
-            assertFalse(wsdl.contains("urn:hasor:meteor:soap:EchoService"), wsdl);
+            assertFalse(wsdl.contains("urn:hasor:meteor:soap:SignalService"), wsdl);
+            assertTrue(wsdl.contains("urn:hasor:meteor:soap:EchoService"), wsdl);
         }
     }
 
@@ -360,7 +362,7 @@ public class WebServicesDirectoryTest {
                 .bind("127.0.0.1", 0) //
                 .protocol("soap") //
                 .contextPath("/services") //
-                .addContextPath("/private") //
+                .addContextPath("/services/private") //
                 .option("directoryEnabled", true) //
                 .option("directoryPath", "/services");
         try (MetContext context = configuration.buildContext()) {
@@ -377,7 +379,7 @@ public class WebServicesDirectoryTest {
             assertEquals(200, response.statusCode());
             String html = new String(response.body(), StandardCharsets.UTF_8);
             Set<URI> links = this.links(directory, html);
-            assertTrue(links.contains(this.endpoint(context, "/private/EchoService?wsdl")), html);
+            assertTrue(links.contains(this.endpoint(context, "/services/private/EchoService?wsdl")), html);
             assertFalse(html.contains("/services/EchoService"), html);
         }
     }
@@ -480,7 +482,7 @@ public class WebServicesDirectoryTest {
             assertEquals(200, after.statusCode());
             String html = new String(after.body(), StandardCharsets.UTF_8);
             Set<URI> links = this.links(directory, html);
-            assertTrue(links.contains(this.endpoint(context, "/services/EchoService?wsdl")), html);
+            assertTrue(links.contains(this.endpoint(context, "/services/default/1.0.0/EchoService?wsdl")), html);
         }
     }
 
@@ -539,7 +541,7 @@ public class WebServicesDirectoryTest {
                 .protocol("soap") //
                 .contextPath("/services") //
                 .option("directoryEnabled", true) //
-                .option("directoryPath", "/services/EchoService");
+                .option("directoryPath", "/services/default/1.0.0/EchoService");
         try (MetContext context = configuration.buildContext()) {
             context.start();
 
@@ -552,14 +554,14 @@ public class WebServicesDirectoryTest {
             assertEquals(service.getBindID(), published.getBindID());
 
             // 访问重叠地址得到明确的 SOAP Fault，不能展示目录或误选业务响应。
-            URI directory = this.endpoint(context, "/services/EchoService");
+            URI directory = this.endpoint(context, "/services/default/1.0.0/EchoService");
             HttpClient http = this.http();
             HttpRequest request = this.get(directory);
             HttpResponse<byte[]> response = http.send(request, HttpResponse.BodyHandlers.ofByteArray());
             assertEquals(500, response.statusCode());
             String fault = new String(response.body(), StandardCharsets.UTF_8);
             assertTrue(fault.contains("<soap:Fault"), fault);
-            String message = "SOAP service endpoint conflicts with directoryPath: /services/EchoService";
+            String message = "SOAP service endpoint conflicts with directoryPath: /services/default/1.0.0/EchoService";
             assertTrue(fault.contains(message), fault);
         }
     }
@@ -589,7 +591,7 @@ public class WebServicesDirectoryTest {
             MetBindInfo<EchoService> service = context.publisher() //
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService").protocol("soap") //
-                    .contextPathByExact("soap", "/services/index").register();
+                    .contextPathByExact("soap", "/index").register();
             MetBindInfo<?> published = context.getServiceInfo(EchoService.class);
             assertNotNull(published);
             assertEquals(service.getBindID(), published.getBindID());

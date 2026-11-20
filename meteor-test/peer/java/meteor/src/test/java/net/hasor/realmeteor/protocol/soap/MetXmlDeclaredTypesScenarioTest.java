@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -14,12 +13,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -34,18 +28,19 @@ import net.hasor.example.protocol.soap.MetXmlDeclaredTypesService;
 import net.hasor.example.protocol.soap.MetXmlDeclaredTypesServiceImpl;
 import net.hasor.example.protocol.soap.MetXmlDeclaredUser;
 import net.hasor.example.protocol.soap.MetXmlDeclaredUserService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.soap.definition.SoapWsdlResource;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.Timeout;
 
 @NxnRpc(name = "soap", version = "1.1")
 public class MetXmlDeclaredTypesScenarioTest {
@@ -63,11 +58,13 @@ public class MetXmlDeclaredTypesScenarioTest {
                     .rsfService(MetXmlDeclaredTypesService.class, new MetXmlDeclaredTypesServiceImpl()) //
                     .aliasName("soap", "MetXmlDeclaredTypesService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetBindInfo<MetXmlDeclaredTypesService> subscription = client.publisher() //
                     .rsfService(MetXmlDeclaredTypesService.class) //
                     .aliasName("soap", "MetXmlDeclaredTypesService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 尚无请求时，线上契约已经包含 DTO，标准校验器也能加载全部 XSD。
@@ -109,6 +106,7 @@ public class MetXmlDeclaredTypesScenarioTest {
                     .rsfService(MetXmlDeclaredTypesService.class, new MetXmlDeclaredTypesServiceImpl()) //
                     .aliasName("soap", "MetXmlDeclaredTypesService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 客户端从服务端线上 WSDL 绑定，覆盖契约解析和实际 Java 类型绑定。
@@ -118,6 +116,7 @@ public class MetXmlDeclaredTypesScenarioTest {
                     .bindResource("soap", resource) //
                     .aliasName("soap", "MetXmlDeclaredTypesService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetXmlDeclaredTypesService remote = client.getRsfClient(server.getListenAddress("soap")) //
                     .getRemote(subscription);
@@ -144,6 +143,7 @@ public class MetXmlDeclaredTypesScenarioTest {
                     .rsfService(MetXmlDeclaredTypesService.class, new MetXmlDeclaredTypesServiceImpl()) //
                     .aliasName("soap", "MetXmlDeclaredTypesService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             Schema schema = this.schema(this.endpoint(server, "?xsd=types.xsd"));
             String namespace = MetXmlDeclaredTypesService.NAMESPACE;
@@ -206,11 +206,13 @@ public class MetXmlDeclaredTypesScenarioTest {
                     .rsfService(MetXmlDeclaredTypesService.class, new MetXmlDeclaredTypesServiceImpl()) //
                     .aliasName("soap", "MetXmlDeclaredTypesService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetBindInfo<MetXmlDeclaredTypesService> subscription = client.publisher() //
                     .rsfService(MetXmlDeclaredTypesService.class) //
                     .aliasName("soap", "MetXmlDeclaredTypesService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetXmlDeclaredTypesService remote = client.getRsfClient(server.getListenAddress("soap")) //
                     .getRemote(subscription);
@@ -244,11 +246,13 @@ public class MetXmlDeclaredTypesScenarioTest {
                     .rsfService(MetXmlDeclaredTypesService.class, new MetXmlDeclaredTypesServiceImpl()) //
                     .aliasName("soap", "MetXmlDeclaredTypesService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetBindInfo<MetXmlDeclaredTypesService> subscription = client.publisher() //
                     .rsfService(MetXmlDeclaredTypesService.class) //
                     .aliasName("soap", "MetXmlDeclaredTypesService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetXmlDeclaredTypesService remote = client.getRsfClient(server.getListenAddress("soap")) //
                     .getRemote(subscription);
@@ -278,11 +282,13 @@ public class MetXmlDeclaredTypesScenarioTest {
                     .rsfService(MetXmlDeclaredTypesService.class, new MetXmlDeclaredTypesServiceImpl()) //
                     .aliasName("soap", "MetXmlDeclaredTypesService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetBindInfo<MetXmlDeclaredTypesService> subscription = client.publisher() //
                     .rsfService(MetXmlDeclaredTypesService.class) //
                     .aliasName("soap", "MetXmlDeclaredTypesService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetXmlDeclaredTypesService remote = client.getRsfClient(server.getListenAddress("soap")) //
                     .getRemote(subscription);
@@ -321,11 +327,13 @@ public class MetXmlDeclaredTypesScenarioTest {
                     .rsfService(MetXmlDeclaredUserService.class, request -> request) //
                     .aliasName("soap", "MetXmlDeclaredUserService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetBindInfo<MetXmlDeclaredUserService> subscription = client.publisher() //
                     .rsfService(MetXmlDeclaredUserService.class) //
                     .aliasName("soap", "MetXmlDeclaredUserService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 调用前下载的 XSD 已包含 User，证明继承的 T 没有退化成 Object。
@@ -373,6 +381,7 @@ public class MetXmlDeclaredTypesScenarioTest {
                     .rsfService(MetXmlDeclaredTypesService.class, service) //
                     .aliasName("soap", "MetXmlDeclaredTypesService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             Schema schema = this.schema(this.endpoint(server, "?xsd=types.xsd"));
             String namespace = MetXmlDeclaredTypesService.NAMESPACE;
@@ -424,11 +433,13 @@ public class MetXmlDeclaredTypesScenarioTest {
                     .rsfService(MetXmlDeclaredTypesService.class, new MetXmlDeclaredTypesServiceImpl()) //
                     .aliasName("soap", "MetXmlDeclaredTypesService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetBindInfo<MetXmlDeclaredTypesService> subscription = client.publisher() //
                     .rsfService(MetXmlDeclaredTypesService.class) //
                     .aliasName("soap", "MetXmlDeclaredTypesService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetXmlDeclaredTypesService remote = client.getRsfClient(server.getListenAddress("soap")) //
                     .getRemote(subscription);
@@ -438,7 +449,7 @@ public class MetXmlDeclaredTypesScenarioTest {
             String xml = "<value xmlns:p=\"urn:vendor:values\" p:code=\"A\">" + childrenXml + "tail</value>";
             Element input = this.parse(xml.getBytes(StandardCharsets.UTF_8)).getDocumentElement();
             Object response = remote.any(input);
-            assertTrue(response instanceof Element);
+            assertInstanceOf(Element.class, response);
             Element result = (Element) response;
             assertEquals("A", result.getAttributeNS("urn:vendor:values", "code"));
             NodeList items = result.getElementsByTagNameNS("urn:vendor:values", "item");

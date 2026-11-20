@@ -48,6 +48,7 @@ public class HproseInteropTest {
             context.publisher() //
                     .rsfService(Sample.class, new SampleImpl()) //
                     .aliasName("Hprose", "sample") //
+                    .contextPathByPrefix("hprose", "/") //
                     .register();
 
             // 由官方客户端验证中文和补充字符的往返，断言位于 peer.js。
@@ -84,6 +85,7 @@ public class HproseInteropTest {
             context.publisher() //
                     .rsfService(Sample.class, new SampleImpl()) //
                     .aliasName("Hprose", "sample") //
+                    .contextPathByPrefix("hprose", "/") //
                     .register();
 
             // 由官方客户端验证整型参数与结果，断言位于 peer.js。
@@ -120,6 +122,7 @@ public class HproseInteropTest {
             context.publisher() //
                     .rsfService(Sample.class, new SampleImpl()) //
                     .aliasName("Hprose", "sample") //
+                    .contextPathByPrefix("hprose", "/") //
                     .register();
 
             // 由官方客户端验证 null 的往返，断言位于 peer.js。
@@ -156,6 +159,7 @@ public class HproseInteropTest {
             context.publisher() //
                     .rsfService(Sample.class, new SampleImpl()) //
                     .aliasName("Hprose", "sample") //
+                    .contextPathByPrefix("hprose", "/") //
                     .register();
 
             // 由官方客户端验证二进制字节的往返，断言位于 peer.js。
@@ -192,6 +196,7 @@ public class HproseInteropTest {
             context.publisher() //
                     .rsfService(Sample.class, new SampleImpl()) //
                     .aliasName("Hprose", "sample") //
+                    .contextPathByPrefix("hprose", "/") //
                     .register();
 
             // 由官方客户端验证日期精度，断言位于 peer.js。
@@ -228,6 +233,7 @@ public class HproseInteropTest {
             context.publisher() //
                     .rsfService(Sample.class, new SampleImpl()) //
                     .aliasName("Hprose", "sample") //
+                    .contextPathByPrefix("hprose", "/") //
                     .register();
 
             // 由官方客户端验证 Map 内容，断言位于 peer.js。
@@ -264,6 +270,7 @@ public class HproseInteropTest {
             context.publisher() //
                     .rsfService(Sample.class, new SampleImpl()) //
                     .aliasName("Hprose", "sample") //
+                    .contextPathByPrefix("hprose", "/") //
                     .register();
 
             // 由官方客户端验证 JavaBean 的字段转换，断言位于 peer.js。
@@ -300,6 +307,7 @@ public class HproseInteropTest {
             context.publisher() //
                     .rsfService(Sample.class, new SampleImpl()) //
                     .aliasName("Hprose", "sample") //
+                    .contextPathByPrefix("hprose", "/") //
                     .register();
 
             // 由官方客户端验证无返回值方法，断言位于 peer.js。
@@ -336,6 +344,7 @@ public class HproseInteropTest {
             context.publisher() //
                     .rsfService(Sample.class, new SampleImpl()) //
                     .aliasName("Hprose", "sample") //
+                    .contextPathByPrefix("hprose", "/") //
                     .register();
 
             // 由官方客户端验证引用参数回写，断言位于 peer.js。
@@ -372,6 +381,7 @@ public class HproseInteropTest {
             context.publisher() //
                     .rsfService(Sample.class, new SampleImpl()) //
                     .aliasName("Hprose", "sample") //
+                    .contextPathByPrefix("hprose", "/") //
                     .register();
 
             // 由官方客户端验证批次顺序和错误隔离，断言位于 peer.js。
@@ -408,6 +418,7 @@ public class HproseInteropTest {
             context.publisher() //
                     .rsfService(Sample.class, new SampleImpl()) //
                     .aliasName("Hprose", "sample") //
+                    .contextPathByPrefix("hprose", "/") //
                     .register();
 
             // 由官方客户端验证函数发现响应，断言位于 peer.js。
@@ -444,6 +455,7 @@ public class HproseInteropTest {
             context.publisher() //
                     .rsfService(Sample.class, new SampleImpl()) //
                     .aliasName("Hprose", "sample") //
+                    .contextPathByPrefix("hprose", "/") //
                     .register();
 
             // 由官方客户端验证跨域预检响应，断言位于 peer.js。
@@ -482,7 +494,8 @@ public class HproseInteropTest {
                 // 启动后订阅业务接口，以动态端口构造真实远程代理。
                 client.start();
                 var publication = client.publisher().rsfService(Sample.class);
-                MetBindInfo<Sample> info = publication.aliasName("Hprose", "sample").register();
+                MetBindInfo<Sample> info = publication.aliasName("Hprose", "sample") //
+                        .contextPathByPrefix("hprose", "/").register();
                 InterAddress address = new InterAddress("hprose", ContainerProcess.host(peer), port);
                 Sample remote = client.getRsfClient(address).getRemote(info);
 
@@ -516,7 +529,8 @@ public class HproseInteropTest {
                 // 启动后订阅业务接口，以动态端口构造真实远程代理。
                 client.start();
                 var publication = client.publisher().rsfService(Sample.class);
-                MetBindInfo<Sample> info = publication.aliasName("Hprose", "sample").register();
+                MetBindInfo<Sample> info = publication.aliasName("Hprose", "sample") //
+                        .contextPathByPrefix("hprose", "/").register();
                 InterAddress address = new InterAddress("hprose", ContainerProcess.host(peer), port);
                 Sample remote = client.getRsfClient(address).getRemote(info);
 
@@ -550,7 +564,8 @@ public class HproseInteropTest {
                 // 启动后订阅业务接口，以动态端口构造真实远程代理。
                 client.start();
                 var publication = client.publisher().rsfService(Sample.class);
-                MetBindInfo<Sample> info = publication.aliasName("Hprose", "sample").register();
+                MetBindInfo<Sample> info = publication.aliasName("Hprose", "sample") //
+                        .contextPathByPrefix("hprose", "/").register();
                 InterAddress address = new InterAddress("hprose", ContainerProcess.host(peer), port);
                 Sample remote = client.getRsfClient(address).getRemote(info);
 
@@ -586,7 +601,8 @@ public class HproseInteropTest {
                 // 启动后订阅业务接口，以动态端口构造真实远程代理。
                 client.start();
                 var publication = client.publisher().rsfService(Sample.class);
-                MetBindInfo<Sample> info = publication.aliasName("Hprose", "sample").register();
+                MetBindInfo<Sample> info = publication.aliasName("Hprose", "sample") //
+                        .contextPathByPrefix("hprose", "/").register();
                 InterAddress address = new InterAddress("hprose", ContainerProcess.host(peer), port);
                 Sample remote = client.getRsfClient(address).getRemote(info);
 
@@ -621,7 +637,8 @@ public class HproseInteropTest {
                 // 启动后订阅业务接口，以动态端口构造真实远程代理。
                 client.start();
                 var publication = client.publisher().rsfService(Sample.class);
-                MetBindInfo<Sample> info = publication.aliasName("Hprose", "sample").register();
+                MetBindInfo<Sample> info = publication.aliasName("Hprose", "sample") //
+                        .contextPathByPrefix("hprose", "/").register();
                 InterAddress address = new InterAddress("hprose", ContainerProcess.host(peer), port);
                 Sample remote = client.getRsfClient(address).getRemote(info);
 
@@ -657,7 +674,8 @@ public class HproseInteropTest {
                 // 启动后订阅业务接口，以动态端口构造真实远程代理。
                 client.start();
                 var publication = client.publisher().rsfService(Sample.class);
-                MetBindInfo<Sample> info = publication.aliasName("Hprose", "sample").register();
+                MetBindInfo<Sample> info = publication.aliasName("Hprose", "sample") //
+                        .contextPathByPrefix("hprose", "/").register();
                 InterAddress address = new InterAddress("hprose", ContainerProcess.host(peer), port);
                 Sample remote = client.getRsfClient(address).getRemote(info);
 
@@ -696,7 +714,8 @@ public class HproseInteropTest {
                 // 启动后订阅业务接口，以动态端口构造真实远程代理。
                 client.start();
                 var publication = client.publisher().rsfService(Sample.class);
-                MetBindInfo<Sample> info = publication.aliasName("Hprose", "sample").register();
+                MetBindInfo<Sample> info = publication.aliasName("Hprose", "sample") //
+                        .contextPathByPrefix("hprose", "/").register();
                 InterAddress address = new InterAddress("hprose", ContainerProcess.host(peer), port);
                 Sample remote = client.getRsfClient(address).getRemote(info);
 
@@ -736,7 +755,8 @@ public class HproseInteropTest {
                 // 启动后订阅业务接口，以动态端口构造真实远程代理。
                 client.start();
                 var publication = client.publisher().rsfService(Sample.class);
-                MetBindInfo<Sample> info = publication.aliasName("Hprose", "sample").register();
+                MetBindInfo<Sample> info = publication.aliasName("Hprose", "sample") //
+                        .contextPathByPrefix("hprose", "/").register();
                 InterAddress address = new InterAddress("hprose", ContainerProcess.host(peer), port);
                 Sample remote = client.getRsfClient(address).getRemote(info);
 
@@ -770,7 +790,8 @@ public class HproseInteropTest {
                 // 启动后订阅业务接口，以动态端口构造真实远程代理。
                 client.start();
                 var publication = client.publisher().rsfService(Sample.class);
-                MetBindInfo<Sample> info = publication.aliasName("Hprose", "sample").register();
+                MetBindInfo<Sample> info = publication.aliasName("Hprose", "sample") //
+                        .contextPathByPrefix("hprose", "/").register();
                 InterAddress address = new InterAddress("hprose", ContainerProcess.host(peer), port);
                 Sample remote = client.getRsfClient(address).getRemote(info);
 

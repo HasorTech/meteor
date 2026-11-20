@@ -25,7 +25,6 @@ import net.hasor.cobble.StringUtils;
 import net.hasor.example.protocol.soap.EchoService;
 import net.hasor.example.protocol.soap.SignalService;
 import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.*;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.domain.MetException;
@@ -53,6 +52,7 @@ public class WebServicesHttpBindingTest {
                     .rsfService(EchoService.class, service) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 使用近似但无效的媒体类型发送格式正确的 SOAP 正文。
@@ -87,6 +87,7 @@ public class WebServicesHttpBindingTest {
                     .rsfService(EchoService.class, service) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 正文没有 XML 声明，字符集只由 HTTP Content-Type 指定。
@@ -125,6 +126,7 @@ public class WebServicesHttpBindingTest {
                     .rsfService(EchoService.class, service) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // JDK 客户端在真实 HTTP 请求中保留两个同名 SOAPAction 字段。
@@ -161,6 +163,7 @@ public class WebServicesHttpBindingTest {
                     .rsfService(EchoService.class, service) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // SOAP 正文有效，但请求故意不发送 SOAPAction。
@@ -195,6 +198,7 @@ public class WebServicesHttpBindingTest {
                     .rsfService(EchoService.class, service) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 请求的 SOAPAction 与正文中的 echo operation 不匹配。
@@ -238,6 +242,7 @@ public class WebServicesHttpBindingTest {
                         .rsfService(SignalService.class) //
                         .aliasName("soap", "SignalService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 空 200 是 one-way 调用的成功确认。
@@ -278,6 +283,7 @@ public class WebServicesHttpBindingTest {
                         .rsfService(SignalService.class) //
                         .aliasName("soap", "SignalService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 空 202 是 one-way 调用的成功确认。
@@ -318,6 +324,7 @@ public class WebServicesHttpBindingTest {
                         .rsfService(SignalService.class) //
                         .aliasName("soap", "SignalService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 空 204 是 one-way 调用的成功确认。
@@ -353,6 +360,7 @@ public class WebServicesHttpBindingTest {
                         .rsfService(SignalService.class) //
                         .aliasName("soap", "SignalService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 非空成功响应违反 one-way HTTP 绑定，调用方必须感知失败。
@@ -392,6 +400,7 @@ public class WebServicesHttpBindingTest {
                         .rsfService(EchoService.class) //
                         .aliasName("soap", "EchoService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 响应字符集仅由 MIME 参数声明，Meteor 仍能还原业务结果。
@@ -422,6 +431,7 @@ public class WebServicesHttpBindingTest {
                         .rsfService(EchoService.class) //
                         .aliasName("soap", "EchoService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 响应解码必须拒绝当前插件未声明处理能力的必选 Header。
@@ -462,6 +472,7 @@ public class WebServicesHttpBindingTest {
                         .rsfService(EchoService.class) //
                         .aliasName("soap", "EchoService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 普通调用不能把无正文的成功状态当作业务调用成功。
@@ -499,6 +510,7 @@ public class WebServicesHttpBindingTest {
                         .rsfService(EchoService.class) //
                         .aliasName("soap", "EchoService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 调用方收到调用失败状态，并能诊断实际的 HTTP 状态。
@@ -537,6 +549,7 @@ public class WebServicesHttpBindingTest {
                         .rsfService(EchoService.class) //
                         .aliasName("soap", "EchoService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 正文即使可解析，错误的 SOAP 媒体类型仍使调用失败。
@@ -576,6 +589,7 @@ public class WebServicesHttpBindingTest {
                         .rsfService(EchoService.class) //
                         .aliasName("soap", "EchoService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 同名业务头只映射首个值，业务结果正常交付。
@@ -614,6 +628,7 @@ public class WebServicesHttpBindingTest {
                         .rsfService(EchoService.class) //
                         .aliasName("soap", "EchoService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // SOAP 与 HTTP 控制头不暴露为 RPC option，业务结果仍正常交付。

@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.net.URI;
 import java.net.URL;
 import java.net.http.HttpClient;
@@ -16,6 +15,7 @@ import java.time.Duration;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.protocol.soap.EchoService;
 import net.hasor.example.protocol.soap.EchoServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.soap.definition.SoapWsdlResource;
@@ -34,6 +34,7 @@ public class WebServicesDefinitionTest {
             context.publisher() //
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService") //
+                    .contextPathByPrefix("soap", "/") //
                     .protocol("soap") //
                     .bindResource("soap", this.echoResource()) //
                     .register();
@@ -47,12 +48,14 @@ public class WebServicesDefinitionTest {
                     .build();
             HttpResponse<String> response = this.http().send(request, HttpResponse.BodyHandlers.ofString());
 
-            // WSDL 返回 XML，并把服务地址和 XSD 引用改写到当前端口。
+            // WSDL 返回 XML，服务地址指向当前端口，原本导入的 XSD 已内嵌。
             assertEquals(200, response.statusCode());
             String contentType = response.headers().firstValue("content-type").orElse("");
             assertTrue(StringUtils.startsWithIgnoreCase(contentType, "text/xml"), contentType);
             assertTrue(response.body().contains("location=\"" + endpoint + "\""), response.body());
-            assertTrue(response.body().contains(endpoint + "?xsd=echo-types.xsd"), response.body());
+            assertTrue(response.body().contains("targetNamespace=\"urn:meteor:test:echo:types\""), response.body());
+            assertTrue(response.body().contains("name=\"echo\""), response.body());
+            assertFalse(response.body().contains("schemaLocation="), response.body());
         }
     }
 
@@ -65,11 +68,12 @@ public class WebServicesDefinitionTest {
             context.publisher() //
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService") //
+                    .contextPathByPrefix("soap", "/") //
                     .protocol("soap") //
                     .bindResource("soap", this.echoResource()) //
                     .register();
 
-            // 通过 WSDL 改写后的查询地址读取真实 XSD。
+            // 通过服务的 XSD 查询地址读取独立 XSD。
             int port = context.getListenAddress("soap").getPort();
             URI endpoint = this.endpoint(port, "/services/EchoService?xsd=echo-types.xsd");
             HttpRequest request = HttpRequest.newBuilder(endpoint) //
@@ -96,6 +100,7 @@ public class WebServicesDefinitionTest {
             context.publisher() //
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService") //
+                    .contextPathByPrefix("soap", "/") //
                     .protocol("soap") //
                     .bindResource("soap", this.echoResource()) //
                     .register();
@@ -126,6 +131,7 @@ public class WebServicesDefinitionTest {
             context.publisher() //
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService") //
+                    .contextPathByPrefix("soap", "/") //
                     .protocol("soap") //
                     .bindResource("soap", this.echoResource()) //
                     .register();

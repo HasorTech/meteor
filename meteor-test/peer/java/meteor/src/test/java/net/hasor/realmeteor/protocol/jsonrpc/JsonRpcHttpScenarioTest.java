@@ -6,8 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.jsonrpc;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -24,6 +22,7 @@ import net.hasor.cobble.StringUtils;
 import net.hasor.example.protocol.jsonrpc.JsonRpcDemoService;
 import net.hasor.example.protocol.jsonrpc.JsonRpcDemoServiceImpl;
 import net.hasor.example.protocol.jsonrpc.JsonRpcPerson;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
@@ -31,9 +30,10 @@ import net.hasor.meteor.MetFuture;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.domain.MetTimeoutException;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 @NxnRpc(name = "jsonrpc", version = "2.0")
 public class JsonRpcHttpScenarioTest {
@@ -58,7 +58,9 @@ public class JsonRpcHttpScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .aliasName("Hprose", "echo") //
+                    .contextPathByPrefix("hprose", "/") //
                     .protocol("jsonrpc", "hprose") //
                     .register();
 
@@ -94,7 +96,6 @@ public class JsonRpcHttpScenarioTest {
         }
     }
 
-
     @Test
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void javaProxyCallsOverHttp2PriorKnowledge() throws Exception {
@@ -109,10 +110,12 @@ public class JsonRpcHttpScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
             MetBindInfo<JsonRpcDemoService> service = client.publisher() //
                     .rsfService(JsonRpcDemoService.class) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 服务代理只使用接口，不接触协议编解码实现。
@@ -135,10 +138,12 @@ public class JsonRpcHttpScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
             MetBindInfo<JsonRpcDemoService> service = client.publisher() //
                     .rsfService(JsonRpcDemoService.class) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 准备一个普通业务对象，并通过集合参数传递。
@@ -169,10 +174,12 @@ public class JsonRpcHttpScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, implementation) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
             MetBindInfo<JsonRpcDemoService> service = client.publisher() //
                     .rsfService(JsonRpcDemoService.class) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // @MetMessage 使 Java 调用生成省略 id 的 notification。
@@ -196,6 +203,7 @@ public class JsonRpcHttpScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .bindFilter("observe", (request, response, chain) -> {
                         filtered.incrementAndGet();
                         chain.doFilter(request, response);
@@ -204,6 +212,7 @@ public class JsonRpcHttpScenarioTest {
             MetBindInfo<JsonRpcDemoService> service = client.publisher() //
                     .rsfService(JsonRpcDemoService.class) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 真实远程调用执行服务过滤器一次。
@@ -227,10 +236,12 @@ public class JsonRpcHttpScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
             MetBindInfo<JsonRpcDemoService> service = client.publisher() //
                     .rsfService(JsonRpcDemoService.class) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 一次提交所有调用，避免同步等待将场景退化为串行。
@@ -258,6 +269,7 @@ public class JsonRpcHttpScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 外部客户端直接发送 JSON-RPC 请求，升级状态由响应版本证明。
@@ -314,10 +326,12 @@ public class JsonRpcHttpScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, implementation) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
             MetBindInfo<JsonRpcDemoService> service = client.publisher() //
                     .rsfService(JsonRpcDemoService.class) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .timeout(600) //
                     .register();
             MetClient remote = client.getRsfClient(server.getListenAddress("jsonrpc"));
@@ -330,7 +344,7 @@ public class JsonRpcHttpScenarioTest {
                 ExecutionException failure = assertThrows(ExecutionException.class, () -> {
                     pending.getData(3, TimeUnit.SECONDS);
                 });
-                assertTrue(failure.getCause() instanceof MetTimeoutException);
+                assertInstanceOf(MetTimeoutException.class, failure.getCause());
             } finally {
                 release.countDown();
             }
@@ -370,10 +384,12 @@ public class JsonRpcHttpScenarioTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, implementation) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
             MetBindInfo<JsonRpcDemoService> service = client.publisher() //
                     .rsfService(JsonRpcDemoService.class) //
                     .aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .timeout(5000) //
                     .register();
             MetClient remote = client.getRsfClient(server.getListenAddress("jsonrpc"));

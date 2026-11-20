@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.net.URI;
 import java.net.URL;
 import java.net.http.HttpClient;
@@ -16,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import net.hasor.example.protocol.soap.FieldService;
 import net.hasor.example.protocol.soap.FieldServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
@@ -42,12 +42,14 @@ public class WebServicesQNameTest {
                     .aliasName("soap", "FieldService") //
                     .protocol("soap") //
                     .bindResource("soap", resource) //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetBindInfo<FieldService> subscribed = client.publisher() //
                     .rsfService(FieldService.class) //
                     .aliasName("soap", "FieldService") //
                     .protocol("soap") //
                     .bindResource("soap", this.resource()) //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 公开客户端经过真实 HTTP 往返，验证请求参数和返回 ref 均使用契约 QName。
@@ -69,6 +71,7 @@ public class WebServicesQNameTest {
                     .aliasName("soap", "FieldService") //
                     .protocol("soap") //
                     .bindResource("soap", this.resource()) //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 使用相同 localName、错误命名空间发送 plain 参数。

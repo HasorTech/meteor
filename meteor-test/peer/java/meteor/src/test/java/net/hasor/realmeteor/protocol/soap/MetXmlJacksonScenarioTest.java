@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
@@ -28,26 +27,23 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.protocol.soap.*;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.Timeout;
 
 @NxnRpc(name = "soap", version = "1.1")
 public class MetXmlJacksonScenarioTest {
@@ -70,11 +66,13 @@ public class MetXmlJacksonScenarioTest {
                     }) //
                     .aliasName("soap", "MetXmlJacksonAsService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetBindInfo<MetXmlJacksonAsService> subscription = client.publisher() //
                     .rsfService(MetXmlJacksonAsService.class) //
                     .aliasName("soap", "MetXmlJacksonAsService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetXmlJacksonAsService remote = client.getRsfClient(server.getListenAddress("soap")) //
                     .getRemote(subscription);
@@ -83,7 +81,7 @@ public class MetXmlJacksonScenarioTest {
             MetXmlJacksonAsValue input = new MetXmlJacksonAsValue();
             input.value = this.user("Alice", 30);
             MetXmlJacksonAsValue response = remote.echo(input);
-            assertTrue(response.value instanceof MetXmlJacksonUser);
+            assertInstanceOf(MetXmlJacksonUser.class, response.value);
             MetXmlJacksonUser result = (MetXmlJacksonUser) response.value;
             assertEquals("Alice-server", result.name);
             assertEquals(31, result.age);
@@ -109,11 +107,13 @@ public class MetXmlJacksonScenarioTest {
                     }) //
                     .aliasName("soap", "MetXmlJacksonPolymorphicService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetBindInfo<MetXmlJacksonPolymorphicService> subscription = client.publisher() //
                     .rsfService(MetXmlJacksonPolymorphicService.class) //
                     .aliasName("soap", "MetXmlJacksonPolymorphicService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetXmlJacksonPolymorphicService remote = client.getRsfClient(server.getListenAddress("soap")) //
                     .getRemote(subscription);
@@ -122,7 +122,7 @@ public class MetXmlJacksonScenarioTest {
             MetXmlJacksonPolymorphicValue input = new MetXmlJacksonPolymorphicValue();
             input.value = this.user("Alice", 30);
             MetXmlJacksonPolymorphicValue response = remote.echo(input);
-            assertTrue(response.value instanceof MetXmlJacksonUser);
+            assertInstanceOf(MetXmlJacksonUser.class, response.value);
             MetXmlJacksonUser result = (MetXmlJacksonUser) response.value;
             assertEquals("Alice-server", result.name);
             assertEquals(31, result.age);
@@ -146,6 +146,7 @@ public class MetXmlJacksonScenarioTest {
                     }) //
                     .aliasName("soap", alias) //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             Schema schema = this.schema(this.endpoint(server, alias, "?xsd=types.xsd"));
             String namespace = "urn:hasor:meteor:soap:" + alias;
@@ -194,6 +195,7 @@ public class MetXmlJacksonScenarioTest {
                     }) //
                     .aliasName("soap", "MetXmlJacksonTokenService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 自定义序列化形状预先声明为 anyType，不根据首个 Token 的内容推导契约。
@@ -205,6 +207,7 @@ public class MetXmlJacksonScenarioTest {
                     .rsfService(MetXmlJacksonTokenService.class) //
                     .aliasName("soap", "MetXmlJacksonTokenService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetXmlJacksonTokenService remote = client.getRsfClient(server.getListenAddress("soap")) //
                     .getRemote(subscription);
@@ -236,11 +239,13 @@ public class MetXmlJacksonScenarioTest {
                     }) //
                     .aliasName("soap", "MetXmlJacksonImmutableService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetBindInfo<MetXmlJacksonImmutableService> subscription = client.publisher() //
                     .rsfService(MetXmlJacksonImmutableService.class) //
                     .aliasName("soap", "MetXmlJacksonImmutableService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetXmlJacksonImmutableService remote = client.getRsfClient(server.getListenAddress("soap")) //
                     .getRemote(subscription);
@@ -268,6 +273,7 @@ public class MetXmlJacksonScenarioTest {
                     }) //
                     .aliasName("soap", alias) //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             Schema schema = this.schema(this.endpoint(server, alias, "?xsd=types.xsd"));
             String namespace = "urn:hasor:meteor:soap:" + alias;
@@ -315,6 +321,7 @@ public class MetXmlJacksonScenarioTest {
                     }) //
                     .aliasName("soap", alias) //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             Schema schema = this.schema(this.endpoint(server, alias, "?xsd=types.xsd"));
             String namespace = "urn:hasor:meteor:soap:" + alias;
@@ -385,18 +392,20 @@ public class MetXmlJacksonScenarioTest {
                     }) //
                     .aliasName("soap", "MetXmlJacksonObjectService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetBindInfo<MetXmlJacksonObjectService> subscription = client.publisher() //
                     .rsfService(MetXmlJacksonObjectService.class) //
                     .aliasName("soap", "MetXmlJacksonObjectService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetXmlJacksonObjectService remote = client.getRsfClient(server.getListenAddress("soap")) //
                     .getRemote(subscription);
 
             // 服务端收到真正 Token，改写后的响应也由客户端的 Object 读写器恢复。
             Object response = remote.echo(new MetXmlJacksonToken("alpha"));
-            assertTrue(response instanceof MetXmlJacksonToken);
+            assertInstanceOf(MetXmlJacksonToken.class, response);
             assertEquals("alpha-server", ((MetXmlJacksonToken) response).value());
             assertTrue(serverReads.get() > 0, "Server Object deserializer must be used");
             assertTrue(clientReads.get() > 0, "Client Object deserializer must be used");

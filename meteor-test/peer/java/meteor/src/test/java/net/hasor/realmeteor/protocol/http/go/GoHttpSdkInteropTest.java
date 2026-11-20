@@ -51,7 +51,8 @@ public class GoHttpSdkInteropTest {
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(GoEchoService.class, value -> value + "|meteor") //
-                    .protocol(this.protocol).aliasName(this.aliasType(), "sample").register();
+                    .protocol(this.protocol).aliasName(this.aliasType(), "sample") //
+                    .contextPathByPrefix(this.protocol, "/").register();
             String target = "http://" + server.getListenAddress(this.protocol).getHostPort() + "/rpc";
 
             // 独立 Go SDK 负责编解码与 HTTP 调用，校验一次 Unicode 回声。
@@ -73,7 +74,8 @@ public class GoHttpSdkInteropTest {
             URI endpoint = URI.create(peer.awaitReady());
             client.start();
             MetBindInfo<GoEchoService> subscription = client.publisher().rsfService(GoEchoService.class) //
-                    .protocol(this.protocol).aliasName(this.aliasType(), "sample").register();
+                    .protocol(this.protocol).aliasName(this.aliasType(), "sample") //
+                    .contextPathByPrefix(this.protocol, "/").register();
             InterAddress address = new InterAddress(this.protocol, endpoint.getHost(), endpoint.getPort());
             GoEchoService remote = client.getRsfClient(address).getRemote(subscription);
 

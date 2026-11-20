@@ -6,34 +6,36 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.composition.state;
-import net.hasor.meteor.test.nxn.NxnRpc;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import net.hasor.cobble.StringUtils;
+import net.hasor.example.Order;
+import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.composition.state.OrderCompositionConfiguration;
 import net.hasor.example.discovery.RegistryDiscoveryExample;
 import net.hasor.example.matrix.OrderProtocol;
-import net.hasor.example.Order;
-import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.matrix.OrderDiscovery;
 import net.hasor.realmeteor.matrix.OrderRegistryEnvironment;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
 
 /** 每个有序协议组合独立保存、回读同一订单；消费者只在直连模式接收业务地址。 */
 @NxnRpc(name = "rsf", version = "1", cases = "write=rsf, read=*, discovery=*")
@@ -66,19 +68,20 @@ import java.util.concurrent.TimeUnit;
 @MethodSource("cases")
 public class OrderedProtocolStateTest {
     @TempDir
-    public static Path serverData;
-    private static      OrderRegistryEnvironment registries;
+    public static  Path                     serverData;
+    private static OrderRegistryEnvironment registries;
     @TempDir
-    public Path data;
-    private final       OrderProtocol            write;
-    private final       OrderProtocol            read;
-    private final       OrderDiscovery           discovery;
+    public         Path                     data;
+    private final  OrderProtocol            write;
+    private final  OrderProtocol            read;
+    private final  OrderDiscovery           discovery;
 
     public OrderedProtocolStateTest(OrderProtocol write, OrderProtocol read, OrderDiscovery discovery) {
         this.write = write;
         this.read = read;
         this.discovery = discovery;
     }
+
     public static Collection<Object[]> cases() {
         List<OrderProtocol> writes = selectedProtocols("meteor.matrix.writeProtocols");
         List<OrderProtocol> reads = selectedProtocols("meteor.matrix.readProtocols");
@@ -159,8 +162,6 @@ public class OrderedProtocolStateTest {
                 if (discovered) {
                     RegistryDiscoveryExample.awaitDiscovery(writer, writeBinding);
                     RegistryDiscoveryExample.awaitDiscovery(reader, readBinding);
-                    AddressSelectionAwaiter.await(writer, writeBinding, "save");
-                    AddressSelectionAwaiter.await(reader, readBinding, "find");
                     writeClient = writer.getRsfClient();
                     readClient = reader.getRsfClient();
                 } else {

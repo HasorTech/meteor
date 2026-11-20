@@ -46,6 +46,7 @@ public class GrpcMetadataInteropTest extends GrpcMetadataPeer {
             context.publisher() //
                     .rsfService(MetadataService.class, new MetadataServiceImpl()) //
                     .aliasName("grpc", "example.Metadata") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Json") //
                     .register();
             // 仅构造普通 JSON 正文，协议应在调用服务之前返回 415。
@@ -94,6 +95,7 @@ public class GrpcMetadataInteropTest extends GrpcMetadataPeer {
             context.publisher() //
                     .rsfService(MetadataService.class, new MetadataServiceImpl()) //
                     .aliasName("grpc", "example.Metadata") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Json") //
                     .register();
             // 官方客户端连接实际监听地址，验证线上报文的字段顺序和值。
@@ -149,6 +151,7 @@ public class GrpcMetadataInteropTest extends GrpcMetadataPeer {
             context.publisher() //
                     .rsfService(MetadataService.class, new MetadataServiceImpl()) //
                     .aliasName("grpc", "example.Metadata") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Json") //
                     .register();
             // 官方客户端连接实际监听地址，验证线上报文的字段顺序和值。
@@ -201,6 +204,7 @@ public class GrpcMetadataInteropTest extends GrpcMetadataPeer {
             context.publisher() //
                     .rsfService(MetadataService.class, new MetadataServiceImpl()) //
                     .aliasName("grpc", "example.Metadata") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Json") //
                     .register();
             // 官方客户端连接实际监听地址，验证线上报文的字段顺序和值。
@@ -253,6 +257,7 @@ public class GrpcMetadataInteropTest extends GrpcMetadataPeer {
             context.publisher() //
                     .rsfService(MetadataService.class, new MetadataServiceImpl()) //
                     .aliasName("grpc", "example.Metadata") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Json") //
                     .register();
             // 官方客户端连接实际监听地址，验证线上报文的字段顺序和值。
@@ -305,6 +310,7 @@ public class GrpcMetadataInteropTest extends GrpcMetadataPeer {
             context.publisher() //
                     .rsfService(MetadataService.class, new MetadataServiceImpl()) //
                     .aliasName("grpc", "example.Metadata") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Json") //
                     .register();
             // 官方客户端连接实际监听地址，验证线上报文的字段顺序和值。
@@ -347,6 +353,7 @@ public class GrpcMetadataInteropTest extends GrpcMetadataPeer {
             MetBindInfo<MetadataService> info = client.publisher() //
                     .rsfService(MetadataService.class) //
                     .aliasName("grpc", "example.Metadata") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Json") //
                     .register();
             InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.getPort());
@@ -398,6 +405,7 @@ public class GrpcMetadataInteropTest extends GrpcMetadataPeer {
             MetBindInfo<MetadataService> info = client.publisher() //
                     .rsfService(MetadataService.class) //
                     .aliasName("grpc", "example.Metadata") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Json") //
                     .register();
             InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.getPort());
@@ -449,6 +457,7 @@ public class GrpcMetadataInteropTest extends GrpcMetadataPeer {
             MetBindInfo<MetadataService> info = client.publisher() //
                     .rsfService(MetadataService.class) //
                     .aliasName("grpc", "example.Metadata") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Json") //
                     .register();
             InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.getPort());
@@ -503,6 +512,7 @@ public class GrpcMetadataInteropTest extends GrpcMetadataPeer {
             MetBindInfo<MetadataService> info = client.publisher() //
                     .rsfService(MetadataService.class) //
                     .aliasName("grpc", "example.Metadata") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Json") //
                     .register();
             InterAddress address = new InterAddress("grpc", "127.0.0.1", peer.getPort());

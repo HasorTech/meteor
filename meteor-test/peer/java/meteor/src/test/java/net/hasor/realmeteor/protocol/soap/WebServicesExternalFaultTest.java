@@ -51,6 +51,7 @@ public class WebServicesExternalFaultTest {
                         .rsfService(EchoService.class) //
                         .aliasName("soap", "EchoService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 即使 Fault detail 声明成功，调用方仍必须收到失败。
@@ -94,6 +95,7 @@ public class WebServicesExternalFaultTest {
                         .rsfService(EchoService.class) //
                         .aliasName("soap", "EchoService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // Fault 不能被解释为 one-way 的成功确认。
@@ -138,6 +140,7 @@ public class WebServicesExternalFaultTest {
                         .rsfService(EchoService.class) //
                         .aliasName("soap", "EchoService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 无命名空间的扩展字段不能覆盖默认失败状态或标准 faultstring。
@@ -182,6 +185,7 @@ public class WebServicesExternalFaultTest {
                         .rsfService(EchoService.class) //
                         .aliasName("soap", "EchoService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 畸形扩展状态回退到调用失败，并保留标准错误消息。
@@ -226,6 +230,7 @@ public class WebServicesExternalFaultTest {
                         .rsfService(EchoService.class) //
                         .aliasName("soap", "EchoService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 调用方保留明确的失败状态，并优先使用同命名空间的详细消息。

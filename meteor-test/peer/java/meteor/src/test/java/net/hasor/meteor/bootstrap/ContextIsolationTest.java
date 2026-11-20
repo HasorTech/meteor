@@ -137,9 +137,11 @@ public class ContextIsolationTest extends BootstrapTestSupport {
             String wireText = new String(frame, StandardCharsets.ISO_8859_1);
             assertTrue(wireText.contains(tag + "value"));
 
-            // 同一上下文解码后恢复参数，报文中的标记由对应编码器去除。
+            // RSF 保留原始参数，所属上下文的编码器按参数类型恢复原值。
             RequestPayload decoded = (RequestPayload) codec.decode(frame);
-            assertEquals("value", decoded.getParameterValues().get(0));
+            assertTrue(decoded.hasEncodedArguments());
+            byte[] argument = (byte[]) decoded.getParameterValues().get(0);
+            assertEquals("value", coder.decode(argument, String.class));
         }
     }
 
@@ -168,9 +170,11 @@ public class ContextIsolationTest extends BootstrapTestSupport {
             String wireText = new String(frame, StandardCharsets.ISO_8859_1);
             assertTrue(wireText.contains(tag + "value"));
 
-            // 同一上下文解码后恢复参数，报文中的标记由对应编码器去除。
+            // RSF 保留原始参数，所属上下文的编码器按参数类型恢复原值。
             RequestPayload decoded = (RequestPayload) codec.decode(frame);
-            assertEquals("value", decoded.getParameterValues().get(0));
+            assertTrue(decoded.hasEncodedArguments());
+            byte[] argument = (byte[]) decoded.getParameterValues().get(0);
+            assertEquals("value", coder.decode(argument, String.class));
         }
     }
 

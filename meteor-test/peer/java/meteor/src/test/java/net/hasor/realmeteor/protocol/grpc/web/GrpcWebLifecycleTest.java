@@ -6,8 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc.web;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
@@ -30,16 +28,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import net.hasor.example.protocol.grpc.Message;
 import net.hasor.example.protocol.grpc.web.GrpcWebService;
 import net.hasor.example.protocol.grpc.web.GrpcWebServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.domain.MetTimeoutException;
 import net.hasor.meteor.rpc.MetCaller;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 @NxnRpc(name = "grpc-web")
 public class GrpcWebLifecycleTest {
@@ -58,7 +57,8 @@ public class GrpcWebLifecycleTest {
                 chain.doFilter(request, response);
             });
             server.publisher().rsfService(GrpcWebService.class, new GrpcWebServiceImpl()) //
-                    .aliasName("grpc-web", "web.Echo").serialize("Json").register();
+                    .aliasName("grpc-web", "web.Echo").serialize("Json") //
+                    .contextPathByPrefix("grpc-web", "/").register();
 
             // 先完成 h2c 协商，再在同一个 JDK 客户端上并发提交数据帧。
             HttpClient http = HttpClient.newBuilder().version(HttpClient.Version.HTTP_2).build();
@@ -128,9 +128,11 @@ public class GrpcWebLifecycleTest {
             server.start();
             client.start();
             server.publisher().rsfService(GrpcWebService.class, implementation) //
-                    .aliasName("grpc-web", "web.Echo").serialize("Json").register();
+                    .aliasName("grpc-web", "web.Echo").serialize("Json") //
+                    .contextPathByPrefix("grpc-web", "/").register();
             MetBindInfo<GrpcWebService> service = client.publisher().rsfService(GrpcWebService.class) //
-                    .aliasName("grpc-web", "web.Echo").serialize("Json").timeout(15000).register();
+                    .aliasName("grpc-web", "web.Echo").serialize("Json").timeout(15000) //
+                    .contextPathByPrefix("grpc-web", "/").register();
 
             // 确认服务端开始响应流后关闭调用方的公开上下文。
             GrpcWebService remote = client.getRsfClient(server.getListenAddress("grpc-web")).getRemote(service);
@@ -164,7 +166,8 @@ public class GrpcWebLifecycleTest {
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(GrpcWebService.class, new GrpcWebServiceImpl()) //
-                    .aliasName("grpc-web", "web.Echo").serialize("Json").register();
+                    .aliasName("grpc-web", "web.Echo").serialize("Json") //
+                    .contextPathByPrefix("grpc-web", "/").register();
 
             // JSON 消息先经 JDK gzip 压缩，再放入压缩标记为 1 的 gRPC-Web 数据帧。
             String value = "gzip 中文".repeat(4096);
@@ -213,7 +216,8 @@ public class GrpcWebLifecycleTest {
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(GrpcWebService.class, new GrpcWebServiceImpl()) //
-                    .aliasName("grpc-web", "web.Echo").serialize("Json").register();
+                    .aliasName("grpc-web", "web.Echo").serialize("Json") //
+                    .contextPathByPrefix("grpc-web", "/").register();
 
             // 升级请求携带普通 gRPC-Web 二进制正文，服务只看自己的协议格式。
             byte[] json = "{\"value\":\"h2c\",\"count\":3}".getBytes(StandardCharsets.UTF_8);
@@ -258,7 +262,8 @@ public class GrpcWebLifecycleTest {
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(GrpcWebService.class, implementation) //
-                    .aliasName("grpc-web", "web.Echo").serialize("Json").register();
+                    .aliasName("grpc-web", "web.Echo").serialize("Json") //
+                    .contextPathByPrefix("grpc-web", "/").register();
 
             // 两个合法消息帧组成一个非法客户端流；文本层只负责 Base64 封装。
             byte[] json = "{\"value\":\"forbidden\",\"count\":1}".getBytes(StandardCharsets.UTF_8);

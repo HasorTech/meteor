@@ -6,8 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.connect;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.connect.ConnectDemoService;
 import net.hasor.example.protocol.connect.ConnectDemoServiceImpl;
 import net.hasor.example.protocol.connect.ConnectMessage;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
@@ -23,9 +22,10 @@ import net.hasor.meteor.MetFuture;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.connect.ConnectStatusException;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 @NxnRpc(name = "connect", version = "1")
 public class ConnectHttpScenarioTest {
@@ -45,10 +45,12 @@ public class ConnectHttpScenarioTest {
             client.start();
             server.publisher().rsfService(ConnectDemoService.class, new ConnectDemoServiceImpl()) //
                     .aliasName("connect", "meteor.connect.demo.ConnectDemoService") //
+                    .contextPathByPrefix("connect", "/") //
                     .serialize("Protobuf") //
                     .bindResource("connect", resource).register();
             MetBindInfo<ConnectDemoService> service = client.publisher().rsfService(ConnectDemoService.class) //
                     .aliasName("connect", "meteor.connect.demo.ConnectDemoService") //
+                    .contextPathByPrefix("connect", "/") //
                     .serialize("Protobuf") //
                     .bindResource("connect", resource).register();
             ConnectDemoService remote = client.getRsfClient(server.getListenAddress("connect")).getRemote(service);
@@ -73,9 +75,11 @@ public class ConnectHttpScenarioTest {
             client.start();
             server.publisher().rsfService(ConnectDemoService.class, new ConnectDemoServiceImpl()) //
                     .aliasName("connect", "meteor.connect.demo.ConnectDemoService") //
+                    .contextPathByPrefix("connect", "/") //
                     .serialize("Json").register();
             MetBindInfo<ConnectDemoService> service = client.publisher().rsfService(ConnectDemoService.class) //
                     .aliasName("connect", "meteor.connect.demo.ConnectDemoService") //
+                    .contextPathByPrefix("connect", "/") //
                     .serialize("Json").register();
             ConnectDemoService remote = client.getRsfClient(server.getListenAddress("connect")).getRemote(service);
 
@@ -104,9 +108,11 @@ public class ConnectHttpScenarioTest {
             client.start();
             server.publisher().rsfService(ConnectDemoService.class, new ConnectDemoServiceImpl()) //
                     .aliasName("connect", "meteor.connect.demo.ConnectDemoService") //
+                    .contextPathByPrefix("connect", "/") //
                     .serialize("Json").register();
             MetBindInfo<ConnectDemoService> service = client.publisher().rsfService(ConnectDemoService.class) //
                     .aliasName("connect", "meteor.connect.demo.ConnectDemoService") //
+                    .contextPathByPrefix("connect", "/") //
                     .serialize("Json").register();
             ConnectDemoService remote = client.getRsfClient(server.getListenAddress("connect")).getRemote(service);
 
@@ -148,9 +154,11 @@ public class ConnectHttpScenarioTest {
             client.start();
             server.publisher().rsfService(ConnectDemoService.class, new ConnectDemoServiceImpl()) //
                     .aliasName("connect", "meteor.connect.demo.ConnectDemoService") //
+                    .contextPathByPrefix("connect", "/") //
                     .serialize("Json").bindResource("connect", resource).register();
             MetBindInfo<ConnectDemoService> service = client.publisher().rsfService(ConnectDemoService.class) //
                     .aliasName("connect", "meteor.connect.demo.ConnectDemoService") //
+                    .contextPathByPrefix("connect", "/") //
                     .serialize("Json").bindResource("connect", resource).register();
 
             // Unicode 与 URI 保留字符经过 GET 查询参数编码后仍保留原值。
@@ -182,9 +190,11 @@ public class ConnectHttpScenarioTest {
             client.start();
             server.publisher().rsfService(ConnectDemoService.class, new ConnectDemoServiceImpl()) //
                     .aliasName("connect", "meteor.connect.demo.ConnectDemoService") //
+                    .contextPathByPrefix("connect", "/") //
                     .serialize("Protobuf").bindResource("connect", resource).register();
             MetBindInfo<ConnectDemoService> service = client.publisher().rsfService(ConnectDemoService.class) //
                     .aliasName("connect", "meteor.connect.demo.ConnectDemoService") //
+                    .contextPathByPrefix("connect", "/") //
                     .serialize("Protobuf").bindResource("connect", resource).register();
 
             // Unicode 与 URI 保留字符经过 GET 查询参数编码后仍保留原值。
@@ -217,9 +227,11 @@ public class ConnectHttpScenarioTest {
             ConnectDemoServiceImpl implementation = new ConnectDemoServiceImpl();
             server.publisher().rsfService(ConnectDemoService.class, implementation) //
                     .aliasName("connect", "meteor.connect.demo.ConnectDemoService") //
+                    .contextPathByPrefix("connect", "/") //
                     .serialize("Protobuf").bindResource("connect", resource).register();
             MetBindInfo<ConnectDemoService> service = client.publisher().rsfService(ConnectDemoService.class) //
                     .aliasName("connect", "meteor.connect.demo.ConnectDemoService") //
+                    .contextPathByPrefix("connect", "/") //
                     .serialize("Protobuf").bindResource("connect", resource).register();
 
             // 校验在编码阶段失败，服务端的业务方法不得执行。
@@ -263,6 +275,7 @@ public class ConnectHttpScenarioTest {
             MetBindInfo<ConnectDemoService> subscription = client.publisher() //
                     .rsfService(ConnectDemoService.class) //
                     .aliasName("connect", "meteor.connect.demo.ConnectDemoService") //
+                    .contextPathByPrefix("connect", "/") //
                     .serialize("Protobuf").bindResource("connect", resource).register();
             MetClient remote = client.getRsfClient(server.getListenAddress("connect"));
             MetFuture pending = remote.asyncInvoke(subscription, "echo", //

@@ -168,7 +168,7 @@ public class MultiProtocolDescriptionScenarioTest {
                     assertNotNull(endpoint.getPublishedAddress());
                     if (StringUtils.equals("jsonrpc", protocolName)) {
                         boolean orderInstance = StringUtils.equals(first.getInstanceID(), instanceId);
-                        String expectedPath = orderInstance ? "/orders" : "/echo";
+                        String expectedPath = orderInstance ? "/orders/descriptions/1" : "/echo/descriptions/1";
                         assertEquals(expectedPath, endpoint.getContextPath());
                     }
                 }
@@ -207,10 +207,10 @@ public class MultiProtocolDescriptionScenarioTest {
             MetServiceDescription description = admin.descriptions().get(context.getInstanceID());
             var endpoints = admin.providers(null, null).getItems().get(0).getEndpoints();
             MetProtocolDescription json = Arrays.stream(endpoints) //
-                    .filter(endpoint -> StringUtils.equals("/json", endpoint.getContextPath())) //
+                    .filter(endpoint -> StringUtils.equals("/json/default/1.0.0", endpoint.getContextPath())) //
                     .findFirst().orElseThrow().getDescription();
             MetProtocolDescription protobuf = Arrays.stream(endpoints) //
-                    .filter(endpoint -> StringUtils.equals("/protobuf", endpoint.getContextPath())) //
+                    .filter(endpoint -> StringUtils.equals("/protobuf/default/1.0.0", endpoint.getContextPath())) //
                     .findFirst().orElseThrow().getDescription();
             assertEquals(DirectRpcExample.SERVICE_NAME, json.getName());
             assertEquals(DirectRpcExample.SERVICE_NAME, protobuf.getName());
@@ -222,8 +222,8 @@ public class MultiProtocolDescriptionScenarioTest {
             assertEquals(2, members.get(0).getEndpoints().length);
             assertEquals("grpc", members.get(0).getEndpoints()[0].getProtocolName());
             assertEquals("grpc", members.get(0).getEndpoints()[1].getProtocolName());
-            assertEquals("/json", members.get(0).getEndpoints()[0].getContextPath());
-            assertEquals("/protobuf", members.get(0).getEndpoints()[1].getContextPath());
+            assertEquals("/json/default/1.0.0", members.get(0).getEndpoints()[0].getContextPath());
+            assertEquals("/protobuf/default/1.0.0", members.get(0).getEndpoints()[1].getContextPath());
         }
     }
 
@@ -257,7 +257,7 @@ public class MultiProtocolDescriptionScenarioTest {
             MetServiceDescription description = admin.descriptions().get(context.getInstanceID());
             var endpoints = admin.providers(null, null).getItems().get(0).getEndpoints();
             assertEquals(1, endpoints.length);
-            assertEquals("/json", endpoints[0].getContextPath());
+            assertEquals("/json/default/1.0.0", endpoints[0].getContextPath());
         }
     }
 

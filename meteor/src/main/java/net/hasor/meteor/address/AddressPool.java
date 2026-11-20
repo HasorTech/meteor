@@ -495,13 +495,9 @@ public class AddressPool {
         return Collections.unmodifiableList(bucket.getAllAddresses());
     }
 
-    /** 获取计算之后可用的地址 */
+    /** 获取已发布到调用方路由快照的可用地址。 */
     public List<InterAddress> queryAvailableAddresses(String serviceID) {
-        AddressBucket bucket = this.addressPool.get(serviceID);
-        if (bucket == null) {
-            return null;
-        }
-        return Collections.unmodifiableList(bucket.getAvailableAddresses());
+        return this.rulerCache.getAvailableAddresses(serviceID);
     }
 
     /** 失效地址 */

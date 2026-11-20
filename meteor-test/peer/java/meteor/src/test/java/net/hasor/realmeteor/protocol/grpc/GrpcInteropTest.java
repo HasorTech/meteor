@@ -72,7 +72,9 @@ public class GrpcInteropTest {
             var publication = context.publisher().rsfService(Echo.class, implementation);
             publication //
                     .aliasName("grpc", "example.Echo") //
+                    .contextPathByPrefix("grpc", "/") //
                     .aliasName("Hprose", "exampleEcho") //
+                    .contextPathByPrefix("hprose", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", this.resource()) //
                     .register();
@@ -116,7 +118,9 @@ public class GrpcInteropTest {
             var publication = context.publisher().rsfService(Echo.class, implementation);
             publication //
                     .aliasName("grpc", "example.Echo") //
+                    .contextPathByPrefix("grpc", "/") //
                     .aliasName("Hprose", "exampleEcho") //
+                    .contextPathByPrefix("hprose", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", this.resource()) //
                     .register();
@@ -207,6 +211,7 @@ public class GrpcInteropTest {
             var publication = client.publisher().rsfService(Echo.class);
             MetBindInfo<Echo> info = publication //
                     .aliasName("grpc", "example.Echo") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("pRoToBuF") //
                     .bindResource("grpc", this.resource()) //
                     .register();
@@ -241,7 +246,8 @@ public class GrpcInteropTest {
             client.start();
 
             var publication = client.publisher().rsfService(Echo.class);
-            MetBindInfo<Echo> info = publication.aliasName("grpc", "example.Echo").serialize("Json").register();
+            MetBindInfo<Echo> info = publication.aliasName("grpc", "example.Echo").serialize("Json") //
+                    .contextPathByPrefix("grpc", "/").register();
 
             // 使用官方服务的真实端口调用接口，验证返回值经过正确的消息编码。
             InterAddress address = new InterAddress("grpc", "127.0.0.1", server.getPort());
@@ -340,7 +346,7 @@ public class GrpcInteropTest {
 
     @Test
     public void concurrentJsonCallsKeepResponsesMatched() throws Exception {
-        // 通过正式入口验证并发调用；connect 当前为每次调用创建独立会话。
+        // 通过正式入口验证并发调用，多个 HTTP/2 流复用同一条连接。
         CountingPipeline.clients.set(0);
         CountingPipeline.servers.set(0);
         MetConfiguration configuration = this.configuration();
@@ -381,9 +387,11 @@ public class GrpcInteropTest {
             client.start();
 
             var publication = server.publisher().rsfService(Echo.class, service);
-            publication.aliasName("grpc", "example.Echo").serialize("Json").register();
+            publication.aliasName("grpc", "example.Echo").serialize("Json") //
+                    .contextPathByPrefix("grpc", "/").register();
             var subscription = client.publisher().rsfService(Echo.class);
-            MetBindInfo<Echo> info = subscription.aliasName("grpc", "example.Echo").serialize("Json").register();
+            MetBindInfo<Echo> info = subscription.aliasName("grpc", "example.Echo").serialize("Json") //
+                    .contextPathByPrefix("grpc", "/").register();
 
             // 一次提交多个异步调用，首个调用仍受闩锁阻塞。
             var remote = client.getRsfClient(server.getListenAddress("grpc"));
@@ -402,8 +410,8 @@ public class GrpcInteropTest {
                 assertEquals(i + 1, response.getCount());
             }
             assertFalse(calls.get(0).isDone());
-            assertEquals(calls.size(), CountingPipeline.clients.get());
-            assertEquals(calls.size(), CountingPipeline.servers.get());
+            assertEquals(1, CountingPipeline.clients.get());
+            assertEquals(1, CountingPipeline.servers.get());
 
             // 最后放行第一个调用，仍必须匹配它自己的响应。
             release.countDown();
@@ -441,7 +449,8 @@ public class GrpcInteropTest {
             context.start();
 
             var publication = context.publisher().rsfService(Echo.class, new EchoImpl());
-            publication.aliasName("grpc", "example.Echo").serialize("Json").register();
+            publication.aliasName("grpc", "example.Echo").serialize("Json") //
+                    .contextPathByPrefix("grpc", "/").register();
 
             int port = context.getListenAddress("grpc").getPort();
             ManagedChannel peer = NettyChannelBuilder.forAddress("127.0.0.1", port).usePlaintext().build();
@@ -586,6 +595,7 @@ public class GrpcInteropTest {
             var publication = context.publisher().rsfService(Echo.class, new EchoImpl());
             publication //
                     .aliasName("grpc", "example.Echo") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", this.resource()) //
                     .register();

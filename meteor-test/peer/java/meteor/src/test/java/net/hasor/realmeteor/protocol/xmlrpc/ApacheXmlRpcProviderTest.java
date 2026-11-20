@@ -6,20 +6,20 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.xmlrpc;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.xmlrpc.XmlRpcDemoService;
 import net.hasor.example.protocol.xmlrpc.XmlRpcDemoServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
-import net.hasor.realmeteor.protocol.support.JavaSdkPeerUtils;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
+import net.hasor.realmeteor.protocol.support.JavaSdkPeerUtils;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** Apache 官方 Java SDK 使用标准 XML-RPC 调用 Meteor 提供者，不启用厂商扩展。 */
 @NxnRpc(name = "xmlrpc")
@@ -35,7 +35,8 @@ public class ApacheXmlRpcProviderTest {
             server.start();
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
-                    .aliasName("xmlrpc", "demo").protocol("xmlrpc").register();
+                    .aliasName("xmlrpc", "demo").protocol("xmlrpc") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
 
             // Apache 3.1.3 将补充平面字符拆成非法引用，本成功场景使用 BMP 中文和 XML 转义。
             int port = server.getListenAddress("xmlrpc").getPort();
@@ -59,7 +60,8 @@ public class ApacheXmlRpcProviderTest {
             server.start();
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
-                    .aliasName("xmlrpc", "demo").protocol("xmlrpc").register();
+                    .aliasName("xmlrpc", "demo").protocol("xmlrpc") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
 
             // SDK 对此字符产生 &#55357;&#56898;，不能由服务端放宽 XML 规则来容忍。
             int port = server.getListenAddress("xmlrpc").getPort();
@@ -83,7 +85,8 @@ public class ApacheXmlRpcProviderTest {
             server.start();
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
-                    .aliasName("xmlrpc", "demo").protocol("xmlrpc").register();
+                    .aliasName("xmlrpc", "demo").protocol("xmlrpc") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
 
             // execute 接收标准 Object[]，在独立 SDK JVM 内产生 XML-RPC 报文。
             int port = server.getListenAddress("xmlrpc").getPort();
@@ -106,7 +109,8 @@ public class ApacheXmlRpcProviderTest {
             server.start();
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
-                    .aliasName("xmlrpc", "demo").protocol("xmlrpc").register();
+                    .aliasName("xmlrpc", "demo").protocol("xmlrpc") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
 
             // 官方 SDK 负责 byte[] 与 base64 的双向映射。
             byte[] expected = new byte[] { 0, 1, 127, (byte) 128, (byte) 255 };
@@ -131,7 +135,8 @@ public class ApacheXmlRpcProviderTest {
             server.start();
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
-                    .aliasName("xmlrpc", "demo").protocol("xmlrpc").register();
+                    .aliasName("xmlrpc", "demo").protocol("xmlrpc") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
 
             // 嵌套 struct 与数组同属一个业务值，SDK 负责其完整往返。
             Map<String, Object> expected = new LinkedHashMap<>();
@@ -162,7 +167,8 @@ public class ApacheXmlRpcProviderTest {
             server.start();
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
-                    .aliasName("xmlrpc", "demo").protocol("xmlrpc").register();
+                    .aliasName("xmlrpc", "demo").protocol("xmlrpc") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
 
             // 对端使用 execute 接收 XmlRpcException，不读取或拼接原始 XML。
             int port = server.getListenAddress("xmlrpc").getPort();

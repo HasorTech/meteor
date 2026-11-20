@@ -4,6 +4,7 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.meteor.registry.nacos;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -18,6 +19,30 @@ import static net.hasor.meteor.registry.nacos.NacosTestData.service;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class NacosServiceShapeTest {
+    @Test
+    public void largeServiceDescriptionFitsInNamingMetadataWithoutLosingFields() throws Exception {
+        // 使用超过 Naming 限额的契约文本，核对实际发送给 SDK 的元数据和公开读取结果。
+        try (MockNacosSdk sdk = new MockNacosSdk(); //
+             StorageAccess storage = sdk.configuration().openStorage()) {
+            storage.registerInstance(instance("node"));
+            RefServiceDescriptionData description = new RefServiceDescriptionData();
+            String contract = "契约字段说明\n".repeat(12000);
+            description.putExtension("contract", contract);
+            EntServiceRuntimeData registration = service("echo");
+            registration.setDescription(description);
+            storage.registerService("node", registration);
+
+            // 正文随临时成员保存，压缩后的整个元数据满足 Naming 上限。
+            var metadata = sdk.nodes.get("services.echo.providers").get("node").getMetadata();
+            byte[] stored = RegistryJson.write(metadata).getBytes(StandardCharsets.UTF_8);
+            assertTrue(stored.length <= 65_536);
+
+            // 重新读取同一实例的服务描述，确认没有截断或错误转码。
+            EntServiceRuntimeData registered = storage.getInstanceService("node", "echo");
+            assertEquals(contract, registered.getDescription().getExtensions().get("contract"));
+        }
+    }
+
     @Test
     public void storedCatalogAndMembershipHaveNoTopLevelType() throws Exception {
         // Java 定位信息只属于实例自己的完整服务描述。

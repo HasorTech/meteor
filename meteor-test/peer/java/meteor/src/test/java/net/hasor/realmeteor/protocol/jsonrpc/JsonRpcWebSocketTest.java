@@ -6,8 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.jsonrpc;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
@@ -20,6 +18,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.hasor.example.protocol.jsonrpc.JsonRpcDemoService;
 import net.hasor.example.protocol.jsonrpc.JsonRpcDemoServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
@@ -28,9 +27,10 @@ import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.domain.MetTimeoutException;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** WebSocket 与 WSS 复用 HTTP 挂载，实际业务仍经过公开 Caller 和 Dispatcher。 */
 @NxnRpc(name = "jsonrpc", version = "2.0")
@@ -65,9 +65,9 @@ public class JsonRpcWebSocketTest {
             server.start();
             client.start();
             server.publisher().rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
-                    .aliasName("jsonrpc", "echo").register();
+                    .aliasName("jsonrpc", "echo").contextPathByPrefix("jsonrpc", "/").register();
             MetBindInfo<JsonRpcDemoService> service = client.publisher().rsfService(JsonRpcDemoService.class) //
-                    .aliasName("jsonrpc", "echo").register();
+                    .aliasName("jsonrpc", "echo").contextPathByPrefix("jsonrpc", "/").register();
 
             // 真正的服务结果证明握手、升级、文本解码和 RPC 派发全部完成。
             JsonRpcDemoService remote = client.getRsfClient(server.getListenAddress("jsonrpc")).getRemote(service);
@@ -103,9 +103,9 @@ public class JsonRpcWebSocketTest {
             server.start();
             client.start();
             server.publisher().rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
-                    .aliasName("jsonrpc", "echo").register();
+                    .aliasName("jsonrpc", "echo").contextPathByPrefix("jsonrpc", "/").register();
             MetBindInfo<JsonRpcDemoService> service = client.publisher().rsfService(JsonRpcDemoService.class) //
-                    .aliasName("jsonrpc", "echo").register();
+                    .aliasName("jsonrpc", "echo").contextPathByPrefix("jsonrpc", "/").register();
 
             // 真正的服务结果证明握手、升级、文本解码和 RPC 派发全部完成。
             JsonRpcDemoService remote = client.getRsfClient(server.getListenAddress("jsonrpc")).getRemote(service);
@@ -143,9 +143,9 @@ public class JsonRpcWebSocketTest {
             server.start();
             client.start();
             server.publisher().rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
-                    .aliasName("jsonrpc", "echo").register();
+                    .aliasName("jsonrpc", "echo").contextPathByPrefix("jsonrpc", "/").register();
             MetBindInfo<JsonRpcDemoService> service = client.publisher().rsfService(JsonRpcDemoService.class) //
-                    .aliasName("jsonrpc", "echo").register();
+                    .aliasName("jsonrpc", "echo").contextPathByPrefix("jsonrpc", "/").register();
 
             // 真正的服务结果证明握手、升级、文本解码和 RPC 派发全部完成。
             JsonRpcDemoService remote = client.getRsfClient(server.getListenAddress("jsonrpc")).getRemote(service);
@@ -183,9 +183,9 @@ public class JsonRpcWebSocketTest {
             server.start();
             client.start();
             server.publisher().rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
-                    .aliasName("jsonrpc", "echo").register();
+                    .aliasName("jsonrpc", "echo").contextPathByPrefix("jsonrpc", "/").register();
             MetBindInfo<JsonRpcDemoService> service = client.publisher().rsfService(JsonRpcDemoService.class) //
-                    .aliasName("jsonrpc", "echo").register();
+                    .aliasName("jsonrpc", "echo").contextPathByPrefix("jsonrpc", "/").register();
 
             // 真正的服务结果证明握手、升级、文本解码和 RPC 派发全部完成。
             JsonRpcDemoService remote = client.getRsfClient(server.getListenAddress("jsonrpc")).getRemote(service);
@@ -223,9 +223,9 @@ public class JsonRpcWebSocketTest {
             server.start();
             client.start();
             server.publisher().rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
-                    .aliasName("jsonrpc", "echo").register();
+                    .aliasName("jsonrpc", "echo").contextPathByPrefix("jsonrpc", "/").register();
             MetBindInfo<JsonRpcDemoService> service = client.publisher().rsfService(JsonRpcDemoService.class) //
-                    .aliasName("jsonrpc", "echo").register();
+                    .aliasName("jsonrpc", "echo").contextPathByPrefix("jsonrpc", "/").register();
 
             // 真正的服务结果证明握手、升级、文本解码和 RPC 派发全部完成。
             JsonRpcDemoService remote = client.getRsfClient(server.getListenAddress("jsonrpc")).getRemote(service);
@@ -263,9 +263,9 @@ public class JsonRpcWebSocketTest {
             server.start();
             client.start();
             server.publisher().rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
-                    .aliasName("jsonrpc", "echo").register();
+                    .aliasName("jsonrpc", "echo").contextPathByPrefix("jsonrpc", "/").register();
             MetBindInfo<JsonRpcDemoService> service = client.publisher().rsfService(JsonRpcDemoService.class) //
-                    .aliasName("jsonrpc", "echo").register();
+                    .aliasName("jsonrpc", "echo").contextPathByPrefix("jsonrpc", "/").register();
 
             // 真正的服务结果证明握手、升级、文本解码和 RPC 派发全部完成。
             JsonRpcDemoService remote = client.getRsfClient(server.getListenAddress("jsonrpc")).getRemote(service);
@@ -282,7 +282,7 @@ public class JsonRpcWebSocketTest {
                 .bind("127.0.0.1", 0) //
                 .protocol("jsonrpc") //
                 .contextPath("/rpc") //
-                .addContextPath("/ws") //
+                .addContextPath("/rpc/ws") //
                 .option("upgrade", "websocket");
         MetConfiguration ordinaryConfig = TestConfigurationUtils.create() //
                 .setRequestTimeout(5000);
@@ -295,7 +295,7 @@ public class JsonRpcWebSocketTest {
         upgradedConfig.connector("http") //
                 .option("httpVersion", 1) //
                 .protocol("jsonrpc") //
-                .contextPath("/ws") //
+                .contextPath("/rpc/ws") //
                 .option("upgrade", "websocket") //
                 .option("httpVersion", 1);
         try (MetContext server = incoming.buildContext(); //
@@ -306,17 +306,20 @@ public class JsonRpcWebSocketTest {
             ordinaryClient.start();
             upgradedClient.start();
             server.publisher().rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
-                    .aliasName("jsonrpc", "echo").contextPathByPrefix("jsonrpc", "/rpc", "/ws").register();
+                    .aliasName("jsonrpc", "echo").contextPathByPrefix("jsonrpc", "/", "/ws").register();
             MetBindInfo<JsonRpcDemoService> ordinary = ordinaryClient.publisher() //
-                    .rsfService(JsonRpcDemoService.class).aliasName("jsonrpc", "echo").register();
+                    .rsfService(JsonRpcDemoService.class).aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/").register();
             MetBindInfo<JsonRpcDemoService> upgraded = upgradedClient.publisher() //
-                    .rsfService(JsonRpcDemoService.class).aliasName("jsonrpc", "echo").register();
+                    .rsfService(JsonRpcDemoService.class).aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/").register();
 
             // 两种客户端使用唯一的公开地址，证明端口复用并未要求额外监听器。
             InterAddress address = server.getListenAddress("jsonrpc");
             assertEquals(1, server.getListenAddresses("jsonrpc").size());
             JsonRpcDemoService http = ordinaryClient.getRsfClient(address).getRemote(ordinary);
-            JsonRpcDemoService websocket = upgradedClient.getRsfClient(address).getRemote(upgraded);
+            InterAddress wsAddress = new InterAddress(address.getSchema(), address.getHost(), address.getPort(), "/rpc/ws");
+            JsonRpcDemoService websocket = upgradedClient.getRsfClient(wsAddress).getRemote(upgraded);
             assertEquals("ordinary", http.echo("ordinary"));
             assertEquals("upgraded", websocket.echo("upgraded"));
         }
@@ -331,7 +334,7 @@ public class JsonRpcWebSocketTest {
                 .bind("127.0.0.1", 0) //
                 .protocol("jsonrpc") //
                 .contextPath("/rpc") //
-                .addContextPath("/ws") //
+                .addContextPath("/rpc/ws") //
                 .option("upgrade", "websocket");
         MetConfiguration ordinaryConfig = TestConfigurationUtils.create() //
                 .setRequestTimeout(5000);
@@ -344,7 +347,7 @@ public class JsonRpcWebSocketTest {
         upgradedConfig.connector("http") //
                 .option("httpVersion", 2) //
                 .protocol("jsonrpc") //
-                .contextPath("/ws") //
+                .contextPath("/rpc/ws") //
                 .option("upgrade", "websocket") //
                 .option("httpVersion", 2);
         try (MetContext server = incoming.buildContext(); //
@@ -355,17 +358,20 @@ public class JsonRpcWebSocketTest {
             ordinaryClient.start();
             upgradedClient.start();
             server.publisher().rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
-                    .aliasName("jsonrpc", "echo").contextPathByPrefix("jsonrpc", "/rpc", "/ws").register();
+                    .aliasName("jsonrpc", "echo").contextPathByPrefix("jsonrpc", "/", "/ws").register();
             MetBindInfo<JsonRpcDemoService> ordinary = ordinaryClient.publisher() //
-                    .rsfService(JsonRpcDemoService.class).aliasName("jsonrpc", "echo").register();
+                    .rsfService(JsonRpcDemoService.class).aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/").register();
             MetBindInfo<JsonRpcDemoService> upgraded = upgradedClient.publisher() //
-                    .rsfService(JsonRpcDemoService.class).aliasName("jsonrpc", "echo").register();
+                    .rsfService(JsonRpcDemoService.class).aliasName("jsonrpc", "echo") //
+                    .contextPathByPrefix("jsonrpc", "/").register();
 
             // 两种客户端使用唯一的公开地址，证明端口复用并未要求额外监听器。
             InterAddress address = server.getListenAddress("jsonrpc");
             assertEquals(1, server.getListenAddresses("jsonrpc").size());
             JsonRpcDemoService http = ordinaryClient.getRsfClient(address).getRemote(ordinary);
-            JsonRpcDemoService websocket = upgradedClient.getRsfClient(address).getRemote(upgraded);
+            InterAddress wsAddress = new InterAddress(address.getSchema(), address.getHost(), address.getPort(), "/rpc/ws");
+            JsonRpcDemoService websocket = upgradedClient.getRsfClient(wsAddress).getRemote(upgraded);
             assertEquals("ordinary", http.echo("ordinary"));
             assertEquals("upgraded", websocket.echo("upgraded"));
         }
@@ -386,7 +392,7 @@ public class JsonRpcWebSocketTest {
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
-                    .aliasName("jsonrpc", "echo").register();
+                    .aliasName("jsonrpc", "echo").contextPathByPrefix("jsonrpc", "/").register();
 
             // JDK 执行 HTTP/1.1 Upgrade，场景直接观察线上 JSON 响应。
             int port = server.getListenAddress("jsonrpc").getPort();
@@ -432,9 +438,9 @@ public class JsonRpcWebSocketTest {
             server.start();
             client.start();
             server.publisher().rsfService(JsonRpcDemoService.class, implementation) //
-                    .aliasName("jsonrpc", "echo").register();
+                    .aliasName("jsonrpc", "echo").contextPathByPrefix("jsonrpc", "/").register();
             MetBindInfo<JsonRpcDemoService> service = client.publisher().rsfService(JsonRpcDemoService.class) //
-                    .aliasName("jsonrpc", "echo").register();
+                    .aliasName("jsonrpc", "echo").contextPathByPrefix("jsonrpc", "/").register();
             MetClient remote = client.getRsfClient(server.getListenAddress("jsonrpc"));
 
             // 写入 Future 完成时远端已进入受控业务，仍未到达业务完成点。
@@ -475,9 +481,9 @@ public class JsonRpcWebSocketTest {
             server.start();
             client.start();
             server.publisher().rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
-                    .aliasName("jsonrpc", "echo").register();
+                    .aliasName("jsonrpc", "echo").contextPathByPrefix("jsonrpc", "/").register();
             MetBindInfo<JsonRpcDemoService> service = client.publisher().rsfService(JsonRpcDemoService.class) //
-                    .aliasName("jsonrpc", "echo").register();
+                    .aliasName("jsonrpc", "echo").contextPathByPrefix("jsonrpc", "/").register();
             MetClient remote = client.getRsfClient(server.getListenAddress("jsonrpc"));
 
             // 先提交全部调用，再逐个核对业务值，避免退化成串行往返。
@@ -518,9 +524,9 @@ public class JsonRpcWebSocketTest {
             server.start();
             client.start();
             server.publisher().rsfService(JsonRpcDemoService.class, implementation) //
-                    .aliasName("jsonrpc", "echo").register();
+                    .aliasName("jsonrpc", "echo").contextPathByPrefix("jsonrpc", "/").register();
             MetBindInfo<JsonRpcDemoService> service = client.publisher().rsfService(JsonRpcDemoService.class) //
-                    .aliasName("jsonrpc", "echo").register();
+                    .aliasName("jsonrpc", "echo").contextPathByPrefix("jsonrpc", "/").register();
             MetClient remote = client.getRsfClient(server.getListenAddress("jsonrpc"));
 
             // 确保请求进入 Dispatcher 后再取消，排除未发出请求的伪隔离结果。
@@ -562,9 +568,9 @@ public class JsonRpcWebSocketTest {
             server.start();
             client.start();
             server.publisher().rsfService(JsonRpcDemoService.class, implementation) //
-                    .aliasName("jsonrpc", "echo").register();
+                    .aliasName("jsonrpc", "echo").contextPathByPrefix("jsonrpc", "/").register();
             MetBindInfo<JsonRpcDemoService> service = client.publisher().rsfService(JsonRpcDemoService.class) //
-                    .aliasName("jsonrpc", "echo").register();
+                    .aliasName("jsonrpc", "echo").contextPathByPrefix("jsonrpc", "/").register();
             MetClient remote = client.getRsfClient(server.getListenAddress("jsonrpc"));
 
             // 监听关闭以后已有物理会话终结，业务期限还没有到期。

@@ -6,8 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.xmlrpc;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.io.StringReader;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -15,6 +13,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -22,14 +21,15 @@ import javax.xml.xpath.XPathFactory;
 import com.sun.net.httpserver.HttpServer;
 import net.hasor.example.protocol.xmlrpc.XmlRpcDemoService;
 import net.hasor.example.protocol.xmlrpc.XmlRpcDemoServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 @NxnRpc(name = "xmlrpc")
 public class XmlRpcWireScenarioTest {
@@ -45,6 +45,7 @@ public class XmlRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
 
             // 对端直接发送标准 XML，避免用插件编解码器验证自己的输出。
@@ -75,6 +76,7 @@ public class XmlRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
 
             // 对端直接发送标准 XML，避免用插件编解码器验证自己的输出。
@@ -103,6 +105,7 @@ public class XmlRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
 
             // 对端直接发送标准 XML，避免用插件编解码器验证自己的输出。
@@ -132,6 +135,7 @@ public class XmlRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
 
             // 对端直接发送标准 XML，避免用插件编解码器验证自己的输出。
@@ -160,6 +164,7 @@ public class XmlRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
 
             // 对端直接发送标准 XML，避免用插件编解码器验证自己的输出。
@@ -188,6 +193,7 @@ public class XmlRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
 
             // 对端直接发送标准 XML，避免用插件编解码器验证自己的输出。
@@ -216,6 +222,7 @@ public class XmlRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
 
             // 对端直接发送标准 XML，避免用插件编解码器验证自己的输出。
@@ -245,6 +252,7 @@ public class XmlRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
 
             // 对端直接发送标准 XML，避免用插件编解码器验证自己的输出。
@@ -278,6 +286,7 @@ public class XmlRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
 
             // 对端直接发送标准 XML，避免用插件编解码器验证自己的输出。
@@ -311,6 +320,7 @@ public class XmlRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
 
             // 对端直接发送标准 XML，避免用插件编解码器验证自己的输出。
@@ -338,6 +348,7 @@ public class XmlRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
 
             // 对端直接发送标准 XML，避免用插件编解码器验证自己的输出。
@@ -370,6 +381,7 @@ public class XmlRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
 
             // 对端直接发送标准 XML，避免用插件编解码器验证自己的输出。
@@ -397,6 +409,7 @@ public class XmlRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
 
             // 对端直接发送标准 XML，避免用插件编解码器验证自己的输出。
@@ -425,6 +438,7 @@ public class XmlRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
 
             // 对端直接发送标准 XML，避免用插件编解码器验证自己的输出。
@@ -454,6 +468,7 @@ public class XmlRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
 
             // 对端直接发送标准 XML，避免用插件编解码器验证自己的输出。
@@ -481,6 +496,7 @@ public class XmlRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
 
             // 对端直接发送标准 XML，避免用插件编解码器验证自己的输出。
@@ -508,6 +524,7 @@ public class XmlRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
 
             // 对端直接发送标准 XML，避免用插件编解码器验证自己的输出。
@@ -542,6 +559,7 @@ public class XmlRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
 
             // 原始报文直接使用扩展标签，服务返回 null 后也编码为 nil。
@@ -576,6 +594,7 @@ public class XmlRpcWireScenarioTest {
                 server.publisher() //
                         .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                         .aliasName("xmlrpc", "demo") //
+                        .contextPathByPrefix("xmlrpc", "/") //
                         .register();
 
                 // methodCall 试图引入远程实体，解析器必须在读取外部地址之前拒绝。
@@ -610,6 +629,7 @@ public class XmlRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
 
             // 对已挂载端点执行 GET，由协议返回明确的 HTTP 方法错误。
@@ -631,6 +651,7 @@ public class XmlRpcWireScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
 
             // 路径匹配成功，但 JSON 正文必须在 HTTP 媒体类型层面拒绝。

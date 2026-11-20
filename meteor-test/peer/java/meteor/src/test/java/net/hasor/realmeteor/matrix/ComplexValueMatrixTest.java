@@ -6,13 +6,10 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.matrix;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.contract.complex.*;
 import net.hasor.example.discovery.RegistryDiscoveryExample;
@@ -21,10 +18,12 @@ import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.registry.RegistryConfiguration;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 
 /** 第二层公共向量：嵌套对象与集合、声明泛型的 Map 各自独立报告。 */
 @ParameterizedClass(autoCloseArguments = false, name = "complex/self/{0}/{1}", quoteTextArguments = false)
@@ -48,11 +47,11 @@ import java.util.concurrent.TimeUnit;
 @NxnRpc(name = "oncrpc", version = "2", cases = "complex/self/oncrpc-xdr/*")
 public class ComplexValueMatrixTest {
     @TempDir
-    public static Path environmentData;
-    private static      OrderRegistryEnvironment environment;
+    public static  Path                     environmentData;
+    private static OrderRegistryEnvironment environment;
 
     @TempDir
-    public Path data;
+    public        Path                data;
     private final ComplexValueProfile profile;
     private final OrderDiscovery      discovery;
     private       String              scope;
@@ -63,6 +62,7 @@ public class ComplexValueMatrixTest {
         this.profile = profile;
         this.discovery = discovery;
     }
+
     public static Collection<Object[]> configurations() {
         // 这里只枚举 profile 和发现方式；两个业务目标仍然是独立的测试方法。
         List<String> availableProtocols = new ArrayList<>();
@@ -153,7 +153,7 @@ public class ComplexValueMatrixTest {
             this.profile.publish(provider, new ComplexValueServiceImpl());
 
             // 只有直连可以取得监听地址；注册模式通过真实自动订阅获得业务地址。
-            MetClient caller = this.remote(provider, consumer, subscription, "acceptDocument");
+            MetClient caller = this.remote(provider, consumer, subscription);
             ComplexValueService remote = this.profile.remote(caller, subscription);
             ComplexDocument request = ComplexValueVectors.document();
             ComplexDocument actual = remote.acceptDocument(request);
@@ -193,7 +193,7 @@ public class ComplexValueMatrixTest {
             this.profile.publish(provider, new ComplexValueServiceImpl());
 
             // 共享向量的 key 满足 XML localName，SOAP literal 不依赖非法 QName 容错。
-            MetClient caller = this.remote(provider, consumer, subscription, "acceptIndex");
+            MetClient caller = this.remote(provider, consumer, subscription);
             ComplexValueService remote = this.profile.remote(caller, subscription);
             ComplexIndex request = ComplexValueVectors.index();
             ComplexIndex actual = remote.acceptIndex(request);
@@ -213,8 +213,7 @@ public class ComplexValueMatrixTest {
         }
     }
 
-    private MetClient remote(MetContext provider, MetContext consumer, MetBindInfo<?> subscription, //
-            String methodName) throws Exception {
+    private MetClient remote(MetContext provider, MetContext consumer, MetBindInfo<?> subscription) throws Exception {
         if (this.discovery == OrderDiscovery.DIRECT) {
             return consumer.getRsfClient(provider.getListenAddress(this.profile.protocolName()));
         }
@@ -224,7 +223,6 @@ public class ComplexValueMatrixTest {
         var addresses = consumer.getUpdater().queryAvailableAddresses(subscription.getBindID());
         assertEquals(1, addresses.size());
         assertEquals(this.profile.protocolName(), addresses.get(0).getSchema());
-        AddressSelectionAwaiter.await(consumer, subscription, methodName);
         return consumer.getRsfClient();
     }
 

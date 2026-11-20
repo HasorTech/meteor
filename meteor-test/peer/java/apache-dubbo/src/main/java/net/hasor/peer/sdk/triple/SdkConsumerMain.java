@@ -7,6 +7,7 @@
  */
 package net.hasor.peer.sdk.triple;
 import java.net.URI;
+import java.util.Map;
 import meteor.example.OrderDemoService;
 import net.hasor.example.Order;
 import net.hasor.example.OrderContract;
@@ -39,10 +40,10 @@ public final class SdkConsumerMain {
         String defaultAddress = "tri://127.0.0.1:8080/" + OrderExampleUtils.SERVICE_NAME;
         URI endpoint = OrderPeerSettings.target(defaultAddress);
         // Meteor 报告 HTTP 传输地址，Dubbo SDK 通过 tri 前缀选择 Triple 协议实现。
-        URI target = new URI("tri", endpoint.getUserInfo(), endpoint.getHost(), endpoint.getPort(),
-                endpoint.getPath(), endpoint.getQuery(), endpoint.getFragment());
+        URI target = new URI("tri", endpoint.getUserInfo(), endpoint.getHost(), endpoint.getPort(), endpoint.getPath(), endpoint.getQuery(), endpoint.getFragment());
         reference.setUrl(target.toString());
         reference.setScope("remote");
+        reference.setParameters(Map.of("connect.timeout", "10000"));
 
         try {
             // 使用同一订单输入保存，再按编号查询，并打印查询结果。

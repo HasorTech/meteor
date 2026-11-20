@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -14,20 +13,21 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import net.hasor.example.protocol.soap.EchoService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 @NxnRpc(name = "soap", version = "1.2")
 public class WebServicesSoap12StructuralAttributesTest {
@@ -53,6 +53,7 @@ public class WebServicesSoap12StructuralAttributesTest {
                     }) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // Envelope 扩展属性必须具有命名空间。
@@ -94,6 +95,7 @@ public class WebServicesSoap12StructuralAttributesTest {
                     }) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // SOAP 1.2 encodingStyle 不能放在 Envelope 上。
@@ -135,6 +137,7 @@ public class WebServicesSoap12StructuralAttributesTest {
                     }) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // SOAP 1.2 encodingStyle 应属于 Body 子项，不能放在 Body 本身。

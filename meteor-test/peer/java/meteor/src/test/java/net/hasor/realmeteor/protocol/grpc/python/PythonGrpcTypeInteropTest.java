@@ -53,13 +53,14 @@ public class PythonGrpcTypeInteropTest {
     @Test
     @Timeout(value = 45000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorProviderPreservesPythonNativeType() throws Exception {
-        // Meteor 从 bootstrap 启动，只发布共享普通接口，并绑定 SDK 使用的相同 Protobuf 契约。
+        // Python 生成桩固定使用 Protobuf 原生方法路径，Meteor 将服务发布到协议根路径。
         MetConfiguration configuration = this.configuration(true);
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
             provider.publisher().rsfService(TypeEchoService.class, new TypeEchoServiceImpl()) //
                     .name(SERVICE).protocol("grpc").aliasName("grpc", SERVICE) //
-                    .serialize("Protobuf").bindResource("grpc", this.resource()).register();
+                    .serialize("Protobuf").contextPathByPrefix("grpc", "/") //
+                    .bindResource("grpc", this.resource()).register();
 
             // 独立 Python 容器构造真实 typed message，逐项核对当前类型与业务收据。
             InterAddress address = provider.getListenAddress("grpc");
@@ -73,7 +74,7 @@ public class PythonGrpcTypeInteropTest {
     @Test
     @Timeout(value = 45000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorConsumerPreservesPythonNativeType() throws Exception {
-        // 官方 Python server 独占网络和生成契约；Meteor 只配置出站协议后从公开入口订阅。
+        // Python 服务监听生成契约的原生路径，Meteor 的出站订阅显式选择该协议根路径。
         MetConfiguration configuration = this.configuration(false);
         try (PythonTypePeerProcess peer = PythonTypePeerProcess.provider("grpc", "protobuf", this.vector); //
              MetContext consumer = configuration.buildContext()) {
@@ -81,7 +82,8 @@ public class PythonGrpcTypeInteropTest {
             consumer.start();
             MetBindInfo<TypeEchoService> service = consumer.publisher().rsfService(TypeEchoService.class) //
                     .name(SERVICE).protocol("grpc").aliasName("grpc", SERVICE) //
-                    .serialize("Protobuf").bindResource("grpc", this.resource()).register();
+                    .serialize("Protobuf").contextPathByPrefix("grpc", "/") //
+                    .bindResource("grpc", this.resource()).register();
 
             // 参数和响应直接使用声明类型 DTO，断言只对应当前向量，不经 JSON 字符串回显。
             InterAddress address = new InterAddress("grpc", peer.host(), port);

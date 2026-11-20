@@ -64,6 +64,7 @@ public class WebServicesBoundHeaderFaultTest {
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
                     .bindResource("soap", this.resource()) //
+                    .contextPathByPrefix("soap", "/") //
                     .bindFilter("token", (request, response, chain) -> {
                         token.set(request.getOption("token"));
                         chain.doFilter(request, response);
@@ -74,6 +75,7 @@ public class WebServicesBoundHeaderFaultTest {
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
                     .bindResource("soap", this.resource()) //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // SOAP mustUnderstand 属性不能破坏应用层 xsd:int 的有效性。
@@ -101,12 +103,14 @@ public class WebServicesBoundHeaderFaultTest {
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
                     .bindResource("soap", this.resource()) //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetBindInfo<EchoService> service = client.publisher() //
                     .rsfService(EchoService.class) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
                     .bindResource("soap", this.resource()) //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 缺少声明的 token 和 receipt 不等于违反 mustUnderstand。
@@ -133,6 +137,7 @@ public class WebServicesBoundHeaderFaultTest {
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
                     .bindResource("soap", this.resource()) //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 对端绕过本地出站校验，把非整数文本放进声明为 xsd:int 的 token。
@@ -172,6 +177,7 @@ public class WebServicesBoundHeaderFaultTest {
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
                     .bindResource("soap", this.resource()) //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // Header 元素允许携带 encodingStyle，但接收方不能忽略未知的编码规则。
@@ -212,6 +218,7 @@ public class WebServicesBoundHeaderFaultTest {
                         .aliasName("soap", "EchoService") //
                         .protocol("soap") //
                         .bindResource("soap", this.resource()) //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 客户端公开调用必须报告 Schema 错误，不能仅忽略未安装处理器的 Header。
@@ -250,12 +257,14 @@ public class WebServicesBoundHeaderFaultTest {
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
                     .bindResource("soap", this.resource()) //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetBindInfo<EchoService> service = client.publisher() //
                     .rsfService(EchoService.class) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
                     .bindResource("soap", this.resource()) //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 声明 Fault 的 Schema 校验不应降级错误类型或丢失 Detail。
@@ -291,6 +300,7 @@ public class WebServicesBoundHeaderFaultTest {
                         .aliasName("soap", "EchoService") //
                         .protocol("soap") //
                         .bindResource("soap", this.resource()) //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 非法声明 Detail 必须作为协议解码失败，不能交付成有效的业务 Fault。
@@ -328,6 +338,7 @@ public class WebServicesBoundHeaderFaultTest {
                         .aliasName("soap", "EchoService") //
                         .protocol("soap") //
                         .bindResource("soap", this.resource()) //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // Header Fault 的类型错误在处理标准 SOAP Fault 之前报告。

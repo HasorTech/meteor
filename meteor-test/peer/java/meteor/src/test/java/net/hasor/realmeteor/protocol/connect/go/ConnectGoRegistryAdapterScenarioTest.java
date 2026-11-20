@@ -21,7 +21,7 @@ import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.OrderQuery;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
+import net.hasor.example.discovery.RegistryDiscoveryExample;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
@@ -84,6 +84,7 @@ public class ConnectGoRegistryAdapterScenarioTest {
                 MetBindInfo<OrderDemoService> service = provider.publisher() //
                         .rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                         .name(SERVICE).protocol("connect").aliasName("connect", SERVICE) //
+                        .contextPathByPrefix("connect", "/") //
                         .serialize("Protobuf").bindResource("connect", this.resource()).register();
 
                 // 显式适配器从真实存储查询和订阅端点，Go 的目标仅来自解析结果。
@@ -116,6 +117,7 @@ public class ConnectGoRegistryAdapterScenarioTest {
                 consumer.start();
                 MetBindInfo<OrderDemoService> service = consumer.publisher().rsfService(OrderDemoService.class) //
                         .name(SERVICE).protocol("connect").aliasName("connect", SERVICE) //
+                        .contextPathByPrefix("connect", "/") //
                         .serialize("Protobuf").bindResource("connect", this.resource()).register();
                 assertTrue(consumer.getUpdater().queryAvailableAddresses(service.getBindID()).isEmpty());
 
@@ -129,7 +131,7 @@ public class ConnectGoRegistryAdapterScenarioTest {
                     InterAddress address = new InterAddress(endpoint.getScheme(), host, endpoint.getPort());
                     registrar.register(service, peer.processId(), "go", "connect", "http", address, "/");
                     awaitAddress(consumer, service, address);
-                    AddressSelectionAwaiter.await(consumer, service, "save");
+                    RegistryDiscoveryExample.awaitDiscovery(consumer, service);
 
                     // 公开代理从自动地址本选址，Go 服务端持有唯一订单状态并实际执行保存和查询。
                     OrderDemoService remote = consumer.getRsfClient().getRemote(service);

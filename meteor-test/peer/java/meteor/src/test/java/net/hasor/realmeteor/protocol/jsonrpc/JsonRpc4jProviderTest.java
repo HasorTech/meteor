@@ -6,22 +6,22 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.jsonrpc;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.jsonrpc.JsonRpcDemoService;
 import net.hasor.example.protocol.jsonrpc.JsonRpcDemoServiceImpl;
 import net.hasor.example.protocol.jsonrpc.JsonRpcInteropService;
 import net.hasor.example.protocol.jsonrpc.JsonRpcInteropServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
-import net.hasor.realmeteor.protocol.support.JavaSdkPeerUtils;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
+import net.hasor.realmeteor.protocol.support.JavaSdkPeerUtils;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 独立 jsonrpc4j Java 客户端调用 Meteor 发布的 JSON-RPC 2.0 服务。 */
 @NxnRpc(name = "jsonrpc", version = "2.0")
@@ -38,6 +38,7 @@ public class JsonRpc4jProviderTest {
             server.publisher() //
                     .rsfService(JsonRpcInteropService.class, new JsonRpcInteropServiceImpl()) //
                     .aliasName("jsonrpc", "peer") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .protocol("jsonrpc") //
                     .serialize("Json") //
                     .register();
@@ -65,6 +66,7 @@ public class JsonRpc4jProviderTest {
             server.publisher() //
                     .rsfService(JsonRpcDemoService.class, new JsonRpcDemoServiceImpl()) //
                     .aliasName("jsonrpc", "peer") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .protocol("jsonrpc") //
                     .serialize("Json") //
                     .register();
@@ -94,6 +96,7 @@ public class JsonRpc4jProviderTest {
             server.publisher() //
                     .rsfService(JsonRpcInteropService.class, new JsonRpcInteropServiceImpl()) //
                     .aliasName("jsonrpc", "peer") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .protocol("jsonrpc") //
                     .serialize("Json") //
                     .register();

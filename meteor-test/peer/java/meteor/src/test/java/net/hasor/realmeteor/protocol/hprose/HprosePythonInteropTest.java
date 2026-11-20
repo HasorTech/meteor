@@ -35,7 +35,8 @@ public class HprosePythonInteropTest {
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
             provider.publisher().rsfService(Sample.class, new SampleImpl()) //
-                    .protocol("hprose").aliasName("hprose", "sample").register();
+                    .protocol("hprose").aliasName("hprose", "sample") //
+                    .contextPathByPrefix("hprose", "/").register();
 
             // 官方 Hprose Python 客户端直接调用，断言由该 SDK 进程执行。
             int port = provider.getListenAddress("hprose").getPort();

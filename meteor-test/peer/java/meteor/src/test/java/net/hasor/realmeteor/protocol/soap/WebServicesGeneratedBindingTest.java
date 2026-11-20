@@ -6,29 +6,29 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilderFactory;
 import net.hasor.example.protocol.soap.EchoService;
 import net.hasor.example.protocol.soap.EchoServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 @NxnRpc(name = "soap", version = "1.1")
 public class WebServicesGeneratedBindingTest {
@@ -47,11 +47,13 @@ public class WebServicesGeneratedBindingTest {
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetBindInfo<EchoService> subscription = client.publisher() //
                     .rsfService(EchoService.class) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 在线 WSDL 必须公开所选绑定，不能静默使用默认 document/wrapped 契约。
@@ -102,11 +104,13 @@ public class WebServicesGeneratedBindingTest {
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetBindInfo<EchoService> subscription = client.publisher() //
                     .rsfService(EchoService.class) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 在线 WSDL 必须公开所选绑定，不能静默使用默认 document/wrapped 契约。
@@ -156,11 +160,13 @@ public class WebServicesGeneratedBindingTest {
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetBindInfo<EchoService> subscription = client.publisher() //
                     .rsfService(EchoService.class) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 在线 WSDL 必须公开所选绑定，不能静默使用默认 document/wrapped 契约。
@@ -215,11 +221,13 @@ public class WebServicesGeneratedBindingTest {
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetBindInfo<EchoService> subscription = client.publisher() //
                     .rsfService(EchoService.class) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 在线 WSDL 必须公开所选绑定，不能静默使用默认 document/wrapped 契约。
@@ -273,11 +281,13 @@ public class WebServicesGeneratedBindingTest {
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetBindInfo<EchoService> subscription = client.publisher() //
                     .rsfService(EchoService.class) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 在线 WSDL 必须公开所选绑定，不能静默使用默认 document/wrapped 契约。
@@ -335,11 +345,13 @@ public class WebServicesGeneratedBindingTest {
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetBindInfo<EchoService> subscription = client.publisher() //
                     .rsfService(EchoService.class) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 在线 WSDL 必须公开所选绑定，不能静默使用默认 document/wrapped 契约。

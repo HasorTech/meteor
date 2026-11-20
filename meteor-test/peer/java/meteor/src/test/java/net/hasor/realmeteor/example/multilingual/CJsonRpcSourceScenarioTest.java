@@ -4,20 +4,20 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.example.multilingual;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.hasor.example.echo.TextEchoService;
-import net.hasor.meteor.MetContext;
 import net.hasor.example.support.TestConfigurationUtils;
+import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 /** 未发布版本的纯 C HTTP 客户端使用固定上游源码，验证一个 JSON-RPC 2.0 业务请求。 */
 @NxnRpc(name = "jsonrpc", version = "2.0")
@@ -36,7 +36,8 @@ public class CJsonRpcSourceScenarioTest {
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
             provider.publisher().rsfService(TextEchoService.class, text -> text) //
-                    .protocol("jsonrpc").aliasName("jsonrpc", "demo").register();
+                    .protocol("jsonrpc").aliasName("jsonrpc", "demo") //
+                    .contextPathByPrefix("jsonrpc", "/").register();
             int port = provider.getListenAddress("jsonrpc").getPort();
             String target = "http://" + ContainerProcess.runnerHost() + ":" + port + "/rpc";
 

@@ -6,18 +6,19 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.thrift;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.protocol.thrift.ThriftDemoService;
 import net.hasor.example.protocol.thrift.ThriftDemoServiceImpl;
 import net.hasor.example.protocol.thrift.generated.ExtendedInteropService;
 import net.hasor.example.protocol.thrift.generated.InteropService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
@@ -31,9 +32,8 @@ import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TMemoryBuffer;
 import org.apache.thrift.transport.TMemoryInputTransport;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** 真实 HTTP 传输上的 Thrift 编码、版本与标准消息互通场景。 */
 @NxnRpc(name = "thrift")
@@ -162,7 +162,8 @@ public class ThriftHttpScenarioTest {
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(ThriftDemoService.class, new ThriftDemoServiceImpl()) //
-                    .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)).register();
+                    .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)) //
+                    .contextPathByPrefix("thrift-http", "/").register();
 
             // HTTP 正文直接包含 Thrift 消息，不附加 framed transport 长度头。
             TMemoryBuffer output = new TMemoryBuffer(128);

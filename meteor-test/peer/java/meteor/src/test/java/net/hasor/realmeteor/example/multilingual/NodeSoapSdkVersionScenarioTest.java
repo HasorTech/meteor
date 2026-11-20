@@ -67,6 +67,7 @@ public class NodeSoapSdkVersionScenarioTest {
             provider.start();
             provider.publisher().rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService").protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .bindResource("soap", new SoapWsdlResource(contract)).register();
 
             // SDK 自行获取 WSDL、编码 SOAP 请求并校验 XML 特殊字符的往返。
@@ -94,6 +95,7 @@ public class NodeSoapSdkVersionScenarioTest {
             consumer.start();
             MetBindInfo<EchoService> service = consumer.publisher().rsfService(EchoService.class) //
                     .aliasName("soap", "EchoService").protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .bindResource("soap", new SoapWsdlResource(contract)).register();
 
             // 普通 Meteor 代理在另一进程的 SDK 服务上验证实际业务响应。

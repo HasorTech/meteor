@@ -17,7 +17,7 @@ import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.OrderQuery;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
+import net.hasor.example.discovery.RegistryDiscoveryExample;
 import net.hasor.example.matrix.OrderMatrixVectors;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
@@ -115,7 +115,8 @@ public class PythonJsonRpcRegistryAdapterScenarioTest {
                 };
                 MetBindInfo<OrderDemoService> service = provider.publisher() //
                         .rsfService(OrderDemoService.class, observed) //
-                        .name("orders").aliasName("jsonrpc", "orders").protocol("jsonrpc").register();
+                        .name("orders").aliasName("jsonrpc", "orders").protocol("jsonrpc") //
+                        .contextPathByPrefix("jsonrpc", "/").register();
 
                 // 存储订阅解析出实际端点；不读取提供者监听地址，不从 Java 转发业务请求。
                 String serviceId = service.getBindID();
@@ -168,7 +169,8 @@ public class PythonJsonRpcRegistryAdapterScenarioTest {
                 consumer.start();
                 MetBindInfo<OrderDemoService> service = consumer.publisher() //
                         .rsfService(OrderDemoService.class).name("orders") //
-                        .aliasName("jsonrpc", "orders").protocol("jsonrpc").register();
+                        .aliasName("jsonrpc", "orders").protocol("jsonrpc") //
+                        .contextPathByPrefix("jsonrpc", "/").register();
                 assertTrue(consumer.getUpdater().queryAvailableAddresses(service.getBindID()).isEmpty());
 
                 // 独立进程确认监听后，由显式适配登记其真实端点、协议与进程信息。
@@ -178,7 +180,7 @@ public class PythonJsonRpcRegistryAdapterScenarioTest {
                     String unit = consumer.getSettings().getUnitName();
                     InterAddress address = new InterAddress("http", provider.host(), port);
                     registrar.register(service, provider.processId(), "python", "jsonrpc", "http", address, "/jsonrpc");
-                    AddressSelectionAwaiter.await(consumer, service, "save");
+                    RegistryDiscoveryExample.awaitDiscovery(consumer, service);
 
                     // 自动地址本选择 Python 服务；Java 代理执行真正的保存和查询网络调用。
                     Order expected = OrderMatrixVectors.order("unicode-order");

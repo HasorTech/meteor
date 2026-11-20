@@ -6,30 +6,29 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.matrix;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import net.hasor.cobble.StringUtils;
+import net.hasor.example.Order;
+import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.discovery.RegistryDiscoveryExample;
 import net.hasor.example.matrix.OrderMatrixVectors;
 import net.hasor.example.matrix.OrderProtocol;
-import net.hasor.example.Order;
-import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.domain.MetTimeoutException;
 import net.hasor.meteor.registry.RegistryConfiguration;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 
 /** 每个协议、连接方式和业务场景单独报告；所有 Meteor 端从 bootstrap 创建并启动。 */
 @ParameterizedClass(autoCloseArguments = false, name = "self/{0}/{1}", quoteTextArguments = false)
@@ -49,11 +48,11 @@ import java.util.concurrent.TimeUnit;
 @NxnRpc(name = "oncrpc", version = "2", cases = "self/oncrpc/*")
 public class OrderSelfMatrixTest {
     @TempDir
-    public static Path environmentData;
-    private static      OrderRegistryEnvironment environment;
+    public static  Path                     environmentData;
+    private static OrderRegistryEnvironment environment;
 
     @TempDir
-    public Path data;
+    public        Path             data;
     private final OrderProtocol    protocol;
     private final OrderDiscovery   discovery;
     private       String           scope;
@@ -64,6 +63,7 @@ public class OrderSelfMatrixTest {
         this.protocol = protocol;
         this.discovery = discovery;
     }
+
     public static Collection<Object[]> configurations() {
         // 参数枚举只生成独立用例，不在一个测试方法内循环多个业务场景。
         List<String> availableProtocols = new ArrayList<>();
@@ -271,7 +271,6 @@ public class OrderSelfMatrixTest {
         var addresses = consumer.getUpdater().queryAvailableAddresses(subscription.getBindID());
         assertEquals(1, addresses.size());
         assertEquals(this.protocol.protocolName(), addresses.get(0).getSchema());
-        AddressSelectionAwaiter.await(consumer, subscription, "save");
         return consumer.getRsfClient();
     }
 

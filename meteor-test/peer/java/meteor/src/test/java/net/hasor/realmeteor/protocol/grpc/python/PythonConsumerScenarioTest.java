@@ -6,21 +6,21 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc.python;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
+import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.cobble.StringUtils;
-import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.OrderDemoService;
-import net.hasor.meteor.MetBindInfo;
+import net.hasor.example.OrderDemoServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
-import org.junit.jupiter.api.Test;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Python 官方消费者通过生成的 SDK 调用 Meteor 订单服务。 */
 @NxnRpc(name = "grpc")
@@ -35,6 +35,7 @@ public class PythonConsumerScenarioTest {
             server.start();
             server.publisher().rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                     .aliasName("grpc", "meteor.example.OrderDemoService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .bindResource("grpc", resource).register();
 
             // 真实 Python SDK 在独立进程中完成当前场景，不共享 Java 编解码器。
@@ -61,6 +62,7 @@ public class PythonConsumerScenarioTest {
             server.start();
             server.publisher().rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                     .aliasName("grpc", "meteor.example.OrderDemoService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .bindResource("grpc", resource).register();
 
             // 真实 Python SDK 在独立进程中完成当前场景，不共享 Java 编解码器。
@@ -87,6 +89,7 @@ public class PythonConsumerScenarioTest {
             server.start();
             server.publisher().rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                     .aliasName("grpc", "meteor.example.OrderDemoService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .bindResource("grpc", resource).register();
 
             // 真实 Python SDK 在独立进程中完成当前场景，不共享 Java 编解码器。
@@ -113,6 +116,7 @@ public class PythonConsumerScenarioTest {
             server.start();
             server.publisher().rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                     .aliasName("grpc", "meteor.example.OrderDemoService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .bindResource("grpc", resource).register();
 
             // 真实 Python SDK 在独立进程中完成当前场景，不共享 Java 编解码器。
@@ -139,6 +143,7 @@ public class PythonConsumerScenarioTest {
             server.start();
             server.publisher().rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                     .aliasName("grpc", "meteor.example.OrderDemoService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .bindResource("grpc", resource).register();
 
             // 真实 Python SDK 在独立进程中完成当前场景，不共享 Java 编解码器。
@@ -165,6 +170,7 @@ public class PythonConsumerScenarioTest {
             server.start();
             server.publisher().rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                     .aliasName("grpc", "meteor.example.OrderDemoService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .bindResource("grpc", resource).register();
 
             // 真实 Python SDK 在独立进程中完成当前场景，不共享 Java 编解码器。
@@ -190,6 +196,7 @@ public class PythonConsumerScenarioTest {
             server.start();
             server.publisher().rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                     .aliasName("grpc", "meteor.example.OrderDemoService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .bindResource("grpc", resource).register();
 
             // 真实 Python SDK 在独立进程中完成当前场景，不共享 Java 编解码器。
@@ -216,6 +223,7 @@ public class PythonConsumerScenarioTest {
             server.start();
             server.publisher().rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                     .aliasName("grpc", "meteor.example.OrderDemoService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .bindResource("grpc", resource).register();
 
             // 真实 Python SDK 在独立进程中完成当前场景，不共享 Java 编解码器。

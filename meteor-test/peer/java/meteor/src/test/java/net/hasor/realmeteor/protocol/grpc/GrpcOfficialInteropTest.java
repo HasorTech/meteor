@@ -6,8 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URL;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -15,11 +13,13 @@ import java.util.concurrent.TimeUnit;
 import io.grpc.testing.integration.TestServiceClient;
 import net.hasor.example.protocol.grpc.InteropService;
 import net.hasor.example.protocol.grpc.InteropServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetFilter;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcMetadata;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
@@ -59,6 +59,7 @@ public class GrpcOfficialInteropTest {
             InteropServiceImpl implementation = new InteropServiceImpl(delivery);
             context.publisher().rsfService(InteropService.class, implementation) //
                     .aliasName("grpc", "grpc.testing.TestService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", proto) //
                     .register();
@@ -115,6 +116,7 @@ public class GrpcOfficialInteropTest {
             InteropServiceImpl implementation = new InteropServiceImpl(delivery);
             context.publisher().rsfService(InteropService.class, implementation) //
                     .aliasName("grpc", "grpc.testing.TestService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", proto) //
                     .register();
@@ -171,6 +173,7 @@ public class GrpcOfficialInteropTest {
             InteropServiceImpl implementation = new InteropServiceImpl(delivery);
             context.publisher().rsfService(InteropService.class, implementation) //
                     .aliasName("grpc", "grpc.testing.TestService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", proto) //
                     .register();
@@ -227,6 +230,7 @@ public class GrpcOfficialInteropTest {
             InteropServiceImpl implementation = new InteropServiceImpl(delivery);
             context.publisher().rsfService(InteropService.class, implementation) //
                     .aliasName("grpc", "grpc.testing.TestService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", proto) //
                     .register();
@@ -283,6 +287,7 @@ public class GrpcOfficialInteropTest {
             InteropServiceImpl implementation = new InteropServiceImpl(delivery);
             context.publisher().rsfService(InteropService.class, implementation) //
                     .aliasName("grpc", "grpc.testing.TestService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", proto) //
                     .register();
@@ -339,6 +344,7 @@ public class GrpcOfficialInteropTest {
             InteropServiceImpl implementation = new InteropServiceImpl(delivery);
             context.publisher().rsfService(InteropService.class, implementation) //
                     .aliasName("grpc", "grpc.testing.TestService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", proto) //
                     .register();
@@ -395,6 +401,7 @@ public class GrpcOfficialInteropTest {
             InteropServiceImpl implementation = new InteropServiceImpl(delivery);
             context.publisher().rsfService(InteropService.class, implementation) //
                     .aliasName("grpc", "grpc.testing.TestService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", proto) //
                     .register();
@@ -451,6 +458,7 @@ public class GrpcOfficialInteropTest {
             InteropServiceImpl implementation = new InteropServiceImpl(delivery);
             context.publisher().rsfService(InteropService.class, implementation) //
                     .aliasName("grpc", "grpc.testing.TestService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", proto) //
                     .register();
@@ -507,6 +515,7 @@ public class GrpcOfficialInteropTest {
             InteropServiceImpl implementation = new InteropServiceImpl(delivery);
             context.publisher().rsfService(InteropService.class, implementation) //
                     .aliasName("grpc", "grpc.testing.TestService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", proto) //
                     .register();
@@ -563,6 +572,7 @@ public class GrpcOfficialInteropTest {
             InteropServiceImpl implementation = new InteropServiceImpl(delivery);
             context.publisher().rsfService(InteropService.class, implementation) //
                     .aliasName("grpc", "grpc.testing.TestService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", proto) //
                     .register();
@@ -619,6 +629,7 @@ public class GrpcOfficialInteropTest {
             InteropServiceImpl implementation = new InteropServiceImpl(delivery);
             context.publisher().rsfService(InteropService.class, implementation) //
                     .aliasName("grpc", "grpc.testing.TestService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", proto) //
                     .register();
@@ -675,6 +686,7 @@ public class GrpcOfficialInteropTest {
             InteropServiceImpl implementation = new InteropServiceImpl(delivery);
             context.publisher().rsfService(InteropService.class, implementation) //
                     .aliasName("grpc", "grpc.testing.TestService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", proto) //
                     .register();
@@ -731,6 +743,7 @@ public class GrpcOfficialInteropTest {
             InteropServiceImpl implementation = new InteropServiceImpl(delivery);
             context.publisher().rsfService(InteropService.class, implementation) //
                     .aliasName("grpc", "grpc.testing.TestService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", proto) //
                     .register();
@@ -787,6 +800,7 @@ public class GrpcOfficialInteropTest {
             InteropServiceImpl implementation = new InteropServiceImpl(delivery);
             context.publisher().rsfService(InteropService.class, implementation) //
                     .aliasName("grpc", "grpc.testing.TestService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", proto) //
                     .register();
@@ -843,6 +857,7 @@ public class GrpcOfficialInteropTest {
             InteropServiceImpl implementation = new InteropServiceImpl(delivery);
             context.publisher().rsfService(InteropService.class, implementation) //
                     .aliasName("grpc", "grpc.testing.TestService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", proto) //
                     .register();
@@ -899,6 +914,7 @@ public class GrpcOfficialInteropTest {
             InteropServiceImpl implementation = new InteropServiceImpl(delivery);
             context.publisher().rsfService(InteropService.class, implementation) //
                     .aliasName("grpc", "grpc.testing.TestService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", proto) //
                     .register();
@@ -955,6 +971,7 @@ public class GrpcOfficialInteropTest {
             InteropServiceImpl implementation = new InteropServiceImpl(delivery);
             context.publisher().rsfService(InteropService.class, implementation) //
                     .aliasName("grpc", "grpc.testing.TestService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", proto) //
                     .register();
@@ -1011,6 +1028,7 @@ public class GrpcOfficialInteropTest {
             InteropServiceImpl implementation = new InteropServiceImpl(delivery);
             context.publisher().rsfService(InteropService.class, implementation) //
                     .aliasName("grpc", "grpc.testing.TestService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", proto) //
                     .register();

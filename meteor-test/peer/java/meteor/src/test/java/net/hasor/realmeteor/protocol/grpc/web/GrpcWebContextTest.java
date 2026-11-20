@@ -6,19 +6,20 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc.web;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
+import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.grpc.Message;
 import net.hasor.example.protocol.grpc.web.GrpcWebService;
 import net.hasor.example.protocol.grpc.web.GrpcWebServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
+import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcStatusException;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 @NxnRpc(name = "grpc-web")
 public class GrpcWebContextTest {
@@ -32,10 +33,10 @@ public class GrpcWebContextTest {
                 .bind("127.0.0.1", 0) //
                 .protocol("grpc-web") //
                 .contextPath("/web") //
-                .addContextPath("/private") //
+                .addContextPath("/web/private") //
                 .option("streamBody", true);
         MetConfiguration defaultOutgoing = this.outgoing("/web");
-        MetConfiguration privateOutgoing = this.outgoing("/private");
+        MetConfiguration privateOutgoing = this.outgoing("/web/private");
         try (MetContext server = incoming.buildContext(); //
              MetContext defaults = defaultOutgoing.buildContext(); //
              MetContext extra = privateOutgoing.buildContext()) {
@@ -49,12 +50,14 @@ public class GrpcWebContextTest {
             MetBindInfo<GrpcWebService> defaultInfo = defaults.publisher().rsfService(GrpcWebService.class) //
                     .aliasName("grpc-web", "web.Echo").serialize("Json").register();
             MetBindInfo<GrpcWebService> privateInfo = extra.publisher().rsfService(GrpcWebService.class) //
-                    .aliasName("grpc-web", "web.Echo").serialize("Json").register();
+                    .aliasName("grpc-web", "web.Echo").serialize("Json") //
+                    .contextPathByPrefix("grpc-web", "/").register();
 
             // 客户端以自己的挂载路径发起请求，服务不能越过声明的上下文边界。
             var address = server.getListenAddress("grpc-web");
             GrpcWebService defaultRemote = defaults.getRsfClient(address).getRemote(defaultInfo);
-            GrpcWebService privateRemote = extra.getRsfClient(address).getRemote(privateInfo);
+            InterAddress isolated = new InterAddress(address.getSchema(), address.getHost(), address.getPort(), "/web/private");
+            GrpcWebService privateRemote = extra.getRsfClient(isolated).getRemote(privateInfo);
             assertEquals("visible", defaultRemote.echo(Message.of("visible", 1)).getValue());
             Exception failure = assertThrows(Exception.class, () -> {
                 privateRemote.echo(Message.of("hidden", 1));
@@ -75,10 +78,10 @@ public class GrpcWebContextTest {
                 .bind("127.0.0.1", 0) //
                 .protocol("grpc-web") //
                 .contextPath("/web") //
-                .addContextPath("/private") //
+                .addContextPath("/web/private") //
                 .option("streamBody", true);
         MetConfiguration defaultOutgoing = this.outgoing("/web");
-        MetConfiguration privateOutgoing = this.outgoing("/private");
+        MetConfiguration privateOutgoing = this.outgoing("/web/private");
         try (MetContext server = incoming.buildContext(); //
              MetContext defaults = defaultOutgoing.buildContext(); //
              MetContext extra = privateOutgoing.buildContext()) {
@@ -91,14 +94,17 @@ public class GrpcWebContextTest {
                     .contextPathByPrefix("grpc-web", "/private") //
                     .register();
             MetBindInfo<GrpcWebService> defaultInfo = defaults.publisher().rsfService(GrpcWebService.class) //
-                    .aliasName("grpc-web", "web.Echo").serialize("Json").register();
+                    .aliasName("grpc-web", "web.Echo").serialize("Json") //
+                    .contextPathByPrefix("grpc-web", "/").register();
             MetBindInfo<GrpcWebService> privateInfo = extra.publisher().rsfService(GrpcWebService.class) //
-                    .aliasName("grpc-web", "web.Echo").serialize("Json").register();
+                    .aliasName("grpc-web", "web.Echo").serialize("Json") //
+                    .contextPathByPrefix("grpc-web", "/").register();
 
             // 客户端以自己的挂载路径发起请求，服务不能越过声明的上下文边界。
             var address = server.getListenAddress("grpc-web");
             GrpcWebService defaultRemote = defaults.getRsfClient(address).getRemote(defaultInfo);
-            GrpcWebService privateRemote = extra.getRsfClient(address).getRemote(privateInfo);
+            InterAddress isolated = new InterAddress(address.getSchema(), address.getHost(), address.getPort(), "/web/private");
+            GrpcWebService privateRemote = extra.getRsfClient(isolated).getRemote(privateInfo);
             assertEquals("visible", privateRemote.echo(Message.of("visible", 1)).getValue());
             Exception failure = assertThrows(Exception.class, () -> {
                 defaultRemote.echo(Message.of("hidden", 1));
@@ -119,10 +125,10 @@ public class GrpcWebContextTest {
                 .bind("127.0.0.1", 0) //
                 .protocol("grpc-web") //
                 .contextPath("/web") //
-                .addContextPath("/private") //
+                .addContextPath("/web/private") //
                 .option("streamBody", true);
         MetConfiguration defaultOutgoing = this.outgoing("/web");
-        MetConfiguration privateOutgoing = this.outgoing("/private");
+        MetConfiguration privateOutgoing = this.outgoing("/web/private");
         try (MetContext server = incoming.buildContext(); //
              MetContext defaults = defaultOutgoing.buildContext(); //
              MetContext extra = privateOutgoing.buildContext()) {
@@ -132,17 +138,20 @@ public class GrpcWebContextTest {
             extra.start();
             server.publisher().rsfService(GrpcWebService.class, new GrpcWebServiceImpl()) //
                     .aliasName("grpc-web", "web.Echo").serialize("Json") //
-                    .contextPathByPrefix("grpc-web", "/web", "/private") //
+                    .contextPathByPrefix("grpc-web", "/", "/private") //
                     .register();
             MetBindInfo<GrpcWebService> defaultInfo = defaults.publisher().rsfService(GrpcWebService.class) //
-                    .aliasName("grpc-web", "web.Echo").serialize("Json").register();
+                    .aliasName("grpc-web", "web.Echo").serialize("Json") //
+                    .contextPathByPrefix("grpc-web", "/").register();
             MetBindInfo<GrpcWebService> privateInfo = extra.publisher().rsfService(GrpcWebService.class) //
-                    .aliasName("grpc-web", "web.Echo").serialize("Json").register();
+                    .aliasName("grpc-web", "web.Echo").serialize("Json") //
+                    .contextPathByPrefix("grpc-web", "/").register();
 
             // 客户端以自己的挂载路径发起请求，服务不能越过声明的上下文边界。
             var address = server.getListenAddress("grpc-web");
             GrpcWebService defaultRemote = defaults.getRsfClient(address).getRemote(defaultInfo);
-            GrpcWebService privateRemote = extra.getRsfClient(address).getRemote(privateInfo);
+            InterAddress isolated = new InterAddress(address.getSchema(), address.getHost(), address.getPort(), "/web/private");
+            GrpcWebService privateRemote = extra.getRsfClient(isolated).getRemote(privateInfo);
             assertEquals("default", defaultRemote.echo(Message.of("default", 1)).getValue());
             assertEquals("private", privateRemote.echo(Message.of("private", 1)).getValue());
         }

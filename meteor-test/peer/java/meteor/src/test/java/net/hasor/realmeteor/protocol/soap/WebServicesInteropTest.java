@@ -50,6 +50,7 @@ public class WebServicesInteropTest {
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
                     .bindResource("soap", new SoapWsdlResource(resource)) //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // Metro 从线上 WSDL 创建动态 Dispatch，并发送完整 SOAP 1.1 消息。
@@ -83,6 +84,7 @@ public class WebServicesInteropTest {
                     .aliasName("soap", "SignalService") //
                     .protocol("soap") //
                     .bindResource("soap", new SoapWsdlResource(resource)) //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // Metro 根据在线 WSDL 识别 one-way operation，并使用标准 invokeOneWay 调用。
@@ -115,6 +117,7 @@ public class WebServicesInteropTest {
                         .aliasName("soap", "EchoService") //
                         .protocol("soap") //
                         .bindResource("soap", new SoapWsdlResource(resource)) //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 公开 MetClient 代理向标准 SOAP Provider 发起真实 HTTP 调用。

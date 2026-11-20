@@ -9,13 +9,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.protocol.thrift.generated.InteropService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.annotation.MetMethod;
 import net.hasor.meteor.annotation.MetParam;
 import net.hasor.meteor.annotation.MetService;
-import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
@@ -25,9 +26,9 @@ import org.apache.thrift.protocol.TMessageType;
 import org.apache.thrift.transport.TMemoryBuffer;
 import org.apache.thrift.transport.TMemoryInputTransport;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** curl 原样发送官方 TJSON 消息，Meteor 通过公开入口发布普通 Java Echo 服务。 */
 @NxnRpc(name = "thrift")
@@ -62,7 +63,8 @@ public class ShellThriftHttpConsumerScenarioTest {
                     .option("encoding", "json");
             try (MetContext server = configuration.buildContext()) {
                 server.start();
-                server.publisher().rsfService(EchoService.class, text -> text).register();
+                server.publisher().rsfService(EchoService.class, text -> text) //
+                        .contextPathByPrefix("thrift-http", "/").register();
                 int port = server.getListenAddress("thrift-http").getPort();
                 String address = "http://" + ContainerProcess.runnerHost() + ":" + port + "/thrift";
 

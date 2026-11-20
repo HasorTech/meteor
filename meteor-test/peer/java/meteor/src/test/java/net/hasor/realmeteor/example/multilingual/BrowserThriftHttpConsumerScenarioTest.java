@@ -6,16 +6,16 @@
 package net.hasor.realmeteor.example.multilingual;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
-import net.hasor.meteor.MetContext;
 import net.hasor.example.support.TestConfigurationUtils;
+import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
 
 /** Apache Thrift 的官方 npm XHR 客户端在真实 Chromium 中消费 TJSON/HTTP 服务。 */
@@ -36,7 +36,8 @@ public class BrowserThriftHttpConsumerScenarioTest {
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
             provider.publisher().rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
-                    .aliasName("thrift-http", "OrderThriftService").protocol("thrift-http").register();
+                    .aliasName("thrift-http", "OrderThriftService").protocol("thrift-http") //
+                    .contextPathByPrefix("thrift-http", "/").register();
             int port = provider.getListenAddress("thrift-http").getPort();
             String target = "http://" + ContainerProcess.runnerHost() + ":" + port + "/thrift";
 

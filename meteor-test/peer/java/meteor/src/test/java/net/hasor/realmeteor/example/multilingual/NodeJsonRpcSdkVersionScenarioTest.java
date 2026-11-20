@@ -62,7 +62,8 @@ public class NodeJsonRpcSdkVersionScenarioTest {
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
             provider.publisher().rsfService(JsonRpcInteropService.class, new JsonRpcInteropServiceImpl()) //
-                    .aliasName("jsonrpc", "peer").protocol("jsonrpc").serialize("Json").register();
+                    .aliasName("jsonrpc", "peer").protocol("jsonrpc").serialize("Json") //
+                    .contextPathByPrefix("jsonrpc", "/").register();
 
             // 本版本 Jayson 生成位置参数和字符串请求 ID，并校验 Unicode 响应。
             int port = provider.getListenAddress("jsonrpc").getPort();
@@ -85,7 +86,8 @@ public class NodeJsonRpcSdkVersionScenarioTest {
             int port = peer.awaitPort();
             consumer.start();
             MetBindInfo<JsonRpcInteropService> service = consumer.publisher().rsfService(JsonRpcInteropService.class) //
-                    .aliasName("jsonrpc", "peer").protocol("jsonrpc").serialize("Json").register();
+                    .aliasName("jsonrpc", "peer").protocol("jsonrpc").serialize("Json") //
+                    .contextPathByPrefix("jsonrpc", "/").register();
 
             // 普通 Meteor 代理直接访问 SDK，协议与业务返回值均不能由测试器代转。
             InterAddress target = new InterAddress("jsonrpc", peer.host(), port);

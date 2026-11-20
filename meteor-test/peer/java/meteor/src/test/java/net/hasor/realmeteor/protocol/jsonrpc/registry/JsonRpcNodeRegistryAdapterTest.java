@@ -6,37 +6,37 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.jsonrpc.registry;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import java.nio.file.Files;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import net.hasor.example.matrix.OrderMatrixVectors;
 import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.OrderQuery;
+import net.hasor.example.discovery.RegistryDiscoveryExample;
+import net.hasor.example.matrix.OrderMatrixVectors;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.registry.RegistryConfiguration;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
+import net.hasor.meteor.test.nxn.NxnRpc;
+import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.discovery.ForeignServiceRegistrar;
 import net.hasor.realmeteor.environment.discovery.RegistryAddressResolver;
 import net.hasor.realmeteor.environment.discovery.RegistryDiscoveryEnvironment;
-import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** JSON-RPC 的显式 Node 注册适配；业务请求由原生 Jayson SDK 发送，不宣称原生注册发现。 */
 @ParameterizedClass(autoCloseArguments = false, name = "jsonrpc/node/adapter/{0}", quoteTextArguments = false)
@@ -44,12 +44,13 @@ import org.junit.jupiter.api.Timeout;
 @NxnRpc(name = "jsonrpc", version = "2.0")
 public class JsonRpcNodeRegistryAdapterTest {
     @TempDir
-    public Path data;
-    private final String          backend;
+    public        Path   data;
+    private final String backend;
 
     public JsonRpcNodeRegistryAdapterTest(String backend) {
         this.backend = backend;
     }
+
     public static Collection<Object[]> backends() {
         List<Object[]> values = new ArrayList<>();
         values.add(new Object[] { "jdbc" });
@@ -173,7 +174,7 @@ public class JsonRpcNodeRegistryAdapterTest {
                      ForeignServiceRegistrar registrar = new ForeignServiceRegistrar(registry)) {
                     InterAddress address = node.awaitAddress(consumer.getSettings().getUnitName());
                     registrar.register(service, node.processId(), "node", "jsonrpc", "http", address, "/orders");
-                    AddressSelectionAwaiter.await(consumer, service, "save");
+                    RegistryDiscoveryExample.awaitDiscovery(consumer, service);
 
                     // 无固定地址的正式代理读取注册结果，Node provider 保存唯一业务状态。
                     OrderDemoService orders = consumer.getRsfClient().getRemote(service);
@@ -209,7 +210,7 @@ public class JsonRpcNodeRegistryAdapterTest {
                      ForeignServiceRegistrar registrar = new ForeignServiceRegistrar(registry)) {
                     InterAddress address = node.awaitAddress(consumer.getSettings().getUnitName());
                     registrar.register(service, node.processId(), "node", "jsonrpc", "http", address, "/orders");
-                    AddressSelectionAwaiter.await(consumer, service, "save");
+                    RegistryDiscoveryExample.awaitDiscovery(consumer, service);
 
                     // 无固定地址的正式代理读取注册结果，Node provider 保存唯一业务状态。
                     OrderDemoService orders = consumer.getRsfClient().getRemote(service);
@@ -245,7 +246,7 @@ public class JsonRpcNodeRegistryAdapterTest {
                      ForeignServiceRegistrar registrar = new ForeignServiceRegistrar(registry)) {
                     InterAddress address = node.awaitAddress(consumer.getSettings().getUnitName());
                     registrar.register(service, node.processId(), "node", "jsonrpc", "http", address, "/orders");
-                    AddressSelectionAwaiter.await(consumer, service, "save");
+                    RegistryDiscoveryExample.awaitDiscovery(consumer, service);
 
                     // 无固定地址的正式代理读取注册结果，Node provider 保存唯一业务状态。
                     OrderDemoService orders = consumer.getRsfClient().getRemote(service);
@@ -278,7 +279,7 @@ public class JsonRpcNodeRegistryAdapterTest {
                      ForeignServiceRegistrar registrar = new ForeignServiceRegistrar(registry)) {
                     InterAddress address = node.awaitAddress(consumer.getSettings().getUnitName());
                     registrar.register(service, node.processId(), "node", "jsonrpc", "http", address, "/orders");
-                    AddressSelectionAwaiter.await(consumer, service, "save");
+                    RegistryDiscoveryExample.awaitDiscovery(consumer, service);
                     Order expected = OrderMatrixVectors.order("order");
                     Order saved = consumer.getRsfClient().getRemote(service).save(expected);
                     assertEquals(expected.getDescription(), saved.getDescription());

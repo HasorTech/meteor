@@ -6,19 +6,17 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.thrift.go;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
-import java.net.URI;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
+import net.hasor.example.Order;
+import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.discovery.RegistryDiscoveryExample;
 import net.hasor.example.matrix.OrderMatrixVectors;
 import net.hasor.example.matrix.OrderProtocol;
-import net.hasor.example.Order;
-import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
@@ -27,22 +25,20 @@ import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.registry.RegistryConfiguration;
 import net.hasor.meteor.registry.shared.storage.StorageAccess;
 import net.hasor.meteor.test.nxn.NxnRpc;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
+import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.discovery.ForeignServiceRegistrar;
 import net.hasor.realmeteor.environment.discovery.RegistryAddressResolver;
-import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.golang.GoPeerProcess;
 import net.hasor.realmeteor.matrix.OrderDiscovery;
 import net.hasor.realmeteor.matrix.OrderRegistryEnvironment;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** Thrift Go 显式注册适配，仅验证 Binary/Framed/Plain；Go SDK 不原生读取 Meteor 注册数据。 */
 @ParameterizedClass(autoCloseArguments = false, name = "thrift/go/adapter/{0}/binary-framed/plain", quoteTextArguments = false)
@@ -50,16 +46,17 @@ import org.junit.jupiter.api.Timeout;
 @NxnRpc(name = "thrift")
 public class ThriftGoRegistryAdapterScenarioTest {
     @TempDir
-    public static Path environmentData;
-    private static      OrderRegistryEnvironment environment;
+    public static  Path                     environmentData;
+    private static OrderRegistryEnvironment environment;
 
     @TempDir
-    public Path data;
-    private final OrderDiscovery  discovery;
+    public        Path           data;
+    private final OrderDiscovery discovery;
 
     public ThriftGoRegistryAdapterScenarioTest(OrderDiscovery discovery) {
         this.discovery = discovery;
     }
+
     public static Object[][] discoveries() {
         return new Object[][] { // 每个注册后端分别报告两个调用方向，不包含直连或其他安全配置。
                 { OrderDiscovery.JDBC }, //
@@ -136,7 +133,6 @@ public class ThriftGoRegistryAdapterScenarioTest {
                     InterAddress address = new InterAddress("thrift://" + target + "/" + unit);
                     registrar.register(service, peer.processId(), "go", "thrift", "tcp", address, "/");
                     RegistryDiscoveryExample.awaitDiscovery(consumer, service);
-                    AddressSelectionAwaiter.await(consumer, service, "save");
 
                     // 公开客户端从自动地址本选址；业务 RPC 直接到 Go，不经过发现适配器。
                     var addresses = consumer.getUpdater().queryAvailableAddresses(service.getBindID());

@@ -44,6 +44,7 @@ public class ConnectJavaInteropTest {
             client.start();
             MetBindInfo<ConnectDemoService> service = client.publisher().rsfService(ConnectDemoService.class) //
                     .aliasName("connect", "meteor.connect.demo.ConnectDemoService") //
+                    .contextPathByPrefix("connect", "/") //
                     .serialize("Json").register();
 
             // 消费者不发布本地实现；SDK 前缀与数值递增均必须来自真实 HTTP 服务。
@@ -76,6 +77,7 @@ public class ConnectJavaInteropTest {
             };
             server.publisher().rsfService(TextEchoService.class, implementation) //
                     .aliasName("connect", "meteor.java.sdk.TextEchoService").serialize("Protobuf") //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
 
             // 官方 JVM 对端由 Java main 直接使用 SDK，未经过 Node 或 Meteor 客户端。

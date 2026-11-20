@@ -6,8 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc.web;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
@@ -29,6 +27,7 @@ import net.hasor.cobble.concurrent.future.BasicFuture;
 import net.hasor.example.protocol.grpc.Message;
 import net.hasor.example.protocol.grpc.web.GrpcWebService;
 import net.hasor.example.protocol.grpc.web.GrpcWebServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
@@ -38,10 +37,10 @@ import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.domain.MetTimeoutException;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
 import net.hasor.meteor.protocol.grpc.GrpcStatusException;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** gRPC-Web 的二进制、文本和响应流通过 TLS 后保持协议与调用语义。 */
 @NxnRpc(name = "grpc-web")
@@ -61,10 +60,12 @@ public class GrpcWebTlsTest {
             client.start();
             server.publisher().rsfService(GrpcWebService.class, new GrpcWebServiceImpl()) //
                     .aliasName("grpc-web", "web.Echo") //
+                    .contextPathByPrefix("grpc-web", "/") //
                     .serialize("Json") //
                     .register();
             MetBindInfo<GrpcWebService> service = client.publisher().rsfService(GrpcWebService.class) //
                     .aliasName("grpc-web", "web.Echo") //
+                    .contextPathByPrefix("grpc-web", "/") //
                     .serialize("Json") //
                     .register();
 
@@ -90,11 +91,13 @@ public class GrpcWebTlsTest {
             client.start();
             server.publisher().rsfService(GrpcWebService.class, new GrpcWebServiceImpl()) //
                     .aliasName("grpc-web", "web.Echo") //
+                    .contextPathByPrefix("grpc-web", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc-web", resource) //
                     .register();
             MetBindInfo<GrpcWebService> service = client.publisher().rsfService(GrpcWebService.class) //
                     .aliasName("grpc-web", "web.Echo") //
+                    .contextPathByPrefix("grpc-web", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc-web", resource) //
                     .register();
@@ -121,11 +124,13 @@ public class GrpcWebTlsTest {
             client.start();
             server.publisher().rsfService(GrpcWebService.class, new GrpcWebServiceImpl()) //
                     .aliasName("grpc-web", "web.Echo") //
+                    .contextPathByPrefix("grpc-web", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc-web", resource) //
                     .register();
             MetBindInfo<GrpcWebService> service = client.publisher().rsfService(GrpcWebService.class) //
                     .aliasName("grpc-web", "web.Echo") //
+                    .contextPathByPrefix("grpc-web", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc-web", resource) //
                     .register();
@@ -151,10 +156,12 @@ public class GrpcWebTlsTest {
             client.start();
             server.publisher().rsfService(GrpcWebService.class, new GrpcWebServiceImpl()) //
                     .aliasName("grpc-web", "web.Echo") //
+                    .contextPathByPrefix("grpc-web", "/") //
                     .serialize("Json") //
                     .register();
             MetBindInfo<GrpcWebService> service = client.publisher().rsfService(GrpcWebService.class) //
                     .aliasName("grpc-web", "web.Echo") //
+                    .contextPathByPrefix("grpc-web", "/") //
                     .serialize("Json") //
                     .register();
 
@@ -174,7 +181,8 @@ public class GrpcWebTlsTest {
         try (MetContext server = incoming.buildContext()) {
             server.start();
             server.publisher().rsfService(GrpcWebService.class, new GrpcWebServiceImpl()) //
-                    .aliasName("grpc-web", "web.Echo").serialize("Json").register();
+                    .aliasName("grpc-web", "web.Echo").serialize("Json") //
+                    .contextPathByPrefix("grpc-web", "/").register();
 
             // 独立编码只使用公开的线协议，证书校验和 ALPN 由 JDK 客户端执行。
             HttpClient client = HttpClient.newBuilder() //
@@ -183,7 +191,8 @@ public class GrpcWebTlsTest {
             int port = server.getListenAddress("grpc-web").getPort();
             URI uri = URI.create("https://127.0.0.1:" + port + "/web/web.Echo/echo");
             byte[] body = this.binaryRequest("{\"value\":\"alpn\",\"count\":2}");
-            HttpRequest request = HttpRequest.newBuilder(uri).timeout(Duration.ofSeconds(5)) //
+            // 为首次 TLS 握手和测试组并发调度保留等待时间。
+            HttpRequest request = HttpRequest.newBuilder(uri).timeout(Duration.ofSeconds(10)) //
                     .header("Content-Type", "application/grpc-web+json") //
                     .POST(HttpRequest.BodyPublishers.ofByteArray(body)).build();
             HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
@@ -218,9 +227,11 @@ public class GrpcWebTlsTest {
             server.start();
             client.start();
             server.publisher().rsfService(GrpcWebService.class, new GrpcWebServiceImpl()) //
-                    .aliasName("grpc-web", "web.Echo").serialize("Json").register();
+                    .aliasName("grpc-web", "web.Echo").serialize("Json") //
+                    .contextPathByPrefix("grpc-web", "/").register();
             MetBindInfo<GrpcWebService> service = client.publisher().rsfService(GrpcWebService.class) //
-                    .aliasName("grpc-web", "web.Echo").serialize("Json").register();
+                    .aliasName("grpc-web", "web.Echo").serialize("Json") //
+                    .contextPathByPrefix("grpc-web", "/").register();
 
             // 从公开异步调用获取真正的协议异常，不把业务拒绝误认为 TLS 失败。
             MetClient remote = client.getRsfClient(server.getListenAddress("grpc-web"));
@@ -248,9 +259,11 @@ public class GrpcWebTlsTest {
             server.start();
             client.start();
             server.publisher().rsfService(GrpcWebService.class, new GrpcWebServiceImpl()) //
-                    .aliasName("grpc-web", "web.Echo").serialize("Json").register();
+                    .aliasName("grpc-web", "web.Echo").serialize("Json") //
+                    .contextPathByPrefix("grpc-web", "/").register();
             MetBindInfo<GrpcWebService> service = client.publisher().rsfService(GrpcWebService.class) //
-                    .aliasName("grpc-web", "web.Echo").serialize("Json").register();
+                    .aliasName("grpc-web", "web.Echo").serialize("Json") //
+                    .contextPathByPrefix("grpc-web", "/").register();
             GrpcWebService remote = client.getRsfClient(server.getListenAddress("grpc-web")).getRemote(service);
 
             // 首次只允许一条，观察窗口中不能收到未请求的第二条消息。
@@ -312,9 +325,11 @@ public class GrpcWebTlsTest {
             server.start();
             client.start();
             server.publisher().rsfService(GrpcWebService.class, implementation) //
-                    .aliasName("grpc-web", "web.Echo").serialize("Json").register();
+                    .aliasName("grpc-web", "web.Echo").serialize("Json") //
+                    .contextPathByPrefix("grpc-web", "/").register();
             MetBindInfo<GrpcWebService> service = client.publisher().rsfService(GrpcWebService.class) //
-                    .aliasName("grpc-web", "web.Echo").serialize("Json").register();
+                    .aliasName("grpc-web", "web.Echo").serialize("Json") //
+                    .contextPathByPrefix("grpc-web", "/").register();
             GrpcWebService remote = client.getRsfClient(server.getListenAddress("grpc-web")).getRemote(service);
             StreamProbe subscriber = new StreamProbe();
             remote.list(Message.of("cancel", 1)).subscribe(subscriber);
@@ -338,7 +353,8 @@ public class GrpcWebTlsTest {
         try (MetContext server = incoming.buildContext()) {
             server.start();
             server.publisher().rsfService(GrpcWebService.class, new GrpcWebServiceImpl()) //
-                    .aliasName("grpc-web", "web.Echo").serialize("Json").register();
+                    .aliasName("grpc-web", "web.Echo").serialize("Json") //
+                    .contextPathByPrefix("grpc-web", "/").register();
 
             // 独立 TLS 客户端信任服务端但没有身份，避免 HTTP 重试造成超时假阳性。
             SSLContext client = GrpcWebTlsUtils.clientContext("trust", null);
@@ -374,7 +390,8 @@ public class GrpcWebTlsTest {
         try (MetContext server = incoming.buildContext()) {
             server.start();
             server.publisher().rsfService(GrpcWebService.class, new GrpcWebServiceImpl()) //
-                    .aliasName("grpc-web", "web.Echo").serialize("Json").register();
+                    .aliasName("grpc-web", "web.Echo").serialize("Json") //
+                    .contextPathByPrefix("grpc-web", "/").register();
 
             // 以真实 gRPC-Web 请求触发握手，不能以 RPC 超时替代身份拒绝。
             HttpClient client = HttpClient.newBuilder() //
@@ -401,7 +418,8 @@ public class GrpcWebTlsTest {
         try (MetContext server = incoming.buildContext()) {
             server.start();
             server.publisher().rsfService(GrpcWebService.class, new GrpcWebServiceImpl()) //
-                    .aliasName("grpc-web", "web.Echo").serialize("Json").register();
+                    .aliasName("grpc-web", "web.Echo").serialize("Json") //
+                    .contextPathByPrefix("grpc-web", "/").register();
 
             // 独立客户端只信任另外的 CA，发送合法业务帧也不能绕过验证。
             HttpClient client = HttpClient.newBuilder() //
@@ -432,9 +450,11 @@ public class GrpcWebTlsTest {
             server.start();
             client.start();
             server.publisher().rsfService(GrpcWebService.class, new GrpcWebServiceImpl()) //
-                    .aliasName("grpc-web", "web.Echo").serialize("Json").register();
+                    .aliasName("grpc-web", "web.Echo").serialize("Json") //
+                    .contextPathByPrefix("grpc-web", "/").register();
             MetBindInfo<GrpcWebService> service = client.publisher().rsfService(GrpcWebService.class) //
-                    .aliasName("grpc-web", "web.Echo").serialize("Json").register();
+                    .aliasName("grpc-web", "web.Echo").serialize("Json") //
+                    .contextPathByPrefix("grpc-web", "/").register();
 
             // 公共 Caller 应提前收到传输错误，不能等到请求超时才结束。
             MetClient remote = client.getRsfClient(server.getListenAddress("grpc-web"));

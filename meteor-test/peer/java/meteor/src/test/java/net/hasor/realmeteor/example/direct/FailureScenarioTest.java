@@ -6,20 +6,17 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.example.direct;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ExecutionException;
-import net.hasor.example.direct.DirectRpcExample;
+import java.util.concurrent.TimeUnit;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderQuery;
-import net.hasor.meteor.MetBindInfo;
-import net.hasor.meteor.MetClient;
-import net.hasor.meteor.MetContext;
-import net.hasor.meteor.MetFuture;
-import net.hasor.meteor.SendLimitPolicy;
+import net.hasor.example.direct.DirectRpcExample;
+import net.hasor.meteor.*;
+import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.domain.MetException;
 import net.hasor.meteor.domain.MetTimeoutException;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -47,7 +44,7 @@ public class FailureScenarioTest {
             Object[] failedArguments = { query(ControlledOrderService.FAILURE_ID) };
             MetFuture failed = remote.asyncInvoke(service, "find", failedTypes, failedArguments);
             Throwable business = failure(failed);
-            assertTrue(business instanceof MetException, business.toString());
+            assertInstanceOf(MetException.class, business, business.toString());
             assertFalse(business instanceof MetTimeoutException);
             assertTrue(business.getMessage().contains("inventory unavailable"));
         }
@@ -95,14 +92,23 @@ public class FailureScenarioTest {
                     .protocol("rsf").register();
             MetBindInfo<OrderDemoService> service = client.publisher().rsfService(OrderDemoService.class) //
                     .protocol("rsf").register();
-            MetClient remote = client.getRsfClient(server.getListenAddress("rsf"));
+            InterAddress address = server.getListenAddress("rsf");
+            MetClient remote = client.getRsfClient(address);
+            OrderDemoService proxy = remote.getRemote(service);
+            assertEquals("ready", proxy.find(query(42)).getDescription());
 
-            // 旧连接关闭后重新上线，消费端使用当前监听地址恢复调用。
-            assertEquals("ready", remote.getRemote(service).find(query(42)).getDescription());
+            // 离线开始排空连接，先从消费端观察到断开，再恢复同一个监听地址。
             server.offline();
+            assertNull(server.getListenAddress("rsf"));
+            MetFuture disconnected = remote.asyncInvoke(service, "find", //
+                    new Class<?>[] { OrderQuery.class }, new Object[] { query(42) });
+            Throwable observed = failure(disconnected);
+            assertNotNull(observed);
+            assertFalse(observed instanceof MetTimeoutException, observed.toString());
+
             server.online();
-            MetClient reconnected = client.getRsfClient(server.getListenAddress("rsf"));
-            assertEquals("ready", reconnected.getRemote(service).find(query(42)).getDescription());
+            assertEquals(address, server.getListenAddress("rsf"));
+            assertEquals("ready", proxy.find(query(42)).getDescription());
         }
     }
 
@@ -130,7 +136,7 @@ public class FailureScenarioTest {
                 Object[] waitingArguments = { query(ControlledOrderService.BLOCKING_ID) };
                 MetFuture waiting = remote.asyncInvoke(service, "find", waitingTypes, waitingArguments);
                 assertTrue(implementation.entered.await(3, TimeUnit.SECONDS));
-                assertTrue(failure(waiting) instanceof MetTimeoutException);
+                assertInstanceOf(MetTimeoutException.class, failure(waiting));
                 assertEquals(1, implementation.release.getCount());
                 assertEquals("ready", remote.getRemote(service).find(query(42)).getDescription());
                 implementation.release.countDown();
@@ -170,7 +176,7 @@ public class FailureScenarioTest {
                 Object[] secondArguments = { query(42) };
                 MetFuture second = remote.asyncInvoke(service, "find", secondTypes, secondArguments);
                 Throwable rejected = failure(second);
-                assertTrue(rejected instanceof MetException, rejected.toString());
+                assertInstanceOf(MetException.class, rejected, rejected.toString());
                 assertFalse(rejected instanceof MetTimeoutException);
                 waiting.cancel();
             } finally {

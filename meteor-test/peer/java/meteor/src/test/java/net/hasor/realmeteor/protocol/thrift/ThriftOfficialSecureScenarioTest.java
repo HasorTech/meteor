@@ -139,7 +139,7 @@ public class ThriftOfficialSecureScenarioTest {
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(ThriftDemoService.class, new ThriftDemoServiceImpl()) //
-                    .contextPathByPrefix("thrift-http", "/thrift") //
+                    .contextPathByPrefix("thrift-http", "/") //
                     .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift-http", "ExtendedInteropService").register();
 
@@ -169,7 +169,7 @@ public class ThriftOfficialSecureScenarioTest {
             // 启动与服务订阅在测试方法中可见，调用地址选择 HTTPS 挂载。
             client.start();
             MetBindInfo<ThriftDemoService> service = client.publisher().rsfService(ThriftDemoService.class) //
-                    .contextPathByPrefix("thrift-http", "/thrift") //
+                    .contextPathByPrefix("thrift-http", "/") //
                     .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift-http", "ExtendedInteropService").register();
             InterAddress address = new InterAddress("https", peer.host(), port);
@@ -190,7 +190,7 @@ public class ThriftOfficialSecureScenarioTest {
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(ThriftDemoService.class, new ThriftDemoServiceImpl()) //
-                    .contextPathByPrefix("thrift-http", "/thrift") //
+                    .contextPathByPrefix("thrift-http", "/") //
                     .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift-http", "ExtendedInteropService").register();
 
@@ -222,7 +222,7 @@ public class ThriftOfficialSecureScenarioTest {
             // 启动 Meteor 并订阅官方生成契约，不引入本地服务实现。
             client.start();
             MetBindInfo<ThriftDemoService> service = client.publisher().rsfService(ThriftDemoService.class) //
-                    .contextPathByPrefix("thrift-http", "/thrift") //
+                    .contextPathByPrefix("thrift-http", "/") //
                     .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift-http", "ExtendedInteropService").register();
             InterAddress address = new InterAddress("https", peer.host(), port);
@@ -324,7 +324,7 @@ public class ThriftOfficialSecureScenarioTest {
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(ThriftDemoService.class, new ThriftDemoServiceImpl()) //
-                    .contextPathByPrefix("thrift-http", "/thrift") //
+                    .contextPathByPrefix("thrift-http", "/") //
                     .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift-http", "ExtendedInteropService").register();
 
@@ -388,7 +388,7 @@ public class ThriftOfficialSecureScenarioTest {
             // Meteor 启动、订阅后通过公开 HTTPS 地址发起 Thrift 调用。
             client.start();
             MetBindInfo<ThriftDemoService> service = client.publisher().rsfService(ThriftDemoService.class) //
-                    .contextPathByPrefix("thrift-http", "/thrift") //
+                    .contextPathByPrefix("thrift-http", "/") //
                     .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)) //
                     .aliasName("thrift-http", "ExtendedInteropService").register();
             InterAddress address = new InterAddress("https", peer.host(), port);

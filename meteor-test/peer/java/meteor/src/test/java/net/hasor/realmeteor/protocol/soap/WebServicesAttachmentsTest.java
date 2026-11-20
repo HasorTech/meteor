@@ -52,6 +52,7 @@ public class WebServicesAttachmentsTest {
                     .rsfService(BinaryService.class, new BinaryServiceImpl()) //
                     .aliasName("soap", "BinaryService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 代理只转发原始 HTTP 字节，让测试观察请求和响应的实际 MIME 类型。
@@ -66,6 +67,7 @@ public class WebServicesAttachmentsTest {
                         .rsfService(BinaryService.class) //
                         .aliasName("soap", "BinaryService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
                 int proxyPort = proxy.getAddress().getPort();
                 InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort);
@@ -116,6 +118,7 @@ public class WebServicesAttachmentsTest {
                     .rsfService(BinaryService.class, new BinaryServiceImpl()) //
                     .aliasName("soap", "BinaryService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 代理只转发原始 HTTP 字节，让测试观察请求和响应的实际 MIME 类型。
@@ -130,6 +133,7 @@ public class WebServicesAttachmentsTest {
                         .rsfService(BinaryService.class) //
                         .aliasName("soap", "BinaryService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
                 int proxyPort = proxy.getAddress().getPort();
                 InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort);
@@ -193,6 +197,7 @@ public class WebServicesAttachmentsTest {
                     .rsfService(BinaryService.class, new BinaryServiceImpl()) //
                     .aliasName("soap", "BinaryService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 代理只转发原始 HTTP 字节，让测试观察请求和响应的实际 MIME 类型。
@@ -207,6 +212,7 @@ public class WebServicesAttachmentsTest {
                         .rsfService(BinaryService.class) //
                         .aliasName("soap", "BinaryService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
                 int proxyPort = proxy.getAddress().getPort();
                 InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort);
@@ -258,6 +264,7 @@ public class WebServicesAttachmentsTest {
                     .rsfService(BinaryService.class, new BinaryServiceImpl()) //
                     .aliasName("soap", "BinaryService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 代理只转发原始 HTTP 字节，让测试观察请求和响应的实际 MIME 类型。
@@ -272,6 +279,7 @@ public class WebServicesAttachmentsTest {
                         .rsfService(BinaryService.class) //
                         .aliasName("soap", "BinaryService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
                 int proxyPort = proxy.getAddress().getPort();
                 InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort);
@@ -334,6 +342,7 @@ public class WebServicesAttachmentsTest {
                     .rsfService(BinaryService.class, new BinaryServiceImpl()) //
                     .aliasName("soap", "BinaryService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 代理只转发原始 HTTP 字节，让测试观察请求和响应的实际 MIME 类型。
@@ -348,6 +357,7 @@ public class WebServicesAttachmentsTest {
                         .rsfService(BinaryService.class) //
                         .aliasName("soap", "BinaryService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
                 int proxyPort = proxy.getAddress().getPort();
                 InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort);
@@ -402,6 +412,7 @@ public class WebServicesAttachmentsTest {
                     .rsfService(BinaryService.class, new BinaryServiceImpl()) //
                     .aliasName("soap", "BinaryService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 代理只转发原始 HTTP 字节，让测试观察请求和响应的实际 MIME 类型。
@@ -416,6 +427,7 @@ public class WebServicesAttachmentsTest {
                         .rsfService(BinaryService.class) //
                         .aliasName("soap", "BinaryService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
                 int proxyPort = proxy.getAddress().getPort();
                 InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort);
@@ -483,6 +495,7 @@ public class WebServicesAttachmentsTest {
                     .rsfService(BinaryService.class, new BinaryServiceImpl()) //
                     .aliasName("soap", "BinaryService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 代理只转发原始 HTTP 字节，让测试观察请求和响应的实际 MIME 类型。
@@ -497,6 +510,7 @@ public class WebServicesAttachmentsTest {
                         .rsfService(BinaryService.class) //
                         .aliasName("soap", "BinaryService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
                 int proxyPort = proxy.getAddress().getPort();
                 InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort);
@@ -552,6 +566,7 @@ public class WebServicesAttachmentsTest {
                     .rsfService(BinaryService.class, new BinaryServiceImpl()) //
                     .aliasName("soap", "BinaryService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 代理只转发原始 HTTP 字节，让测试观察请求和响应的实际 MIME 类型。
@@ -566,6 +581,7 @@ public class WebServicesAttachmentsTest {
                         .rsfService(BinaryService.class) //
                         .aliasName("soap", "BinaryService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
                 int proxyPort = proxy.getAddress().getPort();
                 InterAddress address = new InterAddress("soap", "127.0.0.1", proxyPort);

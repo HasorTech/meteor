@@ -67,17 +67,23 @@ public class GoProtoTypeMatrixTest {
     @Test
     @Timeout(value = 40000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void providerAcceptsOneNativeGoTypeVector() throws Exception {
-        // Meteor 经公开 bootstrap 启动后发布普通 Java 接口；文件声明真实的线上字段类型。
-        MetConfiguration configuration = this.configuration(true);
+        // 使用正式发布契约。gRPC 生成桩固定使用原生方法路径，服务显式绑定到协议根路径。
+        MetConfiguration configuration = this.configuration(true).addExtension(PublishedTypeEndpoint.registry());
+        configuration.connector("tcp").protocol("rsf");
         try (MetContext provider = configuration.buildContext()) {
-            provider.start();
-            provider.publisher().rsfService(TypeEchoService.class, new TypeEchoServiceImpl()) //
+            var publication = provider.publisher().rsfService(TypeEchoService.class, new TypeEchoServiceImpl()) //
                     .aliasName(this.protocol, SERVICE).protocol(this.protocol).serialize("Protobuf") //
-                    .bindResource(this.protocol, this.resource()).register();
-            InterAddress address = provider.getListenAddress(this.protocol);
-            String target = address.getHostPort();
-            if (StringUtils.equals(this.protocol, "connect")) {
-                target = "http://" + target;
+                    .bindResource(this.protocol, this.resource());
+            if (StringUtils.equals(this.protocol, "grpc")) {
+                publication.contextPathByPrefix(this.protocol, "/");
+            }
+            MetBindInfo<TypeEchoService> service = publication.register();
+            provider.start();
+
+            // Connect 生成桩接受完整 HTTP 基址，gRPC 生成桩使用同一发布信息中的监听地址。
+            String target = PublishedTypeEndpoint.httpAddress(provider, service, this.protocol);
+            if (StringUtils.equals(this.protocol, "grpc")) {
+                target = URI.create(target).getRawAuthority();
             }
 
             // 独立 Go 容器恢复 int64、uint64 和浮点原值，官方 SDK 完成真实 RPC。
@@ -100,6 +106,7 @@ public class GoProtoTypeMatrixTest {
             consumer.start();
             MetBindInfo<TypeEchoService> subscription = consumer.publisher().rsfService(TypeEchoService.class) //
                     .aliasName(this.protocol, SERVICE).protocol(this.protocol).serialize("Protobuf") //
+                    .contextPathByPrefix(this.protocol, "/") //
                     .bindResource(this.protocol, this.resource()).register();
             InterAddress address = new InterAddress(this.protocol, endpoint.getHost(), endpoint.getPort());
             TypeEchoService remote = consumer.getRsfClient(address).getRemote(subscription);

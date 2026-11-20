@@ -6,25 +6,25 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.connect;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URI;
 import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.hasor.example.protocol.connect.ConnectDemoService;
 import net.hasor.example.protocol.connect.ConnectDemoServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** 服务的发布范围决定 Connect 在同一监听端口上的上下文可见性。 */
 @NxnRpc(name = "connect", version = "1")
@@ -35,7 +35,7 @@ public class ConnectContextScenarioTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void unspecifiedServiceContextUsesTheDefaultMount() throws Exception {
         // 同一端点提供默认和附加挂载，服务未指定上下文。
-        MetConfiguration configuration = this.configuration("/rpc", "/private");
+        MetConfiguration configuration = this.configuration("/rpc", "/rpc/private");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             URL descriptor = this.getClass().getResource("/protocol/proto/connect/connect-demo.proto");
@@ -46,7 +46,7 @@ public class ConnectContextScenarioTest {
 
             // 标准 Connect JSON 请求通过默认上下文访问实际业务对象。
             int port = server.getListenAddress("connect").getPort();
-            HttpResponse<String> response = this.echo(port, "/rpc");
+            HttpResponse<String> response = this.echo(port, "/rpc/default/1.0.0");
             assertEquals(200, response.statusCode());
             JsonNode reply = JSON.readTree(response.body());
             assertEquals("context 中文", reply.path("text").asText());
@@ -58,7 +58,7 @@ public class ConnectContextScenarioTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void unspecifiedServiceContextIsHiddenFromAdditionalMounts() throws Exception {
         // 附加挂载存在，但未被服务选择，不应默认暴露业务对象。
-        MetConfiguration configuration = this.configuration("/rpc", "/private");
+        MetConfiguration configuration = this.configuration("/rpc", "/rpc/private");
         ConnectDemoServiceImpl implementation = new ConnectDemoServiceImpl();
         try (MetContext server = configuration.buildContext()) {
             server.start();
@@ -70,7 +70,7 @@ public class ConnectContextScenarioTest {
 
             // 客户端收到协议级不可调用结果，服务实现没有执行。
             int port = server.getListenAddress("connect").getPort();
-            HttpResponse<String> response = this.echo(port, "/private");
+            HttpResponse<String> response = this.echo(port, "/rpc/private");
             assertEquals(501, response.statusCode());
             assertEquals("unimplemented", JSON.readTree(response.body()).path("code").asText());
             assertEquals(0, implementation.getCalls());
@@ -81,7 +81,7 @@ public class ConnectContextScenarioTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void explicitServiceContextExposesTheSelectedAdditionalMount() throws Exception {
         // 服务通过发布 API 选择附加上下文，不改变端口和协议配置。
-        MetConfiguration configuration = this.configuration("/rpc", "/private");
+        MetConfiguration configuration = this.configuration("/rpc", "/rpc/private");
         try (MetContext server = configuration.buildContext()) {
             server.start();
             URL descriptor = this.getClass().getResource("/protocol/proto/connect/connect-demo.proto");
@@ -92,7 +92,7 @@ public class ConnectContextScenarioTest {
 
             // 附加上下文可以完成一次真实 Connect RPC。
             int port = server.getListenAddress("connect").getPort();
-            HttpResponse<String> response = this.echo(port, "/private");
+            HttpResponse<String> response = this.echo(port, "/rpc/private");
             assertEquals(200, response.statusCode());
             assertEquals(42, JSON.readTree(response.body()).path("number").asInt());
         }
@@ -102,7 +102,7 @@ public class ConnectContextScenarioTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void explicitServiceContextReplacesTheDefaultSelection() throws Exception {
         // 显式选择附加上下文后，默认上下文不再获得该服务的可见性。
-        MetConfiguration configuration = this.configuration("/rpc", "/private");
+        MetConfiguration configuration = this.configuration("/rpc", "/rpc/private");
         ConnectDemoServiceImpl implementation = new ConnectDemoServiceImpl();
         try (MetContext server = configuration.buildContext()) {
             server.start();
@@ -125,7 +125,7 @@ public class ConnectContextScenarioTest {
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void explicitMultipleContextsShareOneServiceAndOnePort() throws Exception {
         // 一个服务显式选择两个上下文，两个入口共用同一个 HTTP 监听。
-        MetConfiguration configuration = this.configuration("/rpc", "/private");
+        MetConfiguration configuration = this.configuration("/rpc", "/rpc/private");
         ConnectDemoServiceImpl implementation = new ConnectDemoServiceImpl();
         try (MetContext server = configuration.buildContext()) {
             server.start();
@@ -133,12 +133,12 @@ public class ConnectContextScenarioTest {
             GrpcProtoResource resource = new GrpcProtoResource(descriptor);
             server.publisher().rsfService(ConnectDemoService.class, implementation) //
                     .aliasName("connect", "meteor.connect.demo.ConnectDemoService").bindResource("connect", resource) //
-                    .contextPathByPrefix("connect", "/rpc", "/private").register();
+                    .contextPathByPrefix("connect", "/", "/private").register();
 
             // 两个路径均由当前端口进入同一个发布对象。
             int port = server.getListenAddress("connect").getPort();
             HttpResponse<String> first = this.echo(port, "/rpc");
-            HttpResponse<String> second = this.echo(port, "/private");
+            HttpResponse<String> second = this.echo(port, "/rpc/private");
             assertEquals(200, first.statusCode());
             assertEquals(200, second.statusCode());
             assertEquals(first.body(), second.body());
@@ -157,7 +157,7 @@ public class ConnectContextScenarioTest {
             GrpcProtoResource resource = new GrpcProtoResource(descriptor);
             server.publisher().rsfService(ConnectDemoService.class, new ConnectDemoServiceImpl()) //
                     .aliasName("connect", "meteor.connect.demo.ConnectDemoService").bindResource("connect", resource) //
-                    .contextPathByPrefix("connect", "/rpc/private").register();
+                    .contextPathByPrefix("connect", "/private").register();
 
             // 路由应移除完整嵌套前缀，才能解析正确的服务名与方法名。
             int port = server.getListenAddress("connect").getPort();

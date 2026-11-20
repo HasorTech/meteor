@@ -6,20 +6,21 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hessian;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.hasor.example.protocol.hessian.HessianDemoService;
 import net.hasor.example.protocol.hessian.HessianDemoServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
+import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 @NxnRpc(name = "hessian", version = "2")
 public class HessianContextScenarioTest {
@@ -29,7 +30,7 @@ public class HessianContextScenarioTest {
         // 一个端点挂载两个上下文，服务发布配置决定实际暴露范围。
         MetConfiguration incoming = this.incoming();
         MetConfiguration defaults = this.outgoing("/rpc");
-        MetConfiguration isolated = this.outgoing("/private");
+        MetConfiguration isolated = this.outgoing("/rpc/private");
         AtomicInteger calls = new AtomicInteger();
         HessianDemoServiceImpl implementation = new HessianDemoServiceImpl() {
             @Override
@@ -51,14 +52,15 @@ public class HessianContextScenarioTest {
             MetBindInfo<HessianDemoService> accepted = defaultClient.publisher() //
                     .rsfService(HessianDemoService.class).aliasName("hessian", "demo").serialize("Hessian").register();
             MetBindInfo<HessianDemoService> excluded = privateClient.publisher() //
-                    .rsfService(HessianDemoService.class).aliasName("hessian", "demo").serialize("Hessian").register();
+                    .rsfService(HessianDemoService.class).aliasName("hessian", "demo").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
 
             // 被选择的挂载点可以调用同一个 Java 服务。
             MetClient chosen = defaultClient.getRsfClient(server.getListenAddress("hessian"));
             assertEquals("selected", chosen.getRemote(accepted).echo("selected"));
 
             // 另一个真实挂载点不能穿透服务范围，业务对象只执行一次。
-            MetClient other = privateClient.getRsfClient(server.getListenAddress("hessian"));
+            MetClient other = privateClient.getRsfClient(this.privateAddress(server));
             Class<?>[] types = { String.class };
             Object[] arguments = { "excluded" };
             ExecutionException failure = assertThrows(ExecutionException.class, () -> {
@@ -75,7 +77,7 @@ public class HessianContextScenarioTest {
         // 一个端点挂载两个上下文，服务发布配置决定实际暴露范围。
         MetConfiguration incoming = this.incoming();
         MetConfiguration defaults = this.outgoing("/rpc");
-        MetConfiguration isolated = this.outgoing("/private");
+        MetConfiguration isolated = this.outgoing("/rpc/private");
         AtomicInteger calls = new AtomicInteger();
         HessianDemoServiceImpl implementation = new HessianDemoServiceImpl() {
             @Override
@@ -96,12 +98,14 @@ public class HessianContextScenarioTest {
                     .contextPathByPrefix("hessian", "/private") //
                     .register();
             MetBindInfo<HessianDemoService> accepted = privateClient.publisher() //
-                    .rsfService(HessianDemoService.class).aliasName("hessian", "demo").serialize("Hessian").register();
+                    .rsfService(HessianDemoService.class).aliasName("hessian", "demo").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             MetBindInfo<HessianDemoService> excluded = defaultClient.publisher() //
-                    .rsfService(HessianDemoService.class).aliasName("hessian", "demo").serialize("Hessian").register();
+                    .rsfService(HessianDemoService.class).aliasName("hessian", "demo").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
 
             // 被选择的挂载点可以调用同一个 Java 服务。
-            MetClient chosen = privateClient.getRsfClient(server.getListenAddress("hessian"));
+            MetClient chosen = privateClient.getRsfClient(this.privateAddress(server));
             assertEquals("selected", chosen.getRemote(accepted).echo("selected"));
 
             // 另一个真实挂载点不能穿透服务范围，业务对象只执行一次。
@@ -122,7 +126,7 @@ public class HessianContextScenarioTest {
         // 一个服务同时选择默认与附加上下文，两个入口共用监听端口。
         MetConfiguration incoming = this.incoming();
         MetConfiguration defaults = this.outgoing("/rpc");
-        MetConfiguration isolated = this.outgoing("/private");
+        MetConfiguration isolated = this.outgoing("/rpc/private");
         try (MetContext server = incoming.buildContext(); //
              MetContext defaultClient = defaults.buildContext(); //
              MetContext privateClient = isolated.buildContext()) {
@@ -131,20 +135,27 @@ public class HessianContextScenarioTest {
             privateClient.start();
             server.publisher().rsfService(HessianDemoService.class, new HessianDemoServiceImpl()) //
                     .aliasName("hessian", "demo").serialize("Hessian") //
-                    .contextPathByPrefix("hessian", "/rpc", "/private").register();
+                    .contextPathByPrefix("hessian", "/", "/private").register();
             MetBindInfo<HessianDemoService> firstService = defaultClient.publisher() //
-                    .rsfService(HessianDemoService.class).aliasName("hessian", "demo").serialize("Hessian").register();
+                    .rsfService(HessianDemoService.class).aliasName("hessian", "demo").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             MetBindInfo<HessianDemoService> secondService = privateClient.publisher() //
-                    .rsfService(HessianDemoService.class).aliasName("hessian", "demo").serialize("Hessian").register();
+                    .rsfService(HessianDemoService.class).aliasName("hessian", "demo").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
 
             // 相同目标端口通过两个客户端挂载配置访问已发布服务。
             HessianDemoService first = defaultClient.getRsfClient(server.getListenAddress("hessian")) //
                     .getRemote(firstService);
-            HessianDemoService second = privateClient.getRsfClient(server.getListenAddress("hessian")) //
+            HessianDemoService second = privateClient.getRsfClient(this.privateAddress(server)) //
                     .getRemote(secondService);
             assertEquals("default", first.echo("default"));
             assertEquals("additional", second.echo("additional"));
         }
+    }
+
+    private InterAddress privateAddress(MetContext server) {
+        InterAddress address = server.getListenAddress("hessian");
+        return new InterAddress(address.getSchema(), address.getHost(), address.getPort(), "/rpc/private");
     }
 
     private MetConfiguration incoming() {
@@ -154,7 +165,7 @@ public class HessianContextScenarioTest {
                 .bind("127.0.0.1", 0) //
                 .protocol("hessian") //
                 .contextPath("/rpc") //
-                .addContextPath("/private");
+                .addContextPath("/rpc/private");
         return configuration;
     }
 

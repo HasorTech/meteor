@@ -14,7 +14,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
 import net.hasor.example.discovery.RegistryDiscoveryExample;
 import net.hasor.example.protocol.thrift.ThriftDemoService;
 import net.hasor.example.protocol.thrift.ThriftDemoServiceImpl;
@@ -134,7 +133,6 @@ public class ThriftJavaRegistryAdapterScenarioTest {
                     InterAddress address = new InterAddress("thrift", peer.host(), port);
                     registrar.register(service, peer.processId(), "java", "thrift", "tcp", address, "/");
                     RegistryDiscoveryExample.awaitDiscovery(consumer, service);
-                    AddressSelectionAwaiter.await(consumer, service, "echo");
 
                     // 正常客户端从自动地址本选址，真实对端继续使用 Apache 官方生成的服务实现。
                     ThriftClient caller = new ThriftClient(consumer.getRsfClient());

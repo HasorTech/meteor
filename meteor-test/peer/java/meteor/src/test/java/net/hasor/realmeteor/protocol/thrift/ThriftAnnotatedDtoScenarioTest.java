@@ -78,7 +78,7 @@ public class ThriftAnnotatedDtoScenarioTest {
                     .aliasName(this.protocol(), "ExtendedInteropService") //
                     .bindResource(this.protocol(), this.contract());
             if (this.http()) {
-                publication.contextPathByPrefix(this.protocol(), "/thrift");
+                publication.contextPathByPrefix(this.protocol(), "/");
             }
             publication.register();
 
@@ -107,7 +107,7 @@ public class ThriftAnnotatedDtoScenarioTest {
                     .aliasName(this.protocol(), "ExtendedInteropService") //
                     .bindResource(this.protocol(), this.contract());
             if (this.http()) {
-                subscription.contextPathByPrefix(this.protocol(), "/thrift");
+                subscription.contextPathByPrefix(this.protocol(), "/");
             }
             MetBindInfo<AnnotatedInteropService> service = subscription.register();
             InterAddress address = new InterAddress(this.scheme(), peer.host(), port);

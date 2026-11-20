@@ -48,7 +48,8 @@ public class WebServicesSoap12InteropTest {
         try (MetContext context = configuration.buildContext()) {
             context.start();
             context.publisher().rsfService(EchoService.class, new EchoServiceImpl()) //
-                    .aliasName("soap", "EchoService").protocol("soap").register();
+                    .aliasName("soap", "EchoService").protocol("soap") //
+                    .contextPathByPrefix("soap", "/").register();
 
             // Metro 从线上 WSDL 选择 SOAP 1.2 port，并按契约发送标准消息。
             int port = context.getListenAddress("soap").getPort();
@@ -89,7 +90,8 @@ public class WebServicesSoap12InteropTest {
             try (MetContext context = configuration.buildContext()) {
                 context.start();
                 MetBindInfo<EchoService> subscription = context.publisher().rsfService(EchoService.class) //
-                        .aliasName("soap", "EchoService").protocol("soap").register();
+                        .aliasName("soap", "EchoService").protocol("soap") //
+                        .contextPathByPrefix("soap", "/").register();
                 int port = server.getPort();
                 InterAddress address = new InterAddress("soap", server.host(), port);
                 EchoService remote = context.getRsfClient(address).getRemote(subscription);

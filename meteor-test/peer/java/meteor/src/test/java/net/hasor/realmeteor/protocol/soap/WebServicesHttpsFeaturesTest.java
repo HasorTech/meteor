@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.net.URI;
 import java.net.URL;
 import java.net.http.HttpClient;
@@ -15,24 +14,22 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.protocol.soap.*;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.soap.definition.SoapWsdlResource;
-import net.hasor.realmeteor.protocol.soap.support.SoapTlsSupport;
 import net.hasor.meteor.test.nxn.NxnRpc;
+import net.hasor.realmeteor.protocol.soap.support.SoapTlsSupport;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 @NxnRpc(name = "soap", version = "1.1")
 public class WebServicesHttpsFeaturesTest {
-    private static final Pattern SCHEMA_LOCATION = Pattern.compile("schemaLocation=\"([^\"]+)\"");
 
     @Test
     @Timeout(value = 20000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
@@ -46,9 +43,10 @@ public class WebServicesHttpsFeaturesTest {
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
                     .bindResource("soap", this.echoResource()) //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
-            // 通过真实 TLS/ALPN 读取 WSDL，动态地址和导入位置都保留 HTTPS。
+            // 通过真实 TLS/ALPN 读取 WSDL，动态地址保留 HTTPS，导入的 XSD 内嵌在 WSDL 中。
             URI endpoint = this.endpoint(context, "/services/EchoService");
             HttpRequest request = this.get(URI.create(endpoint + "?wsdl"));
             HttpClient client = this.http(HttpClient.Version.HTTP_2, "");
@@ -58,7 +56,9 @@ public class WebServicesHttpsFeaturesTest {
             String contentType = response.headers().firstValue("content-type").orElse("");
             assertTrue(StringUtils.startsWithIgnoreCase(contentType, "text/xml"), contentType);
             assertTrue(response.body().contains("location=\"" + endpoint + "\""), response.body());
-            assertTrue(response.body().contains(endpoint + "?xsd=echo-types.xsd"), response.body());
+            assertTrue(response.body().contains("targetNamespace=\"urn:meteor:test:echo:types\""), response.body());
+            assertTrue(response.body().contains("name=\"echo\""), response.body());
+            assertFalse(response.body().contains("schemaLocation="), response.body());
         }
     }
 
@@ -74,9 +74,10 @@ public class WebServicesHttpsFeaturesTest {
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
                     .bindResource("soap", this.echoResource()) //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
-            // 先读取在线 WSDL，再跟随它发布的 schemaLocation 导入真实 XSD。
+            // 通过同一个 HTTPS 服务端点分别读取 WSDL 与独立 XSD。
             URI endpoint = this.endpoint(context, "/services/EchoService");
             HttpClient client = this.http(HttpClient.Version.HTTP_1_1, "");
             HttpRequest definitionRequest = this.get(URI.create(endpoint + "?wsdl"));
@@ -84,7 +85,7 @@ public class WebServicesHttpsFeaturesTest {
                     HttpResponse.BodyHandlers.ofString());
             assertEquals(200, definition.statusCode());
             assertEquals(HttpClient.Version.HTTP_1_1, definition.version());
-            URI imported = URI.create(this.schemaLocation(definition.body()));
+            URI imported = URI.create(endpoint + "?xsd=echo-types.xsd");
             HttpResponse<String> response = this.send(client, this.get(imported), //
                     HttpResponse.BodyHandlers.ofString());
             assertEquals(200, response.statusCode());
@@ -116,6 +117,7 @@ public class WebServicesHttpsFeaturesTest {
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 外部客户端经 TLS/ALPN 读取目录，页面保留可用的服务与 WSDL 链接。
@@ -145,6 +147,7 @@ public class WebServicesHttpsFeaturesTest {
                     .rsfService(EchoService.class, service) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 外部客户端携带身份，断言真实 HTTP/2 上返回 SOAP 1.2 Fault。
@@ -172,6 +175,7 @@ public class WebServicesHttpsFeaturesTest {
                     .rsfService(SignalService.class, service) //
                     .aliasName("soap", "SignalService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 回执不能等待业务完成，响应仍必须来自真实 HTTP/2 连接。
@@ -208,6 +212,7 @@ public class WebServicesHttpsFeaturesTest {
                     .rsfService(BinaryService.class, new BinaryServiceImpl()) //
                     .aliasName("soap", "BinaryService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetBindInfo<BinaryService> subscription = this.subscribeBinary(client);
 
@@ -233,6 +238,7 @@ public class WebServicesHttpsFeaturesTest {
                     .rsfService(BinaryService.class, new BinaryServiceImpl()) //
                     .aliasName("soap", "BinaryService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetBindInfo<BinaryService> subscription = this.subscribeBinary(client);
 
@@ -277,6 +283,7 @@ public class WebServicesHttpsFeaturesTest {
                 .rsfService(BinaryService.class) //
                 .aliasName("soap", "BinaryService") //
                 .protocol("soap") //
+                .contextPathByPrefix("soap", "/") //
                 .register();
     }
 
@@ -284,12 +291,6 @@ public class WebServicesHttpsFeaturesTest {
         URL wsdl = this.getClass().getResource("/protocol/wsdl/echo.wsdl");
         assertNotNull(wsdl, "Missing echo WSDL");
         return new SoapWsdlResource(wsdl);
-    }
-
-    private String schemaLocation(String wsdl) {
-        Matcher matcher = SCHEMA_LOCATION.matcher(wsdl);
-        assertTrue(matcher.find(), "Missing WSDL schemaLocation");
-        return matcher.group(1);
     }
 
     private HttpClient http(HttpClient.Version version, String identity) throws Exception {

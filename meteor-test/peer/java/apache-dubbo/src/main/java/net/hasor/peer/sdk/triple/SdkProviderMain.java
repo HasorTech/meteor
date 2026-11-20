@@ -24,6 +24,8 @@ public final class SdkProviderMain {
         // 创建独立的官方 SDK 应用，直连示例不连接注册中心或启动管理端口。
         System.setProperty("dubbo.application.logger", "jdk");
         System.setProperty("dubbo.metadata-service.export-port", "-1");
+        // HTTP/2 连接初始窗口为 65,535；Nginx 增大窗口到协议上限时不能多算一个字节。
+        System.setProperty("dubbo.protocol.triple.connection-initial-window-size", "65535");
         ApplicationConfig application = new ApplicationConfig("triple-sdk-order-provider");
         application.setQosEnable(false);
         application.setMetadataType("local");

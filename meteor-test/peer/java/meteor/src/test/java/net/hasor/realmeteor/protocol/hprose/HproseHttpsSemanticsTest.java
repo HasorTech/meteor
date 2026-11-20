@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hprose;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -18,14 +17,15 @@ import java.util.concurrent.TimeUnit;
 import hprose.io.HproseReader;
 import net.hasor.example.protocol.hprose.Sample;
 import net.hasor.example.protocol.hprose.SampleImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.protocol.hprose.support.HproseTlsSupport;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.Timeout;
 
 @NxnRpc(name = "hprose")
 public class HproseHttpsSemanticsTest {
@@ -52,6 +52,7 @@ public class HproseHttpsSemanticsTest {
             server.publisher() //
                     .rsfService(Sample.class, new SampleImpl()) //
                     .aliasName("Hprose", "sample") //
+                    .contextPathByPrefix("hprose", "/") //
                     .register();
 
             // 独立 JDK 客户端校验证书和主机名，响应版本确认实际使用 HTTP/2。
@@ -97,6 +98,7 @@ public class HproseHttpsSemanticsTest {
             server.publisher() //
                     .rsfService(Sample.class, new SampleImpl()) //
                     .aliasName("Hprose", "sample") //
+                    .contextPathByPrefix("hprose", "/") //
                     .register();
 
             // 独立 JDK 客户端校验证书和主机名，响应版本确认实际使用 HTTP/2。
@@ -142,6 +144,7 @@ public class HproseHttpsSemanticsTest {
             server.publisher() //
                     .rsfService(Sample.class, new SampleImpl()) //
                     .aliasName("Hprose", "sample") //
+                    .contextPathByPrefix("hprose", "/") //
                     .register();
 
             // 独立 JDK 客户端校验证书和主机名，响应版本确认实际使用 HTTP/2。

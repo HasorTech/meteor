@@ -5,15 +5,15 @@
  */
 package net.hasor.peer.application;
 import java.io.IOException;
-import java.net.URI;
 import java.net.DatagramSocket;
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.*;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
+import net.hasor.example.discovery.RegistryDiscoveryExample;
 import net.hasor.example.oncrpc.OncRpcOrderBridge;
 import net.hasor.example.oncrpc.OncRpcOrderService;
 import net.hasor.example.oncrpc.OrderXdrCodec;
@@ -148,19 +148,15 @@ public final class OrderApplicationMain {
         }
         boolean tls = Boolean.parseBoolean(environment("METEOR_ORDER_TLS", "false"));
         if (tls) {
-            connector.option("tlsEnabled", true)
-                    .option("tlsTrustStore", "classpath:/certs/acceptance/trust.p12")
-                    .option("tlsTrustStorePassword", "meteor-test");
+            connector.option("tlsEnabled", true).option("tlsTrustStore", "classpath:/certs/acceptance/trust.p12").option("tlsTrustStorePassword", "meteor-test");
             if (provider) {
-                connector.option("tlsKeyStore", "classpath:/certs/acceptance/server.p12")
-                        .option("tlsKeyStorePassword", "meteor-test");
+                connector.option("tlsKeyStore", "classpath:/certs/acceptance/server.p12").option("tlsKeyStorePassword", "meteor-test");
             }
             if (StringUtils.equals(transport, "udp")) {
                 connector.option("tlsProtocols", "DTLSv1.2");
             }
             if (!tcp) {
-                connector.option("tlsAlpn", List.of("grpc", "triple").contains(protocol) ? "h2" : "http/1.1")
-                        .option("httpScheme", "https");
+                connector.option("tlsAlpn", List.of("grpc", "triple").contains(protocol) ? "h2" : "http/1.1").option("httpScheme", "https");
             }
         }
         var mount = connector.protocol(protocol);
@@ -288,9 +284,9 @@ public final class OrderApplicationMain {
             remote = client.getRemote(binding);
         }
 
-        // 自动发现只等待正式选址就绪，不注入地址，也不发送探测业务 RPC。
+        // 自动发现只等待公开地址查询就绪，不注入地址，也不发送探测业务 RPC。
         if (!direct) {
-            AddressSelectionAwaiter.await(context, binding, "save");
+            RegistryDiscoveryExample.awaitDiscovery(context, binding);
             var addresses = context.getUpdater().queryAvailableAddresses(binding.getBindID());
             System.out.println("Discovered addresses: " + addresses);
         }

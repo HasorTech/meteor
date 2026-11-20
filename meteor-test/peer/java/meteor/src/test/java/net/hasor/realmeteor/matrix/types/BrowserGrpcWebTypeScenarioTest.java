@@ -4,26 +4,26 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.matrix.types;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.hasor.example.contract.types.TypeEchoService;
 import net.hasor.example.contract.types.TypeEchoServiceImpl;
 import net.hasor.example.contract.types.TypeValue;
 import net.hasor.example.contract.types.TypeValueVectors;
-import net.hasor.meteor.MetContext;
 import net.hasor.example.support.TestConfigurationUtils;
+import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /** 真实浏览器仅作为 gRPC-Web 消费者，官方传输与 Buf 原生 BigInt 编码共同验证类型精度。 */
 @ParameterizedClass(autoCloseArguments = false, name = "types/browser/grpcweb-{0}/direct/{2}/{1}/meteor-provider", quoteTextArguments = false)
@@ -38,6 +38,7 @@ public class BrowserGrpcWebTypeScenarioTest {
         this.format = format;
         this.vector = vector;
     }
+
     public static List<Object[]> scenarios() throws Exception {
         // 二进制和 Base64 文本是 gRPC-Web 传输形态；消息自身均使用同一份 Protobuf 类型契约。
         List<Object[]> scenarios = new ArrayList<>();
@@ -56,7 +57,8 @@ public class BrowserGrpcWebTypeScenarioTest {
         try (TypeNodePeerProcess peer = TypeNodePeerProcess.browser()) {
             String origin = peer.awaitReady().required("origin").textValue();
             MetConfiguration configuration = TestConfigurationUtils.create() //
-                    .setRequestTimeout(10000);
+                    .setRequestTimeout(10000).addExtension(PublishedTypeEndpoint.registry());
+            configuration.connector("tcp").protocol("rsf");
             configuration.connector("http") //
                     .bind(ContainerProcess.runnerHost(), 0) //
                     .option("httpVersion", 1) //
@@ -65,15 +67,14 @@ public class BrowserGrpcWebTypeScenarioTest {
                     .option("corsOrigins", origin);
             GrpcProtoResource resource = new GrpcProtoResource(getClass().getResource("/protocol/proto/types/types.proto"));
             try (MetContext server = configuration.buildContext()) {
-                // 服务容器启动后正常发布接口和协议资源，所有业务流量经过 Caller/Dispatcher 链路。
-                server.start();
-                server.publisher().rsfService(TypeEchoService.class, new TypeEchoServiceImpl()) //
+                // 在启动前登记服务和协议资源，启动时同步发布实际接入点。
+                var service = server.publisher().rsfService(TypeEchoService.class, new TypeEchoServiceImpl()) //
                         .aliasName("grpc-web", "meteor.types.TypeEchoService").protocol("grpc-web") //
                         .serialize("Protobuf").bindResource("grpc-web", resource).register();
+                server.start();
 
                 // 当前实例只发送一个向量，BigInt、字节数组和可空值均在 Chromium 内构造与读取。
-                int port = server.getListenAddress("grpc-web").getPort();
-                String target = "http://" + ContainerProcess.runnerHost() + ":" + port + "/types";
+                String target = PublishedTypeEndpoint.httpAddress(server, service, "grpc-web");
                 Map<String, String> command = Map.of("target", target, "format", this.format, "vector", this.vector);
                 JsonNode result = peer.invoke(command);
                 TypeValue actual = JSON.treeToValue(result.required("value"), TypeValue.class);

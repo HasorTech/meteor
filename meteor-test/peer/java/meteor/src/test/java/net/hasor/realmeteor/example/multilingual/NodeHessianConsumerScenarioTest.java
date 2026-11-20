@@ -4,19 +4,19 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.example.multilingual;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.example.protocol.hessian.HessianInteropDemo;
 import net.hasor.example.protocol.hessian.HessianInteropDemoImpl;
-import net.hasor.meteor.MetContext;
 import net.hasor.example.support.TestConfigurationUtils;
+import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** Node Hessian HTTP RPC SDK 通过正式代理调用 Meteor，仅验证基础 String 请求与响应。 */
 @NxnRpc(name = "hessian", version = "2")
@@ -35,7 +35,8 @@ public class NodeHessianConsumerScenarioTest {
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(HessianInteropDemo.class, new HessianInteropDemoImpl()) //
-                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian").register();
+                    .aliasName("hessian", "demo").protocol("hessian").serialize("Hessian") //
+                    .contextPathByPrefix("hessian", "/").register();
             int port = server.getListenAddress("hessian").getPort();
             String target = "http://" + ContainerProcess.runnerHost() + ":" + port + "/hessian/demo";
 

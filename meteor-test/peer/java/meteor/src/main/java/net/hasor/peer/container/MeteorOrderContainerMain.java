@@ -21,6 +21,7 @@ import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.OrderQuery;
+import net.hasor.example.discovery.RegistryDiscoveryExample;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
@@ -29,7 +30,6 @@ import net.hasor.meteor.registry.RegistryConfiguration;
 import net.hasor.meteor.registry.jdbc.JdbcRegistryConfiguration;
 import net.hasor.meteor.registry.nacos.NacosRegistryConfiguration;
 import net.hasor.meteor.registry.zookeeper.ZookeeperRegistryConfiguration;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
 import org.h2.jdbcx.JdbcDataSource;
 
 /** 独立应用容器的公开入口；文件仅交换控制与断言数据，订单调用走真实 RSF 网络。 */
@@ -95,7 +95,7 @@ public final class MeteorOrderContainerMain {
             if (directAddress == null) {
                 // 失败时只记录公开快照，不主动拉取、补地址或重新发起业务调用。
                 try {
-                    AddressSelectionAwaiter.await(context, service, "save");
+                    RegistryDiscoveryExample.awaitDiscovery(context, service);
                 } catch (Exception failure) {
                     Properties diagnostics = new Properties();
                     diagnostics.setProperty("instanceId", context.getInstanceID());

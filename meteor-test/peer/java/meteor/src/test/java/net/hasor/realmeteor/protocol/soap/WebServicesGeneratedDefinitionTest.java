@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.net.URL;
@@ -31,17 +30,18 @@ import jakarta.xml.soap.SOAPElement;
 import jakarta.xml.soap.SOAPMessage;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.protocol.soap.*;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
-import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.meteor.test.nxn.NxnRpc;
+import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.Timeout;
 
 @NxnRpc(name = "soap", version = "1.1")
 public class WebServicesGeneratedDefinitionTest {
@@ -62,6 +62,7 @@ public class WebServicesGeneratedDefinitionTest {
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 从真实 HTTP 服务端点读取自动生成的 WSDL。
@@ -105,6 +106,7 @@ public class WebServicesGeneratedDefinitionTest {
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 独立 XSD 地址继续提供自动生成的类型定义。
@@ -149,6 +151,7 @@ public class WebServicesGeneratedDefinitionTest {
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 标准 Metro 客户端从网络加载带内嵌 XSD 的 WSDL，并调用自动生成的 operation。
@@ -183,6 +186,7 @@ public class WebServicesGeneratedDefinitionTest {
                     .rsfService(ProfileService.class, service) //
                     .aliasName("soap", "ProfileService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 请求包含重复集合元素和可空字符串、数值，先用线上生成的 XSD 校验正文。
@@ -252,11 +256,13 @@ public class WebServicesGeneratedDefinitionTest {
                     .rsfService(CollectionService.class, service) //
                     .aliasName("soap", "CollectionService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetBindInfo<CollectionService> subscribed = client.publisher() //
                     .rsfService(CollectionService.class) //
                     .aliasName("soap", "CollectionService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 真实 HTTP 往返中的空 XML 集合必须仍是空集合，不能变成 null。
@@ -282,6 +288,7 @@ public class WebServicesGeneratedDefinitionTest {
                     .rsfService(SignalService.class, signal) //
                     .aliasName("soap", "SignalService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 线上 WSDL 的 portType 和 binding 均只有 input，没有 output。
@@ -321,7 +328,7 @@ public class WebServicesGeneratedDefinitionTest {
                     .register();
 
             // 从精确挂载位置读取生成定义，并确认默认挂载不会泄漏服务。
-            URI endpoint = this.endpoint(context, "/api/echo");
+            URI endpoint = this.endpoint(context, "/services/api/echo");
             HttpClient http = this.http();
             URI wsdlAddress = URI.create(endpoint + "?wsdl");
             HttpResponse<byte[]> wsdl = http.send(this.get(wsdlAddress), HttpResponse.BodyHandlers.ofByteArray());

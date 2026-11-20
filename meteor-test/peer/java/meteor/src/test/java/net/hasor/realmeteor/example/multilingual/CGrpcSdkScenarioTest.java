@@ -62,6 +62,7 @@ public class CGrpcSdkScenarioTest {
             provider.publisher().rsfService(TextEchoService.class, text -> text) //
                     .protocol("grpc").serialize("Protobuf") //
                     .aliasName("grpc", "meteor.java.sdk.TextEchoService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .bindResource("grpc", new GrpcProtoResource(contract)).register();
             int port = provider.getListenAddress("grpc").getPort();
             String target = "grpc://" + ContainerProcess.runnerHost() + ":" + port;
@@ -95,6 +96,7 @@ public class CGrpcSdkScenarioTest {
             MetBindInfo<TextEchoService> service = consumer.publisher().rsfService(TextEchoService.class) //
                     .protocol("grpc").serialize("Protobuf") //
                     .aliasName("grpc", "meteor.java.sdk.TextEchoService") //
+                    .contextPathByPrefix("grpc", "/") //
                     .bindResource("grpc", new GrpcProtoResource(contract)).register();
 
             // 生成的 Protobuf-C codec 处理消息，Core 负责 HTTP/2 和 gRPC 状态。

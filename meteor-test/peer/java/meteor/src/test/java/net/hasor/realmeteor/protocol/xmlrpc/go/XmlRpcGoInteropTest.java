@@ -6,18 +6,19 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.xmlrpc.go;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
+import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.example.protocol.golang.GoEchoService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.golang.GoPeerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** kolo/xmlrpc 只提供客户端 API，本类仅记录 Go 消费 Meteor 的基础证据。 */
 @NxnRpc(name = "xmlrpc")
@@ -36,7 +37,8 @@ public class XmlRpcGoInteropTest {
         try (MetContext server = configuration.buildContext()) {
             server.start();
             server.publisher().rsfService(GoEchoService.class, value -> value + "|meteor") //
-                    .protocol("xmlrpc").aliasName("xmlrpc", "sample").register();
+                    .protocol("xmlrpc").aliasName("xmlrpc", "sample") //
+                    .contextPathByPrefix("xmlrpc", "/").register();
             String target = "http://" + server.getListenAddress("xmlrpc").getHostPort() + "/rpc";
 
             // kolo/xmlrpc 原生客户端调用一次 Unicode 回声并核对远端生成的后缀。

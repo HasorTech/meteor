@@ -4,23 +4,23 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.example.multilingual;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import net.hasor.example.echo.TextEchoService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
-import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 /** libjson-rpc-cpp SDK 的基础双向文本互通，不扩展传输与类型矩阵。 */
 @ParameterizedClass(autoCloseArguments = false, name = "sdk/cpp/jsonrpc/libjson-rpc-cpp@{0}/{1}", quoteTextArguments = false)
@@ -32,6 +32,7 @@ public class JsonRpcCppInteropTest {
     public JsonRpcCppInteropTest(String version, String profile, String executable) {
         this.executable = executable;
     }
+
     public static List<Object[]> versions() {
         // 两个主版本加载不同前缀的运行库，测试保留相同业务契约。
         List<Object[]> versions = new ArrayList<>();
@@ -54,7 +55,8 @@ public class JsonRpcCppInteropTest {
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
             provider.publisher().rsfService(TextEchoService.class, text -> text) //
-                    .aliasName("jsonrpc", "demo").protocol("jsonrpc").serialize("Json").register();
+                    .aliasName("jsonrpc", "demo").protocol("jsonrpc").serialize("Json") //
+                    .contextPathByPrefix("jsonrpc", "/").register();
 
             // 独立 C++ SDK 构造一次 V2 请求，并自行检查 Unicode 回声结果。
             int port = provider.getListenAddress("jsonrpc").getPort();
@@ -83,7 +85,8 @@ public class JsonRpcCppInteropTest {
             String target = provider.awaitReady("READY ");
             consumer.start();
             MetBindInfo<TextEchoService> service = consumer.publisher().rsfService(TextEchoService.class) //
-                    .aliasName("jsonrpc", "demo").protocol("jsonrpc").serialize("Json").register();
+                    .aliasName("jsonrpc", "demo").protocol("jsonrpc").serialize("Json") //
+                    .contextPathByPrefix("jsonrpc", "/").register();
 
             // 订阅没有本地实现的服务，真实网络响应由 C++ AbstractServer 生成。
             TextEchoService remote = consumer.getRsfClient(new InterAddress(target)).getRemote(service);

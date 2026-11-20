@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -15,10 +14,11 @@ import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.hasor.example.protocol.soap.EchoService;
 import net.hasor.example.protocol.soap.EchoServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
-import net.hasor.realmeteor.protocol.soap.support.SoapResponseUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
+import net.hasor.realmeteor.protocol.soap.support.SoapResponseUtils;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -41,11 +41,11 @@ public class WebServicesContextPathTest {
 
             // 选择的 private context 返回生成定义，并保留正确的服务地址。
             int port = context.getListenAddress("soap").getPort();
-            URI privateWsdl = URI.create("http://127.0.0.1:" + port + "/private/EchoService?wsdl");
+            URI privateWsdl = URI.create("http://127.0.0.1:" + port + "/public/private/EchoService?wsdl");
             HttpClient http = this.httpClient();
             HttpResponse<String> allowed = http.send(this.get(privateWsdl), HttpResponse.BodyHandlers.ofString());
             assertEquals(200, allowed.statusCode());
-            assertTrue(allowed.body().contains("/private/EchoService"), allowed.body());
+            assertTrue(allowed.body().contains("/public/private/EchoService"), allowed.body());
 
             // 服务只在选择的 context 可见，默认 context 不会泄漏定义页。
             URI publicWsdl = URI.create("http://127.0.0.1:" + port + "/public/EchoService?wsdl");
@@ -69,14 +69,14 @@ public class WebServicesContextPathTest {
 
             // 默认 context 可获取定义，返回的服务地址也保留该挂载路径。
             int port = context.getListenAddress("soap").getPort();
-            URI publicWsdl = URI.create("http://127.0.0.1:" + port + "/public/EchoService?wsdl");
+            URI publicWsdl = URI.create("http://127.0.0.1:" + port + "/public/default/1.0.0/EchoService?wsdl");
             HttpClient http = this.httpClient();
             HttpResponse<String> allowed = http.send(this.get(publicWsdl), HttpResponse.BodyHandlers.ofString());
             assertEquals(200, allowed.statusCode());
-            assertTrue(allowed.body().contains("/public/EchoService"), allowed.body());
+            assertTrue(allowed.body().contains("/public/default/1.0.0/EchoService"), allowed.body());
 
             // 额外挂载不会自动获得默认服务的定义。
-            URI privateWsdl = URI.create("http://127.0.0.1:" + port + "/private/EchoService?wsdl");
+            URI privateWsdl = URI.create("http://127.0.0.1:" + port + "/public/private/EchoService?wsdl");
             HttpResponse<String> denied = http.send(this.get(privateWsdl), HttpResponse.BodyHandlers.ofString());
             assertEquals(404, denied.statusCode());
         }
@@ -111,7 +111,7 @@ public class WebServicesContextPathTest {
             assertEquals(0, invocations.get());
 
             // 同一监听的 private 可正常调用，隔离不会阻止目标 context。
-            URI privateEndpoint = URI.create("http://127.0.0.1:" + port + "/private/EchoService");
+            URI privateEndpoint = URI.create("http://127.0.0.1:" + port + "/public/private/EchoService");
             HttpRequest allowedRequest = this.echoRequest(privateEndpoint);
             HttpResponse<String> allowed = http.send(allowedRequest, HttpResponse.BodyHandlers.ofString());
             assertEquals(200, allowed.statusCode());
@@ -140,7 +140,7 @@ public class WebServicesContextPathTest {
 
             // 额外挂载上的合法 SOAP 请求找不到默认服务，业务调用计数保持为零。
             int port = context.getListenAddress("soap").getPort();
-            URI privateEndpoint = URI.create("http://127.0.0.1:" + port + "/private/EchoService");
+            URI privateEndpoint = URI.create("http://127.0.0.1:" + port + "/public/private/EchoService");
             HttpClient http = this.httpClient();
             HttpRequest deniedRequest = this.echoRequest(privateEndpoint);
             HttpResponse<String> denied = http.send(deniedRequest, HttpResponse.BodyHandlers.ofString());
@@ -148,7 +148,7 @@ public class WebServicesContextPathTest {
             assertEquals(0, invocations.get());
 
             // public 仍可完成同一业务请求，额外 context 不影响默认挂载。
-            URI publicEndpoint = URI.create("http://127.0.0.1:" + port + "/public/EchoService");
+            URI publicEndpoint = URI.create("http://127.0.0.1:" + port + "/public/default/1.0.0/EchoService");
             HttpRequest allowedRequest = this.echoRequest(publicEndpoint);
             HttpResponse<String> allowed = http.send(allowedRequest, HttpResponse.BodyHandlers.ofString());
             assertEquals(200, allowed.statusCode());
@@ -164,7 +164,7 @@ public class WebServicesContextPathTest {
                 .bind("127.0.0.1", 0) //
                 .protocol("soap") //
                 .contextPath("/public") //
-                .addContextPath("/private");
+                .addContextPath("/public/private");
         return configuration;
     }
 

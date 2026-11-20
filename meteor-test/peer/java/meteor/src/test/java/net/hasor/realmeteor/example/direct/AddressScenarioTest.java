@@ -6,26 +6,23 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.example.direct;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import net.hasor.meteor.address.InterAddress;
-import net.hasor.example.direct.DirectRpcExample;
+import java.util.Map;
+import java.util.concurrent.*;
 import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.OrderQuery;
+import net.hasor.example.direct.DirectRpcExample;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetUpdater;
+import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** 在点对点订单示例上维护地址与单元、限速规则。 */
 @NxnRpc(name = "rsf", version = "1")
@@ -60,7 +57,7 @@ public class AddressScenarioTest {
             InterAddress westAddress = west.getListenAddress("rsf");
             String serviceId = service.getBindID();
             MetUpdater updater = client.getUpdater();
-            updater.appendAddress(serviceId, List.of(eastAddress, westAddress));
+            updater.appendAddress(serviceId, Map.of("east", List.of(eastAddress), "west", List.of(westAddress)));
             assertTrue(updater.updateFlowControl(serviceId, UNIT_RULE));
             OrderDemoService remote = client.getRsfClient().getRemote(service);
 
@@ -91,7 +88,7 @@ public class AddressScenarioTest {
             InterAddress westAddress = west.getListenAddress("rsf");
             String serviceId = service.getBindID();
             MetUpdater updater = client.getUpdater();
-            updater.appendAddress(serviceId, List.of(eastAddress, westAddress));
+            updater.appendAddress(serviceId, Map.of("east", List.of(eastAddress), "west", List.of(westAddress)));
             assertTrue(updater.updateFlowControl(serviceId, UNIT_RULE));
             OrderDemoService remote = client.getRsfClient().getRemote(service);
 
@@ -122,14 +119,14 @@ public class AddressScenarioTest {
             InterAddress westAddress = west.getListenAddress("rsf");
             String serviceId = service.getBindID();
             MetUpdater updater = client.getUpdater();
-            updater.appendAddress(serviceId, List.of(eastAddress, westAddress));
+            updater.appendAddress(serviceId, Map.of("east", List.of(eastAddress), "west", List.of(westAddress)));
             assertTrue(updater.updateFlowControl(serviceId, UNIT_RULE));
             OrderDemoService remote = client.getRsfClient().getRemote(service);
 
             // 模拟本单元提供者退出，然后重新加入地址本。
             updater.removeAddress(serviceId, eastAddress);
             assertEquals("west", remote.find(query()).getDescription());
-            updater.appendAddress(serviceId, List.of(eastAddress));
+            updater.appendAddress(serviceId, Map.of("east", List.of(eastAddress)));
             assertEquals("east", remote.find(query()).getDescription());
         }
     }

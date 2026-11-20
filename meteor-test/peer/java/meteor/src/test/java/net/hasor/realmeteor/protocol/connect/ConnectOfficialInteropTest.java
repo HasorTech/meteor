@@ -70,9 +70,10 @@ public class ConnectOfficialInteropTest {
             server.start();
             server.publisher().rsfService(ConnectDemoService.class, new ConnectDemoServiceImpl()) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
-            int port = server.getListenAddress("connect").getPort();
-            String target = "--url=http://" + ContainerProcess.runnerHost() + ":" + port + "/connect";
+            InterAddress address = server.getListenAddress("connect");
+            String target = "--url=http://" + address.getHostPort() + address.getPath();
 
             // 由官方 Connect Node 客户端完成单次独立调用。
             String[] peerArguments = { //
@@ -101,9 +102,10 @@ public class ConnectOfficialInteropTest {
             server.start();
             server.publisher().rsfService(ConnectDemoService.class, new ConnectDemoServiceImpl()) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
-            int port = server.getListenAddress("connect").getPort();
-            String target = "--url=http://" + ContainerProcess.runnerHost() + ":" + port + "/connect";
+            InterAddress address = server.getListenAddress("connect");
+            String target = "--url=http://" + address.getHostPort() + address.getPath();
 
             // 由官方 Connect Node 客户端完成单次独立调用。
             String[] peerArguments = { //
@@ -132,9 +134,10 @@ public class ConnectOfficialInteropTest {
             server.start();
             server.publisher().rsfService(ConnectDemoService.class, new ConnectDemoServiceImpl()) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
-            int port = server.getListenAddress("connect").getPort();
-            String target = "--url=http://" + ContainerProcess.runnerHost() + ":" + port + "/connect";
+            InterAddress address = server.getListenAddress("connect");
+            String target = "--url=http://" + address.getHostPort() + address.getPath();
 
             // 由官方 Connect Node 客户端完成单次独立调用。
             String[] peerArguments = { //
@@ -165,9 +168,10 @@ public class ConnectOfficialInteropTest {
             server.start();
             server.publisher().rsfService(ConnectDemoService.class, new ConnectDemoServiceImpl()) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
-            int port = server.getListenAddress("connect").getPort();
-            String target = "--url=http://" + ContainerProcess.runnerHost() + ":" + port + "/connect";
+            InterAddress address = server.getListenAddress("connect");
+            String target = "--url=http://" + address.getHostPort() + address.getPath();
 
             // 由官方 Connect Node 客户端完成单次独立调用。
             String[] peerArguments = { //
@@ -198,9 +202,10 @@ public class ConnectOfficialInteropTest {
             server.start();
             server.publisher().rsfService(ConnectDemoService.class, new ConnectDemoServiceImpl()) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
-            int port = server.getListenAddress("connect").getPort();
-            String target = "--url=http://" + ContainerProcess.runnerHost() + ":" + port + "/connect";
+            InterAddress address = server.getListenAddress("connect");
+            String target = "--url=http://" + address.getHostPort() + address.getPath();
 
             // 由官方 Connect Node 客户端完成单次独立调用。
             String[] peerArguments = { //
@@ -229,9 +234,10 @@ public class ConnectOfficialInteropTest {
             server.start();
             server.publisher().rsfService(ConnectDemoService.class, new ConnectDemoServiceImpl()) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
-            int port = server.getListenAddress("connect").getPort();
-            String target = "--url=http://" + ContainerProcess.runnerHost() + ":" + port + "/connect";
+            InterAddress address = server.getListenAddress("connect");
+            String target = "--url=http://" + address.getHostPort() + address.getPath();
 
             // 由官方 Connect Node 客户端完成单次独立调用。
             String[] peerArguments = { //
@@ -261,9 +267,10 @@ public class ConnectOfficialInteropTest {
             server.start();
             server.publisher().rsfService(ConnectDemoService.class, new ConnectDemoServiceImpl()) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
-            int port = server.getListenAddress("connect").getPort();
-            String target = "--url=http://" + ContainerProcess.runnerHost() + ":" + port + "/connect";
+            InterAddress address = server.getListenAddress("connect");
+            String target = "--url=http://" + address.getHostPort() + address.getPath();
 
             // 由官方 Connect Node 客户端完成单次独立调用。
             String[] peerArguments = { //
@@ -292,9 +299,10 @@ public class ConnectOfficialInteropTest {
             server.start();
             server.publisher().rsfService(ConnectDemoService.class, new ConnectDemoServiceImpl()) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
-            int port = server.getListenAddress("connect").getPort();
-            String target = "--url=http://" + ContainerProcess.runnerHost() + ":" + port + "/connect";
+            InterAddress address = server.getListenAddress("connect");
+            String target = "--url=http://" + address.getHostPort() + address.getPath();
 
             // 由官方 Connect Node 客户端完成单次独立调用。
             String[] peerArguments = { //
@@ -324,9 +332,10 @@ public class ConnectOfficialInteropTest {
             server.start();
             server.publisher().rsfService(ConnectDemoService.class, new ConnectDemoServiceImpl()) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
-            int port = server.getListenAddress("connect").getPort();
-            String target = "--url=http://" + ContainerProcess.runnerHost() + ":" + port + "/connect";
+            InterAddress address = server.getListenAddress("connect");
+            String target = "--url=http://" + address.getHostPort() + address.getPath();
 
             // 由官方 Connect Node 客户端完成单次独立调用。
             String[] peerArguments = { //
@@ -361,6 +370,7 @@ public class ConnectOfficialInteropTest {
             client.start();
             MetBindInfo<ConnectDemoService> info = client.publisher().rsfService(ConnectDemoService.class) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
             InterAddress target = new InterAddress("connect", peer.host(), port);
             ConnectDemoService remote = client.getRsfClient(target).getRemote(info);
@@ -387,6 +397,7 @@ public class ConnectOfficialInteropTest {
             client.start();
             MetBindInfo<ConnectDemoService> info = client.publisher().rsfService(ConnectDemoService.class) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
             InterAddress target = new InterAddress("connect", peer.host(), port);
             ConnectDemoService remote = client.getRsfClient(target).getRemote(info);
@@ -413,6 +424,7 @@ public class ConnectOfficialInteropTest {
             client.start();
             MetBindInfo<ConnectDemoService> info = client.publisher().rsfService(ConnectDemoService.class) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
             InterAddress target = new InterAddress("connect", peer.host(), port);
             ConnectDemoService remote = client.getRsfClient(target).getRemote(info);
@@ -443,6 +455,7 @@ public class ConnectOfficialInteropTest {
             client.start();
             MetBindInfo<ConnectDemoService> info = client.publisher().rsfService(ConnectDemoService.class) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
             InterAddress target = new InterAddress("connect", peer.host(), port);
             ConnectDemoService remote = client.getRsfClient(target).getRemote(info);
@@ -473,6 +486,7 @@ public class ConnectOfficialInteropTest {
             client.start();
             MetBindInfo<ConnectDemoService> info = client.publisher().rsfService(ConnectDemoService.class) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
             InterAddress target = new InterAddress("connect", peer.host(), port);
             ConnectDemoService remote = client.getRsfClient(target).getRemote(info);
@@ -501,6 +515,7 @@ public class ConnectOfficialInteropTest {
             client.start();
             MetBindInfo<ConnectDemoService> info = client.publisher().rsfService(ConnectDemoService.class) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
             InterAddress target = new InterAddress("connect", peer.host(), port);
             ConnectDemoService remote = client.getRsfClient(target).getRemote(info);
@@ -532,6 +547,7 @@ public class ConnectOfficialInteropTest {
             client.start();
             MetBindInfo<ConnectDemoService> info = client.publisher().rsfService(ConnectDemoService.class) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
             InterAddress target = new InterAddress("connect", peer.host(), port);
 
@@ -563,6 +579,7 @@ public class ConnectOfficialInteropTest {
             client.start();
             MetBindInfo<ConnectDemoService> info = client.publisher().rsfService(ConnectDemoService.class) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
             InterAddress target = new InterAddress("connect", peer.host(), port);
             ConnectDemoService remote = client.getRsfClient(target).getRemote(info);
@@ -589,6 +606,7 @@ public class ConnectOfficialInteropTest {
             client.start();
             MetBindInfo<ConnectDemoService> info = client.publisher().rsfService(ConnectDemoService.class) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
             InterAddress target = new InterAddress("connect", peer.host(), port);
             ConnectDemoService remote = client.getRsfClient(target).getRemote(info);
@@ -626,9 +644,10 @@ public class ConnectOfficialInteropTest {
             });
             server.publisher().rsfService(ConnectDemoService.class, new ConnectDemoServiceImpl()) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
-            int port = server.getListenAddress("connect").getPort();
-            String target = "--url=http://" + ContainerProcess.runnerHost() + ":" + port + "/connect";
+            InterAddress address = server.getListenAddress("connect");
+            String target = "--url=http://" + address.getHostPort() + address.getPath();
 
             // 官方客户端分别观察初始字段和结束字段，不依赖 Meteor 的元数据解码实现。
             try (ConnectNodeProcess peer = ConnectNodeProcess.start("client", target, "--http-version=1.1", //
@@ -661,6 +680,7 @@ public class ConnectOfficialInteropTest {
             });
             MetBindInfo<ConnectDemoService> info = client.publisher().rsfService(ConnectDemoService.class) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
             InterAddress target = new InterAddress("connect", peer.host(), port);
 
@@ -696,9 +716,10 @@ public class ConnectOfficialInteropTest {
             });
             server.publisher().rsfService(ConnectDemoService.class, new ConnectDemoServiceImpl()) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
-            int port = server.getListenAddress("connect").getPort();
-            String target = "--url=http://" + ContainerProcess.runnerHost() + ":" + port + "/connect";
+            InterAddress address = server.getListenAddress("connect");
+            String target = "--url=http://" + address.getHostPort() + address.getPath();
 
             // 官方客户端消费响应流至结束后检查 Connect 元数据。
             try (ConnectNodeProcess peer = ConnectNodeProcess.start("client", target, "--http-version=2", //
@@ -728,6 +749,7 @@ public class ConnectOfficialInteropTest {
             client.start();
             MetBindInfo<ConnectDemoService> info = client.publisher().rsfService(ConnectDemoService.class) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
             InterAddress target = new InterAddress("connect", peer.host(), port);
             Class<?>[] types = { ConnectMessage.class };
@@ -766,9 +788,10 @@ public class ConnectOfficialInteropTest {
             });
             server.publisher().rsfService(ConnectDemoService.class, new ConnectDemoServiceImpl()) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
-            int port = server.getListenAddress("connect").getPort();
-            String target = "--url=http://" + ContainerProcess.runnerHost() + ":" + port + "/connect";
+            InterAddress address = server.getListenAddress("connect");
+            String target = "--url=http://" + address.getHostPort() + address.getPath();
 
             // 官方客户端按自己的错误解析和 Any 消息描述恢复详情。
             try (ConnectNodeProcess peer = ConnectNodeProcess.start("client", target, "--http-version=1.1", //
@@ -796,6 +819,7 @@ public class ConnectOfficialInteropTest {
             client.start();
             MetBindInfo<ConnectDemoService> info = client.publisher().rsfService(ConnectDemoService.class) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
             InterAddress target = new InterAddress("connect", peer.host(), port);
             Class<?>[] types = { ConnectMessage.class };
@@ -830,9 +854,10 @@ public class ConnectOfficialInteropTest {
             server.start();
             server.publisher().rsfService(ConnectDemoService.class, new ConnectDemoServiceImpl()) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
-            int port = server.getListenAddress("connect").getPort();
-            String target = "--url=http://" + ContainerProcess.runnerHost() + ":" + port + "/connect";
+            InterAddress address = server.getListenAddress("connect");
+            String target = "--url=http://" + address.getHostPort() + address.getPath();
 
             // 官方客户端识别流式失败，保留中文原因而不误报普通空流。
             String[] peerArguments = { //
@@ -862,6 +887,7 @@ public class ConnectOfficialInteropTest {
             client.start();
             MetBindInfo<ConnectDemoService> info = client.publisher().rsfService(ConnectDemoService.class) //
                     .aliasName("connect", SERVICE).protocol("connect").serialize(this.serialization) //
+                    .contextPathByPrefix("connect", "/") //
                     .bindResource("connect", resource).register();
             InterAddress target = new InterAddress("connect", peer.host(), port);
             ConnectDemoService remote = client.getRsfClient(target).getRemote(info);

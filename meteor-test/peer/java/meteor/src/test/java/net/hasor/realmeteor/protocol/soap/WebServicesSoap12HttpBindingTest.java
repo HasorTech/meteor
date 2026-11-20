@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -19,15 +18,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import net.hasor.example.protocol.soap.EchoService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.Timeout;
 
 @NxnRpc(name = "soap", version = "1.2")
 public class WebServicesSoap12HttpBindingTest {
@@ -53,6 +53,7 @@ public class WebServicesSoap12HttpBindingTest {
                     }) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // Content-Type action 承载 SOAP 1.2 操作，不发送 SOAPAction。
@@ -86,6 +87,7 @@ public class WebServicesSoap12HttpBindingTest {
                     }) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 媒体类型中的 action 与 Body 操作不匹配。
@@ -125,6 +127,7 @@ public class WebServicesSoap12HttpBindingTest {
                     }) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 生成 WSDL 声明 action 必选，缺失时不能仅凭 Body 调用。
@@ -164,6 +167,7 @@ public class WebServicesSoap12HttpBindingTest {
                     }) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 同名 action 参数重复形成歧义媒体类型。
@@ -195,6 +199,7 @@ public class WebServicesSoap12HttpBindingTest {
                     }) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // SOAP 1.2 端点拒绝 SOAP 1.1 媒体类型。
@@ -226,6 +231,7 @@ public class WebServicesSoap12HttpBindingTest {
                     }) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 媒体类型正确但 Envelope 使用错误版本。
@@ -267,6 +273,7 @@ public class WebServicesSoap12HttpBindingTest {
                     }) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 未声明 role 的必选头发给最终接收方。
@@ -310,6 +317,7 @@ public class WebServicesSoap12HttpBindingTest {
                     }) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // next 角色也由最终接收方承担。
@@ -355,6 +363,7 @@ public class WebServicesSoap12HttpBindingTest {
                     }) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 显式最终接收方角色要求处理必选头。
@@ -400,6 +409,7 @@ public class WebServicesSoap12HttpBindingTest {
                     }) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // none 角色不由任何 SOAP 节点处理，relay 不会改变目标角色。
@@ -435,6 +445,7 @@ public class WebServicesSoap12HttpBindingTest {
                     }) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 其他角色的必选头不属于当前最终接收方。
@@ -469,6 +480,7 @@ public class WebServicesSoap12HttpBindingTest {
                     }) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 大写 TRUE 不是 XML Schema boolean 词法。
@@ -508,6 +520,7 @@ public class WebServicesSoap12HttpBindingTest {
                     }) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // relay 也必须符合 SOAP 1.2 boolean 词法。
@@ -547,6 +560,7 @@ public class WebServicesSoap12HttpBindingTest {
                     }) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // SOAP Header block 必须使用非空命名空间。
@@ -586,6 +600,7 @@ public class WebServicesSoap12HttpBindingTest {
                     }) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 第二个 Body 不能被解码器静默忽略。
@@ -625,6 +640,7 @@ public class WebServicesSoap12HttpBindingTest {
                     }) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 重复 Header 不能导致只验证第一组必选头。
@@ -665,6 +681,7 @@ public class WebServicesSoap12HttpBindingTest {
                     }) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // Header 必须位于 Body 前。
@@ -705,6 +722,7 @@ public class WebServicesSoap12HttpBindingTest {
                     }) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 插件 document/literal 请求只允许一个 operation wrapper。
@@ -744,6 +762,7 @@ public class WebServicesSoap12HttpBindingTest {
                     }) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // SOAP 消息不能携带 processing instruction。
@@ -787,11 +806,13 @@ public class WebServicesSoap12HttpBindingTest {
                     .rsfService(EchoService.class, value -> value) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetBindInfo<EchoService> service = client.publisher() //
                     .rsfService(EchoService.class) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 独立上下文之间通过绑定端口执行真实 SOAP HTTP 请求。

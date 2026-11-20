@@ -141,7 +141,7 @@ public class ThriftOfficialInteropScenarioTest {
             server.start();
             server.publisher().rsfService(ThriftDemoService.class, new ThriftDemoServiceImpl()) //
                     .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)) //
-                    .contextPathByPrefix("thrift-http", "/thrift") //
+                    .contextPathByPrefix("thrift-http", "/") //
                     .aliasName("thrift-http", "ExtendedInteropService").register();
 
             // 隔离进程中的官方 Client 使用实际监听端口，只执行当前场景。
@@ -171,7 +171,7 @@ public class ThriftOfficialInteropScenarioTest {
             client.start();
             MetBindInfo<ThriftDemoService> service = client.publisher().rsfService(ThriftDemoService.class) //
                     .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)) //
-                    .contextPathByPrefix("thrift-http", "/thrift") //
+                    .contextPathByPrefix("thrift-http", "/") //
                     .aliasName("thrift-http", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
             InterAddress address = new InterAddress("thrift-http", peer.host(), port);
@@ -296,7 +296,7 @@ public class ThriftOfficialInteropScenarioTest {
             server.start();
             server.publisher().rsfService(ThriftDemoService.class, new ThriftDemoServiceImpl()) //
                     .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)) //
-                    .contextPathByPrefix("thrift-http", "/thrift") //
+                    .contextPathByPrefix("thrift-http", "/") //
                     .aliasName("thrift-http", "ExtendedInteropService").register();
 
             // 隔离进程中的官方 Client 使用实际监听端口，只执行当前场景。
@@ -326,7 +326,7 @@ public class ThriftOfficialInteropScenarioTest {
             client.start();
             MetBindInfo<ThriftDemoService> service = client.publisher().rsfService(ThriftDemoService.class) //
                     .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)) //
-                    .contextPathByPrefix("thrift-http", "/thrift") //
+                    .contextPathByPrefix("thrift-http", "/") //
                     .aliasName("thrift-http", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
             InterAddress address = new InterAddress("thrift-http", peer.host(), port);
@@ -451,7 +451,7 @@ public class ThriftOfficialInteropScenarioTest {
             server.start();
             server.publisher().rsfService(ThriftDemoService.class, new ThriftDemoServiceImpl()) //
                     .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)) //
-                    .contextPathByPrefix("thrift-http", "/thrift") //
+                    .contextPathByPrefix("thrift-http", "/") //
                     .aliasName("thrift-http", "ExtendedInteropService").register();
 
             // 隔离进程中的官方 Client 使用实际监听端口，只执行当前场景。
@@ -481,7 +481,7 @@ public class ThriftOfficialInteropScenarioTest {
             client.start();
             MetBindInfo<ThriftDemoService> service = client.publisher().rsfService(ThriftDemoService.class) //
                     .bindResource("thrift-http", new ThriftServiceResource(ExtendedInteropService.class)) //
-                    .contextPathByPrefix("thrift-http", "/thrift") //
+                    .contextPathByPrefix("thrift-http", "/") //
                     .aliasName("thrift-http", "ExtendedInteropService").register();
             String unitName = client.getSettings().getUnitName();
             InterAddress address = new InterAddress("thrift-http", peer.host(), port);

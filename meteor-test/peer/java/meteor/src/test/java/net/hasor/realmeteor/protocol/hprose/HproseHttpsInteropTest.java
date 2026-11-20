@@ -54,6 +54,7 @@ public class HproseHttpsInteropTest {
             server.publisher() //
                     .rsfService(Sample.class, new SampleImpl()) //
                     .aliasName("Hprose", "sample") //
+                    .contextPathByPrefix("hprose", "/") //
                     .register();
 
             // 官方客户端在双向 TLS 上发现服务并验证中文及补充字符往返。
@@ -98,6 +99,7 @@ public class HproseHttpsInteropTest {
             server.publisher() //
                     .rsfService(Sample.class, new SampleImpl()) //
                     .aliasName("Hprose", "sample") //
+                    .contextPathByPrefix("hprose", "/") //
                     .register();
 
             // 官方客户端在一个 HTTPS 批次中验证顺序及错误隔离，随后再次调用确认恢复。
@@ -142,6 +144,7 @@ public class HproseHttpsInteropTest {
             server.publisher() //
                     .rsfService(Sample.class, new SampleImpl()) //
                     .aliasName("Hprose", "sample") //
+                    .contextPathByPrefix("hprose", "/") //
                     .register();
 
             // 官方客户端在 HTTPS 上读取 byref 参数，验证服务端修改后的参数回传。
@@ -189,6 +192,7 @@ public class HproseHttpsInteropTest {
                 MetBindInfo<Sample> service = client.publisher() //
                         .rsfService(Sample.class) //
                         .aliasName("Hprose", "sample") //
+                        .contextPathByPrefix("hprose", "/") //
                         .register();
                 InterAddress address = new InterAddress("https", ContainerProcess.host(peer), port);
                 Sample remote = client.getRsfClient(address).getRemote(service);

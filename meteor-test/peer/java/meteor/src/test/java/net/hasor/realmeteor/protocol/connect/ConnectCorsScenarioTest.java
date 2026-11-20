@@ -6,23 +6,23 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.connect;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.connect.ConnectDemoService;
 import net.hasor.example.protocol.connect.ConnectDemoServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
 
 @NxnRpc(name = "connect", version = "1")
 public class ConnectCorsScenarioTest {
@@ -34,7 +34,8 @@ public class ConnectCorsScenarioTest {
         try (MetContext context = configuration.buildContext()) {
             context.start();
             context.publisher().rsfService(ConnectDemoService.class, new ConnectDemoServiceImpl()) //
-                    .aliasName("connect", "meteor.connect.demo.ConnectDemoService").serialize("Json").register();
+                    .aliasName("connect", "meteor.connect.demo.ConnectDemoService").serialize("Json") //
+                    .contextPathByPrefix("connect", "/").register();
 
             // 使用普通 HTTP 客户端模拟浏览器对同一路径的预检。
             HttpRequest request = HttpRequest.newBuilder(this.endpoint(context)) //
@@ -63,7 +64,8 @@ public class ConnectCorsScenarioTest {
         try (MetContext context = configuration.buildContext()) {
             context.start();
             context.publisher().rsfService(ConnectDemoService.class, new ConnectDemoServiceImpl()) //
-                    .aliasName("connect", "meteor.connect.demo.ConnectDemoService").serialize("Json").register();
+                    .aliasName("connect", "meteor.connect.demo.ConnectDemoService").serialize("Json") //
+                    .contextPathByPrefix("connect", "/").register();
 
             // 已获授权的浏览器来源发送标准 Connect unary POST。
             String json = "{\"text\":\"browser\",\"number\":3}";

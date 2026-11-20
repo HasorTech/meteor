@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
 import java.net.URI;
@@ -34,24 +33,21 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import net.hasor.cobble.StringUtils;
-import net.hasor.example.protocol.soap.MetXmlMapService;
-import net.hasor.example.protocol.soap.MetXmlMapValue;
-import net.hasor.example.protocol.soap.MetXmlOrder;
-import net.hasor.example.protocol.soap.MetXmlOrderService;
-import net.hasor.example.protocol.soap.MetXmlWrappedUserService;
+import net.hasor.example.protocol.soap.*;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.soap.definition.SoapWsdlResource;
-import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.meteor.test.nxn.NxnRpc;
+import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.w3c.dom.*;
 import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSInput;
 import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.Timeout;
 
 @NxnRpc(name = "soap", version = "1.1")
 public class MetXmlContractScenarioTest {
@@ -83,6 +79,7 @@ public class MetXmlContractScenarioTest {
                     }) //
                     .aliasName("soap", "MetXmlMapService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             int port = context.getListenAddress("soap").getPort();
             String authority = "http://" + ContainerProcess.runnerHost() + ":" + port;
@@ -179,6 +176,7 @@ public class MetXmlContractScenarioTest {
                     .rsfService(MetXmlWrappedUserService.class, value -> value) //
                     .aliasName("soap", "MetXmlWrappedUserService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             int port = context.getListenAddress("soap").getPort();
             String authority = "http://" + ContainerProcess.runnerHost() + ":" + port;
@@ -242,6 +240,7 @@ public class MetXmlContractScenarioTest {
                     .rsfService(MetXmlOrderService.class, value -> value) //
                     .aliasName("soap", "MetXmlOrderService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // Metro 从线上 WSDL 组装标准 typed 客户端，用其自己的 JAXB DTO 编解码。
@@ -284,6 +283,7 @@ public class MetXmlContractScenarioTest {
                     .rsfService(MetXmlOrderService.class, value -> value) //
                     .aliasName("soap", "MetXmlOrderService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // Metro 从线上 WSDL 组装标准 typed 客户端，用其自己的 JAXB DTO 编解码。
@@ -325,6 +325,7 @@ public class MetXmlContractScenarioTest {
                     .rsfService(MetXmlOrderService.class, value -> value) //
                     .aliasName("soap", "MetXmlOrderService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             HttpRequest wsdlRequest = HttpRequest.newBuilder(this.endpoint(context, "?wsdl")).GET().build();
             HttpResponse<byte[]> wsdlResponse = this.send(wsdlRequest);
@@ -374,6 +375,7 @@ public class MetXmlContractScenarioTest {
                     .rsfService(MetXmlOrderService.class, value -> value) //
                     .aliasName("soap", "MetXmlOrderService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 标准 JAXP 客户端直接从主 XSD 地址加载依赖，由本场景服务端提供 HTTP 资源。
@@ -402,6 +404,7 @@ public class MetXmlContractScenarioTest {
                     }) //
                     .aliasName("soap", "MetXmlOrderService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 请求遗漏 id 属性，其他必填字段与元素顺序均符合生成契约。
@@ -429,6 +432,7 @@ public class MetXmlContractScenarioTest {
                     }) //
                     .aliasName("soap", "MetXmlOrderService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 用 delivery 命名空间冒充 buyer，验证错误在 Java DTO 构造之前被拒绝。
@@ -459,15 +463,17 @@ public class MetXmlContractScenarioTest {
                     .rsfService(MetXmlOrderService.class, value -> value) //
                     .aliasName("soap", "MetXmlOrderService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
-            // 从真正的 WSDL 地址载入契约，并跟随同源查询式 XSD 引用。
+            // 从真实 HTTP 端点载入包含多个内嵌 Schema 的 WSDL。
             SoapWsdlResource resource = new SoapWsdlResource(this.endpoint(server, "?wsdl").toURL());
             MetBindInfo<MetXmlOrderService> subscription = client.publisher() //
                     .rsfService(MetXmlOrderService.class) //
                     .aliasName("soap", "MetXmlOrderService") //
                     .protocol("soap") //
                     .bindResource("soap", resource) //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
             MetXmlOrderService remote = client.getRsfClient(server.getListenAddress("soap")) //
                     .getRemote(subscription);

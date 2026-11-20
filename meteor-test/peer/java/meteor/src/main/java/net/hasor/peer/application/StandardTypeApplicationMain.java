@@ -88,7 +88,12 @@ public final class StandardTypeApplicationMain {
             } else {
                 // 出站地址只来自提供者的就绪事件，代理没有本地实现可以绕过真实网络。
                 URI target = URI.create(System.getenv("METEOR_ORDER_TARGET"));
-                InterAddress address = new InterAddress(protocol, target.getHost(), target.getPort(), target.getRawPath());
+                // Hessian 的服务声明已采用就绪地址的精确子路径，连接地址只携带实际监听端口。
+                String path = target.getRawPath();
+                if (StringUtils.equals("hessian", protocol)) {
+                    path = "";
+                }
+                InterAddress address = new InterAddress(protocol, target.getHost(), target.getPort(), path);
                 Object remote = context.getRsfClient(address).getRemote(binding);
                 if (StringUtils.equals("scalar-v1", api)) {
                     TypeValue value = JSON.treeToValue(request, TypeValue.class);

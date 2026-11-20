@@ -6,16 +6,13 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap.python;
-import net.hasor.meteor.test.nxn.NxnRpc;
-import java.nio.file.Files;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.net.URI;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
 import net.hasor.example.contract.types.TypeEchoService;
@@ -29,11 +26,15 @@ import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.soap.definition.SoapWsdlResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
+import net.hasor.realmeteor.matrix.types.PublishedTypeEndpoint;
 import net.hasor.realmeteor.matrix.types.TypeValueAssertions;
 import org.junit.jupiter.api.Test;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /** 同一普通 Java DTO 与 Python SDK 原生值双向互通，每个实例只验证一个类型向量。 */
 @ParameterizedClass(autoCloseArguments = false, name = "types/python/soap/direct/{0}/{1}", quoteTextArguments = false)
@@ -48,6 +49,7 @@ public class SoapPythonTypeMatrixTest {
     public SoapPythonTypeMatrixTest(String type, String vector) {
         this.vector = vector;
     }
+
     public static List<Object[]> vectors() throws Exception {
         // 固定共享向量顺序，使每个类型边界在 JUnit 和矩阵报告中有独立身份。
         List<Object[]> cases = new ArrayList<>();
@@ -61,18 +63,18 @@ public class SoapPythonTypeMatrixTest {
     @Timeout(value = 60000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     public void meteorProviderAcceptsPythonNativeType() throws Exception {
         // Meteor 从公开 bootstrap 启动，服务绑定独立 SDK 生成的 WSDL。
-        MetConfiguration configuration = this.configuration(true);
+        MetConfiguration configuration = this.configuration(true).addExtension(PublishedTypeEndpoint.registry());
+        configuration.connector("tcp").protocol("rsf");
         try (MetContext provider = configuration.buildContext(); //
              PythonSoapTypePeer consumer = PythonSoapTypePeer.consumer()) {
-            provider.start();
-            provider.publisher() //
+            var service = provider.publisher() //
                     .rsfService(TypeEchoService.class, new TypeEchoServiceImpl()) //
                     .name("types").aliasName("soap", "types").protocol("soap") //
                     .bindResource("soap", new SoapWsdlResource(this.contract())).register();
+            provider.start();
 
             // Python 自行从共享输入恢复值并通过 Zeep 实际编码、调用和解码。
-            InterAddress listen = provider.getListenAddress("soap");
-            URI wsdl = new URI("http", null, listen.getHost(), listen.getPort(), "/soap/types", "wsdl", null);
+            URI wsdl = URI.create(PublishedTypeEndpoint.schemaAddress(provider, service, "soap"));
             TypeValue actual = consumer.echo(wsdl, this.vector);
 
             // Java 再检查当前字段及服务端收据，不能把 JSON 控制结果当作业务调用本身。

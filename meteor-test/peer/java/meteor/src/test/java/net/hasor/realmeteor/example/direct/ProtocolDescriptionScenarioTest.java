@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.example.direct;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -18,19 +17,22 @@ import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.hasor.cobble.StringUtils;
+import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.direct.DirectRpcExample;
 import net.hasor.example.direct.ProtocolDescriptionExample;
-import net.hasor.example.OrderDemoServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
+import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.builtin.GrpcHealthService;
 import net.hasor.meteor.protocol.grpc.builtin.GrpcReflectionService;
 import net.hasor.meteor.rpc.MetCaller;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.Timeout;
 
 /** 协议自带的描述和标准服务，复用订单示例的同一个监听端点。 */
 public class ProtocolDescriptionScenarioTest {
@@ -49,10 +51,10 @@ public class ProtocolDescriptionScenarioTest {
             HttpResponse<String> directory = this.get(port, "/soap");
             assertEquals(200, directory.statusCode());
             assertTrue(directory.body().contains("orders"), directory.body());
-            assertTrue(directory.body().contains("/soap/orders?wsdl"), directory.body());
+            assertTrue(directory.body().contains("/soap/default/1.0.0/orders?wsdl"), directory.body());
 
             // 描述来自真实接口，包含订单服务的保存和查询操作。
-            HttpResponse<String> wsdl = this.get(port, "/soap/orders?wsdl");
+            HttpResponse<String> wsdl = this.get(port, "/soap/default/1.0.0/orders?wsdl");
             assertEquals(200, wsdl.statusCode());
             assertTrue(wsdl.body().contains("name=\"save\""), wsdl.body());
             assertTrue(wsdl.body().contains("name=\"find\""), wsdl.body());
@@ -65,7 +67,7 @@ public class ProtocolDescriptionScenarioTest {
     public void grpcHealthReportsThePublishedOrderServiceAsServing() throws Exception {
         // 服务端显式安装标准服务，客户端只配置 gRPC 出口。
         MetConfiguration incoming = DirectRpcExample.server("127.0.0.1", 0, 0);
-        MetConfiguration outgoing = DirectRpcExample.client("grpc");
+        MetConfiguration outgoing = this.standardGrpcClient();
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();
@@ -74,7 +76,7 @@ public class ProtocolDescriptionScenarioTest {
 
             // 标准契约使用完整根路径，业务服务名称取自相同的发布声明。
             MetBindInfo<GrpcHealthService> binding = ProtocolDescriptionExample.subscribeHealth(client);
-            GrpcHealthService health = client.getRsfClient(server.getListenAddress("grpc")).getRemote(binding);
+            GrpcHealthService health = client.getRsfClient(this.grpcAuthority(server)).getRemote(binding);
             JsonNode request = new ObjectMapper().createObjectNode().put("service", DirectRpcExample.SERVICE_NAME);
             JsonNode response = health.Check(request);
             assertEquals("SERVING", response.path("status").asText());
@@ -87,7 +89,7 @@ public class ProtocolDescriptionScenarioTest {
     public void grpcReflectionListsThePublishedOrderService() throws Exception {
         // 同一个 gRPC 监听同时提供业务 context 和标准 Reflection 根路径。
         MetConfiguration incoming = DirectRpcExample.server("127.0.0.1", 0, 0);
-        MetConfiguration outgoing = DirectRpcExample.client("grpc");
+        MetConfiguration outgoing = this.standardGrpcClient();
         try (MetContext server = incoming.buildContext(); //
              MetContext client = outgoing.buildContext()) {
             server.start();
@@ -96,7 +98,7 @@ public class ProtocolDescriptionScenarioTest {
 
             // 通过公开 Java 接口发起标准双向流，用户无需处理 HTTP/2 帧或 Protobuf 字节。
             MetBindInfo<GrpcReflectionService> binding = ProtocolDescriptionExample.subscribeReflection(client);
-            GrpcReflectionService reflection = client.getRsfClient(server.getListenAddress("grpc")) //
+            GrpcReflectionService reflection = client.getRsfClient(this.grpcAuthority(server)) //
                     .getRemote(binding);
             JsonNode request = new ObjectMapper().createObjectNode().put("listServices", "");
             var requests = MetCaller.fromIterable(List.of(request));
@@ -114,6 +116,17 @@ public class ProtocolDescriptionScenarioTest {
             }
             assertTrue(found, replies.toString());
         }
+    }
+
+    private MetConfiguration standardGrpcClient() {
+        MetConfiguration outgoing = TestConfigurationUtils.create();
+        outgoing.connector("http").option("httpVersion", 2).protocol("grpc").contextPath("/");
+        return outgoing;
+    }
+
+    private InterAddress grpcAuthority(MetContext server) {
+        InterAddress address = server.getListenAddress("grpc");
+        return new InterAddress(address.getSchema(), address.getHost(), address.getPort());
     }
 
     private HttpResponse<String> get(int port, String path) throws Exception {

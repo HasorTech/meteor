@@ -44,6 +44,7 @@ public class JsonRpcInteropTest {
                     .aliasName("jsonrpc", "peer") //
                     .protocol("jsonrpc") //
                     .serialize("Json") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 独立 Jayson 客户端验证位置参数、Unicode 正文与字符串请求 ID。
@@ -72,6 +73,7 @@ public class JsonRpcInteropTest {
                     .aliasName("jsonrpc", "peer") //
                     .protocol("jsonrpc") //
                     .serialize("Json") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 独立 Jayson 客户端验证命名参数与数字请求 ID。
@@ -100,6 +102,7 @@ public class JsonRpcInteropTest {
                     .aliasName("jsonrpc", "peer") //
                     .protocol("jsonrpc") //
                     .serialize("Json") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 独立 Jayson 客户端验证无 ID 通知执行且不产生 RPC 响应。
@@ -128,6 +131,7 @@ public class JsonRpcInteropTest {
                     .aliasName("jsonrpc", "peer") //
                     .protocol("jsonrpc") //
                     .serialize("Json") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 独立 Jayson 客户端验证成功、失败与通知混合批次的隔离。
@@ -156,6 +160,7 @@ public class JsonRpcInteropTest {
                     .aliasName("jsonrpc", "peer") //
                     .protocol("jsonrpc") //
                     .serialize("Json") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 独立 Jayson 客户端验证不存在方法的标准错误码。
@@ -185,6 +190,7 @@ public class JsonRpcInteropTest {
                     .aliasName("jsonrpc", "peer") //
                     .protocol("jsonrpc") //
                     .serialize("Json") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 独立 Jayson 客户端验证位置参数、Unicode 正文与字符串请求 ID。
@@ -214,6 +220,7 @@ public class JsonRpcInteropTest {
                     .aliasName("jsonrpc", "peer") //
                     .protocol("jsonrpc") //
                     .serialize("Json") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 独立 Jayson 客户端验证命名参数与数字请求 ID。
@@ -243,6 +250,7 @@ public class JsonRpcInteropTest {
                     .aliasName("jsonrpc", "peer") //
                     .protocol("jsonrpc") //
                     .serialize("Json") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 独立 Jayson 客户端验证无 ID 通知执行且不产生 RPC 响应。
@@ -272,6 +280,7 @@ public class JsonRpcInteropTest {
                     .aliasName("jsonrpc", "peer") //
                     .protocol("jsonrpc") //
                     .serialize("Json") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 独立 Jayson 客户端验证成功、失败与通知混合批次的隔离。
@@ -301,6 +310,7 @@ public class JsonRpcInteropTest {
                     .aliasName("jsonrpc", "peer") //
                     .protocol("jsonrpc") //
                     .serialize("Json") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
 
             // 独立 Jayson 客户端验证不存在方法的标准错误码。
@@ -332,6 +342,7 @@ public class JsonRpcInteropTest {
                     .aliasName("jsonrpc", "peer") //
                     .protocol("jsonrpc") //
                     .serialize("Json") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
             InterAddress address = new InterAddress("jsonrpc", peer.host(), port);
 
@@ -361,6 +372,7 @@ public class JsonRpcInteropTest {
                     .aliasName("jsonrpc", "peer") //
                     .protocol("jsonrpc") //
                     .serialize("Json") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
             InterAddress address = new InterAddress("jsonrpc", peer.host(), port);
 
@@ -397,6 +409,7 @@ public class JsonRpcInteropTest {
                     .aliasName("jsonrpc", "peer") //
                     .protocol("jsonrpc") //
                     .serialize("Json") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
             InterAddress address = new InterAddress("jsonrpc", peer.host(), port);
 
@@ -434,6 +447,7 @@ public class JsonRpcInteropTest {
                     .aliasName("jsonrpc", "peer") //
                     .protocol("jsonrpc") //
                     .serialize("Json") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
             InterAddress address = new InterAddress("jsonrpc", peer.host(), port);
 
@@ -464,6 +478,7 @@ public class JsonRpcInteropTest {
                     .aliasName("jsonrpc", "peer") //
                     .protocol("jsonrpc") //
                     .serialize("Json") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
             InterAddress address = new InterAddress("jsonrpc", peer.host(), port);
 
@@ -501,6 +516,7 @@ public class JsonRpcInteropTest {
                     .aliasName("jsonrpc", "peer") //
                     .protocol("jsonrpc") //
                     .serialize("Json") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .register();
             InterAddress address = new InterAddress("jsonrpc", peer.host(), port);
 

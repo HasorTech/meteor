@@ -6,20 +6,21 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap.go;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URL;
+import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.example.protocol.soap.EchoService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.soap.definition.SoapWsdlResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import net.hasor.realmeteor.environment.golang.GoPeerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** 稳定版 gowsdl 生成的 Go 客户端调用 Meteor 的 SOAP 1.1 document/literal 服务。 */
 @NxnRpc(name = "soap", version = "1.1")
@@ -40,6 +41,7 @@ public class SoapGoInteropTest {
             server.start();
             server.publisher().rsfService(EchoService.class, message -> message + "|meteor") //
                     .protocol("soap").aliasName("soap", "EchoService") //
+                    .contextPathByPrefix("soap", "/") //
                     .bindResource("soap", new SoapWsdlResource(contract)).register();
             int port = server.getListenAddress("soap").getPort();
             String target = "http://" + ContainerProcess.runnerHost() + ":" + port + "/services/EchoService";

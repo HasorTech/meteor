@@ -59,6 +59,7 @@ public class WebServicesSoap12ResponseTest {
                         .rsfService(SignalService.class) //
                         .aliasName("soap", "SignalService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 调用完成说明空成功响应已被当作 one-way 回执。
@@ -102,6 +103,7 @@ public class WebServicesSoap12ResponseTest {
                         .rsfService(SignalService.class) //
                         .aliasName("soap", "SignalService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 调用完成说明空成功响应已被当作 one-way 回执。
@@ -145,6 +147,7 @@ public class WebServicesSoap12ResponseTest {
                         .rsfService(SignalService.class) //
                         .aliasName("soap", "SignalService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 调用完成说明空成功响应已被当作 one-way 回执。
@@ -184,6 +187,7 @@ public class WebServicesSoap12ResponseTest {
                         .rsfService(EchoService.class) //
                         .aliasName("soap", "EchoService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 调用方应立即收到相应协议失败，而不是空成功或超时。
@@ -223,6 +227,7 @@ public class WebServicesSoap12ResponseTest {
                         .rsfService(EchoService.class) //
                         .aliasName("soap", "EchoService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 调用方应立即收到相应协议失败，而不是空成功或超时。
@@ -261,6 +266,7 @@ public class WebServicesSoap12ResponseTest {
                         .rsfService(EchoService.class) //
                         .aliasName("soap", "EchoService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 调用方应立即收到相应协议失败，而不是空成功或超时。
@@ -300,6 +306,7 @@ public class WebServicesSoap12ResponseTest {
                         .rsfService(EchoService.class) //
                         .aliasName("soap", "EchoService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 调用方应立即收到相应协议失败，而不是空成功或超时。
@@ -339,6 +346,7 @@ public class WebServicesSoap12ResponseTest {
                         .rsfService(EchoService.class) //
                         .aliasName("soap", "EchoService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 调用方应立即收到相应协议失败，而不是空成功或超时。
@@ -378,6 +386,7 @@ public class WebServicesSoap12ResponseTest {
                         .rsfService(EchoService.class) //
                         .aliasName("soap", "EchoService") //
                         .protocol("soap") //
+                        .contextPathByPrefix("soap", "/") //
                         .register();
 
                 // 调用方应立即收到相应协议失败，而不是空成功或超时。

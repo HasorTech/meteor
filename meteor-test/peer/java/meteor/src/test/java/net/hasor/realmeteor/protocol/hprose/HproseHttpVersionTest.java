@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.hprose;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -14,13 +13,14 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.hprose.TextService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.Timeout;
 
 @NxnRpc(name = "hprose")
 public class HproseHttpVersionTest {
@@ -40,6 +40,7 @@ public class HproseHttpVersionTest {
             server.publisher() //
                     .rsfService(TextService.class, value -> value) //
                     .aliasName("Hprose", "echo") //
+                    .contextPathByPrefix("hprose", "/") //
                     .register();
 
             int port = server.getListenAddress("hprose").getPort();
@@ -82,6 +83,7 @@ public class HproseHttpVersionTest {
             server.publisher() //
                     .rsfService(TextService.class, value -> value) //
                     .aliasName("Hprose", "echo") //
+                    .contextPathByPrefix("hprose", "/") //
                     .register();
 
             int port = server.getListenAddress("hprose").getPort();
@@ -123,6 +125,7 @@ public class HproseHttpVersionTest {
             server.publisher() //
                     .rsfService(TextService.class, value -> value) //
                     .aliasName("Hprose", "echo") //
+                    .contextPathByPrefix("hprose", "/") //
                     .register();
 
             int port = server.getListenAddress("hprose").getPort();
@@ -162,6 +165,7 @@ public class HproseHttpVersionTest {
             server.publisher() //
                     .rsfService(TextService.class, value -> value) //
                     .aliasName("Hprose", "echo") //
+                    .contextPathByPrefix("hprose", "/") //
                     .register();
 
             int port = server.getListenAddress("hprose").getPort();
@@ -204,6 +208,7 @@ public class HproseHttpVersionTest {
             server.publisher() //
                     .rsfService(TextService.class, value -> value) //
                     .aliasName("Hprose", "echo") //
+                    .contextPathByPrefix("hprose", "/") //
                     .register();
 
             int port = server.getListenAddress("hprose").getPort();
@@ -245,6 +250,7 @@ public class HproseHttpVersionTest {
             server.publisher() //
                     .rsfService(TextService.class, value -> value) //
                     .aliasName("Hprose", "echo") //
+                    .contextPathByPrefix("hprose", "/") //
                     .register();
 
             int port = server.getListenAddress("hprose").getPort();

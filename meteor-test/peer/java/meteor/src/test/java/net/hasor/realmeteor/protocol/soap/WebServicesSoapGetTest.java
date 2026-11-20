@@ -46,9 +46,11 @@ public class WebServicesSoapGetTest {
             server.start();
             client.start();
             server.publisher().rsfService(SoapStatusService.class, implementation) //
-                    .aliasName("soap", "Status").protocol("soap").register();
+                    .aliasName("soap", "Status").protocol("soap") //
+                    .contextPathByPrefix("soap", "/").register();
             MetBindInfo<SoapStatusService> service = client.publisher().rsfService(SoapStatusService.class) //
-                    .aliasName("soap", "Status").protocol("soap").register();
+                    .aliasName("soap", "Status").protocol("soap") //
+                    .contextPathByPrefix("soap", "/").register();
 
             // 字节转发代理观测 HTTP 方法，避免 POST 也能调用成功掩盖 GET 发送路径。
             int port = server.getListenAddress("soap").getPort();
@@ -79,7 +81,8 @@ public class WebServicesSoapGetTest {
         try (MetContext context = configuration.buildContext()) {
             context.start();
             context.publisher().rsfService(SoapStatusService.class, implementation) //
-                    .aliasName("soap", "Status").protocol("soap").register();
+                    .aliasName("soap", "Status").protocol("soap") //
+                    .contextPathByPrefix("soap", "/").register();
 
             // 通过真实 HTTP 入口请求，检查状态与业务是否实际执行。
             int port = context.getListenAddress("soap").getPort();
@@ -106,7 +109,8 @@ public class WebServicesSoapGetTest {
         try (MetContext context = configuration.buildContext()) {
             context.start();
             context.publisher().rsfService(SoapStatusService.class, implementation) //
-                    .aliasName("soap", "Status").protocol("soap").register();
+                    .aliasName("soap", "Status").protocol("soap") //
+                    .contextPathByPrefix("soap", "/").register();
 
             // 通过真实 HTTP 入口请求，检查状态与业务是否实际执行。
             int port = context.getListenAddress("soap").getPort();
@@ -128,7 +132,8 @@ public class WebServicesSoapGetTest {
         try (MetContext context = configuration.buildContext()) {
             context.start();
             context.publisher().rsfService(SoapStatusService.class, implementation) //
-                    .aliasName("soap", "Status").protocol("soap").register();
+                    .aliasName("soap", "Status").protocol("soap") //
+                    .contextPathByPrefix("soap", "/").register();
 
             // 通过真实 HTTP 入口请求，检查状态与业务是否实际执行。
             int port = context.getListenAddress("soap").getPort();
@@ -150,7 +155,8 @@ public class WebServicesSoapGetTest {
         try (MetContext context = configuration.buildContext()) {
             context.start();
             context.publisher().rsfService(SoapStatusService.class, implementation) //
-                    .aliasName("soap", "Status").protocol("soap").register();
+                    .aliasName("soap", "Status").protocol("soap") //
+                    .contextPathByPrefix("soap", "/").register();
 
             // 通过真实 HTTP 入口请求，检查状态与业务是否实际执行。
             int port = context.getListenAddress("soap").getPort();
@@ -173,7 +179,8 @@ public class WebServicesSoapGetTest {
         try (MetContext context = configuration.buildContext()) {
             context.start();
             context.publisher().rsfService(SoapStatusService.class, implementation) //
-                    .aliasName("soap", "Status").protocol("soap").register();
+                    .aliasName("soap", "Status").protocol("soap") //
+                    .contextPathByPrefix("soap", "/").register();
 
             // 通过真实 HTTP 入口请求，检查状态与业务是否实际执行。
             int port = context.getListenAddress("soap").getPort();
@@ -195,7 +202,8 @@ public class WebServicesSoapGetTest {
         try (MetContext context = configuration.buildContext()) {
             context.start();
             context.publisher().rsfService(SoapStatusService.class, implementation) //
-                    .aliasName("soap", "Status").protocol("soap").register();
+                    .aliasName("soap", "Status").protocol("soap") //
+                    .contextPathByPrefix("soap", "/").register();
 
             // 通过真实 HTTP 入口请求，检查状态与业务是否实际执行。
             int port = context.getListenAddress("soap").getPort();

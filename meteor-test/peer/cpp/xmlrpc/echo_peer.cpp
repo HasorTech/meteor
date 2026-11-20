@@ -47,13 +47,14 @@ static void provide() {
     registry.addMethod("demo.echo", xmlrpc_c::methodPtr(new EchoMethod));
     unsigned short port;
     int descriptor = listeningSocket(port);
+    const char *path = "/rpc";
     xmlrpc_c::serverAbyss server(xmlrpc_c::serverAbyss::constrOpt()
-        .registryP(&registry).socketFd(descriptor).uriPath("/rpc"));
+        .registryP(&registry).socketFd(descriptor).uriPath(path));
 
     // Publish the concrete container endpoint only after the SDK finishes setup.
     const char *host = std::getenv("METEOR_TEST_PEER_HOST");
     std::cout << "READY xmlrpc://" << (host == nullptr ? "127.0.0.1" : host)
-              << ':' << port << "/default" << std::endl;
+              << ':' << port << path << std::endl;
     server.run();
     close(descriptor);
 }

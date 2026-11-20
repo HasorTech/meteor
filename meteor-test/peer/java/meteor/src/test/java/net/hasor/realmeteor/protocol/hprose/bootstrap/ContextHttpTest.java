@@ -52,7 +52,7 @@ public class ContextHttpTest extends BootstrapTestSupport {
 
             // 原生 HTTP 调用经过 Hprose 解码后，返回原始中文参数。
             int httpPort = server.getListenAddress("hprose").getPort();
-            assertEquals("HTTP中文", this.invokeHttp(httpPort, "/hprose", "HTTP中文"));
+            assertEquals("HTTP中文", this.invokeHttp(httpPort, "/hprose/default/1.0.0", "HTTP中文"));
         }
     }
 
@@ -82,7 +82,7 @@ public class ContextHttpTest extends BootstrapTestSupport {
                 assertTrue(server.runProtocols().contains(protocol));
                 assertEquals("http", server.getListenAddress(protocol).getSchema());
                 assertEquals(sharedPort, server.getListenAddress(protocol).getPort());
-                assertEquals(protocol, this.invokeHttp(sharedPort, "/" + branch, protocol));
+                assertEquals(protocol, this.invokeHttp(sharedPort, "/" + branch + "/default/1.0.0", protocol));
             }
         }
     }
@@ -286,7 +286,7 @@ public class ContextHttpTest extends BootstrapTestSupport {
             while (cause.getCause() != null) {
                 cause = cause.getCause();
             }
-            assertTrue(cause instanceof MetException, cause.toString());
+            assertInstanceOf(MetException.class, cause, cause.toString());
         }
     }
 
@@ -344,7 +344,7 @@ public class ContextHttpTest extends BootstrapTestSupport {
                 // 确认业务已经进入，再等待客户端期限结束此次调用。
                 MetFuture expired = remote.asyncInvoke(service, "slow", slowTypes, slowArguments);
                 assertNotNull(entered.poll(3, TimeUnit.SECONDS));
-                assertTrue(assertFailure(expired) instanceof MetTimeoutException);
+                assertInstanceOf(MetTimeoutException.class, assertFailure(expired));
 
                 // 超时不破坏连接，普通请求仍能通过同一客户端完成。
                 assertEquals("after timeout", remote.getRemote(service).echo("after timeout"));
@@ -477,7 +477,7 @@ public class ContextHttpTest extends BootstrapTestSupport {
 
                 // 客户端收到远端错误，而不是自身等待期限触发的异常。
                 var failure = assertThrows(ExecutionException.class, () -> call.getData(3, TimeUnit.SECONDS));
-                assertTrue(failure.getCause() instanceof MetException);
+                assertInstanceOf(MetException.class, failure.getCause());
                 assertFalse(failure.getCause() instanceof MetTimeoutException);
 
                 // 业务释放后仍能继续处理新的 HTTP 请求。

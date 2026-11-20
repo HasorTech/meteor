@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -16,17 +15,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import net.hasor.example.protocol.soap.EchoService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.MetResponse;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.protocol.soap.support.SoapHeadersExtension;
 import net.hasor.realmeteor.protocol.soap.support.TraceHeaderHandler;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.Timeout;
 
 @NxnRpc(name = "soap", version = "1.2")
 public class WebServicesHeaderHandlerTest {
@@ -47,6 +47,7 @@ public class WebServicesHeaderHandlerTest {
                     .rsfService(EchoService.class, message -> message) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .bindFilter("trace", (request, response, chain) -> {
                         requestTrace.set(request.getOption("requestTrace"));
                         chain.doFilter(request, response);
@@ -56,6 +57,7 @@ public class WebServicesHeaderHandlerTest {
                     .rsfService(EchoService.class) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 请求和响应各有一个 mustUnderstand=true 的 Trace block，均经过真实 HTTP。
@@ -86,6 +88,7 @@ public class WebServicesHeaderHandlerTest {
                     .rsfService(EchoService.class, message -> message) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .bindFilter("trace", (request, response, chain) -> {
                         requestTrace.set(request.getOption("requestTrace"));
                         chain.doFilter(request, response);
@@ -95,6 +98,7 @@ public class WebServicesHeaderHandlerTest {
                     .rsfService(EchoService.class) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 接收方声明相应 actor，理解必选 Header 后继续调用业务。
@@ -123,6 +127,7 @@ public class WebServicesHeaderHandlerTest {
                     }) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 未知头声明必选，同时正文缺少参数；必须先报告 MustUnderstand。

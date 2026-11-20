@@ -4,17 +4,17 @@
  * See the LICENSE.txt file for the full license.
  */
 package net.hasor.realmeteor.example.multilingual;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import net.hasor.example.echo.TextEchoService;
-import net.hasor.meteor.MetContext;
 import net.hasor.example.support.TestConfigurationUtils;
+import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.container.ContainerProcess;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** 官方 C++ 1x 源码 SDK，经公开传输扩展接入 libcurl；未使用上游损坏的 Asio HTTP 客户端。 */
 @NxnRpc(name = "hprose")
@@ -31,7 +31,8 @@ public class HproseCppSourceSdkScenarioTest {
         try (MetContext provider = configuration.buildContext()) {
             provider.start();
             provider.publisher().rsfService(TextEchoService.class, text -> text) //
-                    .protocol("hprose").aliasName("Hprose", "sample").serialize("Hprose").register();
+                    .protocol("hprose").aliasName("Hprose", "sample").serialize("Hprose") //
+                    .contextPathByPrefix("hprose", "/").register();
             int port = provider.getListenAddress("hprose").getPort();
             String target = "http://" + ContainerProcess.runnerHost() + ":" + port + "/rpc";
 

@@ -19,7 +19,7 @@ import net.hasor.example.Order;
 import net.hasor.example.OrderDemoService;
 import net.hasor.example.OrderDemoServiceImpl;
 import net.hasor.example.OrderQuery;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
+import net.hasor.example.discovery.RegistryDiscoveryExample;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
@@ -77,7 +77,9 @@ public class PythonGrpcRegistryAdapterScenarioTest {
                 MetBindInfo<OrderDemoService> service = provider.publisher() //
                         .rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                         .name("orders").protocol("grpc") //
-                        .aliasName("grpc", "meteor.example.OrderDemoService").bindResource("grpc", resource).register();
+                        .aliasName("grpc", "meteor.example.OrderDemoService") //
+                        .contextPathByPrefix("grpc", "/") //
+                        .bindResource("grpc", resource).register();
 
                 // 显式存储适配器订阅服务 ID，Python SDK 仅取得被发现端点并直接执行网络 RPC。
                 String serviceId = service.getBindID();
@@ -115,7 +117,9 @@ public class PythonGrpcRegistryAdapterScenarioTest {
                 GrpcProtoResource resource = new GrpcProtoResource(this.getClass().getResource("/protocol/proto/order.proto"));
                 MetBindInfo<OrderDemoService> service = consumer.publisher() //
                         .rsfService(OrderDemoService.class).name("orders").protocol("grpc") //
-                        .aliasName("grpc", "meteor.example.OrderDemoService").bindResource("grpc", resource).register();
+                        .aliasName("grpc", "meteor.example.OrderDemoService") //
+                        .contextPathByPrefix("grpc", "/") //
+                        .bindResource("grpc", resource).register();
                 assertTrue(consumer.getUpdater().queryAvailableAddresses(service.getBindID()).isEmpty());
 
                 // Python 官方 server 就绪后，适配器登记它自己的进程与端点，不代发业务调用。
@@ -125,7 +129,7 @@ public class PythonGrpcRegistryAdapterScenarioTest {
                     String unit = consumer.getSettings().getUnitName();
                     InterAddress address = new InterAddress("grpc", provider.host(), port);
                     registrar.register(service, provider.processId(), "python", "grpc", "http", address, "/");
-                    AddressSelectionAwaiter.await(consumer, service, "save");
+                    RegistryDiscoveryExample.awaitDiscovery(consumer, service);
 
                     // 统一业务向量经过自动地址本调用真实 Python 存储，保留 Unicode 与二进制附件。
                     Order expected;

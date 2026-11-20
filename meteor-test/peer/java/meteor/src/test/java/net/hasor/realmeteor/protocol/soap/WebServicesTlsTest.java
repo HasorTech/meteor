@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -15,19 +14,20 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.hasor.cobble.StringUtils;
 import net.hasor.example.protocol.soap.EchoService;
 import net.hasor.example.protocol.soap.EchoServiceImpl;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.protocol.soap.support.SoapResponseUtils;
 import net.hasor.realmeteor.protocol.soap.support.SoapTlsSupport;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 @NxnRpc(name = "soap", version = "1.1")
 public class WebServicesTlsTest {
@@ -42,6 +42,7 @@ public class WebServicesTlsTest {
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 外部 HTTPS 客户端必须通过 HTTP/1.1 完成调用。
@@ -65,6 +66,7 @@ public class WebServicesTlsTest {
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 外部 HTTPS 客户端必须协商 HTTP/2 后完成调用。
@@ -89,6 +91,7 @@ public class WebServicesTlsTest {
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 外部 HTTPS 客户端必须通过 HTTP/1.1 完成调用。
@@ -113,6 +116,7 @@ public class WebServicesTlsTest {
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 外部 HTTPS 客户端必须协商 HTTP/2 后完成调用。
@@ -136,6 +140,7 @@ public class WebServicesTlsTest {
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 客户端携带受信任身份完成双向 TLS 调用。
@@ -159,6 +164,7 @@ public class WebServicesTlsTest {
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 客户端携带受信任身份并通过 ALPN 协商 HTTP/2。
@@ -183,6 +189,7 @@ public class WebServicesTlsTest {
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 客户端携带受信任身份完成双向 TLS 调用。
@@ -207,6 +214,7 @@ public class WebServicesTlsTest {
                     .rsfService(EchoService.class, new EchoServiceImpl()) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 客户端携带受信任身份并通过 ALPN 协商 HTTP/2。
@@ -372,6 +380,7 @@ public class WebServicesTlsTest {
                 .rsfService(EchoService.class, service) //
                 .aliasName("soap", "EchoService") //
                 .protocol("soap") //
+                .contextPathByPrefix("soap", "/") //
                 .register();
     }
 

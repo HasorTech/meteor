@@ -6,21 +6,21 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.grpc;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
+import java.util.concurrent.TimeUnit;
 import net.hasor.example.protocol.grpc.DemoTlsPipeline;
 import net.hasor.example.protocol.grpc.Echo;
 import net.hasor.example.protocol.grpc.EchoImpl;
 import net.hasor.example.protocol.grpc.Message;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** 通过公开 bootstrap 配置协议组合，业务接口与其他互通场景共用。 */
 @NxnRpc(name = "grpc")
@@ -128,8 +128,9 @@ public class GrpcBootstrapTest {
             InterAddress grpcAddress = server.getListenAddress("grpc");
             InterAddress hproseAddress = server.getListenAddress("hprose");
             assertEquals("https", grpcAddress.getSchema());
-            assertEquals(grpcAddress, hproseAddress);
-            assertEquals(grpcAddress.getPort(), hproseAddress.getPort());
+            assertEquals(grpcAddress.getHostPort(), hproseAddress.getHostPort());
+            assertEquals("/rpc", grpcAddress.getPath());
+            assertEquals("/legacy", hproseAddress.getPath());
             Echo overHttp2 = client.getRsfClient(grpcAddress).getRemote(grpcInfo);
             Echo overHttp1 = client.getRsfClient(hproseAddress).getRemote(hproseInfo);
             Message grpcResponse = overHttp2.echo(Message.of("secure HTTP/2", 1));

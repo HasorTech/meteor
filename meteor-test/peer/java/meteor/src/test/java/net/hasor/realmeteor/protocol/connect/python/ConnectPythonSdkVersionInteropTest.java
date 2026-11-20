@@ -88,6 +88,7 @@ public class ConnectPythonSdkVersionInteropTest {
             provider.start();
             provider.publisher().rsfService(OrderDemoService.class, new OrderDemoServiceImpl()) //
                     .protocol(this.protocol).aliasName(this.protocol, "meteor.example.OrderDemoService") //
+                    .contextPathByPrefix(this.protocol, "/") //
                     .serialize("Protobuf").bindResource(this.protocol, resource).register();
 
             // 官方 SDK 在独立 Python 容器中保存并查询同一笔订单，实际使用所选线协议。
@@ -117,6 +118,7 @@ public class ConnectPythonSdkVersionInteropTest {
             consumer.start();
             var service = consumer.publisher().rsfService(OrderDemoService.class) //
                     .protocol(this.protocol).aliasName(this.protocol, "meteor.example.OrderDemoService") //
+                    .contextPathByPrefix(this.protocol, "/") //
                     .serialize("Protobuf").bindResource(this.protocol, resource).register();
             // 地址前缀沿用当前协议的配置；底层 HTTP 传输不改变协议选择。
             var address = new InterAddress(this.protocol, peer.host(), port);

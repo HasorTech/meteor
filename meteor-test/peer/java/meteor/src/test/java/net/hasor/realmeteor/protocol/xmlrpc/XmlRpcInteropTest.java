@@ -49,6 +49,7 @@ public class XmlRpcInteropTest {
             server.start();
             server.publisher().rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .protocol("xmlrpc") //
                     .register();
 
@@ -76,6 +77,7 @@ public class XmlRpcInteropTest {
             server.start();
             server.publisher().rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .protocol("xmlrpc") //
                     .register();
 
@@ -103,6 +105,7 @@ public class XmlRpcInteropTest {
             server.start();
             server.publisher().rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .protocol("xmlrpc") //
                     .register();
 
@@ -130,6 +133,7 @@ public class XmlRpcInteropTest {
             server.start();
             server.publisher().rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .protocol("xmlrpc") //
                     .register();
 
@@ -157,6 +161,7 @@ public class XmlRpcInteropTest {
             server.start();
             server.publisher().rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .protocol("xmlrpc") //
                     .register();
 
@@ -184,6 +189,7 @@ public class XmlRpcInteropTest {
             server.start();
             server.publisher().rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .protocol("xmlrpc") //
                     .register();
 
@@ -211,6 +217,7 @@ public class XmlRpcInteropTest {
             server.start();
             server.publisher().rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .protocol("xmlrpc") //
                     .register();
 
@@ -238,6 +245,7 @@ public class XmlRpcInteropTest {
             server.start();
             server.publisher().rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .protocol("xmlrpc") //
                     .register();
 
@@ -265,6 +273,7 @@ public class XmlRpcInteropTest {
             server.start();
             server.publisher().rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .protocol("xmlrpc") //
                     .register();
 
@@ -292,6 +301,7 @@ public class XmlRpcInteropTest {
             server.start();
             server.publisher().rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .protocol("xmlrpc") //
                     .register();
 
@@ -320,6 +330,7 @@ public class XmlRpcInteropTest {
             server.start();
             server.publisher().rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .protocol("xmlrpc") //
                     .register();
 
@@ -350,6 +361,7 @@ public class XmlRpcInteropTest {
             MetBindInfo<XmlRpcDemoService> service = client.publisher() //
                     .rsfService(XmlRpcDemoService.class) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .protocol("xmlrpc") //
                     .register();
             InterAddress address = new InterAddress("xmlrpc", peer.host(), port);
@@ -379,6 +391,7 @@ public class XmlRpcInteropTest {
             MetBindInfo<XmlRpcDemoService> service = client.publisher() //
                     .rsfService(XmlRpcDemoService.class) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .protocol("xmlrpc") //
                     .register();
             InterAddress address = new InterAddress("xmlrpc", peer.host(), port);
@@ -407,6 +420,7 @@ public class XmlRpcInteropTest {
             MetBindInfo<XmlRpcDemoService> service = client.publisher() //
                     .rsfService(XmlRpcDemoService.class) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .protocol("xmlrpc") //
                     .register();
             InterAddress address = new InterAddress("xmlrpc", peer.host(), port);
@@ -435,6 +449,7 @@ public class XmlRpcInteropTest {
             MetBindInfo<XmlRpcDemoService> service = client.publisher() //
                     .rsfService(XmlRpcDemoService.class) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .protocol("xmlrpc") //
                     .register();
             InterAddress address = new InterAddress("xmlrpc", peer.host(), port);
@@ -463,6 +478,7 @@ public class XmlRpcInteropTest {
             MetBindInfo<XmlRpcDemoService> service = client.publisher() //
                     .rsfService(XmlRpcDemoService.class) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .protocol("xmlrpc") //
                     .register();
             InterAddress address = new InterAddress("xmlrpc", peer.host(), port);
@@ -492,6 +508,7 @@ public class XmlRpcInteropTest {
             MetBindInfo<XmlRpcDemoService> service = client.publisher() //
                     .rsfService(XmlRpcDemoService.class) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .protocol("xmlrpc") //
                     .register();
             InterAddress address = new InterAddress("xmlrpc", peer.host(), port);
@@ -521,6 +538,7 @@ public class XmlRpcInteropTest {
             MetBindInfo<XmlRpcDemoService> service = client.publisher() //
                     .rsfService(XmlRpcDemoService.class) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .protocol("xmlrpc") //
                     .register();
             InterAddress address = new InterAddress("xmlrpc", peer.host(), port);
@@ -560,6 +578,7 @@ public class XmlRpcInteropTest {
             MetBindInfo<XmlRpcDemoService> service = client.publisher() //
                     .rsfService(XmlRpcDemoService.class) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .protocol("xmlrpc") //
                     .register();
             InterAddress address = new InterAddress("xmlrpc", peer.host(), port);
@@ -590,6 +609,7 @@ public class XmlRpcInteropTest {
             MetBindInfo<XmlRpcDemoService> service = client.publisher() //
                     .rsfService(XmlRpcDemoService.class) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .protocol("xmlrpc") //
                     .register();
             InterAddress address = new InterAddress("xmlrpc", peer.host(), port);
@@ -625,6 +645,7 @@ public class XmlRpcInteropTest {
             MetBindInfo<XmlRpcDemoService> service = client.publisher() //
                     .rsfService(XmlRpcDemoService.class) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .protocol("xmlrpc") //
                     .register();
             InterAddress address = new InterAddress("xmlrpc", peer.host(), port);
@@ -654,6 +675,7 @@ public class XmlRpcInteropTest {
             MetBindInfo<XmlRpcDemoService> service = client.publisher() //
                     .rsfService(XmlRpcDemoService.class) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .protocol("xmlrpc") //
                     .register();
             InterAddress address = new InterAddress("xmlrpc", peer.host(), port);
@@ -681,6 +703,7 @@ public class XmlRpcInteropTest {
             server.start();
             server.publisher().rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .protocol("xmlrpc") //
                     .register();
 
@@ -717,6 +740,7 @@ public class XmlRpcInteropTest {
             MetBindInfo<XmlRpcDemoService> service = client.publisher() //
                     .rsfService(XmlRpcDemoService.class) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .protocol("xmlrpc") //
                     .register();
             InterAddress address = new InterAddress("https", peer.host(), port);

@@ -6,31 +6,25 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.triple;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.hasor.example.protocol.triple.TripleDemoService;
-import net.hasor.example.protocol.triple.TripleDemoServiceImpl;
-import net.hasor.example.protocol.triple.TripleFlowService;
-import net.hasor.example.protocol.triple.TripleFlowServiceImpl;
-import net.hasor.example.protocol.triple.TripleMessage;
-import net.hasor.example.protocol.triple.TripleUnaryService;
-import net.hasor.example.protocol.triple.TripleUnaryServiceImpl;
+import net.hasor.example.protocol.triple.*;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.protocol.grpc.GrpcProtoResource;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** Triple 与既有协议共享端口时，协议与服务上下文各自保持隔离。 */
 @NxnRpc(name = "triple")
@@ -180,7 +174,7 @@ public class TripleCompositionScenarioTest {
                 .bind("127.0.0.1", 0) //
                 .protocol("triple") //
                 .contextPath("/default") //
-                .addContextPath("/isolated") //
+                .addContextPath("/default/isolated") //
                 .option("httpMode", "json");
         TripleDemoServiceImpl implementation = new TripleDemoServiceImpl();
         try (MetContext server = configuration.buildContext()) {
@@ -194,7 +188,7 @@ public class TripleCompositionScenarioTest {
             String base = "http://127.0.0.1:" + port;
             String method = "/meteor.triple.demo.TripleDemoService/echo";
             HttpClient client = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build();
-            URI isolated = URI.create(base + "/isolated" + method);
+            URI isolated = URI.create(base + "/default/isolated" + method);
             HttpResponse<byte[]> selected = client.send(this.unaryRequest(isolated), //
                     HttpResponse.BodyHandlers.ofByteArray());
             URI defaultContext = URI.create(base + "/default" + method);

@@ -6,12 +6,18 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.meteor.registry.nacos;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -26,6 +32,9 @@ import net.hasor.meteor.registry.shared.utils.RegistryJson;
 
 /** 应用和服务定义持久保存；实例、成员关系和实例治理随 Naming 临时登记退出。 */
 final class NacosRegistry implements StorageAccess {
+    private static final int    NAMING_METADATA_BYTES = 65_536;
+    private static final String GZIP_BODY_PREFIX      = "gzip:";
+
     private final    NacosConfigStore                         configStore;
     private final    NacosNamingStore                         namingStore;
     private final    NacosGovernance                          governance;
@@ -253,8 +262,8 @@ final class NacosRegistry implements StorageAccess {
         if (value.getDescription() != null) {
             relation.put("description", value.getDescription());
         }
-        String body = RegistryJson.write(relation);
-        this.namingStore.publish(membersKey(id, value.getRole()), instance, Map.of("body", body));
+        Map<String, String> metadata = memberMetadata(instanceId, relation);
+        this.namingStore.publish(membersKey(id, value.getRole()), instance, metadata);
         MetServiceType other = MetServiceType.Provider;
         if (value.getRole() == MetServiceType.Provider) {
             other = MetServiceType.Consumer;
@@ -274,6 +283,33 @@ final class NacosRegistry implements StorageAccess {
         // 主关系成功后再发布反向引用。失败向上传递，重复登记会继续补齐引用。
         this.references.get(instanceId).put(id, value.getRole());
         this.publishInstance(instance);
+    }
+
+    private static Map<String, String> memberMetadata(String instanceId, Map<String, Object> relation) throws IOException {
+        String body = RegistryJson.write(relation);
+        Map<String, String> metadata = Map.of("instanceId", instanceId, "body", body);
+        int bytes = RegistryJson.write(metadata).getBytes(StandardCharsets.UTF_8).length;
+        if (bytes <= NAMING_METADATA_BYTES) {
+            return Map.of("body", body);
+        }
+
+        // Naming 限制整个元数据 Map 的大小。常规正文继续使用 JSON，超长契约仍随临时实例关系保存。
+        ByteArrayOutputStream compressed = new ByteArrayOutputStream();
+        try (GZIPOutputStream gzip = new GZIPOutputStream(compressed)) {
+            gzip.write(body.getBytes(StandardCharsets.UTF_8));
+        }
+        String encoded = GZIP_BODY_PREFIX + Base64.getEncoder().encodeToString(compressed.toByteArray());
+        return Map.of("body", encoded);
+    }
+
+    private static String memberBody(String body) throws IOException {
+        if (!body.startsWith(GZIP_BODY_PREFIX)) {
+            return body;
+        }
+        byte[] encoded = Base64.getDecoder().decode(body.substring(GZIP_BODY_PREFIX.length()));
+        try (GZIPInputStream gzip = new GZIPInputStream(new ByteArrayInputStream(encoded))) {
+            return new String(gzip.readAllBytes(), StandardCharsets.UTF_8);
+        }
     }
 
     @Override
@@ -299,7 +335,7 @@ final class NacosRegistry implements StorageAccess {
         if (instance == null || catalog == null) {
             return null;
         }
-        EntServiceRuntimeData value = RegistryJson.read(node.getMetadata().get("body"), EntServiceRuntimeData.class);
+        EntServiceRuntimeData value = RegistryJson.read(memberBody(node.getMetadata().get("body")), EntServiceRuntimeData.class);
         value.setServiceId(serviceId);
         value.setGroup(catalog.getGroup());
         value.setName(catalog.getName());

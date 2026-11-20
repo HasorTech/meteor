@@ -8,6 +8,9 @@
 package net.hasor.meteor.address;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import net.hasor.meteor.address.dsl.RouteContext;
 import net.hasor.meteor.address.route.FlowControlScripts;
 import org.junit.jupiter.api.Test;
@@ -77,6 +80,43 @@ class AddressPoolProtocolTest {
         assertEquals(Set.of("jsonrpc"), pool.getSupportedProtocols("service"));
         assertEquals(List.of(next), pool.queryAvailableAddresses("service"));
         assertEquals(Set.of(this.rsf, next, this.hessian), Set.copyOf(pool.queryAllAddresses("service")));
+    }
+
+    @Test
+    void discoveryReadsTheSameAvailableAddressesAsRoutingDuringRefresh() throws Exception {
+        AddressPool pool = new AddressPool();
+        CountDownLatch bucketChanged = new CountDownLatch(1);
+        CountDownLatch publishSnapshot = new CountDownLatch(1);
+        AddressBucket bucket = new AddressBucket("service", "default") {
+            @Override
+            public void refreshAddressToNew(List<InterAddress> addresses) {
+                super.refreshAddressToNew(addresses);
+                bucketChanged.countDown();
+                try {
+                    assertTrue(publishSnapshot.await(5, TimeUnit.SECONDS));
+                } catch (InterruptedException failure) {
+                    Thread.currentThread().interrupt();
+                    throw new AssertionError("Interrupted while waiting to publish routing snapshot", failure);
+                }
+            }
+        };
+        pool.registerBucket(bucket);
+        pool.appendAddress("service", this.rsf);
+        var writer = Executors.newSingleThreadExecutor();
+        try {
+            var refresh = writer.submit(() -> pool.refreshAddress("service", List.of(this.jsonrpc)));
+            assertTrue(bucketChanged.await(5, TimeUnit.SECONDS));
+            assertEquals(List.of(this.rsf), pool.queryAvailableAddresses("service"));
+            assertEquals(this.rsf, pool.nextAddress("service", "echo", new Object[0]));
+
+            publishSnapshot.countDown();
+            refresh.get(5, TimeUnit.SECONDS);
+            assertEquals(List.of(this.jsonrpc), pool.queryAvailableAddresses("service"));
+            assertEquals(this.jsonrpc, pool.nextAddress("service", "echo", new Object[0]));
+        } finally {
+            publishSnapshot.countDown();
+            writer.shutdownNow();
+        }
     }
 
     @Test

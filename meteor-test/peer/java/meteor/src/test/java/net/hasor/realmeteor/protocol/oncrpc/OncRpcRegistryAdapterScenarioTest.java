@@ -17,7 +17,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import net.hasor.cobble.StringUtils;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
+import net.hasor.example.discovery.RegistryDiscoveryExample;
 import net.hasor.example.protocol.oncrpc.OncRpcDemoCodecs;
 import net.hasor.example.protocol.oncrpc.OncRpcDemoService;
 import net.hasor.example.protocol.oncrpc.OncRpcDemoServiceImpl;
@@ -129,7 +129,7 @@ public class OncRpcRegistryAdapterScenarioTest {
                     String unitName = consumer.getSettings().getUnitName();
                     InterAddress address = new InterAddress(this.protocol, peer.host(), port);
                     registrar.register(service, peer.processId(), "c", this.protocol, this.transport, address, "/");
-                    AddressSelectionAwaiter.await(consumer, service, "echo");
+                    RegistryDiscoveryExample.awaitDiscovery(consumer, service);
 
                     // 代理使用自动地址本，业务结果只能来自原生服务端，不传固定远端地址。
                     OncRpcDemoService remote = consumer.getRsfClient().getRemote(service);

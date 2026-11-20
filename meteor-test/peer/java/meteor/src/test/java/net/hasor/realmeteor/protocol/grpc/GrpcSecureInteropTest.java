@@ -48,6 +48,7 @@ public class GrpcSecureInteropTest {
             server.start();
             server.publisher().rsfService(Echo.class, implementation) //
                     .aliasName("grpc", "example.Echo") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", this.resource()) //
                     .register();
@@ -87,6 +88,7 @@ public class GrpcSecureInteropTest {
             client.start();
             MetBindInfo<Echo> info = client.publisher().rsfService(Echo.class) //
                     .aliasName("grpc", "example.Echo") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", this.resource()) //
                     .register();
@@ -113,6 +115,7 @@ public class GrpcSecureInteropTest {
             server.start();
             server.publisher().rsfService(Echo.class, implementation) //
                     .aliasName("grpc", "example.Echo") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", this.resource()) //
                     .register();
@@ -150,6 +153,7 @@ public class GrpcSecureInteropTest {
             client.start();
             MetBindInfo<Echo> info = client.publisher().rsfService(Echo.class) //
                     .aliasName("grpc", "example.Echo") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", this.resource()) //
                     .register();
@@ -176,6 +180,7 @@ public class GrpcSecureInteropTest {
             server.start();
             server.publisher().rsfService(Echo.class, implementation) //
                     .aliasName("grpc", "example.Echo") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", this.resource()) //
                     .register();
@@ -214,6 +219,7 @@ public class GrpcSecureInteropTest {
             client.start();
             MetBindInfo<Echo> info = client.publisher().rsfService(Echo.class) //
                     .aliasName("grpc", "example.Echo") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", this.resource()) //
                     .register();
@@ -241,6 +247,7 @@ public class GrpcSecureInteropTest {
             server.start();
             server.publisher().rsfService(Echo.class, implementation) //
                     .aliasName("grpc", "example.Echo") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", this.resource()) //
                     .register();
@@ -285,6 +292,7 @@ public class GrpcSecureInteropTest {
             server.start();
             server.publisher().rsfService(Echo.class, implementation) //
                     .aliasName("grpc", "example.Echo") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", this.resource()) //
                     .register();
@@ -319,6 +327,7 @@ public class GrpcSecureInteropTest {
             server.start();
             server.publisher().rsfService(Echo.class, implementation) //
                     .aliasName("grpc", "example.Echo") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", this.resource()) //
                     .register();
@@ -355,6 +364,7 @@ public class GrpcSecureInteropTest {
             server.start();
             server.publisher().rsfService(Echo.class, implementation) //
                     .aliasName("grpc", "example.Echo") //
+                    .contextPathByPrefix("grpc", "/") //
                     .serialize("Protobuf") //
                     .bindResource("grpc", this.resource()) //
                     .register();

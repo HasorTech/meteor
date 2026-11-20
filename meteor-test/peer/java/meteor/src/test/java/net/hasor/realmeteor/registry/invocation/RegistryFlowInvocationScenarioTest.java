@@ -6,11 +6,7 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.registry.invocation;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.nio.file.Files;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.ParameterizedClass;
 import java.nio.file.Path;
 import java.util.concurrent.Flow;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -19,15 +15,19 @@ import net.hasor.cobble.concurrent.future.BasicFuture;
 import net.hasor.example.direct.stream.CatalogItem;
 import net.hasor.example.direct.stream.CatalogStreamService;
 import net.hasor.example.direct.stream.StreamRpcExample;
+import net.hasor.example.discovery.RegistryDiscoveryExample;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.registry.RegistryConfiguration;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import net.hasor.realmeteor.environment.discovery.RegistryDiscoveryEnvironment;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** Flow 调用通过三种真实注册存储自动发现，同一普通接口分别使用 JSON 和 Protobuf。 */
 @ParameterizedClass(autoCloseArguments = false, name = "flow/{0}/{1}", quoteTextArguments = false)
@@ -44,6 +44,7 @@ public class RegistryFlowInvocationScenarioTest {
         this.backend = backend;
         this.format = format;
     }
+
     public static Object[][] combinations() {
         return new Object[][] { // 每一行是独立的注册发现与协议编码组合。
                 { "jdbc", "Json" }, //
@@ -70,7 +71,7 @@ public class RegistryFlowInvocationScenarioTest {
                 consumer.start();
                 StreamRpcExample.publish(provider, this.format);
                 MetBindInfo<CatalogStreamService> binding = StreamRpcExample.subscribe(consumer, this.format);
-                AddressSelectionAwaiter.await(consumer, binding, "list");
+                RegistryDiscoveryExample.awaitDiscovery(consumer, binding);
                 CatalogStreamService remote = consumer.getRsfClient().getRemote(binding);
 
                 // 先订阅但不声明需求，使用队列观察本次流的交付，而非观察网络内部缓冲。
@@ -145,7 +146,7 @@ public class RegistryFlowInvocationScenarioTest {
                 consumer.start();
                 StreamRpcExample.publish(provider, this.format);
                 MetBindInfo<CatalogStreamService> binding = StreamRpcExample.subscribe(consumer, this.format);
-                AddressSelectionAwaiter.await(consumer, binding, "list");
+                RegistryDiscoveryExample.awaitDiscovery(consumer, binding);
                 CatalogStreamService remote = consumer.getRsfClient().getRemote(binding);
 
                 // 只消费响应流的第一条，保留未消费消息后显式取消当前订阅。

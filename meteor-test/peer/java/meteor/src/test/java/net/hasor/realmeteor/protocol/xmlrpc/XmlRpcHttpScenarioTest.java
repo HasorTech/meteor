@@ -6,8 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.xmlrpc;
-import net.hasor.example.support.TestConfigurationUtils;
-import net.hasor.meteor.test.nxn.NxnRpc;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -23,6 +21,7 @@ import net.hasor.cobble.StringUtils;
 import net.hasor.example.protocol.xmlrpc.XmlRpcDemoService;
 import net.hasor.example.protocol.xmlrpc.XmlRpcDemoServiceImpl;
 import net.hasor.example.protocol.xmlrpc.XmlRpcPerson;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetBindInfo;
 import net.hasor.meteor.MetClient;
 import net.hasor.meteor.MetContext;
@@ -31,13 +30,13 @@ import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.bootstrap.MetConfiguration.ConnectorSettings;
 import net.hasor.meteor.domain.MetTimeoutException;
 import net.hasor.meteor.protocol.xmlrpc.XmlRpcException;
+import net.hasor.meteor.test.nxn.NxnRpc;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Timeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 @NxnRpc(name = "xmlrpc")
 public class XmlRpcHttpScenarioTest {
-
 
     @Test
     @Timeout(value = 15000, unit = TimeUnit.MILLISECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
@@ -53,10 +52,12 @@ public class XmlRpcHttpScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
             MetBindInfo<XmlRpcDemoService> service = client.publisher() //
                     .rsfService(XmlRpcDemoService.class) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
 
             // 服务代理只使用接口，不接触协议编解码实现。
@@ -79,10 +80,12 @@ public class XmlRpcHttpScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
             MetBindInfo<XmlRpcDemoService> service = client.publisher() //
                     .rsfService(XmlRpcDemoService.class) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
 
             // 准备一个普通业务对象，并通过集合参数传递。
@@ -113,6 +116,7 @@ public class XmlRpcHttpScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .bindFilter("observe", (request, response, chain) -> {
                         filtered.incrementAndGet();
                         chain.doFilter(request, response);
@@ -121,6 +125,7 @@ public class XmlRpcHttpScenarioTest {
             MetBindInfo<XmlRpcDemoService> service = client.publisher() //
                     .rsfService(XmlRpcDemoService.class) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
 
             // 真实远程调用执行服务过滤器一次。
@@ -144,10 +149,12 @@ public class XmlRpcHttpScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
             MetBindInfo<XmlRpcDemoService> service = client.publisher() //
                     .rsfService(XmlRpcDemoService.class) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
 
             // 一次提交所有调用，避免同步等待将场景退化为串行。
@@ -198,10 +205,12 @@ public class XmlRpcHttpScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, implementation) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
             MetBindInfo<XmlRpcDemoService> service = client.publisher() //
                     .rsfService(XmlRpcDemoService.class) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .timeout(600) //
                     .register();
             MetClient remote = client.getRsfClient(server.getListenAddress("xmlrpc"));
@@ -214,7 +223,7 @@ public class XmlRpcHttpScenarioTest {
                 ExecutionException failure = assertThrows(ExecutionException.class, () -> {
                     pending.getData(3, TimeUnit.SECONDS);
                 });
-                assertTrue(failure.getCause() instanceof MetTimeoutException);
+                assertInstanceOf(MetTimeoutException.class, failure.getCause());
             } finally {
                 release.countDown();
             }
@@ -254,10 +263,12 @@ public class XmlRpcHttpScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, implementation) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
             MetBindInfo<XmlRpcDemoService> service = client.publisher() //
                     .rsfService(XmlRpcDemoService.class) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .timeout(5000) //
                     .register();
             MetClient remote = client.getRsfClient(server.getListenAddress("xmlrpc"));
@@ -298,7 +309,9 @@ public class XmlRpcHttpScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .aliasName("jsonrpc", "demo") //
+                    .contextPathByPrefix("jsonrpc", "/") //
                     .protocol("xmlrpc", "jsonrpc") //
                     .register();
 
@@ -333,7 +346,7 @@ public class XmlRpcHttpScenarioTest {
                     .build();
             HttpResponse<String> jsonResponse = http.send(jsonRequest, HttpResponse.BodyHandlers.ofString());
             assertEquals(200, jsonResponse.statusCode());
-            assertTrue(jsonResponse.body().contains("\"result\":\"jsonrpc\""));
+            assertTrue(jsonResponse.body().contains("\"result\":\"jsonrpc\""), jsonResponse.body());
         }
     }
 
@@ -347,6 +360,7 @@ public class XmlRpcHttpScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
 
             // XML-RPC 本身不参与传输升级，响应版本证明协商成功。
@@ -385,10 +399,12 @@ public class XmlRpcHttpScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, new XmlRpcDemoServiceImpl()) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
             MetBindInfo<XmlRpcDemoService> service = client.publisher() //
                     .rsfService(XmlRpcDemoService.class) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
 
             // 标准 fault 经 Caller 返回给调用者，不变成超时或普通字符串。
@@ -398,7 +414,7 @@ public class XmlRpcHttpScenarioTest {
             ExecutionException failure = assertThrows(ExecutionException.class, () -> {
                 remote.syncInvoke(service, "fail", parameterTypes, arguments);
             });
-            assertTrue(failure.getCause() instanceof XmlRpcException);
+            assertInstanceOf(XmlRpcException.class, failure.getCause());
             XmlRpcException fault = (XmlRpcException) failure.getCause();
             assertEquals(42, fault.getCode());
             assertEquals("business rejected", fault.getMessage());
@@ -436,10 +452,12 @@ public class XmlRpcHttpScenarioTest {
             server.publisher() //
                     .rsfService(XmlRpcDemoService.class, implementation) //
                     .aliasName("xmlrpc", "demo") //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
             MetBindInfo<XmlRpcDemoService> service = client.publisher() //
                     .rsfService(XmlRpcDemoService.class) //
                     .aliasName("xmlrpc", "demo").timeout(10000) //
+                    .contextPathByPrefix("xmlrpc", "/") //
                     .register();
             MetClient remote = client.getRsfClient(server.getListenAddress("xmlrpc"));
 

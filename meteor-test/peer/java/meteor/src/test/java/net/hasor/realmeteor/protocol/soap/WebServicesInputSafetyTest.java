@@ -6,7 +6,6 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 package net.hasor.realmeteor.protocol.soap;
-import net.hasor.example.support.TestConfigurationUtils;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -15,10 +14,11 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.hasor.example.protocol.soap.EchoService;
+import net.hasor.example.support.TestConfigurationUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.bootstrap.MetConfiguration;
-import net.hasor.realmeteor.protocol.soap.support.SoapResponseUtils;
 import net.hasor.meteor.test.nxn.NxnRpc;
+import net.hasor.realmeteor.protocol.soap.support.SoapResponseUtils;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -43,6 +43,7 @@ public class WebServicesInputSafetyTest {
                     .rsfService(EchoService.class, service) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 缺省 actor 的未知必选 Header 面向最终接收者。
@@ -76,6 +77,7 @@ public class WebServicesInputSafetyTest {
                     .rsfService(EchoService.class, service) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // SOAP next actor 明确要求当前节点理解 Header。
@@ -110,6 +112,7 @@ public class WebServicesInputSafetyTest {
                     .rsfService(EchoService.class, service) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 发给其他 actor 的 Header 不要求当前节点处理。
@@ -144,6 +147,7 @@ public class WebServicesInputSafetyTest {
                     .rsfService(EchoService.class, service) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 缺省 actor 的未知 Header 显式声明为非必选。
@@ -177,6 +181,7 @@ public class WebServicesInputSafetyTest {
                     .rsfService(EchoService.class, service) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 在普通回显请求中嵌入 DOCTYPE 和内部实体引用。
@@ -210,6 +215,7 @@ public class WebServicesInputSafetyTest {
                     .rsfService(EchoService.class, service) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 发送远超限制的嵌套正文，验证网络通道仍能返回协议错误。
@@ -242,6 +248,7 @@ public class WebServicesInputSafetyTest {
                     .rsfService(EchoService.class, service) //
                     .aliasName("soap", "EchoService") //
                     .protocol("soap") //
+                    .contextPathByPrefix("soap", "/") //
                     .register();
 
             // 发送大量同级元素，避免用深度限制替代节点总量限制。

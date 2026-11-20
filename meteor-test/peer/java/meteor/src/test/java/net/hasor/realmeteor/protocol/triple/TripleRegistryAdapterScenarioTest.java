@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.LockSupport;
 import com.fasterxml.jackson.databind.JsonNode;
-import net.hasor.example.discovery.AddressSelectionAwaiter;
+import net.hasor.example.discovery.RegistryDiscoveryExample;
 import net.hasor.example.protocol.triple.interop.TripleInteropWrappedService;
 import net.hasor.example.protocol.triple.interop.TripleInteropWrappedServiceImpl;
 import net.hasor.meteor.MetBindInfo;
@@ -126,7 +126,7 @@ public class TripleRegistryAdapterScenarioTest {
                     InterAddress address = new InterAddress("http", peer.host(), port);
                     registrar.register(service, peer.processId(), "java", "triple", "http", address, "/");
                     awaitAddress(consumer, service, address);
-                    AddressSelectionAwaiter.await(consumer, service, "echo");
+                    RegistryDiscoveryExample.awaitDiscovery(consumer, service);
 
                     // 公共客户端从自动地址本选择官方提供者，业务调用仍使用 Triple 与 Hessian2。
                     TripleInteropWrappedService remote = consumer.getRsfClient().getRemote(service);

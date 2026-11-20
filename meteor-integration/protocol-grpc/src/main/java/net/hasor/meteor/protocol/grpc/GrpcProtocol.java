@@ -22,16 +22,22 @@ import net.hasor.meteor.connector.transport.NetworkChannel;
 import net.hasor.meteor.connector.transport.http.HttpProtocolProvider;
 import net.hasor.meteor.connector.transport.http.HttpServicePathUtils;
 import net.hasor.meteor.connector.transport.http.channel.HttpExchange;
+import net.hasor.meteor.domain.ContextPath;
 import net.hasor.meteor.domain.ProtocolBinding;
 import net.hasor.meteor.domain.ProtocolConfig;
 import net.hasor.meteor.domain.meta.ProtocolMeta;
 import net.hasor.meteor.domain.payload.Payload;
 import net.hasor.meteor.protocol.grpc.binding.GrpcServiceBinding;
+import net.hasor.meteor.protocol.grpc.builtin.GrpcHealthService;
+import net.hasor.meteor.protocol.grpc.builtin.GrpcReflectionService;
+import net.hasor.meteor.protocol.grpc.builtin.GrpcReflectionV1AlphaService;
 import net.hasor.meteor.protocol.grpc.session.GrpcMountRuntime;
 import net.hasor.meteor.protocol.grpc.session.GrpcSession;
 
 /** Grpc SPI provider using the same session contract as every other protocol. */
 public final class GrpcProtocol implements HttpProtocolProvider {
+    private static final Set<Class<?>> STANDARD_SERVICES = Set.of(GrpcHealthService.class, GrpcReflectionService.class, GrpcReflectionV1AlphaService.class);
+
     @Override
     public Set<Integer> httpVersions(ProtocolConfig config) {
         return Set.of(2);
@@ -74,7 +80,16 @@ public final class GrpcProtocol implements HttpProtocolProvider {
         // 从同一份端点定义导出契约，一次创建完整发布绑定。
         ObjectNode description = meta.createServiceDescription(config, this.defaultSerialize());
         definition.describeContract(description);
-        ProtocolBinding binding = HttpServicePathUtils.bind(config, meta, definition, description);
+        ContextPath declared = meta.getContextPath();
+        ProtocolBinding binding;
+        if (declared != null && declared.isExact() && STANDARD_SERVICES.contains(meta.getService().getBindType())) {
+            // 标准 Health 和 Reflection 的生成桩固定使用根方法路径。
+            description.put("contextExact", true);
+            binding = new ProtocolBinding(declared, definition, description);
+        } else {
+            binding = HttpServicePathUtils.bind(config, meta, definition, description);
+        }
+
         if (definition.schemaResource() != null) {
             definition.schemaResource().describe(binding, List.of(definition.serviceName()));
         }

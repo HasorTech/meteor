@@ -18,6 +18,7 @@ import net.hasor.example.protocol.dubbo.interop.DubboInteropPerson;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropService;
 import net.hasor.example.protocol.dubbo.interop.DubboInteropServiceImpl;
 import net.hasor.example.support.TestConfigurationUtils;
+import net.hasor.meteor.*;
 import net.hasor.meteor.address.InterAddress;
 import net.hasor.meteor.bootstrap.MetConfiguration;
 import net.hasor.meteor.domain.MetTimeoutException;
