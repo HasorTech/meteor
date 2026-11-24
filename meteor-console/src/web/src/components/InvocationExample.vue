@@ -16,26 +16,50 @@ const orderedLanguages = computed(() =>
   languageOrder.map((id) => props.languages.find((item) => item.id === id)).filter(Boolean)
 );
 const target = ref(null);
-const documents = ref([]);
+const rendered = ref(null);
+const documents = computed(() => rendered.value?.documents || []);
 const language = ref(languageId(props.request.language || 'java'));
 const role = ref('caller');
-const roles = computed(() => [
-  { id: 'provider', label: t('ui.providers') },
-  { id: 'caller', label: t('ui.consumers') }
-]);
+const languageDocuments = computed(() =>
+  documents.value.filter((item) => languageId(item.language) === language.value)
+);
+const roleDocuments = computed(() => ({
+  definition: sharedDocument('definition', rendered.value?.interfaceDefinition),
+  descriptor: sharedDocument('descriptor', rendered.value?.interfaceDescriptor),
+  provider: languageDocuments.value.find((item) => item.role === 'provider'),
+  caller:
+    languageDocuments.value.find((item) => item.role === 'direct') ||
+    languageDocuments.value.find((item) => item.role === 'consumer'),
+  registry: languageDocuments.value.find((item) => item.role === 'registry'),
+  files: languageDocuments.value.find((item) => item.role === 'files')
+}));
+const roles = computed(() => {
+  const tabs = [];
+  if (roleDocuments.value.definition) {
+    tabs.push({ id: 'definition', label: t('ui.interface-definition') });
+  }
+  if (roleDocuments.value.descriptor) {
+    tabs.push({ id: 'descriptor', label: t('ui.interface-descriptor') });
+  }
+  tabs.push(
+    { id: 'provider', label: t('ui.providers') },
+    { id: 'caller', label: t('ui.consumers') }
+  );
+  if (roleDocuments.value.registry) {
+    tabs.push({ id: 'registry', label: t('ui.using-a-registry') });
+  }
+  if (roleDocuments.value.files) {
+    tabs.push({ id: 'files', label: t('ui.example-files') });
+  }
+  return tabs;
+});
 const targetWarnings = ref([]);
 const renderWarnings = ref([]);
 const loadingTargets = ref(false);
 const loadingDocument = ref(false);
 const targetError = ref('');
 const renderError = ref('');
-const selectedDocument = computed(() => {
-  const available = documents.value.filter((item) => languageId(item.language) === language.value);
-  if (role.value === 'provider') return available.find((item) => item.role === 'provider');
-  return (
-    available.find((item) => item.role === 'direct') || available.find((item) => item.role === 'consumer')
-  );
-});
+const selectedDocument = computed(() => roleDocuments.value[role.value]);
 const warnings = computed(() => [...new Set([...targetWarnings.value, ...renderWarnings.value])]);
 const error = computed(() => targetError.value || renderError.value);
 let active = true;
@@ -46,13 +70,11 @@ function languageId(value) {
   const id = value.toLowerCase();
   return id === 'node' || id === 'node.js' ? 'javascript' : id;
 }
+function sharedDocument(id, markdown) {
+  if (markdown) return { id, markdown };
+}
 function supportsRole(value) {
-  const available = documents.value.filter((item) => languageId(item.language) === language.value);
-  return available.length
-    ? available.some((item) =>
-        value === 'provider' ? item.role === 'provider' : ['direct', 'consumer'].includes(item.role)
-      )
-    : value === 'caller';
+  return !!roleDocuments.value[value] || (!languageDocuments.value.length && value === 'caller');
 }
 function selectRole(value) {
   role.value = value;
@@ -88,7 +110,7 @@ async function loadTargets() {
   loadingDocument.value = false;
   targetError.value = '';
   renderError.value = '';
-  documents.value = [];
+  rendered.value = null;
   target.value = null;
   targetWarnings.value = [];
   renderWarnings.value = [];
@@ -108,7 +130,7 @@ async function loadTargets() {
 async function loadDocument() {
   const selected = target.value;
   const sequence = ++renderSequence;
-  documents.value = [];
+  rendered.value = null;
   renderError.value = '';
   renderWarnings.value = [];
   loadingDocument.value = false;
@@ -117,7 +139,7 @@ async function loadDocument() {
   try {
     const result = await api('examples/render', exampleParams(selected));
     if (!active || sequence !== renderSequence) return;
-    documents.value = result.documents || [];
+    rendered.value = result;
     if (props.showLanguages && !supportsLanguage(language.value)) {
       language.value = orderedLanguages.value.find((item) => supportsLanguage(item.id))?.id || 'java';
     }
@@ -260,6 +282,7 @@ onBeforeUnmount(() => {
               v-if="selectedDocument"
               :key="selectedDocument.id"
               :markdown="selectedDocument.markdown"
+              :java-description="target?.description"
             />
             <p
               v-else

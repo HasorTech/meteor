@@ -1,19 +1,55 @@
 <script setup>
 import { t } from '../i18n';
-import { computed, inject, ref } from 'vue';
+import { computed, inject, nextTick, ref } from 'vue';
 import { useFeedback } from '../useFeedback';
 import Feedback from '../components/Feedback.vue';
+import chevronUp from '../assets/icons/chevron-up.svg';
 const props = defineProps({ clusters: Array });
 const emit = defineEmits(['changed']);
 const navigate = inject('navigate');
 const api = inject('api');
 const query = ref('');
 const removal = ref(null);
+const cancelRemovalButton = ref(null);
 const { busy, error, success, run } = useFeedback();
 const types = { remote: 'Remote', nacos: 'Nacos', jdbc: 'JDBC', zookeeper: 'ZooKeeper' };
 const filtered = computed(() =>
   props.clusters.filter((c) => `${c.name} ${c.address}`.toLowerCase().includes(query.value.toLowerCase()))
 );
+let removalTrigger;
+
+function clusterDetails(cluster) {
+  if (cluster.type === 'nacos') {
+    return [cluster.namespace || 'public', cluster.group || 'meteor'].join(' / ');
+  }
+  if (cluster.type === 'zookeeper') return cluster.root || '/meteor';
+  return cluster.database;
+}
+
+function closeActionsOnBlur(event) {
+  if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false;
+}
+
+function closeActions(details) {
+  details.open = false;
+  details.querySelector('summary').focus();
+}
+
+async function confirmRemoval(cluster, event) {
+  const actions = event.currentTarget.closest('details');
+  removalTrigger = actions.querySelector('summary');
+  closeActions(actions);
+  removal.value = cluster;
+  await nextTick();
+  cancelRemovalButton.value?.focus();
+}
+
+function cancelRemoval() {
+  if (busy.value) return;
+  removal.value = null;
+  removalTrigger?.focus();
+  removalTrigger = null;
+}
 function copyWithSelection(id) {
   const focused = document.activeElement;
   const text = document.createElement('textarea');
@@ -47,12 +83,13 @@ function remove() {
   run(async () => {
     await api('clusters', { id: removal.value.id }, 'DELETE');
     removal.value = null;
+    removalTrigger = null;
     emit('changed');
   });
 }
 </script>
 <template>
-  <div class="tabbar page-actionbar">
+  <div class="tabbar cluster-list-header">
     <h1>{{ $t('ui.cluster-connections') }}</h1>
     <div class="toolbar">
       <input
@@ -78,20 +115,8 @@ function remove() {
     v-if="!clusters.length"
     class="empty-state"
   >
-    <span
-      class="empty-illustration"
-      aria-hidden="true"
-    >
-      ◇
-    </span>
     <h2>{{ $t('ui.connect-to-a-registry-2') }}</h2>
     <p>{{ $t('ui.select-a-registry-to-start-managing') }}</p>
-    <button
-      class="primary"
-      @click="navigate({ view: 'connection' })"
-    >
-      {{ $t('ui.connect-to-a-registry') }}
-    </button>
   </div>
   <div
     v-else
@@ -102,26 +127,31 @@ function remove() {
       :key="cluster.id"
       class="card"
     >
-      <div class="card-heading">
-        <strong>{{ cluster.name }}</strong>
-        <span class="muted">{{ types[cluster.type] }}</span>
-      </div>
-      <p
-        class="address"
+      <header class="card-heading">
+        <h2>{{ cluster.name }}</h2>
+        <button
+          class="text-button cluster-open"
+          type="button"
+          @click="navigate({ view: 'applications', clusterId: cluster.id })"
+        >
+          {{ $t('ui.open') }}
+          <img
+            :src="chevronUp"
+            alt=""
+          />
+        </button>
+      </header>
+      <p class="cluster-details">
+        <span>{{ types[cluster.type] }}</span>
+        <span v-if="clusterDetails(cluster)">{{ clusterDetails(cluster) }}</span>
+      </p>
+      <code
+        class="cluster-address"
         :title="cluster.address"
       >
         {{ cluster.address }}
-      </p>
-      <p class="small muted">
-        {{
-          cluster.type === 'nacos'
-            ? [cluster.namespace || 'public', cluster.group || 'meteor'].join(' / ')
-            : cluster.type === 'zookeeper'
-              ? cluster.root || '/meteor'
-              : cluster.database
-        }}
-      </p>
-      <div class="card-actions">
+      </code>
+      <footer class="card-actions">
         <button
           class="text-button"
           type="button"
@@ -132,23 +162,30 @@ function remove() {
         </button>
         <button
           class="text-button"
+          type="button"
           @click="navigate({ view: 'connection', id: cluster.id })"
         >
           {{ $t('ui.edit') }}
         </button>
-        <button
-          class="text-button"
-          @click="removal = cluster"
+        <details
+          class="cluster-actions"
+          name="cluster-actions"
+          @focusout="closeActionsOnBlur"
+          @keydown.esc.stop="closeActions($event.currentTarget)"
         >
-          {{ $t('ui.remove') }}
-        </button>
-        <button
-          class="text-button push-right"
-          @click="navigate({ view: 'applications', clusterId: cluster.id })"
-        >
-          {{ $t('ui.open') }}
-        </button>
-      </div>
+          <summary class="text-button">{{ $t('ui.actions') }}</summary>
+          <div class="cluster-actions-panel">
+            <button
+              class="text-button"
+              type="button"
+              :disabled="busy"
+              @click="confirmRemoval(cluster, $event)"
+            >
+              {{ $t('ui.remove') }}
+            </button>
+          </div>
+        </details>
+      </footer>
     </article>
   </div>
   <p
@@ -166,8 +203,8 @@ function remove() {
   <div
     v-if="removal"
     class="dialog-backdrop"
-    @click.self="removal = null"
-    @keydown.esc="removal = null"
+    @click.self="cancelRemoval"
+    @keydown.esc="cancelRemoval"
   >
     <section
       class="dialog"
@@ -179,8 +216,9 @@ function remove() {
       <p>{{ $t('ui.confirm-remove-connection', removal.name) }}</p>
       <div class="actions">
         <button
+          ref="cancelRemovalButton"
           :disabled="busy"
-          @click="removal = null"
+          @click="cancelRemoval"
         >
           {{ $t('ui.cancel') }}
         </button>

@@ -6,7 +6,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.boot.Boot;
 import net.hasor.boot.BootApplication;
@@ -14,6 +13,7 @@ import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.MetContext;
 import net.hasor.meteor.console.ConsoleMain;
 import net.hasor.meteor.example.api.EchoService;
+import net.hasor.realmeteor.console.ProtoExampleCompiler;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -66,6 +66,25 @@ public class ConsoleNativeDocumentsTest {
                 String source = extract(document, name);
                 Path work = this.directory.resolve(name);
                 Files.createDirectories(work);
+                saveExampleFiles(document, work);
+                Path proto = work.resolve("service.proto");
+                if (Files.isRegularFile(proto)) {
+                    Files.move(ProtoExampleCompiler.compile(proto), work.resolve("service.pb"));
+                }
+                String expected = "actual:";
+                for (String editable : List.of("request.json", "arguments.json", "request.py")) {
+                    Path path = work.resolve(editable);
+                    if (Files.isRegularFile(path)) {
+                        String content = Files.readString(path);
+                        if (content.contains("example")) {
+                            Files.writeString(path, content.replace("example", "edited-request"));
+                            expected = "actual:edited-request";
+                        }
+                    }
+                }
+                if (Files.isRegularFile(work.resolve("request.py"))) {
+                    execute(work, List.of(python(), "request.py"));
+                }
                 String filename = switch (name) {
                     case "python" -> "consumer.py";
                     case "javascript" -> "consumer.mjs";
@@ -83,7 +102,7 @@ public class ConsoleNativeDocumentsTest {
                     String modules = "";
                     if (StringUtils.equals(protocol, "dubbo")) {
                         modules = "require dubbo.apache.org/dubbo-go/v3 v3.3.2\n";
-                    } else if (StringUtils.equals(protocol, "grpc")) {
+                    } else if (List.of("grpc", "triple").contains(protocol)) {
                         modules = "require (\n google.golang.org/grpc v1.76.0\n google.golang.org/protobuf v1.36.10\n)\n";
                     }
                     Files.writeString(work.resolve("go.mod"), "module console-example\n\ngo 1.25\n" + modules);
@@ -105,7 +124,7 @@ public class ConsoleNativeDocumentsTest {
                         compiler = "g++";
                     }
                     List<String> compile = new ArrayList<>(List.of(compiler, filename, "-o", "consumer"));
-                    if (protocol.startsWith("oncrpc")) {
+                    if (source.contains("#include \"service.h\"")) {
                         // 执行展示文档中的真实 XDR 契约，不借用测试工程生成物。
                         Files.writeString(work.resolve("service.x"), extract(document, "xdr"));
                         execute(work, nativeCommand(work, List.of("rpcgen", "-h", "-o", "service.h", "service.x")));
@@ -119,18 +138,18 @@ public class ConsoleNativeDocumentsTest {
                     execute(work, nativeCommand(work, compile));
                     command = List.of(work.resolve("consumer").toString());
                 } else if (StringUtils.equals(name, "python")) {
-                    if (List.of("thrift", "thrift-http").contains(protocol)) {
+                    if (List.of("thrift", "thrift-http").contains(protocol) && !Files.exists(work.resolve("request.py"))) {
                         Files.writeString(work.resolve("service.thrift"), extract(document, "thrift"));
                         execute(work, nativeCommand(work, List.of("thrift", "--gen", "py", "-out", ".", "service.thrift")));
                     }
-                    command = List.of(Path.of("build/invocation-python/bin/python").toAbsolutePath().toString(), filename);
+                    command = List.of(python(), filename);
                 } else {
                     command = List.of("bash", filename);
                 }
                 String response = execute(work, command);
                 // 文本或二进制响应都必须包含真实提供者返回的标记。
-                String hex = java.util.HexFormat.of().formatHex("actual:".getBytes(StandardCharsets.UTF_8));
-                assertTrue(response.contains("actual:") || response.replaceAll("\\s+", "").contains(hex), protocol + "/" + name + "\n" + response);
+                String hex = java.util.HexFormat.of().formatHex(expected.getBytes(StandardCharsets.UTF_8));
+                assertTrue(response.contains(expected) || response.replaceAll("\\s+", "").contains(hex), protocol + "/" + name + "\n" + response);
             }
         }
     }
@@ -142,20 +161,17 @@ public class ConsoleNativeDocumentsTest {
     }
 
     private static String extract(JsonNode document, String language) {
-        String syntax = language;
-        if (StringUtils.equals(language, "javascript")) {
-            syntax = "javascript";
-        } else if (StringUtils.equals(language, "shell")) {
-            syntax = "bash";
+        String syntax = StringUtils.equals(language, "shell") ? "bash" : language;
+        List<String> blocks = codeBlocks(document, syntax);
+        if (blocks.isEmpty() && StringUtils.equals(language, "cpp")) {
+            blocks = codeBlocks(document, "c");
         }
-        var match = Pattern.compile("(?ms)^```" + syntax + "\\s*\\R(.*?)^```").matcher(document.path("markdown").asText());
-        if (!match.find()) {
-            if (StringUtils.equals(language, "cpp")) {
-                return extract(document, "c");
-            }
-            fail("文档缺少代码块：" + language);
-        }
-        return match.group(1);
+        assertFalse(blocks.isEmpty(), "文档缺少代码块：" + language);
+        return blocks.get(blocks.size() - 1);
+    }
+
+    private static String python() {
+        return Path.of("build/invocation-python/bin/python").toAbsolutePath().toString();
     }
 
     private static String execute(Path work, List<String> command) throws Exception {

@@ -1,0 +1,59 @@
+{
+  "home.title": {"message": "Multi-protocol RPC for Java"},
+  "home.description": {"message": "Meteor connects Java services to gRPC, Dubbo, Thrift, JSON-RPC, and other protocols, with service discovery and support for clients in many languages."},
+  "home.hero.slogan": {"message": "Multi-protocol, polyglot"},
+  "home.hero.sloganFramework": {"message": "RPC framework"},
+  "home.hero.description": {"message": "Publish and call services through familiar Java interfaces. Use protocol plugins to connect clients across languages and ecosystems."},
+  "home.hero.quickStart": {"message": "Quick start"},
+  "home.hero.overview": {"message": "About Meteor"},
+  "home.protocols.protobuf": {"message": "Protobuf ecosystem"},
+  "home.protocols.http": {"message": "HTTP and WebSocket"},
+  "home.protocols.dubbo": {"message": "Dubbo ecosystem"},
+  "home.protocols.other": {"message": "Other"},
+  "home.architecture.title": {"message": "Services, gateway, and governance in one place"},
+  "home.architecture.summary": {"message": "One entry point for distributed services. Java applications and local services can both take part in RPC calls."},
+  "home.architecture.diagram.label": {"message": "Meteor target architecture. Service C in Go calls the gateway, which forwards the request across languages to service A in Java. Cluster nodes can also call one another directly. Java services can publish directly, and Python, Go, and Node.js services can use Sidecar. The gateway has read-only access to service discovery, and Meteor Console provides service governance."},
+  "home.architecture.governance": {"message": "Control plane"},
+  "home.architecture.app.title": {"message": "Meteor applications"},
+  "home.architecture.app.description": {"message": "Integrate Meteor in Java applications and publish services over multiple protocols."},
+  "home.architecture.app.action": {"message": "Getting started"},
+  "home.architecture.registry.title": {"message": "Service discovery"},
+  "home.architecture.registry.description": {"message": "Register and discover services published by applications and Sidecar."},
+  "home.architecture.registry.action": {"message": "Service discovery"},
+  "home.architecture.console.title": {"message": "Service governance"},
+  "home.architecture.console.description": {"message": "Find services, debug calls, and manage governance rules."},
+  "home.architecture.console.action": {"message": "Governance documentation"},
+  "home.architecture.console.capabilities": {"message": "Query · Debug · Manage"},
+  "home.architecture.discovery.readOnly": {"message": "Read-only discovery"},
+  "home.architecture.discovery.registration": {"message": "Registration and discovery"},
+  "home.architecture.cluster": {"message": "Distributed service cluster"},
+  "home.architecture.meteorService": {"message": "Meteor service {name}"},
+  "home.architecture.role.provider": {"message": "Provider"},
+  "home.architecture.role.sidecarProvider": {"message": "Via Sidecar"},
+  "home.architecture.role.caller": {"message": "Caller"},
+  "home.architecture.role.local": {"message": "Local services"},
+  "home.architecture.forward": {"message": "Cross-language forwarding"},
+  "home.architecture.gatewayCall": {"message": "Call gateway"},
+  "home.examples.title": {"message": "A simple start"},
+  "home.examples.intro": {"message": "Make a JSON-RPC call in Java"},
+  "home.examples.start": {"message": "Start the server on port 8080"},
+  "home.examples.echo": {"message": "Publish Echo and call it through its Java interface"},
+  "home.examples.guide": {"message": "Quick Start"},
+  "home.examples.configure.label": {"message": "01 Configure and start"},
+  "home.examples.publish.label": {"message": "02 Publish a service"},
+  "home.examples.call.label": {"message": "03 Subscribe and call"},
+  "home.participation.title": {"message": "Join the Community"},
+  "home.participation.description": {"message": "Share your experience, report issues, and help improve Meteor."},
+  "home.hero.illustration": {
+    "message": "Python and Node.js clients call services published by the Java application over gRPC and JSON-RPC, respectively. The Java application calls Go and Python services over gRPC and Thrift, respectively. More languages and protocols are available in both directions."
+  },
+  "home.languages.title": {
+    "message": "Multi-language and multi-protocol support"
+  },
+  "home.languages.details": {
+    "message": "Learn more about language and protocol support"
+  },
+  "home.languages.more": {
+    "message": "Learn more"
+  }
+}

@@ -35,6 +35,26 @@ Windows 使用相同的 Gradle 任务：
 .\gradlew.bat :meteor-test:dockerTest --tests '*GrpcInteropTest'
 ```
 
+## 反向代理
+
+订单 NXN 组合在双方声明支持时增加 Nginx 路径，沿用同一份保存、查询断言。每例独立配置、端口和进程；配置、访问日志、进程清理证据随报告归档。
+
+- `nginx-clear`：HTTP/1.1 使用 `proxy_pass`，gRPC、Triple 使用 `grpc_pass`；TCP、UDP 使用 `stream` 转发。
+- `nginx-tls-pass`：TCP 透传 TLS，证书由 RPC 两端校验，HTTP/2 保留端到端 ALPN 协商。
+- `nginx-tls-edge`：Nginx 终止 TLS，以明文连接提供者。
+- `nginx-tls-bridge`：Nginx 终止 TLS，再以 TLS 连接提供者并校验 CA、主机名。
+- `nginx-dtls-pass`：UDP 转发 DTLS，Nginx 不终止 DTLS 会话。
+
+明文代理覆盖已声明的各语言订单对端；加密代理目前覆盖 Meteor 提供者和消费者的 13 种协议，以及 ONC RPC UDP。SDK 尚未声明的加密组合不自动推定支持。注册发现、类型矩阵保持原有路径。
+
+```bash
+./meteor-test/runnxn.sh test '*StandardMatrixTest' --case '*nginx*'
+./meteor-test/runnxn.sh rpc oncrpc --tests '*StandardMatrixTest' --case '*nginx-dtls-pass*'
+./meteor-test/runnxn.sh test '*StandardMatrixTest' --case '*consumer=java-meteor-*/provider=java-meteor-*nginx*'
+```
+
+Nginx 镜像使用固定版本及摘要。初次运行自动构建，`METEOR_TEST_IMAGE_NGINX` 可替换；自定义镜像需提供 Nginx 的 HTTP SSL、HTTP/2、stream、stream SSL 模块、Python 3 和测试进程管理程序。
+
 ## 参数
 
 - `--jobs N`、`--groups N`：并发数，默认 `16`，范围 `1` 到 `16`。

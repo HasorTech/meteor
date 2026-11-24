@@ -1,3 +1,3 @@
-"""Explicit site binding; never infer the target from the working directory."""
+"""Bind publication to this site independently of the working directory."""
 
 SITE_NAME = "meteor"

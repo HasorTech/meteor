@@ -138,9 +138,6 @@ bash meteor-test/peer/node/grpcweb/versions/regenerate.sh
 
 # 当前版 gRPC-Web：生成器需在 PATH 中，版本见脚本头部
 bash meteor-test/peer/node/grpcweb/generate.sh
-
-# TLS 验收证书：需要 Python cryptography 和 JDK keytool
-bash document/docs/other/testing/generate-tls-test-material.sh --module meteor-test
 ```
 
 ### gRPC-Web 1.5 生成契约
@@ -166,3 +163,11 @@ bash document/docs/other/testing/generate-tls-test-material.sh --module meteor-t
 ```bash
 docker exec meteor-test-node node /workspace/meteor/meteor-test/tools/diagnostics/node/types-negative-zero-probe.mjs
 ```
+
+## Nginx 代理矩阵
+
+能力声明的 `networkPaths` 默认只有 `direct`，提供者和消费者取交集；只对 `order-v1` 的直连发现方式展开代理路径。增加 SDK 的 TLS 支持时，先补齐该 SDK 的证书配置，再声明加密路径，不用 Meteor 的 TLS 配置代替原生 SDK。
+
+`StandardMatrixTest` 持有业务双方及 `NginxPeerProcess`。Compose 拥有常驻 Nginx 容器，测试只回收自己创建的进程树。`tools/nginx/launch.py` 在服务内串行分配启动端口，确认监听后才交给消费者。每例的 `connection.json` 记录实际调用地址；成功还必须具备 Nginx 转发日志。
+
+TLS 使用 `resource/certs/acceptance` 的测试身份，包含 `*.meteor.test`，不关闭主机名校验。DTLS 使用 UDP stream 转发；无 DTLS 终止或重新加密组合。代理配置依据 [Nginx stream proxy](https://nginx.org/en/docs/stream/ngx_stream_proxy_module.html) 和 [stream SSL](https://nginx.org/en/docs/stream/ngx_stream_ssl_module.html)。

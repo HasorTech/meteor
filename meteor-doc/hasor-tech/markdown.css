@@ -1,0 +1,129 @@
+/* Licensed under the Apache License, Version 2.0. See LICENSE.txt. */
+/* Keep the reading layout in sync with the dbVisitor documentation. */
+:root:is(.docs-doc-page, .blog-post-page, .mdx-page) {
+    --ifm-font-size-base: 85%;
+    --ifm-line-height-base: 22px;
+    --ifm-font-weight-bold: 500;
+    --ifm-code-font-size: 75%;
+    --ifm-pre-padding: 0.3rem;
+    --ifm-tabs-padding-vertical: 0.2rem;
+    --ifm-breadcrumb-padding-vertical: 1px;
+    --ifm-breadcrumb-separator-size: 0.8rem;
+    --doc-sidebar-width: 250px;
+    --ifm-container-width-xl: auto;
+    --docusaurus-highlighted-code-line-bg: rgb(218 218 218);
+}
+
+:is(.docs-doc-page, .blog-post-page, .mdx-page) article h1 {
+    font-size: 28px;
+}
+
+:is(.docs-doc-page, .blog-post-page, .mdx-page) article h2 {
+    font-size: 20px;
+}
+
+:is(.docs-doc-page, .blog-post-page, .mdx-page) article h3 {
+    font-size: 16px;
+}
+
+:is(.docs-doc-page, .blog-post-page, .mdx-page) .table-of-contents li {
+    font-size: 1rem;
+    line-height: normal;
+}
+
+:is(.docs-doc-page, .blog-post-page, .mdx-page) .padding--lg {
+    padding: 0.5rem !important;
+}
+
+@media (min-width: 997px) {
+    .mdx-page main > .row > .col--8 {
+        --ifm-col-width: 75%;
+    }
+
+    .mdx-page main > .row > .col--2 {
+        --ifm-col-width: 25%;
+    }
+
+    .mdx-page main > .row > .col:only-child {
+        --ifm-col-width: 100%;
+    }
+}
+
+.markdown table,
+.mdx-page article table {
+    --doc-table-border: #e1e6ed;
+    --doc-table-header: #f1f5fa;
+    --doc-table-stripe: #f8fafc;
+    --doc-table-hover: #eef4fc;
+    --ifm-table-cell-padding: 0.6rem 0.85rem;
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--doc-table-border);
+    border-radius: 6px;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 1rem 0 1.5rem;
+    background: var(--ifm-background-color);
+}
+
+[data-theme='dark'] .markdown table,
+[data-theme='dark'] .mdx-page article table {
+    --doc-table-border: #39414d;
+    --doc-table-header: #282f39;
+    --doc-table-stripe: #242830;
+    --doc-table-hover: #2c3543;
+}
+
+.markdown table tr,
+.mdx-page article table tr {
+    border: 0;
+    background: transparent;
+}
+
+.markdown table th,
+.mdx-page article table th,
+.markdown table td,
+.mdx-page article table td {
+    border: 0;
+    border-bottom: 1px solid var(--doc-table-border);
+    padding: var(--ifm-table-cell-padding);
+    vertical-align: top;
+    line-height: 1.6;
+}
+
+.markdown table th,
+.mdx-page article table th {
+    background: var(--doc-table-header);
+    font-weight: 600;
+}
+
+.markdown table th:not([align]),
+.mdx-page article table th:not([align]) {
+    text-align: left;
+}
+
+.markdown table tbody tr:nth-child(even),
+.mdx-page article table tbody tr:nth-child(even) {
+    background: var(--doc-table-stripe);
+}
+
+.markdown table tbody tr:last-child td,
+.mdx-page article table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+@media (hover: hover) {
+    .markdown table tbody tr:hover,
+    .mdx-page article table tbody tr:hover {
+        background: var(--doc-table-hover);
+    }
+}
+
+@media screen and (max-width: 640px) {
+    .markdown table,
+    .mdx-page article table {
+        --ifm-table-cell-padding: 0.5rem 0.65rem;
+    }
+}

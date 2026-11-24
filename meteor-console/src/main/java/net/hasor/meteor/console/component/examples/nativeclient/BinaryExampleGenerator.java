@@ -28,15 +28,20 @@ public final class BinaryExampleGenerator {
             return List.of(this.thrift(target, address));
         }
         if (Set.of("oncrpc", "oncrpc-udp").contains(protocol)) {
-            ExampleDocument document = this.oncrpc(target, address);
-            return List.of(document, new ExampleDocument("cpp-direct", "cpp", "direct", document.getMarkdown()));
+            String markdown = this.oncrpc(target, address) + "\n\n";
+            String rpcgen = "rpcgen -h -o service.h service.x\nrpcgen -c -o service_xdr.c service.x\n";
+            String cBuild = rpcgen + "cc -I/usr/include/tirpc consumer.c service_xdr.c -o consumer -ltirpc";
+            String cppBuild = rpcgen + "cc -I/usr/include/tirpc -c service_xdr.c\n"
+                    + "c++ -I/usr/include/tirpc consumer.cpp service_xdr.o -o consumer -ltirpc";
+            return List.of(
+                    new ExampleDocument("c-direct", "c", "direct", ExampleTemplates.codeBlock("bash", cBuild) + "\n\n" + markdown.stripTrailing()),
+                    new ExampleDocument("cpp-direct", "cpp", "direct", ExampleTemplates.codeBlock("bash", cppBuild) + "\n\n" + markdown.stripTrailing()));
         }
         return List.of();
     }
 
     private ExampleDocument thrift(ExampleTarget target, String providedAddress) {
         MetProtocolDescription binding = this.binding(target);
-        String contract = BinaryContracts.thrift(binding);
         Object framed = binding.getExtensions().get("framed");
         if (StringUtils.equals(target.getEndpoint().getProtocolName(), "thrift") && !(framed instanceof Boolean)) {
             throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_THRIFT_ENDPOINT_HAS_NOT_REPORTED_2);
@@ -46,10 +51,12 @@ public final class BinaryExampleGenerator {
         }
         JsonNode types = JsonUtils.valueToTree(binding.getTypes());
         JsonNode selected = null;
+        Map<String, Object> selectedOperation = null;
         String arguments = null;
         IllegalArgumentException lastFailure = null;
-        for (JsonNode method : JsonUtils.valueToTree(binding.getMethods())) {
+        for (Map<String, Object> operation : binding.getMethods()) {
             try {
+                JsonNode method = JsonUtils.valueToTree(operation);
                 StringBuilder values = new StringBuilder();
                 for (JsonNode parameter : method.path("parameters")) {
                     if (!values.isEmpty()) {
@@ -58,6 +65,7 @@ public final class BinaryExampleGenerator {
                     values.append(this.pythonValue(types, parameter.path("type").asText(), new HashSet<>()));
                 }
                 selected = method;
+                selectedOperation = operation;
                 arguments = values.toString();
                 break;
             } catch (IllegalArgumentException failure) {
@@ -68,13 +76,32 @@ public final class BinaryExampleGenerator {
             throw new ErrorMessageException(ConsoleMessageKey.ERROR_COULD_NOT_CONSTRUCT_VALID_SAMPLE_ARGUMENTS, lastFailure == null ? "" : lastFailure);
         }
         Map<String, String> values = new LinkedHashMap<>();
-        values.put("service", BinaryContracts.identifier(BinaryContracts.thriftServiceName(binding)));
-        values.put("address", this.string(StringUtils.defaultIfBlank(providedAddress, "请填写服务地址")));
+        String service = BinaryContracts.identifier(BinaryContracts.thriftServiceName(binding));
+        boolean http = StringUtils.equals(target.getEndpoint().getProtocolName(), "thrift-http");
+        boolean multiplexed = Boolean.TRUE.equals(binding.getExtensions().get("multiplexed"));
+        StringBuilder imports = new StringBuilder();
+        if (arguments.contains("uuid.UUID")) {
+            imports.append("import uuid\n");
+        }
+        if (!http) {
+            imports.append("from urllib.parse import unquote, urlsplit\n");
+        }
+        imports.append("from thrift.protocol import TBinaryProtocol");
+        if (multiplexed) {
+            imports.append(", TMultiplexedProtocol");
+        }
+        imports.append("\nfrom thrift.transport import ").append(http ? "THttpClient" : "TSocket").append(", TTransport\n");
+        imports.append("from meteor_example import ").append(service);
+        if (arguments.contains("ttypes.")) {
+            imports.append(", ttypes");
+        }
+        values.put("imports", imports.toString());
+        values.put("service", service);
         values.put("transport", Boolean.TRUE.equals(framed) ? "TFramedTransport" : "TBufferedTransport");
         String protocol = "TBinaryProtocol.TBinaryProtocol(transport)";
-        if (Boolean.TRUE.equals(binding.getExtensions().get("multiplexed"))) {
-            Object multiplexed = binding.getExtensions().get("multiplexedName");
-            if (!(multiplexed instanceof String name) || StringUtils.isBlank(name)) {
+        if (multiplexed) {
+            Object multiplexedName = binding.getExtensions().get("multiplexedName");
+            if (!(multiplexedName instanceof String name) || StringUtils.isBlank(name)) {
                 throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_THRIFT_CONTRACT_IS_MISSING_THE);
             }
             protocol = "TMultiplexedProtocol.TMultiplexedProtocol(" + protocol + ", " + this.string(name) + ")";
@@ -82,16 +109,25 @@ public final class BinaryExampleGenerator {
         values.put("protocol", protocol);
         values.put("method", this.string(selected.path("name").asText()));
         values.put("arguments", arguments);
-        String connection = "TSocket.TSocket(unquote(address.hostname), address.port)";
-        if (StringUtils.equals(target.getEndpoint().getProtocolName(), "thrift-http")) {
-            connection = "THttpClient.THttpClient(" + this.string(HttpRequestExampleGenerator.endpoint(target, providedAddress, "http")) + ")";
+        if (http) {
+            String url = this.string(HttpRequestExampleGenerator.endpoint(target, providedAddress, "http"));
+            values.put("connection", "connection = THttpClient.THttpClient(" + url + ")");
+        } else {
+            String address = this.string(StringUtils.defaultIfBlank(providedAddress, ExampleConnections.ADDRESS_PLACEHOLDER));
+            values.put("connection", "address = urlsplit(" + address + ")\nconnection = TSocket.TSocket(unquote(address.hostname), address.port)");
         }
-        values.put("connection", connection);
-        return this.document("python", "thrift", contract, ExampleTemplates.render("thrift/consumer.py", values), "Python 3；依赖 `thrift==0.22.0`，并使用下方 service.thrift 生成的 Python 绑定（meteor_example 包）。");
+        String code = ExampleTemplates.render("thrift/consumer.py", values);
+        String contract = BinaryContracts.thrift(BinaryContracts.onlyMethod(binding, selectedOperation));
+        String markdown = ExampleTemplates.codeBlock("bash", "python -m pip install thrift==0.22.0") + "\n\n"
+                + ExampleTemplates.codeBlock("thrift", contract) + "\n\n"
+                + ExampleTemplates.codeBlock("bash", "thrift --gen py -out . service.thrift") + "\n\n"
+                + ExampleTemplates.codeBlock("python", code);
+        return new ExampleDocument("python-direct", "python", "direct", markdown);
     }
 
-    private ExampleDocument oncrpc(ExampleTarget target, String providedAddress) {
+    private String oncrpc(ExampleTarget target, String providedAddress) {
         MetProtocolDescription binding = this.binding(target);
+        binding = BinaryContracts.onlyMethod(binding, binding.getMethods().get(0));
         BinaryContracts.XdrWriter writer = new BinaryContracts.XdrWriter(binding);
         String contract = writer.write();
         URI address = null;
@@ -108,7 +144,7 @@ public final class BinaryExampleGenerator {
         String outputType = writer.name(output);
         Map<String, String> values = new LinkedHashMap<>();
         if (address == null) {
-            values.put("host", this.string("请填写服务地址"));
+            values.put("host", this.string(ExampleConnections.ADDRESS_PLACEHOLDER));
             values.put("port", "0");
         } else {
             values.put("host", this.string(address.getHost()));
@@ -151,12 +187,8 @@ public final class BinaryExampleGenerator {
         } else {
             throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_ONC_RPC_ENDPOINT_HAS_NOT);
         }
-        return this.document("c", "xdr", contract, ExampleTemplates.render("oncrpc/consumer.c", values), "依赖 libtirpc，以及由下方 service.x 经 rpcgen 生成的 service.h、service_xdr.c。");
-    }
-
-    private ExampleDocument document(String language, String contractLanguage, String contract, String code, String dependency) {
-        String markdown = ExampleTemplates.render("binary-document.md.tpl", Map.of("dependency", dependency, "code", ExampleTemplates.codeBlock(language, code), "contract", ExampleTemplates.codeBlock(contractLanguage, contract)));
-        return new ExampleDocument(language + "-direct", language, "direct", markdown);
+        String code = ExampleTemplates.render("oncrpc/consumer.c", values);
+        return ExampleTemplates.codeBlock("xdr", contract) + "\n\n" + ExampleTemplates.codeBlock("c", code);
     }
 
     private void cValue(BinaryContracts.XdrWriter writer, String reference, String expression, //

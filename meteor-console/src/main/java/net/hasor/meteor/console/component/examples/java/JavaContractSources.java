@@ -13,26 +13,154 @@ import net.hasor.meteor.registry.admin.description.MetMethodDescription;
 import net.hasor.meteor.registry.admin.description.MetServiceDescription;
 import net.hasor.meteor.registry.admin.description.MetTypeDescription;
 
-/** 根据提供者的 Java 契约生成调用参数和示例实现，不复制业务接口或加载业务类。 */
+/** 根据公开的 Java 契约生成接口声明和调用参数。 */
 final class JavaContractSources {
     private static final Set<String>           KEYWORDS   = Set.of("abstract", "assert", "boolean", "break", "byte", "case", "catch", "char", "class", "const", "continue", "default", "do", "double", "else", "enum", "extends", "final", "finally", "float", "for", "goto", "if", "implements", "import", "instanceof", "int", "interface", "long", "native", "new", "package", "private", "protected", "public", "return", "short", "static", "strictfp", "super", "switch", "synchronized", "this", "throw", "throws", "transient", "try", "void", "volatile", "while", "true", "false", "null", "_", "record",
             "var", "yield", "sealed", "permits");
     private static final Set<String>           PRIMITIVES = Set.of("boolean", "byte", "short", "int", "long", "float", "double", "char", "void");
     private final        MetServiceDescription description;
     private final        String                serviceType;
+    private final        boolean               runnableExample;
     private final        Map<String, String>   typeNames  = new LinkedHashMap<>();
 
-    JavaContractSources(MetServiceDescription description) {
+    private JavaContractSources(MetServiceDescription description, boolean runnableExample) {
         if (description == null || description.getMethods() == null || description.getMethods().isEmpty()) {
             throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_PROVIDER_DOES_NOT_HAVE_A);
         }
 
         this.description = description;
         this.serviceType = sourceType(description.getJavaType(), description.getExtensions());
+        this.runnableExample = runnableExample;
     }
 
-    String serviceType() {
-        return this.serviceType;
+    static JavaContractSources forExample(MetServiceDescription description) {
+        return new JavaContractSources(description, true);
+    }
+
+    static JavaContractSources forInterface(MetServiceDescription description) {
+        return new JavaContractSources(description, false);
+    }
+
+    String exampleType() {
+        String simpleName = this.serviceType.substring(this.serviceType.lastIndexOf('.') + 1);
+        if (Set.of("ExampleMain", "MetConfiguration", "MetService", "MetMessage", "MetMethod", "MetParam",
+                "MetReturn", "String", "Throwable").contains(simpleName)) {
+            return simpleName + "Api";
+        }
+        return simpleName;
+    }
+
+    String methodSignature() {
+        return this.description.getMethods().get(0).getJavaSignature();
+    }
+
+    String exampleInterface(String name, boolean preserveErasure) {
+        return this.interfaceSource(name, List.of(this.description.getMethods().get(0)), preserveErasure);
+    }
+
+    String fullInterface() {
+        String name = this.serviceType.substring(this.serviceType.lastIndexOf('.') + 1);
+        return this.interfaceSource(name, this.description.getMethods(), false);
+    }
+
+    private String interfaceSource(String name, List<MetMethodDescription> methods, boolean preserveErasure) {
+        StringBuilder declaration = new StringBuilder();
+        if (this.description.isMessage()) {
+            declaration.append("@MetMessage\n");
+        }
+        declaration.append("public interface ").append(name).append(" {\n");
+        for (MetMethodDescription method : methods) {
+            declaration.append(this.exampleMethod(method, preserveErasure, true));
+        }
+        return declaration.append("}\n").toString();
+    }
+
+    String sdkInterface(String name) {
+        return "public interface " + name + " {\n"
+                + this.exampleMethod(this.description.getMethods().get(0), true, false) + "}\n";
+    }
+
+    private String exampleMethod(MetMethodDescription method, boolean preserveErasure, boolean annotations) {
+        StringBuilder source = new StringBuilder();
+        if (annotations && method.isMessage() && !this.description.isMessage()) {
+            source.append("    @MetMessage\n");
+        }
+        Long id = method.getMethodId();
+        List<String> attributes = annotationAttributes(id, method.getName(), method.getJavaName());
+        if (annotations && !attributes.isEmpty()) {
+            source.append("    @MetMethod(").append(String.join(", ", attributes)).append(")\n");
+        }
+        String returnType = this.returnType(method);
+        if (annotations && method.getReturns().getName() != null) {
+            source.append("    @MetReturn(name = ").append(JavaExampleGenerator.literal(method.getReturns().getName())).append(")\n");
+        }
+        StringJoiner arguments = new StringJoiner(", ");
+        List<MetFieldDescription> parameters = parameters(method);
+        List<String> wireTypes = List.of();
+        String signature = method.getJavaSignature();
+        String prefix = method.getJavaName() + "(";
+        if (preserveErasure && signature != null && signature.startsWith(prefix) && signature.endsWith(")") && !parameters.isEmpty()) {
+            wireTypes = Arrays.asList(signature.substring(prefix.length(), signature.length() - 1).split(","));
+        }
+        for (MetFieldDescription parameter : parameters) {
+            List<String> values = annotationAttributes(parameter.getFieldId(), parameter.getName(), null);
+            String type = this.valueType(parameter.getType());
+            int index = parameter.getArgIndex();
+            if (index < wireTypes.size()) {
+                String wireType = wireTypes.get(index);
+                MetTypeDescription resolved = this.description.getTypes().get(parameter.getType());
+                if (!StringUtils.equals(wireType, resolved.getJavaType())) {
+                    // 继承的泛型参数在发布接口上可能擦除为更宽的类型。
+                    type = this.erasedType(wireType);
+                }
+            }
+            String argument = type + " arg" + index;
+            if (annotations && !values.isEmpty()) {
+                argument = "@MetParam(" + String.join(", ", values) + ") " + argument;
+            }
+            arguments.add(argument);
+        }
+        source.append("    ").append(returnType).append(' ').append(identifier(method.getJavaName()))
+                .append('(').append(arguments).append(')');
+        if (method.getExceptions() != null && !method.getExceptions().isEmpty()) {
+            StringJoiner exceptions = new StringJoiner(", ");
+            for (String exception : method.getExceptions()) {
+                exceptions.add(this.type(exception));
+            }
+            source.append(" throws ").append(exceptions);
+        }
+        return source.append(";\n").toString();
+    }
+
+    private String erasedType(String binaryName) {
+        int array = binaryName.indexOf('[');
+        String component = binaryName;
+        String suffix = "";
+        if (array >= 0) {
+            component = binaryName.substring(0, array);
+            suffix = binaryName.substring(array);
+        }
+        for (MetTypeDescription type : this.description.getTypes().values()) {
+            if (StringUtils.equals(type.getJavaType(), component)) {
+                return sourceType(component, type.getExtensions()) + suffix;
+            }
+        }
+        return sourceType(component, Map.of()) + suffix;
+    }
+
+    private static List<String> annotationAttributes(Long id, String name, String defaultName) {
+        List<String> attributes = new ArrayList<>();
+        if (id != null && id != 0L) {
+            String number = id.toString();
+            if (id < Integer.MIN_VALUE || id > Integer.MAX_VALUE) {
+                number += "L";
+            }
+            attributes.add("id = " + number);
+        }
+        if (StringUtils.isNotBlank(name) && !StringUtils.equals(name, defaultName)) {
+            attributes.add("name = " + JavaExampleGenerator.literal(name));
+        }
+        return attributes;
     }
 
     String invocationStatements(String variable) {
@@ -57,38 +185,6 @@ final class JavaContractSources {
             arguments.add(sample);
         }
         return arguments.toString();
-    }
-
-    String providerBody() {
-        StringBuilder source = new StringBuilder("new ").append(this.serviceType()).append("() {\n");
-        for (MetMethodDescription method : this.description.getMethods()) {
-            source.append("                        @Override\n                        public ").append(this.signature(method)).append(" {\n");
-            if (!StringUtils.equals("void", this.returnType(method))) {
-                source.append("                            return ").append(this.sample(method.getReturns().getType())).append(";\n");
-            }
-            source.append("                        }\n");
-        }
-        return source.append("                    }").toString();
-    }
-
-    private String signature(MetMethodDescription method) {
-        StringJoiner parameters = new StringJoiner(", ");
-        List<MetFieldDescription> arguments = parameters(method);
-        for (int index = 0; index < arguments.size(); index++) {
-            MetFieldDescription parameter = arguments.get(index);
-            StringBuilder source = new StringBuilder();
-            source.append(this.valueType(parameter.getType())).append(" arg").append(index);
-            parameters.add(source);
-        }
-        StringBuilder source = new StringBuilder(this.returnType(method)).append(' ').append(identifier(method.getJavaName())).append('(').append(parameters).append(')');
-        if (method.getExceptions() != null && !method.getExceptions().isEmpty()) {
-            StringJoiner exceptions = new StringJoiner(", ");
-            for (String exception : method.getExceptions()) {
-                exceptions.add(this.type(exception));
-            }
-            source.append(" throws ").append(exceptions);
-        }
-        return source.toString();
     }
 
     private String returnType(MetMethodDescription method) {
@@ -127,11 +223,12 @@ final class JavaContractSources {
         if (!PRIMITIVES.contains(raw)) {
             qualifiedName(raw);
         }
-        if (raw.startsWith("java.io.") && (raw.endsWith("Stream") || raw.endsWith("Reader") || raw.endsWith("Writer"))) {
+        if (this.runnableExample && raw.startsWith("java.io.")
+                && (raw.endsWith("Stream") || raw.endsWith("Reader") || raw.endsWith("Writer"))) {
             throw new ErrorMessageException(ConsoleMessageKey.ERROR_A_STANDALONE_INVOCATION_EXAMPLE_CANNOT_BE, reference);
         }
         List<String> arguments = type.getArguments();
-        if (arguments != null && !arguments.isEmpty() && !raw.startsWith("java.")) {
+        if (this.runnableExample && arguments != null && !arguments.isEmpty() && !raw.startsWith("java.")) {
             throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_DESCRIPTION_LACKS_THE_ORIGINAL_DECLARATION, reference);
         }
         // 先缓存原始类型，让 DTO 的自引用和相互引用在后续属性展开中保持有限。

@@ -19,13 +19,13 @@ Meteor 是面向 **Java** 的多协议 RPC 框架。使用普通 Java 接口发�
 
 ## 快速开始
 
-使用 JDK 17，从 Maven Central 引入所需的协议模块，Meteor 内核随协议模块传递引入。下面以 JSON-RPC Echo 服务为例：
+使用 JDK 17，引入所需的协议模块，Meteor 内核随协议模块传递引入。当前 5.0.0-SNAPSHOT 仍在开发中。下面以 JSON-RPC Echo 服务为例：
 
 ```xml
 <dependency>
     <groupId>net.hasor</groupId>
     <artifactId>meteor-protocol-jsonrpc</artifactId>
-    <version>4.2.6</version>
+    <version>5.0.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -67,7 +67,7 @@ curl http://127.0.0.1:8080/jsonrpc \
   -d '{"jsonrpc":"2.0","method":"echo.echo","params":["Hello, Meteor!"],"id":1}'
 ```
 
-Java 接口代理、注册发现和多协议发布见[完整示例](met-example/README.md)。也可在 IDEA 中单独打开 `met-example`，直接运行对应的提供者与消费者。
+Java 接口代理、注册发现和多协议发布见[完整示例](met-example/README.md)。也可在 IDEA 中打开 `met-example`，先运行基础 Echo，再按需选择框架或协议示例。
 
 ## 兼容矩阵
 
@@ -160,6 +160,7 @@ Java 接口代理、注册发现和多协议发布见[完整示例](met-example/
 | --- | --- | --- |
 | Hasor | 5.3.1-SNAPSHOT | `net.hasor:meteor-hasor` |
 | Spring Framework | 6.2.18 | `net.hasor:meteor-spring` |
+| Spring Boot | 3.5.14 | `net.hasor:meteor-spring-starter` |
 | Solon | 4.1.0 | `net.hasor:meteor-solon` |
 
 配置与可运行 JAR 示例见[框架示例](met-example/README.md#framework-integration)。
@@ -174,9 +175,9 @@ Java 接口代理、注册发现和多协议发布见[完整示例](met-example/
 | [meteor-integration/registry-*](meteor-integration) | JDBC、Nacos、ZooKeeper 存储与 Dubbo 原生注册中心桥接 |
 | [meteor-integration/meteor-*](meteor-integration) | Hasor、Spring、Solon 框架整合 |
 | [meteor-console](meteor-console) | Web 控制台、注册中心管理 |
-| [met-example](met-example/README.md) | 各语言协议示例、框架整合示例 |
+| [met-example](met-example/README.md) | 基础、框架接入、协议互通与博客示例 |
 | [meteor-test](meteor-test/README.md) | SDK 互通、跨语言矩阵、框架与注册中心集成测试 |
-| `document` | 使用指南、协议手册、博客与开发资料 |
+| [meteor-doc](meteor-doc/README.md) | 使用指南、协议手册与版本说明 |
 
 ## 源码构建
 
@@ -200,7 +201,7 @@ Java 接口代理、注册发现和多协议发布见[完整示例](met-example/
 ## 示例与测试
 
 - [开发示例](met-example/README.md)：按语言和协议选择提供者、消费者。
-- [Java 协议互通](met-example/peer/java/README.md)：Meteor 与各 Java SDK 的调用示例。
+- [Java 协议互通](met-example/java/README.md)：Meteor 与各 Java SDK 的调用示例。
 - [框架整合](met-example/README.md#framework-integration)：Hasor、Solon、Spring 发布与消费服务。
 - [测试工程](meteor-test/README.md)：Docker 交叉测试的运行入口。
 - [测试报告](meteor-test/report.md)：实际执行结果和已知问题。

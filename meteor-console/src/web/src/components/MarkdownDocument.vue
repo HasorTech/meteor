@@ -4,9 +4,10 @@ import { renderMarkdown } from '../markdown.js';
 import 'highlight.js/styles/github.css';
 
 const props = defineProps({
-  markdown: { type: String, required: true }
+  markdown: { type: String, required: true },
+  javaDescription: Object
 });
-const html = computed(() => renderMarkdown(props.markdown));
+const html = computed(() => renderMarkdown(props.markdown, props.javaDescription));
 </script>
 <template>
   <article class="markdown-document">

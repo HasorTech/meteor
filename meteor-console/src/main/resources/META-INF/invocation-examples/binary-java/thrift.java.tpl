@@ -6,8 +6,7 @@ import org.apache.thrift.transport.layered.TFramedTransport;
 
 public final class ExampleMain {
     public static void main(String[] arguments) throws Exception {
-        TTransport transport = {{transport}};
-        try {
+        try (var transport = {{transport}}) {
             transport.open();
             TProtocol protocol = new {{protocol}}(transport);
             protocol.writeMessageBegin(new TMessage({{method}}, TMessageType.CALL, 1));
@@ -22,12 +21,9 @@ public final class ExampleMain {
             Object result = read(protocol, TType.STRUCT);
             protocol.readMessageEnd();
             System.out.println(result);
-        } finally {
-            transport.close();
         }
     }
 
-    // 结果按线上字段编号展示，无需复制业务 DTO 或生成额外源码。
     private static Object read(TProtocol protocol, byte kind) throws Exception {
         switch (kind) {
             case TType.BOOL: return protocol.readBool();

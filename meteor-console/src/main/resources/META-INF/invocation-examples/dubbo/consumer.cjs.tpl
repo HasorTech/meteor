@@ -9,7 +9,6 @@ async function main() {
   });
   const result = await service[{{method}}]();
   if (result.err) throw result.err;
-  // dubbo2.js 2.x 没有公开的关闭入口；本次独立进程写完结果后退出并释放 Socket。
   process.stdout.write(JSON.stringify(result.res) + '\n', () => process.exit(0));
 }
 main().catch(error => {

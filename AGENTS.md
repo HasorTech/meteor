@@ -111,7 +111,7 @@ boolean managed = ObjectUtils.equals("managed", metadata.get("owner"));
 10. 协议插件按以下职责组织：
 
     - Provider 是组装入口，位于各自协议根包，并以该入口类型注册到公共 `ProtocolProvider` SPI。
-    - 公共 `ProtocolProvider<M>` 提供协议元信息、`prepareBinding` 服务绑定准备和 `createSession` 会话创建；自定义传输直接使用该接口。
+    - 公共 `ProtocolProvider<M>` 提供协议元信息、`prepareBinding` 服务绑定准备、`prepareOperation` 泛化调用的协议绑定准备和 `createSession` 会话创建；自定义传输直接使用该接口。
     - HTTP、TCP、UDP 插件分别实现 `transport.http.HttpProtocolProvider`、`transport.tcp.TcpProtocolProvider`、`transport.udp.UdpProtocolProvider`。三个接口继承固定消息类型的公共接口，按“接口设计”中的例外提供默认方法，具体入口不重复声明。
     - TCP/UDP 各自声明 `probeProtocol`，HTTP 按挂载路径选路。识别逻辑由协议插件提供，传输层执行路由。多协议字节监听端点按传输类型检查探测接口，缺少能力时启动失败；单协议和纯出站端点不强制探测接口，出站协议由连接请求指定。
     - 协议定义通过 `describeContract` 导出契约；`ProtocolSession` 负责连接上的握手、收发和关闭；`codec`、`session` 或 `channel` 保存具体实现。
@@ -130,10 +130,9 @@ boolean managed = ObjectUtils.equals("managed", metadata.get("owner"));
 
 ## AI 辅助资料与技能
 
-1. [AI 辅助开发索引](document/docs/other/ai/README.md)说明仓库技能、开发约定和维护备注的存放方式。
-2. 编写、补齐、审查或整理 Java 测试时，读取并使用 [meteor-test-style](.agents/skills/meteor-test-style/SKILL.md)。按任务需要读取其参考材料，不将测试整理扩展为无关生产代码改造。
-3. 编写或重写 Git 提交说明时，读取并使用 [git-commit-intent](.agents/skills/git-commit-intent/SKILL.md)，根据对应 diff 描述功能、真实意图与兼容影响，避免文件清单式日志。
-4. 审查或重构 Java 包结构、类型命名、依赖方向及可见性时，读取并使用 [$meteor-package-naming-review](.agents/skills/meteor-package-naming-review/SKILL.md)。先还原真实调用链、对象所有权和生命周期，再确定目标包树与重命名映射；不得仅按类名机械迁包。
+1. 编写、补齐、审查或整理 Java 测试时，读取并使用 [meteor-test-style](.agents/skills/meteor-test-style/SKILL.md)。按任务需要读取其参考材料，不将测试整理扩展为无关生产代码改造。
+2. 编写或重写 Git 提交说明时，读取并使用 [git-commit-intent](.agents/skills/git-commit-intent/SKILL.md)，根据对应 diff 描述功能、真实意图与兼容影响，避免文件清单式日志。
+3. 审查或重构 Java 包结构、类型命名、依赖方向及可见性时，读取并使用 [$meteor-package-naming-review](.agents/skills/meteor-package-naming-review/SKILL.md)。先还原真实调用链、对象所有权和生命周期，再确定目标包树与重命名映射；不得仅按类名机械迁包。
 
 ## 测试与示例归属
 
@@ -142,7 +141,7 @@ boolean managed = ObjectUtils.equals("managed", metadata.get("owner"));
 3. Meteor 自体互通、官方 SDK、多语言、注册发现及多协议组合测试统一归 `meteor-test`，按 `self`、`provider`、`consumer` 记录矩阵。协议插件不承载官方 SDK 对端、跨语言或跨协议组合测试；同一场景在测试工程内只保留一份。
 4. 外部 Java SDK 互通优先使用官方 Java/JVM SDK，其次成熟 Java 实现；无法覆盖的协议与 SDK 限制必须记录，不用其他语言代替 Java 覆盖。
 5. 官方 SDK 互通使用公开 API 和官方生成契约，保留原厂源码与发布制品内容。允许公开配置、官方支持或经 SDK 自体验证可用的依赖组合，并记录运行图；兼容修复由 Meteor 承担，不通过对端改包、改写报文、monkey patch 或隐藏重试掩盖问题。不可用组合保留失败证据并说明限制。
-6. `met-example` 仅向开发者展示用法，语言入口归 `peer/<语言>`，Java 按真实 SDK 与必要版本分目录；资源、证书与工具独立持有。`meteor-test` 独立持有测试模型、契约、对端入口和 SDK 依赖。两者互不依赖，不通过源码目录、生成脚本、资源路径或 Docker 构建间接复用；允许相同模型和契约分别存在，不以去重破坏边界。
+6. `met-example` 仅向开发者展示用法，语言作为第一层目录，第二层按框架或 SDK 划分，需要时用第三层区分场景或版本；资源、证书与工具独立持有。`meteor-test` 独立持有测试模型、契约、对端入口和 SDK 依赖。两者互不依赖，不通过源码目录、生成脚本、资源路径或 Docker 构建间接复用；允许相同模型和契约分别存在，不以去重破坏边界。
 
 ## meteor-test 布局与执行
 

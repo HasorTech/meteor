@@ -25,6 +25,16 @@ public final class BinaryContracts {
         return new XdrWriter(binding).write();
     }
 
+    public static MetProtocolDescription onlyMethod(MetProtocolDescription binding, Map<String, Object> method) {
+        var selected = new MetProtocolDescription();
+        selected.setName(binding.getName());
+        selected.setSerializeType(binding.getSerializeType());
+        selected.setExtensions(binding.getExtensions());
+        selected.setTypes(binding.getTypes());
+        selected.setMethods(List.of(method));
+        return selected;
+    }
+
     static String identifier(String value) {
         if (value == null || !value.matches("[A-Za-z_][A-Za-z0-9_]*")) {
             throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_CONTRACT_CONTAINS_AN_IDENTIFIER_THAT, value);

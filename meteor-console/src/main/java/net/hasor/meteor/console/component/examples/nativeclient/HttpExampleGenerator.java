@@ -2,6 +2,7 @@
 package net.hasor.meteor.console.component.examples.nativeclient;
 import java.net.URI;
 import java.util.*;
+import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.cobble.ObjectUtils;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.console.component.commands.dto.service.ExampleTarget;
@@ -38,16 +39,17 @@ public final class HttpExampleGenerator {
             throw lastFailure == null ? new ErrorMessageException(ConsoleMessageKey.ERROR_NO_INVOCABLE_METHODS) : lastFailure;
         }
         try {
-            String sample = JsonUtils.valueToTree(call).toPrettyString();
+            JsonNode arguments = JsonUtils.valueToTree(call.get("args"));
+            String method = JsonUtils.writeValueAsString(call.get("method"));
             String url = JsonUtils.writeValueAsString(httpAddress(target, address));
             List<ExampleDocument> documents = new ArrayList<>();
             if (StringUtils.equals(protocol, "jsonrpc")) {
-                documents.add(document("python", "jsonrpc.py", url, sample, "Python 3.9+，使用标准库。"));
-                documents.add(document("javascript", "jsonrpc.mjs", url, sample, "Node.js 22+，使用内置 fetch。"));
+                documents.add(document("python", "jsonrpc.py", url, method, arguments, ""));
+                documents.add(document("javascript", "jsonrpc.mjs", url, method, arguments, ""));
             } else if (StringUtils.equals(protocol, "xmlrpc")) {
-                documents.add(document("python", "xmlrpc.py", url, sample, "Python 3.9+，使用标准库。"));
+                documents.add(document("python", "xmlrpc.py", url, method, arguments, ""));
             } else {
-                documents.add(document("javascript", "hprose.mjs", url, sample, "Node.js 22+；依赖 `hprose@2.0.51`。"));
+                documents.add(document("javascript", "hprose.mjs", url, method, arguments, "npm install hprose@2.0.51"));
             }
             return documents;
         } catch (java.io.IOException failure) {
@@ -76,20 +78,56 @@ public final class HttpExampleGenerator {
         return call;
     }
 
-    private static ExampleDocument document(String language, String template, String url, String sample, String dependency) throws java.io.IOException {
-        // Python 通过 JSON 字符串读取，避免 JSON 的 true/null 被误当作 Python 标识符。
-        String arguments = sample;
-        if (StringUtils.equals(language, "python")) {
-            arguments = JsonUtils.writeValueAsString(sample);
+    private static ExampleDocument document(String language, String template, String url, String method, JsonNode arguments, String setup) {
+        boolean python = StringUtils.equals(language, "python");
+        String code = ExampleTemplates.render("http/" + template, Map.of(
+                "url", url, "method", method, "arguments", nativeValue(arguments, python)));
+        String markdown = ExampleTemplates.codeBlock(language, code);
+        if (!setup.isEmpty()) {
+            markdown = ExampleTemplates.codeBlock("bash", setup) + "\n\n" + markdown;
         }
-        String code = ExampleTemplates.render("http/" + template, Map.of("url", url, "call", arguments));
-        String markdown = ExampleTemplates.render("http/document.md.tpl", Map.of("dependency", dependency, "code", ExampleTemplates.codeBlock(language, code)));
         return new ExampleDocument(language + "-direct", language, "direct", markdown);
+    }
+
+    private static String nativeValue(JsonNode value, boolean python) {
+        if (value.size() == 1 && value.path("$binary").isTextual()) {
+            String bytes = value.path("$binary").asText();
+            String hex = HexFormat.of().formatHex(Base64.getDecoder().decode(bytes));
+            if (python) {
+                return "bytes.fromhex(\"" + hex + "\")";
+            }
+            return "Buffer.from(\"" + hex + "\", \"hex\")";
+        }
+        if (value.isArray()) {
+            StringJoiner items = new StringJoiner(", ", "[", "]");
+            value.forEach(item -> items.add(nativeValue(item, python)));
+            return items.toString();
+        }
+        if (value.isObject()) {
+            StringJoiner fields = new StringJoiner(", ", "{", "}");
+            value.fields().forEachRemaining(field -> {
+                String key = JsonUtils.valueToTree(field.getKey()).toString();
+                if (!python && StringUtils.equals(field.getKey(), "__proto__")) {
+                    key = "[" + key + "]";
+                }
+                fields.add(key + ": " + nativeValue(field.getValue(), python));
+            });
+            return fields.toString();
+        }
+        if (python) {
+            if (value.isBoolean()) {
+                return value.asBoolean() ? "True" : "False";
+            }
+            if (value.isNull()) {
+                return "None";
+            }
+        }
+        return value.toString();
     }
 
     private static String httpAddress(ExampleTarget target, String providedAddress) {
         if (StringUtils.isBlank(providedAddress)) {
-            return "请填写服务地址";
+            return ExampleConnections.ADDRESS_PLACEHOLDER;
         }
         URI address = URI.create(providedAddress);
         String scheme = StringUtils.equalsIgnoreCase(address.getScheme(), "https") ? "https" : "http";

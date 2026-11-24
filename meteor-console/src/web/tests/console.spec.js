@@ -214,6 +214,61 @@ test('cluster ID copies when the Clipboard API is unavailable', async ({page}) =
     await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(clusterId);
 });
 
+test('cluster cards truncate long addresses on one line and search the complete address', async ({
+    page
+}, testInfo) => {
+    const address = 'jdbc:h2:tcp://127.0.0.1:19192/mem:console-debug';
+    const errors = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.route((url) => url.pathname === '/api/clusters', (route) =>
+        route.fulfill({
+            json: [
+                {id: 'jdbc', name: '111', type: 'jdbc', address, database: 'h2'},
+                {id: 'dev', name: '开发集群', type: 'nacos', address: '10.0.1.8:8848'},
+                {id: 'test', name: '测试集群', type: 'zookeeper', address: '10.0.2.8:2181'},
+                {id: 'remote', name: '远程集群', type: 'remote', address: '10.0.3.8:19200'}
+            ]
+        })
+    );
+    await page.setViewportSize({width: 1280, height: 692});
+    await login(page);
+    const cards = page.getByRole('article');
+    await expect(cards).toHaveCount(4);
+    await expect(page.getByText('集群连接', {exact: true})).toHaveCount(1);
+    const search = page.getByRole('searchbox', {name: '搜索集群'});
+    const connect = page.getByRole('button', {name: '连接注册中心'});
+    expect(Math.abs((await search.boundingBox()).y - (await connect.boundingBox()).y)).toBeLessThan(2);
+    const longAddress = cards.first().locator('.cluster-address');
+    const shortAddress = cards.nth(1).locator('.cluster-address');
+    await expect(longAddress).toHaveText(address);
+    await expect(longAddress).toHaveAttribute('title', address);
+    await expect(longAddress).toHaveCSS('white-space', 'nowrap');
+    await expect(longAddress).toHaveCSS('text-overflow', 'ellipsis');
+    expect(await longAddress.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);
+    expect(await shortAddress.evaluate((element) => element.scrollWidth === element.clientWidth)).toBe(true);
+    expect((await longAddress.boundingBox()).height).toBe((await shortAddress.boundingBox()).height);
+    expect((await cards.nth(3).boundingBox()).y).toBeGreaterThan((await cards.first().boundingBox()).y);
+    await page.screenshot({path: testInfo.outputPath('cluster-cards.png')});
+
+    await page.setViewportSize({width: 2560, height: 900});
+    const button = await connect.boundingBox();
+    expect(button.x + button.width).toBeCloseTo(2540, 0);
+    const firstCard = await cards.first().boundingBox();
+    expect((await cards.nth(3).boundingBox()).y).toBeCloseTo(firstCard.y, 0);
+    await page.screenshot({path: testInfo.outputPath('cluster-cards-wide.png')});
+    await search.fill('console-debug');
+    await expect(cards).toHaveCount(1);
+    expect((await cards.first().boundingBox()).width).toBeCloseTo(firstCard.width, 0);
+
+    await page.setViewportSize({width: 375, height: 812});
+    expect(await longAddress.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(375);
+    await page.screenshot({path: testInfo.outputPath('cluster-cards-mobile.png')});
+    await search.fill('no-such-cluster');
+    await expect(page.getByText('没有匹配的集群', {exact: true})).toBeVisible();
+    expect(errors).toEqual([]);
+});
+
 test('all console table headers match the rule panel title height and reference styles', async ({
                                                                                                     page
                                                                                                 }, testInfo) => {
@@ -1381,6 +1436,9 @@ test('language entry links open one Markdown document with only role tabs', asyn
                         instanceId: 'provider-a',
                         application: 'order-app',
                         unit: 'east',
+                        description: {
+                            types: {DebugMessage: {javaType: 'net.hasor.meteor.example.api.DebugMessage'}}
+                        },
                         endpoint: {protocolName: 'rsf', contextPath: '/orders'}
                     }
                 ],
@@ -1416,13 +1474,28 @@ test('language entry links open one Markdown document with only role tabs', asyn
                         id: 'java-provider',
                         language: 'Java',
                         role: 'provider',
-                        markdown: '# Java 提供者\n\n```java\nclass ProviderMain {}\n```'
+                        markdown: [
+                            '```java',
+                            'import net.hasor.meteor.annotation.*;',
+                            '',
+                            'import java.util.List;',
+                            '',
+                            'public interface StatusService {',
+                            '    net.hasor.meteor.example.api.DebugMessage status(net.hasor.meteor.example.api.DebugMessage request);',
+                            '}',
+                            '```',
+                            '',
+                            '```java',
+                            'var arguments = java.util.List.of(new net.hasor.meteor.example.api.DebugMessage());',
+                            'var wireName = "java.lang.String";',
+                            '```'
+                        ].join('\n')
                     },
                     {
-                        id: 'java-consumer',
+                        id: 'java-registry',
                         language: 'Java',
-                        role: 'consumer',
-                        markdown: '# Java 消费者\n\n通过注册中心发现。\n\n```java\nclass RegistryConsumerMain {}\n```'
+                        role: 'registry',
+                        markdown: '```java\nclass RegistryConsumerMain {}\n```'
                     },
                     {
                         id: 'python-direct',
@@ -1453,7 +1526,7 @@ test('language entry links open one Markdown document with only role tabs', asyn
     await expect(drawer.getByRole('tablist', {name: '示例语言'})).toHaveCount(0);
     const roles = drawer.getByRole('tablist', {name: '调用角色'});
     const document = drawer.getByRole('tabpanel', {name: '调用示例文档'});
-    await expect(roles.getByRole('tab')).toHaveText(exampleRoleLabels);
+    await expect(roles.getByRole('tab')).toHaveText([...exampleRoleLabels, '使用注册中心']);
     await expect(document.getByRole('heading', {name: 'Java 直连', exact: true})).toBeVisible();
     await expect(document.locator('pre code.language-java')).toHaveText(
         'class ConsumerMain { /* <contract> */ }\n'
@@ -1473,7 +1546,11 @@ test('language entry links open one Markdown document with only role tabs', asyn
     expect(await page.evaluate(() => window.exampleInjected)).toBeUndefined();
 
     await roles.getByRole('tab', {name: '提供者', exact: true}).click();
-    await expect(document.locator('pre code.language-java')).toHaveText('class ProviderMain {}\n');
+    const provider = document.locator('pre code.language-java');
+    await expect(provider).toHaveText([
+        'public interface StatusService {\n    DebugMessage status(DebugMessage request);\n}\n',
+        'var arguments = List.of(new DebugMessage());\nvar wireName = "java.lang.String";\n'
+    ]);
     await roles.getByRole('tab', {name: '消费者', exact: true}).click();
     await expect(document.locator('pre code.language-java')).toHaveText(
         'class ConsumerMain { /* <contract> */ }\n'
@@ -1484,6 +1561,9 @@ test('language entry links open one Markdown document with only role tabs', asyn
     await expect(roles.getByRole('tab', {name: '提供者', exact: true})).toBeFocused();
     await page.keyboard.press('ArrowRight');
     await expect(roles.getByRole('tab', {name: '消费者', exact: true})).toBeFocused();
+    await page.keyboard.press('ArrowRight');
+    await expect(roles.getByRole('tab', {name: '使用注册中心', exact: true})).toBeFocused();
+    await expect(document.locator('pre code.language-java')).toHaveText('class RegistryConsumerMain {}\n');
     await page.keyboard.press('Escape');
     await expect(drawer).toHaveCount(0);
     // 语言在表格中选择，抽屉不再提供另一套语言切换。
@@ -1711,12 +1791,9 @@ test('service protocol examples render one Markdown document from real registry 
     );
     expect(java).toBeTruthy();
     const binaryType = 'net.hasor.meteor.test.scenario.ConsoleBrowserFixture$OrderService';
-    const sourceType = 'net.hasor.meteor.test.scenario.ConsoleBrowserFixture.OrderService';
     expect(targets.targets[0].description.javaType).toBe(binaryType);
-    expect(java.markdown).toContain(`MetBindInfo<${sourceType}>`);
-    expect(java.markdown).toContain(`rsfService(${sourceType}.class)`);
-    expect(java.markdown).not.toContain(`MetBindInfo<${binaryType}>`);
-    expect(java.markdown).not.toContain(`rsfService(${binaryType}.class)`);
+    expect(java.markdown).toContain('var binding = context.publisher().rsfService(OrderService.class).register()');
+    expect(java.markdown).toContain('\npublic interface OrderService {');
     const drawer = page.getByRole('dialog', {name: /^rsf /});
     const document = drawer.getByRole('tabpanel', {name: '调用示例文档'});
     await expect(drawer.getByRole('tablist', {name: '示例语言'})).toHaveCount(0);
@@ -1725,12 +1802,22 @@ test('service protocol examples render one Markdown document from real registry 
         'true'
     );
     expect(new URL((await renderResponse).url()).searchParams.get('language')).toBe('java');
-    await expect(document.locator('pre code.language-java')).toHaveCount(1);
+    await expect(document.locator('pre code')).toHaveCount(3);
+    await expect(document.locator('pre code').first()).toHaveClass(/language-groovy/);
+    await expect(document.locator('pre code.language-java').first()).toContainText('public interface');
     await expect(document).toContainText('net.hasor:meteor:');
     expect(new URL((await renderResponse).url()).searchParams.get('address')).toBeNull();
-    expect(java.markdown).toContain('请填写服务地址');
-    await expect(document.locator('pre code.language-java')).toContainText('请填写服务地址');
+    expect(java.markdown).toContain('SERVICE_ADDRESS');
+    await expect(document.locator('pre code.language-java').last()).toContainText('SERVICE_ADDRESS');
     await expect(document.locator('pre code.language-java .hljs-keyword')).not.toHaveCount(0);
+    const roles = drawer.getByRole('tablist', {name: '调用角色'});
+    await expect(roles.getByRole('tab').first()).toHaveText('接口定义');
+    await expect(roles.getByRole('tab', {name: '接口描述符', exact: true})).toHaveCount(0);
+    await roles.getByRole('tab', {name: '接口定义', exact: true}).click();
+    await expect(document.locator('pre code')).toHaveCount(1);
+    await expect(document.locator('pre code')).toContainText('public interface OrderService');
+    await expect(document).not.toContainText('MetConfiguration');
+    await roles.getByRole('tab', {name: '消费者', exact: true}).click();
     const screenshot = testInfo.outputPath('protocol-examples-drawer.png');
     await page.screenshot({path: screenshot, fullPage: true});
     await testInfo.attach('protocol-examples-drawer', {path: screenshot, contentType: 'image/png'});
@@ -1752,18 +1839,106 @@ test('Meteor and native Java SDK example entries use separate real documents', a
     await expect(protocol.getByRole('button')).toHaveText(exampleLanguageLabels);
     await protocol.getByRole('button', {name: 'Meteor', exact: true}).click();
     const drawer = page.getByRole('dialog', {name: /^hprose /});
-    await expect(drawer.locator('pre code.language-java')).toContainText('MetConfiguration');
+    await expect(drawer.locator('pre code.language-java').last()).toContainText('MetConfiguration');
     await expect(drawer.getByRole('tab', {name: '提供者', exact: true})).toBeEnabled();
     await page.keyboard.press('Escape');
 
     await protocol.getByRole('button', {name: 'Java RPC SDK', exact: true}).click();
     await expect(drawer.locator('pre code.language-java')).toContainText('HproseHttpClient');
+    await expect(drawer.locator('pre code.language-java')).not.toContainText('import ');
     await expect(drawer.locator('pre code.language-java')).not.toContainText('net.hasor.meteor');
     await expect(drawer.getByRole('tab', {name: '提供者', exact: true})).toBeDisabled();
     await expect(drawer.getByRole('tablist', {name: '示例语言'})).toHaveCount(0);
     await expect(drawer.getByRole('tablist', {name: '调用角色'}).getByRole('tab')).toHaveText(
-        exampleRoleLabels
+        ['接口定义', ...exampleRoleLabels]
     );
+});
+
+test('native wire examples show named editable input before the call', async ({page}) => {
+    await enter(page);
+    await order(page);
+    await tab(page, '服务信息');
+    await page.getByRole('tablist', {name: '服务协议'}).getByRole('tab', {name: 'hprose', exact: true}).click();
+    await page.locator('.access-examples .example-language-links')
+        .getByRole('button', {name: 'Shell', exact: true}).click();
+    const drawer = page.getByRole('dialog', {name: /^hprose /});
+    const blocks = drawer.locator('pre');
+    await expect(blocks).toHaveCount(4);
+    await expect(blocks.nth(0).locator('.markdown-code-file')).toHaveText('arguments.json');
+    await expect(blocks.nth(0)).toContainText('"example"');
+    await expect(blocks.nth(1).locator('.markdown-code-file')).toHaveText('request.py');
+    await expect(blocks.nth(2)).toContainText('python3 request.py');
+    await expect(blocks.nth(3)).toContainText('--data-binary @request.bin');
+    await expect(drawer).not.toContainText('Base64');
+});
+
+test('native Java SDK shows the request alongside consumer code and in example files', async ({page}) => {
+    await enter(page);
+    await order(page);
+    await tab(page, '服务信息');
+    await page.getByRole('tablist', {name: '服务协议'}).getByRole('tab', {name: 'hprose', exact: true}).click();
+    const requestJson = '```json request.json\n{"value":"example"}\n```';
+    await page.route('**/api/examples/render?*', (route) => route.fulfill({
+        json: {
+            interfaceDefinition: '```java\ninterface EchoService {\n    String echo(String value);\n    String check();\n}\n```',
+            interfaceDescriptor: '```protobuf service.proto\nservice EchoService {}\n```',
+            documents: [
+                {
+                    id: 'java-sdk-direct',
+                    language: 'java-sdk',
+                    role: 'direct',
+                    markdown: requestJson + '\n\n```java\nvar result = client.unaryBlocking(request, Map.of(), method).execute();\n```'
+                },
+                {
+                    id: 'java-sdk-files',
+                    language: 'java-sdk',
+                    role: 'files',
+                    markdown: [
+                        '```json service.json',
+                        '{"file":[]}',
+                        '```',
+                        '',
+                        requestJson,
+                        '',
+                        '```java ProtobufCodec.java',
+                        'final class ProtobufCodec {}',
+                        '```'
+                    ].join('\n')
+                }
+            ]
+        }
+    }));
+    await page.locator('.access-examples .example-language-links')
+        .getByRole('button', {name: 'Java RPC SDK', exact: true}).click();
+    const drawer = page.getByRole('dialog', {name: /^hprose /});
+    const roles = drawer.getByRole('tablist', {name: '调用角色'});
+    const consumer = roles.getByRole('tab', {name: '消费者', exact: true});
+    const files = roles.getByRole('tab', {name: '示例文件', exact: true});
+    const document = drawer.getByRole('tabpanel', {name: '调用示例文档'});
+
+    await expect(roles.getByRole('tab')).toHaveText(['接口定义', '接口描述符', ...exampleRoleLabels, '示例文件']);
+    await expect(consumer).toHaveAttribute('aria-selected', 'true');
+    await roles.getByRole('tab', {name: '接口定义', exact: true}).click();
+    await expect(document.locator('pre code')).toContainText('String check();');
+    await page.keyboard.press('ArrowRight');
+    await expect(roles.getByRole('tab', {name: '接口描述符', exact: true})).toBeFocused();
+    await expect(document.locator('.markdown-code-file')).toHaveText(['service.proto']);
+    await expect(document.locator('pre code')).toContainText('service EchoService');
+    await consumer.click();
+    await expect(document.locator('.markdown-code-file')).toHaveText(['request.json']);
+    await expect(document.locator('pre code')).toHaveText([
+        '{"value":"example"}', 'var result = client.unaryBlocking(request, Map.of(), method).execute();'
+    ]);
+    await consumer.focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(files).toBeFocused();
+    await expect(files).toHaveAttribute('aria-selected', 'true');
+    await expect(document.locator('.markdown-code-file')).toHaveText([
+        'service.json', 'request.json', 'ProtobufCodec.java'
+    ]);
+    await expect(document).not.toContainText('unaryBlocking');
+    await consumer.click();
+    await expect(document.locator('.markdown-code-file')).toHaveText(['request.json']);
 });
 
 test('instance protocol badges are display only in lists and cards', async ({page}) => {
@@ -2383,7 +2558,7 @@ for (const entry of protocolExampleEntries) {
             (item) => item.language.toLowerCase() === 'java' && item.role === 'direct'
         );
         expect(directDocument).toBeTruthy();
-        expect(directDocument.markdown).toContain(scope.address || '请填写服务地址');
+        expect(directDocument.markdown).toContain(scope.address || 'SERVICE_ADDRESS');
         expect(page.url()).toBe(originalUrl);
 
         const drawer = page.getByRole('dialog', {name: `${scope.protocol} ${selected.serviceId}`, exact: true});
@@ -2396,13 +2571,15 @@ for (const entry of protocolExampleEntries) {
         await expect(drawer.locator('.examples-address')).toHaveCount(0);
         await expect(drawer.getByRole('tablist', {name: '示例语言'})).toHaveCount(0);
         const roles = drawer.getByRole('tablist', {name: '调用角色'});
-        await expect(roles.getByRole('tab')).toHaveText(exampleRoleLabels);
+        const expectedTabs = ['接口定义'];
+        if (generated.interfaceDescriptor) expectedTabs.push('接口描述符');
+        await expect(roles.getByRole('tab')).toHaveText([...expectedTabs, ...exampleRoleLabels]);
         const roleBounds = await roles.boundingBox();
         const bodyBounds = await drawer.locator('.examples-body').boundingBox();
         expect(roleBounds.x - bodyBounds.x).toBeLessThanOrEqual(24);
         const document = drawer.getByRole('tabpanel', {name: '调用示例文档'});
-        await expect(document.locator('pre code.language-java').first()).toContainText(
-            scope.address || '请填写服务地址'
+        await expect(document.locator('pre code.language-java').last()).toContainText(
+            scope.address || 'SERVICE_ADDRESS'
         );
         for (const label of exampleRoleLabels) {
             await roles.getByRole('tab', {name: label, exact: true}).click();
@@ -2953,16 +3130,30 @@ test('direct management uses real RPC without a selected registry', async ({page
     await login(page);
     await page.locator('.cluster-select').click();
     await page.locator('.cluster-menu').getByRole('button', {name: '直连实例', exact: true}).click();
-    await expect(page.getByRole('form', {name: '连接信息', exact: true})).toBeVisible();
+    const heading = page.getByRole('heading', {name: '直连实例', exact: true});
+    const panel = page.locator('.direct-layout');
+    const formRegion = panel.getByRole('form', {name: '连接信息', exact: true});
+    const helpRegion = panel.getByRole('complementary', {name: '连接准备', exact: true});
+    await expect(heading).toHaveCount(1);
+    await expect(page.getByRole('navigation', {name: '面包屑导航', exact: true})).toHaveCount(0);
+    await expect(formRegion).toBeVisible();
+    await expect(helpRegion).toBeVisible();
     await expect(page.getByLabel('实例 Endpoint', {exact: true})).toBeVisible();
     await expect(page.getByLabel('管理凭据', {exact: true})).toHaveAttribute('type', 'password');
     const originalViewport = page.viewportSize();
-    for (const width of [1360, 390]) {
-        await page.setViewportSize({width, height: width === 390 ? 844 : 900});
-        const form = await page.locator('.direct-form').boundingBox();
-        const help = await page.locator('.direct-help').boundingBox();
-        if (width === 390) expect(help.y).toBeGreaterThanOrEqual(form.y + form.height);
-        else expect(help.x).toBeGreaterThanOrEqual(form.x + form.width);
+    for (const {width, height} of [{width: 1780, height: 884}, {width: 390, height: 844}]) {
+        await page.setViewportSize({width, height});
+        const form = await formRegion.boundingBox();
+        const help = await helpRegion.boundingBox();
+        expect((await panel.boundingBox()).x).toBeCloseTo((await heading.boundingBox()).x, 0);
+        if (width === 390) {
+            expect(help.y).toBeGreaterThanOrEqual(form.y + form.height);
+            await expect(helpRegion).toHaveCSS('border-top-width', '1px');
+        } else {
+            expect(help.x).toBeGreaterThanOrEqual(form.x + form.width);
+            expect(help.y).toBeCloseTo(form.y, 0);
+            await expect(helpRegion).toHaveCSS('border-left-width', '1px');
+        }
         expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
         const screenshot = testInfo.outputPath(`direct-connect-${width}.png`);
         await page.screenshot({path: screenshot, fullPage: true});
@@ -3057,8 +3248,20 @@ test('connection pages cover provider fields, failed connection, second cluster 
     await card.getByRole('button', {name: '编辑', exact: true}).click();
     await expect(page.getByLabel('连接名称')).toHaveValue('独立集群');
     await page.getByRole('button', {name: '取消', exact: true}).click();
+    const actions = card.getByText('操作', {exact: true});
+    await actions.press('Enter');
+    await expect(card.getByRole('button', {name: '移除', exact: true})).toBeVisible();
+    await actions.press('Escape');
+    await expect(card.getByRole('button', {name: '移除', exact: true})).toBeHidden();
+    await actions.click();
     await card.getByRole('button', {name: '移除', exact: true}).click();
-    await page.getByRole('dialog').getByRole('button', {name: '移除', exact: true}).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByRole('button', {name: '取消', exact: true})).toBeFocused();
+    await dialog.getByRole('button', {name: '取消', exact: true}).click();
+    await expect(actions).toBeFocused();
+    await actions.click();
+    await card.getByRole('button', {name: '移除', exact: true}).click();
+    await dialog.getByRole('button', {name: '移除', exact: true}).click();
     await expect(card).toHaveCount(0);
 });
 

@@ -1,8 +1,6 @@
-import base64
+from pathlib import Path
 import urllib.request
 
-# {{operation}}；以下请求来自当前服务的实际线上契约。
-request = urllib.request.Request({{url}}, data=base64.b64decode("{{body}}"),
-                                 headers={{headers}}, method="POST")
+request = urllib.request.Request({{url}}, Path("request.bin").read_bytes(), {{headers}})
 with urllib.request.urlopen(request, timeout=5) as response:
     print(response.read().hex())

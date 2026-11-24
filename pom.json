@@ -1,5 +1,5 @@
 {
-  "url": "https://www.hasor.net/rsf",
+  "url": "https://www.hasor.net/meteor",
   "licenses": [
     {
       "name": "The Apache Software License, Version 2.0",
@@ -13,9 +13,9 @@
     }
   ],
   "scm": {
-    "connection": "scm:git:git@gitee.com:zycgit/rsf.git",
-    "developerConnection": "scm:git:git@gitee.com:zycgit/rsf.git",
-    "url": "https://gitee.com/zycgit/rsf",
+    "connection": "scm:git:git@gitee.com:hasortech/meteor.git",
+    "developerConnection": "scm:git:git@gitee.com:hasortech/meteor.git",
+    "url": "https://gitee.com/hasortech/meteor",
     "tag": "HEAD"
   }
 }

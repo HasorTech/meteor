@@ -103,3 +103,8 @@ if (providers.gradleProperty('includeTestProjects').getOrElse('true').toBoolean(
     project(':meteor-test-sdk:metro-jaxws-2.3').projectDir = file('meteor-test/peer/java/metro-jaxws/2.3.7')
     project(':meteor-test-sdk:apache-thrift-0.10').projectDir = file('meteor-test/peer/java/apache-thrift/0.10.0')
 }
+
+// 压测工程按需加载，不参与默认产品构建。
+if (providers.gradleProperty('includePerformance').getOrElse('false').toBoolean()) {
+    include 'performance'
+}

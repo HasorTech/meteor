@@ -22,5 +22,6 @@ module.exports = {
         `https://central.sonatype.com/artifact/net.hasor/${lastReleaseArtifact}/${lastReleaseVer}`,
     developmentVersion: version,
     hasorVersion,
-    repositoryUrl: 'https://gitee.com/zycgit/meteor',
+    repositoryUrl: 'https://gitee.com/hasortech/meteor',
+    repositoryRef: 'dev',
 };

@@ -1,6 +1,0 @@
-meteor:
-  name: Meteor 文档
-  title: 使用指南与开发实践
-  url: https://gitee.com/zycgit/meteor
-  image_url: /img/meteor.svg
-  page: true

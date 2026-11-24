@@ -1,4 +1,3 @@
-#include <stdbool.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <netdb.h>
@@ -6,19 +5,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <arpa/inet.h>
-static int exact(int connection, unsigned char *data, size_t size) {
-    while (size) {
-        ssize_t count = recv(connection, data, size, 0);
-        if (count <= 0) return -1;
-        data += count; size -= count;
-    }
-    return 0;
-}
-int main(void) {
-    /* {{operation}}；请求来自当前服务的实际线上契约，响应为十六进制报文。 */
-    unsigned char request[] = { {{bytes}} };
+{{reader}}int main(void) {
     struct addrinfo hints = {0}, *addresses = NULL;
     hints.ai_socktype = {{socketKind}};
     if (getaddrinfo({{host}}, "{{port}}", &hints, &addresses)) return 1;
@@ -29,30 +17,25 @@ int main(void) {
     setsockopt(connection, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
     if (connect(connection, addresses->ai_addr, addresses->ai_addrlen)) { close(connection); freeaddrinfo(addresses); return 1; }
     freeaddrinfo(addresses);
+    FILE *input = fopen("request.bin", "rb");
+    if (!input) { close(connection); return 1; }
+    fseek(input, 0, SEEK_END);
+    long requestSize = ftell(input);
+    rewind(input);
+    if (requestSize < 0) { fclose(input); close(connection); return 1; }
+    unsigned char *request = (unsigned char *)malloc((size_t)requestSize);
+    if (!request || fread(request, 1, (size_t)requestSize, input) != (size_t)requestSize) {
+        free(request); fclose(input); close(connection); return 1;
+    }
+    fclose(input);
     size_t sent = 0;
-    while (sent < sizeof(request)) {
-        ssize_t count = send(connection, request + sent, sizeof(request) - sent, 0);
-        if (count <= 0) { close(connection); return 1; }
+    while (sent < (size_t)requestSize) {
+        ssize_t count = send(connection, request + sent, (size_t)requestSize - sent, 0);
+        if (count <= 0) { free(request); close(connection); return 1; }
         sent += count;
     }
-    if ({{udp}}) {
-        unsigned char result[65535];
-        ssize_t count = recv(connection, result, sizeof(result), 0);
-        if (count < 0) { close(connection); return 1; }
-        for (ssize_t i = 0; i < count; i++) printf("%02x", result[i]);
-    } else {
-        while (1) {
-            uint32_t header;
-            if (exact(connection, (unsigned char *)&header, 4)) { close(connection); return 1; }
-            uint32_t marker = ntohl(header), size = marker & 0x7fffffff;
-            if (size > 16 * 1024 * 1024) { close(connection); return 1; }
-            unsigned char *body = (unsigned char *)malloc(size ? size : 1);
-            if (!body || exact(connection, body, size)) { free(body); close(connection); return 1; }
-            for (uint32_t i = 0; i < size; i++) printf("%02x", body[i]);
-            free(body);
-            if ({{thrift}} || (marker & 0x80000000)) break;
-        }
-    }
+    free(request);
+{{receive}}
     puts(""); close(connection);
     return 0;
 }

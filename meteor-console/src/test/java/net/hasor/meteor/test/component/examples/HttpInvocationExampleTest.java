@@ -7,7 +7,6 @@ package net.hasor.meteor.test.component.examples;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.console.component.commands.dto.service.ExampleTarget;
 import net.hasor.meteor.console.component.examples.ExampleDocument;
@@ -40,10 +39,11 @@ class HttpInvocationExampleTest {
         // 文档直接内联选中的线上方法和位置参数，不暴露其他方法或外部 calls 文件。
         String markdown = document.getMarkdown();
         String code = code(markdown, language);
-        JsonNode call = call(code, language);
-        assertEquals("orders-live.wire_selected", call.path("method").asText());
-        assertEquals(JsonUtils.readTree("[\"example\",1]"), call.path("args"));
-        assertEquals(2, call.size(), call.toPrettyString());
+        String key = StringUtils.equals("python", language) ? "\"%s\"" : "%s";
+        var payload = Pattern.compile(key.formatted("method") + ": (\"[^\"]+\"), " + key.formatted("params") + ": (\\[[^]]*])").matcher(code);
+        assertTrue(payload.find(), code);
+        assertEquals("orders-live.wire_selected", JsonUtils.readTree(payload.group(1)).asText());
+        assertEquals(JsonUtils.readTree("[\"example\",1]"), JsonUtils.readTree(payload.group(2)));
         assertTrue(code.contains("http://127.0.0.1:19206/rpc/live"), code);
         assertFalse(markdown.contains("wire_recursive"), markdown);
         assertFalse(markdown.contains("wire_later"), markdown);
@@ -85,7 +85,7 @@ class HttpInvocationExampleTest {
         assertEquals(2, documents.size());
         for (ExampleDocument document : documents) {
             String code = code(document.getMarkdown(), document.getLanguage());
-            assertTrue(code.contains("请填写服务地址"), code);
+            assertTrue(code.contains("SERVICE_ADDRESS"), code);
             assertFalse(code.contains("127.0.0.1:19206"), code);
         }
     }
@@ -163,19 +163,5 @@ class HttpInvocationExampleTest {
         String code = matcher.group(1);
         assertFalse(matcher.find(), "每份文档只展示一份主代码：" + markdown);
         return code;
-    }
-
-    private static JsonNode call(String code, String language) throws Exception {
-        String expression = "(?ms)^const call\\s*=\\s*(\\{.*?\\});";
-        if (StringUtils.equals(language, "python")) {
-            expression = "(?m)^call\\s*=\\s*json\\.loads\\((.+)\\)$";
-        }
-        var matcher = Pattern.compile(expression).matcher(code);
-        assertTrue(matcher.find(), code);
-        JsonNode value = JsonUtils.readTree(matcher.group(1));
-        if (StringUtils.equals(language, "python")) {
-            return JsonUtils.readTree(value.asText());
-        }
-        return value;
     }
 }

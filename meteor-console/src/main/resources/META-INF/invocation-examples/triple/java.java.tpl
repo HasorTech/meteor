@@ -9,6 +9,15 @@ import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.stub.ClientCalls;
 import io.grpc.stub.MetadataUtils;
 
+final class ByteArrayMarshaller implements MethodDescriptor.Marshaller<byte[]> {
+    public InputStream stream(byte[] value) { return new ByteArrayInputStream(value); }
+
+    public byte[] parse(InputStream input) {
+        try { return input.readAllBytes(); }
+        catch (IOException failure) { throw new UncheckedIOException(failure); }
+    }
+}
+
 public final class ExampleMain {
     public static void main(String[] arguments) throws Throwable {
         Object[] values = { {{arguments}} };
@@ -25,13 +34,7 @@ public final class ExampleMain {
         }
         for (String type : types) wrapper.writeString(3, type);
         wrapper.flush();
-        MethodDescriptor.Marshaller<byte[]> bytes = new MethodDescriptor.Marshaller<>() {
-            public InputStream stream(byte[] value) { return new ByteArrayInputStream(value); }
-            public byte[] parse(InputStream input) {
-                try { return input.readAllBytes(); }
-                catch (IOException failure) { throw new UncheckedIOException(failure); }
-            }
-        };
+        var bytes = new ByteArrayMarshaller();
         var method = MethodDescriptor.<byte[], byte[]>newBuilder()
                 .setType(MethodDescriptor.MethodType.UNARY).setFullMethodName({{method}})
                 .setRequestMarshaller(bytes).setResponseMarshaller(bytes).build();

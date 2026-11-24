@@ -25,7 +25,7 @@ public final class BinaryJavaExampleGenerator {
         JsonNode method = JsonUtils.valueToTree(binding.getMethods()).get(0);
         URI uri = URI.create(target.getAddress());
         Map<String, String> values = new LinkedHashMap<>();
-        values.put("host", literal(StringUtils.isBlank(address) ? "请填写服务地址" : uri.getHost()));
+        values.put("host", literal(StringUtils.isBlank(address) ? ExampleConnections.ADDRESS_PLACEHOLDER : uri.getHost()));
         values.put("port", Integer.toString(uri.getPort()));
         String template;
         String dependency;
@@ -52,26 +52,28 @@ public final class BinaryJavaExampleGenerator {
             for (JsonNode parameter : method.path("parameters")) {
                 this.thriftField(types, parameter, write, new HashSet<>());
             }
-            dependency = "`org.apache.thrift:libthrift:0.25.0`";
+            dependency = "org.apache.thrift:libthrift:0.25.0";
             template = "thrift";
         } else {
             this.xdrWrite(types, method.path("requestType").asText(), write, new HashSet<>());
+            String responseType = method.path("responseType").asText();
             Map<String, String> readers = new LinkedHashMap<>();
-            types.fieldNames().forEachRemaining(name -> readers.put(name, "read" + readers.size()));
+            this.xdrResponseTypes(types, responseType, readers);
             StringBuilder methods = new StringBuilder();
-            types.fieldNames().forEachRemaining(name -> methods.append(this.xdrReader(types, name, readers)));
+            readers.keySet().forEach(name -> methods.append(this.xdrReader(types, name, readers)));
             values.put("client", StringUtils.equals(protocol, "oncrpc-udp") ? "OncRpcUdpClient" : "OncRpcTcpClient");
             values.put("program", "(int) " + binding.getExtensions().get("program") + "L");
             values.put("version", "(int) " + binding.getExtensions().get("version") + "L");
             values.put("procedure", method.path("procedureId").asText());
-            values.put("read", readers.get(method.path("responseType").asText()) + "(stream)");
+            values.put("read", readers.get(responseType) + "(stream)");
             values.put("readers", methods.toString());
-            dependency = "`org.acplt.remotetea:remotetea-oncrpc:1.1.6`";
+            dependency = "org.acplt.remotetea:remotetea-oncrpc:1.1.6";
             template = "oncrpc";
         }
         values.put("write", write.toString().stripTrailing());
         String code = ExampleTemplates.render("binary-java/" + template + ".java.tpl", values);
-        return List.of(new ExampleDocument("java-sdk-direct", "java-sdk", "direct", "依赖：" + dependency + "。请求中的编号、名称和字段来自当前服务契约；结果按线上结构输出。\n\n" + ExampleTemplates.codeBlock("java", code)));
+        String markdown = ExampleTemplates.gradleDependencies(List.of(dependency)) + "\n\n" + ExampleTemplates.codeBlock("java", code);
+        return List.of(new ExampleDocument("java-sdk-direct", "java-sdk", "direct", markdown));
     }
 
     private void thriftField(JsonNode types, JsonNode field, StringBuilder code, Set<String> parents) {
@@ -143,19 +145,19 @@ public final class BinaryJavaExampleGenerator {
             value = "stream.xdrEncodeInt(" + type.path("values").get(0).path("fieldId").asInt() + ");";
         }
         if (value != null) {
-            code.append("                    ").append(value).append('\n');
+            code.append("        ").append(value).append('\n');
         } else if (StringUtils.equals(kind, "struct")) {
             for (JsonNode member : type.path("members")) {
                 this.xdrWrite(types, member.path("type").asText(), code, new HashSet<>(parents));
             }
         } else if (StringUtils.equals(kind, "optional")) {
-            code.append("                    stream.xdrEncodeBoolean(false);\n");
+            code.append("        stream.xdrEncodeBoolean(false);\n");
         } else if (StringUtils.equals(kind, "opaque")) {
             int length = type.path("length").asInt();
             if (type.path("fixed").asBoolean()) {
-                code.append("                    stream.xdrEncodeOpaque(new byte[").append(length).append("]);\n");
+                code.append("        stream.xdrEncodeOpaque(new byte[").append(length).append("]);\n");
             } else {
-                code.append("                    stream.xdrEncodeDynamicOpaque(new byte[0]);\n");
+                code.append("        stream.xdrEncodeDynamicOpaque(new byte[0]);\n");
             }
         } else if (StringUtils.equals(kind, "array")) {
             if (type.path("fixed").asBoolean()) {
@@ -167,10 +169,23 @@ public final class BinaryJavaExampleGenerator {
                     this.xdrWrite(types, type.path("elementType").asText(), code, new HashSet<>(parents));
                 }
             } else {
-                code.append("                    stream.xdrEncodeInt(0);\n");
+                code.append("        stream.xdrEncodeInt(0);\n");
             }
         } else {
             throw new ErrorMessageException(ConsoleMessageKey.ERROR_THIS_XDR_TYPE_REQUIRES_AN_EXPLICIT, kind);
+        }
+    }
+
+    private void xdrResponseTypes(JsonNode types, String reference, Map<String, String> readers) {
+        if (readers.putIfAbsent(reference, "read" + readers.size()) != null) {
+            return;
+        }
+        JsonNode type = BinaryContracts.required(types, reference);
+        if (type.hasNonNull("elementType")) {
+            this.xdrResponseTypes(types, type.path("elementType").asText(), readers);
+        }
+        for (JsonNode member : type.path("members")) {
+            this.xdrResponseTypes(types, member.path("type").asText(), readers);
         }
     }
 
@@ -209,7 +224,7 @@ public final class BinaryJavaExampleGenerator {
             if (type.path("fixed").asBoolean()) {
                 read = "stream.xdrDecodeOpaque(" + type.path("length").asInt() + ")";
             }
-            code.append("        return Base64.getEncoder().encodeToString(").append(read).append(");\n");
+            code.append("        return HexFormat.of().formatHex(").append(read).append(");\n");
         } else {
             throw new ErrorMessageException(ConsoleMessageKey.ERROR_NO_GENERIC_EXAMPLE_DECODER_IS_AVAILABLE, kind);
         }

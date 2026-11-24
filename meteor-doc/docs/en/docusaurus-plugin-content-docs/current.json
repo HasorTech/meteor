@@ -1,0 +1,19 @@
+{
+  "version.label": {"message": "Current"},
+  "sidebar.guides.category.创建应用": {"message": "Build an application"},
+  "sidebar.guides.category.开发手册": {"message": "Development guide"},
+  "sidebar.guides.category.发布订阅": {"message": "Publish and subscribe"},
+  "sidebar.guides.category.调用方式": {"message": "Invocation"},
+  "sidebar.guides.category.多协议发布": {"message": "Multi-protocol publishing"},
+  "sidebar.guides.category.服务发现": {"message": "Service discovery"},
+  "sidebar.guides.category.生命周期": {"message": "Lifecycle"},
+  "sidebar.guides.category.框架配置": {"message": "Framework configuration"},
+  "sidebar.guides.category.安全通信": {"message": "Secure communication"},
+  "sidebar.guides.category.协议支持": {"message": "Supported protocols"},
+  "sidebar.guides.category.服务治理": {"message": "Service governance"},
+  "sidebar.guides.category.治理能力": {"message": "Governance features"},
+  "sidebar.guides.category.使用 API": {"message": "Management API"},
+  "sidebar.guides.category.使用控制台": {"message": "Console"},
+  "sidebar.guides.category.使用 Telnet": {"message": "Telnet"},
+  "sidebar.guides.category.框架扩展": {"message": "Framework extensions"}
+}

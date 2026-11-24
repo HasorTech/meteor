@@ -3,6 +3,7 @@ package net.hasor.meteor.console.component.examples;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
@@ -65,5 +66,13 @@ public final class ExampleTemplates {
         }
         String fence = "`".repeat(length);
         return fence + language + "\n" + code.stripTrailing() + "\n" + fence;
+    }
+
+    public static String gradleDependencies(List<String> coordinates) {
+        StringBuilder code = new StringBuilder("dependencies {\n");
+        for (String coordinate : coordinates) {
+            code.append("    implementation '").append(coordinate).append("'\n");
+        }
+        return codeBlock("groovy", code.append('}').toString());
     }
 }

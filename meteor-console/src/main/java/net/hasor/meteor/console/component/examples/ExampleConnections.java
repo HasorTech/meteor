@@ -13,6 +13,7 @@ import net.hasor.meteor.registry.admin.description.MetProtocolDescription;
 
 /** 示例只覆盖普通连接；不能把 TLS 或 WebSocket 端点生成为明文调用。 */
 public final class ExampleConnections {
+    public static final String ADDRESS_PLACEHOLDER = "SERVICE_ADDRESS";
     private static final Set<String> SECURE_SCHEMES = Set.of("https", "wss", "rsfs", "grpcs", "tls", "ssl", "tcps");
 
     private ExampleConnections() {

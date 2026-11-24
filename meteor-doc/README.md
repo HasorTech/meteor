@@ -1,13 +1,13 @@
 # Meteor 文档
 
-在线文档：https://www.hasor.net/rsf/
+在线文档：https://www.hasor.net/meteor/
 
-- 技术文档：`docs/guides/`
-- 版本说明：`docs/releases/`
-- 博客：`blog/`
-- 维护资料：`docs/other/`，不进入公开页面和搜索
+- 技术文档：`docs/cn/docusaurus-plugin-content-docs/current/guides/`
+- 版本说明：`docs/cn/docusaurus-plugin-content-docs/current/releases/`
+- [Meteor 博客](https://www.hasor.net/cn/blog/meteor/)
+- 维护资料：[article/meteor](../../article/meteor/)
 
-本工程沿用 `dbvisitor-doc` 的 Docusaurus 骨架。文章、首页内容和配色归 Meteor 自身维护。
+本工程沿用 `dbvisitor-doc` 的 Docusaurus 骨架。使用指南、版本说明、首页内容和配色由 Meteor 维护。
 
 ## 本地预览
 
@@ -15,15 +15,17 @@
 
 ```sh
 npm ci
-npm run start
+npm run start:alone
 ```
 
-默认地址为 `http://localhost:3000/rsf/`。构建和预览生产站点：
+默认地址为 `http://localhost:4304/`。构建和预览生产站点：
 
 ```sh
 npm run build
 npm run serve -- --host 127.0.0.1 --port 3000
 ```
+
+顶部的语言图标可切换中文和 English。开发时用 `npm run start:alone -- --locale en` 启动英文站，首页为 `http://localhost:4304/en/`。同时预览两种语言时，使用上面的构建及预览命令。
 
 本目录用于构建文档站；Java 模块仍由仓库根目录的 `build.sh` 构建。文档构建必须通过链接、锚点和 Markdown 检查。
 
@@ -31,12 +33,10 @@ npm run serve -- --host 127.0.0.1 --port 3000
 
 ```text
 meteor-doc/
-├── docs/                     # 技术文档、版本记录、维护资料
-├── blog/                     # 文章、作者、标签和专栏
-├── plugins/                  # 版本变量、博客专栏、AI 索引
+├── docs/cn/                  # 中文文档、版本记录
+├── docs/en/                  # 英文文档和界面译稿
+├── plugins/                  # 版本变量、AI 索引
 ├── src/
-│   ├── components/           # 通用博客组件
-│   ├── theme/                # 博客主题覆盖
 │   ├── pages/                # Meteor 首页
 │   └── css/                  # Meteor 配色和文档样式
 ├── static/                   # 图片等静态资源
@@ -55,9 +55,9 @@ meteor-doc/
 
 ## AI 文档索引
 
-与 dbVisitor 一样，通过 `@signalwire/docusaurus-plugin-llms-txt` 收集现有页面，再由 `plugins/llms.js` 整理项目介绍和目录。生产构建生成一个 `build/llms.txt`，技术文档在前，版本记录和博客在 `Optional` 部分。页面的 `rel="describedby"` 指向该索引。
+与 dbVisitor 一样，通过 `@signalwire/docusaurus-plugin-llms-txt` 收集现有页面，再由 `plugins/llms.js` 整理项目介绍和目录。门户模式生成 `build/cn/meteor/llms.txt` 和 `build/en/meteor/llms.txt`，技术文档在前，版本记录在 `Optional` 部分。页面的 `rel="describedby"` 指向该索引。
 
-项目介绍复用 `docs/guides/start/overview.md` 中 `<!-- llms:start -->` 与 `<!-- llms:end -->` 之间的 Markdown。维护介绍时只改正文，不单独维护另一份 AI 简介。索引使用实际发布地址，不包含维护资料、搜索页或聚合页。
+项目介绍复用 各文档语言目录下的 `guides/start/overview.md` 中 `<!-- llms:start -->` 与 `<!-- llms:end -->` 之间的 Markdown。维护介绍时只改正文，不单独维护另一份 AI 简介。索引使用实际发布地址，不包含维护资料、搜索页或聚合页。
 
 ## 版本变量
 
@@ -73,9 +73,7 @@ meteor-doc/
 
 ## 博客维护
 
-文件名为 `YYYY-MM-DD-slug.md` 或 `.mdx`。作者、标签和专栏分别维护在 `authors.yml`、`tags.yml` 和 `topics.yml`；图片归文章自己的资源目录。元数据、标题和更新时间要求见 [AGENTS.md](AGENTS.md)。
-
-博客的列表、标签、专栏、作者页和文章页共用 dbVisitor 的组件与主题结构。只维护 Meteor 的正文、分类和配色，不复制 dbVisitor 的产品内容。
+博客文章和配图在门户工程 `www/docs/cn/docusaurus-plugin-content-blog/meteor/` 维护，配套可运行示例由 Meteor 的 `met-example/` 提供。阅读入口为 [Meteor 博客](https://www.hasor.net/cn/blog/meteor/)。
 
 ## 目录和链接
 
@@ -85,17 +83,15 @@ meteor-doc/
 
 ## 网站发布
 
-默认站点地址为 `https://www.hasor.net/rsf/`。本地或 CI 可通过 `DOCS_URL` 和 `DOCS_BASE_URL` 覆盖；子路径以 `/` 开始和结束。只部署 `build/` 中的静态文件。
-
-发布入口与 dbVisitor 相同：
+在本目录验证门户发布：
 
 ```sh
-./deploy.sh
+./deploy.sh --mode portal --dry-run
 ```
 
-`deploy_site.py` 将站点固定为 `meteor`。配置默认读取 `~/.hasor-docs-deploy.json`，也可通过 `HASOR_DOCS_DEPLOY_CONFIG` 指定文件；格式见 `oss-config.sample.json`，真实凭据不写入仓库。示例按 `/rsf/` 子路径配置，实际 OSS 前缀和 CDN 回源规则需与站点地址一致。
+门户模式读取 `sites.portal`，产物包含 `cn/meteor/`、`en/meteor/` 及自动选语言的 `meteor/` 入口。独立模式使用 `--mode alone`，读取 `sites.meteor`，产物包含 `cn/`、`en/` 和根入口。配置默认位于 `~/.hasor-docs-deploy.json`，也可通过 `HASOR_DOCS_DEPLOY_CONFIG` 指定。
 
-脚本依次构建、上传和刷新 CDN，任一步失败即停止。Python 依赖安装在 `.deploy-venv/`，缓存和发布锁位于仓库 `.gradle/docs-deploy/`。同一工作副本的发布会串行执行；跨工作副本或机器发布时由 CI 串行化。
+实际发布时去掉 `--dry-run`。脚本依次构建、上传和刷新 CDN，任一步失败即停止。Python 依赖位于 `.deploy-venv/`，发布锁位于 `~/.cache/hasor-docs-deploy/`。
 
 也可单独执行：
 
@@ -104,4 +100,4 @@ meteor-doc/
 .deploy-venv/bin/python refresh_website_cdn.py
 ```
 
-`npm run deploy` 是 Docusaurus 自带入口，与 `./deploy.sh` 的 OSS/CDN 流程不同。本次工程整理不执行网站发布。
+`npm run deploy:docusaurus` 是 Docusaurus 自带入口，与 `./deploy.sh` 的 OSS/CDN 流程不同。本次工程整理不执行网站发布。

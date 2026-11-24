@@ -62,6 +62,7 @@ watch(user, (value) => {
 });
 const selected = computed(() => clusters.value.find((c) => c.id === route.value.clusterId));
 const view = computed(() => route.value.view || 'clusters');
+const connectionWorkspace = computed(() => view.value === 'clusters' || view.value === 'direct');
 const scope = computed(() => ({
   mode: route.value.target ? 'direct' : 'registry',
   clusterId: route.value.clusterId,
@@ -230,6 +231,7 @@ onMounted(async () => {
       <SideNavigation v-if="selected && !route.target" />
       <div class="workspace-content">
         <nav
+          v-if="!connectionWorkspace"
           id="breadcrumb-bar"
           :aria-label="$t('ui.breadcrumb')"
         >
@@ -242,15 +244,16 @@ onMounted(async () => {
                 {
                   applications: $t('ui.applications'),
                   services: $t('ui.service-directory'),
-                  global: $t('ui.global-settings'),
-                  clusters: $t('ui.cluster-connections'),
-                  direct: $t('ui.direct-connection')
+                  global: $t('ui.global-settings')
                 }[view] || $t('ui.console')
               }}
             </strong>
           </div>
         </nav>
-        <main class="workspace">
+        <main
+          class="workspace"
+          :class="{ 'connection-workspace': connectionWorkspace }"
+        >
           <Feedback :error="error" />
           <template v-if="!route.clusterId || selected">
             <ClusterList

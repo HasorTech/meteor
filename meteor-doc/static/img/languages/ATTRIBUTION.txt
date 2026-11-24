@@ -1,0 +1,24 @@
+go-gopher.svg
+Go Gopher by Renee French (CC BY 4.0). The original SVG is also rendered in the
+Chinese and English homepage RPC illustrations.
+Source: https://go.dev/images/gophers/blue.svg
+License: https://creativecommons.org/licenses/by/4.0/
+
+nodejs.svg
+Node.js® green JS icon, unmodified, from the official Node.js branding assets.
+Source: https://nodejs.org/en/about/branding/#js-icons
+Trademark policy: https://trademark-policy.openjsf.org/
+
+c.svg
+Traditional C mark by Cobaiahackers, dedicated to the public domain.
+Source: SVG attachment to WG14 paper N3408.
+https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3408.pdf
+
+cplusplus.png
+C++ logo of the Standard C++ Foundation, unmodified.
+Source: https://isocpp.org/files/img/cpp_logo.png
+Terms: https://isocpp.org/home/terms-of-use
+
+terminal.svg
+Terminal icon from GitHub Primer Octicons, under the MIT license in LICENSE-octicons.txt.
+Source: https://github.com/primer/octicons/blob/main/icons/terminal-24.svg

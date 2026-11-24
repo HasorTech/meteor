@@ -3,41 +3,37 @@ import com.google.protobuf.Descriptors;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.util.JsonFormat;
 import io.grpc.CallOptions;
-import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.protobuf.ProtoUtils;
 import io.grpc.stub.ClientCalls;
-import io.grpc.stub.MetadataUtils;
-import java.util.Base64;
+{{javaMetadataImports}}import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public final class ExampleMain {
     public static void main(String[] arguments) throws Exception {
         var files = new HashMap<String, Descriptors.FileDescriptor>();
         var types = new HashMap<String, Descriptors.Descriptor>();
-        var definition = FileDescriptorSet.parseFrom(Base64.getDecoder().decode("{{descriptors}}"));
+        {{javaDescriptors}}
         for (var file : definition.getFileList()) {
             var dependencies = file.getDependencyList().stream().map(files::get)
                     .toArray(Descriptors.FileDescriptor[]::new);
             var descriptor = Descriptors.FileDescriptor.buildFrom(file, dependencies);
             files.put(file.getName(), descriptor);
-            for (var type : descriptor.getMessageTypes()) types.put(type.getFullName(), type);
+            for (var type : descriptor.getMessageTypes()) addType(types, type);
         }
         var input = DynamicMessage.newBuilder(types.get("{{requestType}}"));
-        JsonFormat.parser().merge({{requestJson}}, input);
+        JsonFormat.parser().merge(Files.readString(Path.of("request.json")), input);
         var output = DynamicMessage.getDefaultInstance(types.get("{{responseType}}"));
         var method = MethodDescriptor.<DynamicMessage, DynamicMessage>newBuilder()
                 .setType(MethodDescriptor.MethodType.UNARY)
                 .setFullMethodName("{{methodPath}}".substring(1))
                 .setRequestMarshaller(ProtoUtils.marshaller(input.getDefaultInstanceForType()))
                 .setResponseMarshaller(ProtoUtils.marshaller(output)).build();
-        var headers = new Metadata();
-        headers.put(Metadata.Key.of("tri-service-group", Metadata.ASCII_STRING_MARSHALLER), {{group}});
-        headers.put(Metadata.Key.of("tri-service-version", Metadata.ASCII_STRING_MARSHALLER), {{version}});
-        var channel = NettyChannelBuilder.forAddress("{{host}}", {{port}}).usePlaintext()
-                .intercept(MetadataUtils.newAttachHeadersInterceptor(headers)).build();
+{{javaMetadata}}        var channel = NettyChannelBuilder.forAddress("{{host}}", {{port}}).usePlaintext(){{javaInterceptor}}.build();
         try {
             var result = ClientCalls.blockingUnaryCall(channel, method,
                     CallOptions.DEFAULT.withDeadlineAfter(5, TimeUnit.SECONDS), input.build());
@@ -47,4 +43,9 @@ public final class ExampleMain {
             channel.awaitTermination(5, TimeUnit.SECONDS);
         }
     }
+    private static void addType(Map<String, Descriptors.Descriptor> types, Descriptors.Descriptor type) {
+        types.put(type.getFullName(), type);
+        for (var nested : type.getNestedTypes()) addType(types, nested);
+    }
+
 }

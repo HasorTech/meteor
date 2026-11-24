@@ -1,0 +1,473 @@
+/* Licensed under the Apache License, Version 2.0. See LICENSE.txt. */
+
+.architecture {
+    --diagram-text: #172238;
+    --diagram-muted: #5c626a;
+    --diagram-line: #b56f13;
+    --diagram-border: #e8c992;
+    --diagram-control: #2d51b2;
+    padding-block: clamp(3rem, 5vw, 4.8rem);
+    color: var(--diagram-text);
+    background: #fffaf1;
+}
+
+.heading {
+    margin: 0 auto 1.65rem;
+    text-align: center;
+}
+
+.heading h2 {
+    margin-bottom: .55rem;
+    font-size: clamp(1.7rem, 3.25vw, 2.75rem);
+    line-height: 1.2;
+    font-weight: 700;
+}
+
+.heading p {
+    margin: 0;
+    color: var(--diagram-control);
+}
+
+.topology {
+    --gateway-gap: 12%;
+    --cluster-inset: clamp(.65rem, 2.6vw, 2rem);
+    container-type: inline-size;
+    display: grid;
+    grid-template-columns: 17% var(--gateway-gap) minmax(0, 1fr);
+    grid-template-rows: auto 4rem auto;
+    margin: 0 auto;
+    max-width: 1120px;
+}
+
+.governance {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    padding: .7rem 1rem .9rem;
+    border: 1px solid var(--diagram-border);
+    border-radius: .9rem;
+    background: #fff2da;
+}
+
+.governance h3 {
+    margin: 0 0 .4rem;
+    font-size: .95rem;
+}
+
+.governanceNodes {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 18% minmax(0, 1.15fr);
+    align-items: stretch;
+    margin-inline: 15% 9%;
+}
+
+.governanceNode {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    min-width: 0;
+    padding: .65rem min(2vw, 1.35rem);
+    border: 1px solid var(--diagram-border);
+    border-radius: .65rem;
+    background: #fffbf2;
+}
+
+.governanceNode strong,
+.governanceNode span {
+    display: block;
+    line-height: 1.4;
+}
+
+.governanceNode strong { font-weight: 700; }
+
+.governanceNode span {
+    color: var(--diagram-muted);
+    font-size: .82rem;
+}
+
+.icon {
+    flex: none;
+    width: 2rem;
+    height: 2rem;
+}
+
+.governanceLink,
+.forward,
+.call {
+    position: relative;
+    align-self: center;
+    height: 2px;
+    background: currentColor;
+}
+
+.governanceLink {
+    color: var(--diagram-control);
+}
+
+.governanceLink::before,
+.governanceLink::after,
+.forward::after,
+.call::after {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    width: 8px;
+    height: 8px;
+    background: currentColor;
+    clip-path: polygon(0 0, 100% 50%, 0 100%);
+    content: '';
+    transform: translateY(-50%);
+}
+
+.governanceLink::before {
+    left: 0;
+    right: auto;
+    transform: translateY(-50%) rotate(180deg);
+}
+
+.discoveryLinks {
+    position: relative;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    color: var(--diagram-control);
+}
+
+.discoveryLinks svg,
+.mesh {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+}
+
+.discoveryLinks svg > path,
+.mesh g > path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75px;
+    vector-effect: non-scaling-stroke;
+}
+
+.discoveryLinks svg > path {
+    stroke-dasharray: 5 4;
+}
+
+.readOnly,
+.registration {
+    position: absolute;
+    top: .55rem;
+    font-size: .84rem;
+    font-weight: 600;
+}
+
+.readOnly { left: 10%; }
+.registration { left: calc(36% + .65rem); }
+
+.gateway {
+    grid-column: 1;
+    grid-row: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .6rem;
+    padding: .6rem;
+    border: 1px solid #e4d7bf;
+    border-radius: 1.15rem;
+    background: #faf6ee;
+    color: #665944;
+    text-align: center;
+}
+
+.gateway .icon {
+    width: clamp(1.6rem, 2.9vw, 2.5rem);
+    height: auto;
+    filter: saturate(.5);
+    opacity: .78;
+}
+
+.gateway strong {
+    font-size: clamp(1rem, 1.55vw, 1.2rem);
+    line-height: 1.3;
+    font-weight: 500;
+}
+
+.gateway strong span { display: block; }
+
+.desktopRoute {
+    position: absolute;
+    top: 50%;
+    right: 100%;
+    width: calc(12cqw + var(--cluster-inset) + 2px);
+}
+
+.forward,
+.call {
+    color: var(--diagram-line);
+}
+
+.call::after {
+    left: 0;
+    right: auto;
+    transform: translateY(-50%) rotate(180deg);
+}
+
+.forward span,
+.call span {
+    position: absolute;
+    bottom: .35rem;
+    left: 50%;
+    width: 100%;
+    transform: translateX(-50%);
+    font-size: clamp(.72rem, 1.3vw, .9rem);
+    font-weight: 600;
+    text-align: center;
+}
+
+.mobileRoutes { display: none; }
+
+.cluster {
+    grid-column: 3;
+    grid-row: 3;
+    padding: 0 var(--cluster-inset) clamp(.85rem, 3.4vw, 2.7rem);
+    border: 1px dashed var(--diagram-line);
+    border-radius: 1.1rem;
+    background: #fff6e6;
+}
+
+.clusterHeading {
+    margin: -.8rem auto .7rem;
+    text-align: center;
+}
+
+.clusterHeading h3 {
+    width: fit-content;
+    margin: 0 auto .25rem;
+    padding: .22rem .85rem;
+    border: 1px solid var(--diagram-border);
+    border-radius: 1.4rem;
+    background: #fff0d6;
+    font-size: clamp(1.05rem, 2.35vw, 1.75rem);
+    line-height: 1.2;
+    font-weight: 700;
+}
+
+.services {
+    position: relative;
+    display: grid;
+    grid-template: 30% 40% 30% / 43% 14% 43%;
+    height: clamp(12.6rem, 23vw, 16rem);
+}
+
+.mesh {
+    color: var(--diagram-line);
+}
+
+.service,
+.sidecar {
+    z-index: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: clamp(.35rem, 1vw, .85rem);
+    padding: .4rem clamp(.55rem, 1.9vw, 1.4rem);
+    border: 1px solid var(--diagram-border);
+    border-radius: .68rem;
+    background: #fffbf5;
+    font-size: clamp(.87rem, 1.65vw, 1.25rem);
+    line-height: 1.2;
+}
+
+.service:nth-of-type(1) { grid-area: 1 / 1; }
+.service:nth-of-type(2) { grid-area: 1 / 3; }
+.service:nth-of-type(3) { grid-area: 3 / 1; }
+.service { position: relative; }
+
+.service strong,
+.sidecar strong { font-weight: 700; }
+
+.serviceRole {
+    display: block;
+    margin-top: .2rem;
+    color: var(--diagram-muted);
+    font-size: clamp(.7rem, 1.18vw, .87rem);
+    font-weight: 400;
+}
+
+.sidecar strong .serviceRole {
+    display: inline;
+    margin-inline-start: .35rem;
+}
+
+.service img {
+    flex: none;
+    width: clamp(1.4rem, 3.3vw, 2.75rem);
+    height: auto;
+}
+
+.sidecar {
+    grid-area: 3 / 3;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: .25rem;
+}
+
+.sidecarLanguages {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .25rem;
+}
+
+.sidecarLanguages img {
+    width: clamp(1.15rem, 2.6vw, 2.15rem);
+    height: auto;
+    aspect-ratio: 1;
+    object-fit: contain;
+}
+
+.guides {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(.7rem, 2vw, 1.35rem);
+    margin-top: clamp(2rem, 4.5vw, 3.2rem);
+}
+
+.guide {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: clamp(.9rem, 2.25vw, 1.55rem);
+    border: 1px solid var(--diagram-border);
+    border-radius: .85rem;
+    background: #fffbf4;
+}
+
+.guide h3 {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    margin: 0 0 .55rem;
+    font-size: clamp(1.08rem, 2vw, 1.4rem);
+    font-weight: 700;
+}
+
+.guide p {
+    margin: 0 0 1rem;
+    color: var(--diagram-muted);
+    font-size: .92rem;
+}
+
+.guideLink {
+    display: inline-flex;
+    justify-content: space-between;
+    gap: .55rem;
+    margin-top: auto;
+    padding: .4rem .8rem;
+    border: 1px solid var(--diagram-control);
+    border-radius: .42rem;
+    color: var(--diagram-control);
+    font-size: .9rem;
+    font-weight: 600;
+}
+
+.guideLink:hover,
+.guideLink:focus-visible {
+    background: #ecf2ff;
+    color: var(--diagram-control);
+}
+
+@media (max-width: 700px) {
+    .topology {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto;
+    }
+
+    .governance,
+    .discoveryLinks,
+    .gateway,
+    .mobileRoutes,
+    .cluster {
+        grid-area: auto / 1;
+    }
+
+    .governanceNodes {
+        grid-template-columns: minmax(0, 1fr) 8% minmax(0, 1fr);
+        margin-inline: 0;
+    }
+
+    .governanceNode { padding: .45rem; }
+    .governanceNode .icon { display: none; }
+
+    .discoveryLinks {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-evenly;
+        gap: .35rem .6rem;
+        padding: .5rem .15rem;
+    }
+
+    .discoveryLinks svg { display: none; }
+    .readOnly, .registration { position: static; }
+
+    .gateway {
+        flex-direction: row;
+        gap: .5rem;
+        padding: .4rem;
+    }
+
+    .gateway strong span { display: inline; }
+    .gateway .icon { width: 1.7rem; }
+
+    .desktopRoute { display: none; }
+
+    .mobileRoutes {
+        display: flex;
+        justify-content: center;
+        gap: 1.3rem;
+        padding-bottom: .75rem;
+    }
+
+    .forward,
+    .call {
+        width: 2px;
+        height: 2.4rem;
+    }
+
+    .forward::after {
+        top: auto;
+        right: 50%;
+        bottom: 0;
+        transform: translateX(50%) rotate(90deg);
+    }
+
+    .call::after {
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%) rotate(-90deg);
+    }
+
+    .forward span,
+    .call span {
+        width: max-content;
+        max-width: calc(50cqw - 1.25rem);
+        top: 50%;
+        bottom: auto;
+        line-height: 1.15;
+        transform: translateY(-50%);
+    }
+
+    .call span {
+        left: .55rem;
+    }
+
+    .forward span {
+        left: auto;
+        right: .55rem;
+    }
+
+    .services { min-height: 15rem; }
+    .guides { grid-template-columns: minmax(0, 1fr); }
+}

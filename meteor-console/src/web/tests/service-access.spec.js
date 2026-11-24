@@ -76,6 +76,7 @@ test('service access opens the shared drawer with the selected language and endp
   await expect(drawer.locator('pre code.language-python').first()).not.toBeEmpty();
   await expect(drawer.getByRole('tablist', { name: '示例语言' })).toHaveCount(0);
   await expect(drawer.getByRole('tablist', { name: '调用角色' }).getByRole('tab')).toHaveText([
+    '接口定义',
     '提供者',
     '消费者'
   ]);
@@ -84,9 +85,23 @@ test('service access opens the shared drawer with the selected language and endp
   await protocols.getByRole('tab', { name: 'rsf', exact: true }).click();
   await expect(links.getByRole('button', { name: 'Python', exact: true })).toBeDisabled();
   await links.getByRole('button', { name: 'Meteor', exact: true }).click();
-  await expect(drawer.locator('pre code.language-java').first()).toContainText('MetConfiguration');
+  await expect(drawer.locator('pre code.language-java').last()).toContainText('MetConfiguration');
   await drawer.getByRole('tab', { name: '提供者', exact: true }).click();
-  await expect(drawer.locator('pre code.language-java').first()).toContainText('register()');
+  const javaBlocks = drawer.locator('pre code.language-java');
+  await expect(javaBlocks).toHaveCount(2);
+  const serviceTypes = javaBlocks.first();
+  const mainCode = javaBlocks.last();
+  await expect(serviceTypes).toContainText('@MetService(group = "commerce"');
+  await expect(serviceTypes).toContainText('public interface OrderService {');
+  await expect(serviceTypes).toContainText('class OrderServiceImpl implements OrderService');
+  await expect(serviceTypes).toContainText('// ...');
+  await expect(serviceTypes).not.toContainText('import ');
+  await expect(serviceTypes).not.toContainText('java.lang.String');
+  await expect(mainCode).toContainText('rsfService(OrderService.class, new OrderServiceImpl()).register()');
+  await expect(mainCode).toContainText('context.start()');
+  await expect(mainCode).toContainText('new CountDownLatch(1).await()');
+  await expect(mainCode).not.toContainText('import ');
+  await expect(mainCode).not.toContainText('class OrderServiceImpl');
   await drawer.getByRole('button', { name: '关闭协议示例' }).click();
   await protocols.getByRole('tab').first().focus();
   await page.keyboard.press('ArrowDown');

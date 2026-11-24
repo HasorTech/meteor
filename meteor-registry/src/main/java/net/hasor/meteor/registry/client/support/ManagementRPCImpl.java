@@ -21,6 +21,7 @@ import net.hasor.meteor.domain.ProtocolBinding;
 import net.hasor.meteor.domain.ProtocolConfig;
 import net.hasor.meteor.domain.ServiceDomain;
 import net.hasor.meteor.domain.meta.ProtocolMeta;
+import net.hasor.meteor.domain.meta.ServiceMeta;
 import net.hasor.meteor.domain.warp.MetBindInfoWrap;
 import net.hasor.meteor.registry.RegistryTokenProvider;
 import net.hasor.meteor.registry.admin.MetEndpointType;
@@ -740,7 +741,13 @@ public final class ManagementRPCImpl implements ManagementRPC {
     }
 
     private ObjectNode description(MetBindInfo<?> service) {
-        ObjectNode description = MetBindInfoWrap.unwrap(service).getServiceMeta().createServiceDescription();
+        ServiceMeta declaration = MetBindInfoWrap.unwrap(service).getServiceMeta();
+        ObjectNode description = declaration.createServiceDescription();
+        description.putObject("javaDeclaration")
+                .put("group", declaration.getGroup())
+                .put("name", declaration.getName())
+                .put("version", declaration.getVersion())
+                .put("serializeType", declaration.getSerializeType());
         description.put("message", service.isMessage());
         if (service.isMessage()) {
             description.withArray("methods").forEach(method -> ((ObjectNode) method).put("message", true));

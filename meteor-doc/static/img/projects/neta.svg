@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+  <title>Neta</title>
+  <defs>
+    <linearGradient id="ocean" x1="14" y1="11" x2="67" y2="71" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#91B5B2"/>
+      <stop offset="1" stop-color="#486F78"/>
+    </linearGradient>
+    <clipPath id="earth"><circle cx="40" cy="40" r="35.5"/></clipPath>
+  </defs>
+  <g transform="translate(11 4) scale(.9)">
+    <circle cx="40" cy="40" r="35.5" fill="url(#ocean)"/>
+    <g fill="#8CAFA1" clip-path="url(#earth)">
+      <path d="M5 29 15 19l8-5 13 2 1 6-9 4 3 4-7 4-2 8-6 2-3-9-8-2Zm22 17 9-1 4 8 7 4-3 10-7 6-5-8-2-9Zm19-26 11-6 15 8 6 13-8 5-8-4-7 4-7-2-5 5-9-10Zm11 24 8-3 8 9-4 8-7 1-5 9-7-4 1-9-4-5Z"/>
+      <path d="M11 48q7 16 25 22" fill="none" stroke="#ADCFC8" stroke-width="2" stroke-linecap="round" opacity=".44"/>
+    </g>
+  </g>
+  <g transform="rotate(-9 30 47) translate(4 10) scale(.83)">
+    <path d="M50 41C45 30 44 24 38 18 30 11 17 7 5 5c5 6 10 12 16 16 8 6 10 13 11 21Z" fill="#CBDCD5"/>
+    <path d="M5 5c10 2 20 5 27 9l-6 11C17 19 11 13 5 5Z" fill="#2B5159"/>
+    <path d="M41 48c-7 5-13 9-25 11l-5-3 6-5-8-1 20-8Z" fill="#CBDCD5"/>
+    <path d="M32 38c10-5 19-3 25-6 4-3 7-6 13-5 5 1 8 4 8 9l2 3-3 4-5-1c-3 2-7 1-10 0-5 8-12 13-23 13-7 0-12-2-17-5C14 55 7 58 0 57l12-9c7-4 13-7 20-10Z" fill="#FAF7E9"/>
+    <path d="M0 57c7 1 13-2 22-7l-5-5C11 49 5 53 0 57Z" fill="#2B5159"/>
+    <path d="m77 35 3 4-2 4-5-2Z" fill="#D9B967"/>
+    <circle cx="72.2" cy="34.1" r="1.8" fill="#304554"/>
+  </g>
+</svg>

@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="6 8 244 240" width="244" height="240" role="img" aria-labelledby="title desc">
+  <title id="title">dbVisitor crab</title>
+  <desc id="desc">A smiling coral-red crab with raised claws and two tall eyes on a transparent background.</desc>
+  <defs>
+    <path id="shell" d="M208 165C208 197 173 219 128 219S49 200 49 168C49 137 84 113 127 113S208 132 208 165Z"/>
+    <clipPath id="shell-clip"><use href="#shell"/></clipPath>
+  </defs>
+
+  <!-- Six legs, behind the shell. -->
+  <g id="legs" stroke="#050505" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">
+    <path fill="#ed321f" d="M51 159L24 164Q21 165 20 169L12 196Q11 202 15 198L29 177L51 174Z"/>
+    <path fill="#ff684b" d="M56 181L35 190Q33 191 33 195L31 225Q31 229 34 226L44 199L65 193Z"/>
+    <path fill="#ed321f" d="M74 204L55 214Q52 215 54 221L59 241Q61 245 63 240L65 222L85 213Z"/>
+    <path fill="#ed321f" d="M205 159L232 164Q235 165 236 169L244 196Q245 202 241 198L227 177L205 174Z"/>
+    <path fill="#ff886a" d="M200 181L221 190Q223 191 223 195L225 225Q225 229 222 226L212 199L191 193Z"/>
+    <path fill="#ed321f" d="M182 204L201 214Q204 215 202 221L197 241Q195 245 193 240L191 222L171 213Z"/>
+  </g>
+
+  <!-- Claw arms and joints. -->
+  <g id="arms" stroke="#050505" stroke-width="6" stroke-linejoin="round">
+    <path fill="#fa6244" d="M38 133L50 146L60 133L45 122Z"/>
+    <path fill="#fa6244" d="M218 133L206 146L196 133L211 122Z"/>
+    <circle fill="#ed2f1c" cx="40" cy="127" r="9"/>
+    <circle fill="#ed2f1c" cx="216" cy="127" r="9"/>
+  </g>
+
+  <!-- Two pincers on each claw; the asymmetrical colors follow the original. -->
+  <g id="claws" stroke="#050505" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <path fill="#ed241e" d="M40 73C52 81 60 98 56 109C54 117 48 122 41 124L35 105Z"/>
+    <path fill="#ff795b" d="M18 70C11 81 9 95 12 106C15 117 23 124 32 124C40 124 47 120 49 111Z"/>
+    <path fill="#ff9b80" d="M216 73C204 81 196 98 200 109C202 117 208 122 215 124L221 105Z"/>
+    <path fill="#f92f23" d="M238 70C245 81 247 95 244 106C241 117 233 124 224 124C216 124 209 120 207 111Z"/>
+    <path fill="#ff5b3d" stroke="none" d="M236 79C240 95 235 111 224 118C219 121 214 118 211 112Z"/>
+  </g>
+
+  <!-- Eye stalks, followed by dark eye capsules and separate opaque eye whites. -->
+  <g id="eye-stalks" fill="#ed321f" stroke="#050505" stroke-width="5.5" stroke-linejoin="round">
+    <path d="M98 94H109V115H98Z"/>
+    <path d="M147 94H158V115H147Z"/>
+  </g>
+  <g id="eyes">
+    <g id="left-eye">
+      <rect x="91" y="13" width="24" height="83" rx="12" fill="#28323c" stroke="#050505" stroke-width="6"/>
+      <path fill="#fff9e8" d="M102 16C97.6 16 94 20 94 25V83C94 88.5 97 92.5 102 93V27C102 25 106 23 106 20C106 17.5 104.5 16 102 16Z"/>
+    </g>
+    <g id="right-eye" transform="translate(49)">
+      <rect x="91" y="13" width="24" height="83" rx="12" fill="#28323c" stroke="#050505" stroke-width="6"/>
+      <path fill="#fff9e8" d="M102 16C97.6 16 94 20 94 25V83C94 88.5 97 92.5 102 93V27C102 25 106 23 106 20C106 17.5 104.5 16 102 16Z"/>
+    </g>
+  </g>
+
+  <!-- The shell has two simple color accents, not a raster texture. -->
+  <g id="body">
+    <use href="#shell" fill="#f95f42"/>
+    <g clip-path="url(#shell-clip)">
+      <path fill="#f03821" d="M169 124C194 134 207 149 207 165C207 196 173 216 132 217C100 218 79 209 64 195C80 205 103 210 127 209C163 209 192 190 194 166C195 147 185 134 169 124Z"/>
+      <path fill="#ff987e" d="M161 120C124 109 88 121 67 143C51 159 48 179 64 197C56 173 65 150 90 135C113 122 137 119 161 120Z"/>
+    </g>
+    <use href="#shell" fill="none" stroke="#050505" stroke-width="6" stroke-linejoin="round"/>
+    <path id="smile" d="M115 131C117 141 134 143 139 131" fill="none" stroke="#050505" stroke-width="6" stroke-linecap="round"/>
+  </g>
+</svg>

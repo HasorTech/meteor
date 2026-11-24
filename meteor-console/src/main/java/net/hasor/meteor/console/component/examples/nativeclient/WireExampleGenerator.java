@@ -1,12 +1,7 @@
 /* Copyright 2015-2026 the original author or authors. Licensed under the Apache License, Version 2.0. */
 package net.hasor.meteor.console.component.examples.nativeclient;
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
-import com.caucho.hessian.io.Hessian2Output;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.hasor.cobble.StringUtils;
 import net.hasor.meteor.console.component.commands.dto.service.ExampleTarget;
@@ -29,88 +24,78 @@ public final class WireExampleGenerator {
         var binding = target.getEndpoint().getDescription();
         JsonNode method = JsonUtils.valueToTree(binding.getMethods()).get(0);
         String operation = method.path("name").asText();
-        try {
-            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-            DataOutputStream output = new DataOutputStream(bytes);
-            if (protocol.startsWith("thrift")) {
-                // 示例只生成 TBinaryProtocol；Compact/JSON 由原生 Java SDK 文档处理。
-                String coding = binding.getSerializeType();
-                if (StringUtils.equalsIgnoreCase(coding, "compact") || StringUtils.equalsIgnoreCase(coding, "json")) {
-                    return List.of();
-                }
-                String name = operation;
-                if (Boolean.TRUE.equals(binding.getExtensions().get("multiplexed"))) {
-                    name = binding.getExtensions().get("multiplexedName") + ":" + name;
-                }
-                output.writeInt(0x80010001);
-                this.text(output, name);
-                output.writeInt(1);
-                JsonNode types = JsonUtils.valueToTree(binding.getTypes());
-                for (JsonNode field : method.path("parameters")) {
-                    this.thriftField(types, field, output, new HashSet<>());
-                }
-                output.writeByte(0);
-                if (StringUtils.equals(protocol, "thrift-http")) {
-                    return http(HttpRequestExampleGenerator.endpoint(target, address, "http"), bytes.toByteArray(), Map.of("Content-Type", "application/x-thrift"), operation, List.of("python", "javascript", "go", "c", "cpp", "browser", "shell"));
-                }
-                if (!Boolean.TRUE.equals(binding.getExtensions().get("framed"))) {
-                    return List.of(); // 无帧传输需使用能按类型流读取的 SDK。
-                }
-                return this.socket(target, address, frame(bytes.toByteArray(), false), operation);
+        if (protocol.startsWith("thrift")) {
+            String coding = binding.getSerializeType();
+            if (StringUtils.equalsIgnoreCase(coding, "compact") || StringUtils.equalsIgnoreCase(coding, "json")) {
+                return List.of();
             }
-            if (protocol.startsWith("oncrpc")) {
-                // 固定事务号只用于本次独占连接；不经 rpcbind，直接访问发布端口。
-                output.writeInt(1);
-                output.writeInt(0);
-                output.writeInt(2);
-                output.writeInt(((Number) binding.getExtensions().get("program")).intValue());
-                output.writeInt(((Number) binding.getExtensions().get("version")).intValue());
-                output.writeInt(method.path("procedureId").asInt());
-                for (int index = 0; index < 4; index++) {
-                    output.writeInt(0); // AUTH_NONE credentials and verifier
-                }
-                this.xdr(JsonUtils.valueToTree(binding.getTypes()), method.path("requestType").asText(), output, new HashSet<>());
-                byte[] body = bytes.toByteArray();
-                if (!StringUtils.equals(protocol, "oncrpc-udp")) {
-                    body = frame(body, true);
-                }
-                return this.socket(target, address, body, operation);
+            String name = operation;
+            if (Boolean.TRUE.equals(binding.getExtensions().get("multiplexed"))) {
+                name = binding.getExtensions().get("multiplexedName") + ":" + name;
             }
-            Map<String, Object> selected = binding.getMethods().get(0);
-            Map<String, Object> call = HttpExampleGenerator.call(target.getDescription(), binding, selected, protocol);
-            List<?> arguments = (List<?>) call.get("args");
-            if (StringUtils.equals(protocol, "hprose")) {
-                output.writeByte('C');
-                this.hprose(JsonUtils.valueToTree(call.get("method")), output);
-                this.hprose(JsonUtils.valueToTree(arguments), output);
-                output.writeByte('z');
-            } else {
-                Hessian2Output hessian = new Hessian2Output(bytes);
-                hessian.call(operation, arguments.toArray());
-                hessian.flush();
+            var packet = new RequestScript();
+            packet.write("I", 0x80010001);
+            packet.text(name, false);
+            packet.write("i", 1); // Sequence ID
+            JsonNode types = JsonUtils.valueToTree(binding.getTypes());
+            for (JsonNode field : method.path("parameters")) {
+                this.thriftField(types, field, packet, new HashSet<>());
             }
-            String mediaType = "application/hprose";
-            if (StringUtils.equals(protocol, "hessian")) {
-                mediaType = "application/x-hessian";
+            packet.write("B", 0);
+            String contract = ExampleTemplates.codeBlock("thrift", BinaryContracts.thrift(BinaryContracts.onlyMethod(binding, binding.getMethods().get(0))));
+            if (StringUtils.equals(protocol, "thrift-http")) {
+                return http(HttpRequestExampleGenerator.endpoint(target, address, "http"),
+                        contract + "\n\n" + packet.document("packet"), Map.of("Content-Type", "application/x-thrift"),
+                        List.of("python", "javascript", "go", "c", "cpp", "browser", "shell"));
             }
-            return http(HttpRequestExampleGenerator.endpoint(target, address, "http"), bytes.toByteArray(), Map.of("Content-Type", mediaType), operation, List.of("python", "javascript", "go", "cpp", "browser", "shell"));
-        } catch (IOException failure) {
-            throw new ErrorMessageException(failure, ConsoleMessageKey.ERROR_COULD_NOT_CONSTRUCT_A_NATIVE_REQUEST);
+            if (!Boolean.TRUE.equals(binding.getExtensions().get("framed"))) {
+                return List.of();
+            }
+            return this.socket(target, address, contract + "\n\n" + packet.document("pack(\">I\", len(packet)) + packet"));
         }
+        if (protocol.startsWith("oncrpc")) {
+            var packet = new RequestScript();
+            packet.write("III", 1, 0, 2); // XID, CALL, RPC version
+            packet.write("III", ((Number) binding.getExtensions().get("program")).intValue(),
+                    ((Number) binding.getExtensions().get("version")).intValue(), method.path("procedureId").asInt());
+            packet.write("IIII", 0, 0, 0, 0); // AUTH_NONE credentials and verifier
+            this.xdr(JsonUtils.valueToTree(binding.getTypes()), method.path("requestType").asText(), packet, new HashSet<>());
+            String body = "packet";
+            if (!StringUtils.equals(protocol, "oncrpc-udp")) {
+                body = "pack(\">I\", 0x80000000 | len(packet)) + packet";
+            }
+            String contract = ExampleTemplates.codeBlock("xdr", BinaryContracts.oncrpc(BinaryContracts.onlyMethod(binding, binding.getMethods().get(0))));
+            return this.socket(target, address, contract + "\n\n" + packet.document(body));
+        }
+
+        Map<String, Object> call = HttpExampleGenerator.call(target.getDescription(), binding, binding.getMethods().get(0), protocol);
+        String mediaType = "application/" + protocol;
+        if (StringUtils.equals(protocol, "hessian")) {
+            mediaType = "application/x-hessian";
+        }
+        String name = operation;
+        if (StringUtils.equals(protocol, "hprose")) {
+            name = Objects.toString(call.get("method"));
+        }
+        String script = ExampleTemplates.render("wire/" + protocol + "-request.py.tpl", Map.of("method", literal(name)));
+        String setup = ExampleTemplates.codeBlock("json arguments.json", JsonUtils.valueToTree(call.get("args")).toPrettyString())
+                + "\n\n" + requestScript(script);
+        return http(HttpRequestExampleGenerator.endpoint(target, address, "http"), setup,
+                Map.of("Content-Type", mediaType), List.of("python", "javascript", "go", "cpp", "browser", "shell"));
     }
 
-    static byte[] frame(byte[] body, boolean last) throws IOException {
-        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        DataOutputStream output = new DataOutputStream(bytes);
-        output.writeInt(body.length | (last ? 0x80000000 : 0));
-        output.write(body);
-        return bytes.toByteArray();
+    static String requestScript(String source) {
+        return ExampleTemplates.codeBlock("python request.py", source)
+                + "\n\n" + ExampleTemplates.codeBlock("bash", "python3 request.py");
     }
 
-    static List<ExampleDocument> http(String url, byte[] body, Map<String, String> headers, String operation, List<String> languages) {
-        Map<String, String> values = values(body, operation);
+    static List<ExampleDocument> http(String url, String setup, Map<String, String> headers, List<String> languages) {
+        Map<String, String> values = new LinkedHashMap<>();
         values.put("url", literal(url));
         values.put("headers", literal(headers));
+        boolean http2 = StringUtils.equals(headers.get("Content-Type"), "application/grpc+proto");
+        values.put("curlHttpVersion", http2 ? "    curl_easy_setopt(client, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE);\n" : "");
+        values.put("shellHttpVersion", http2 ? " --http2-prior-knowledge" : "");
         StringBuilder curl = new StringBuilder();
         StringBuilder shell = new StringBuilder();
         headers.forEach((name, value) -> {
@@ -120,35 +105,25 @@ public final class WireExampleGenerator {
         values.put("curlHeaders", curl.toString().stripTrailing());
         values.put("shellHeaders", shell.toString().stripTrailing());
         values.put("shellUrl", quote(url));
-        return documents("http", values, languages);
+        return documents("http", values, setup, languages);
     }
 
-    private List<ExampleDocument> socket(ExampleTarget target, String address, byte[] body, String operation) {
+    private List<ExampleDocument> socket(ExampleTarget target, String address, String setup) {
         URI uri = URI.create(target.getAddress());
-        Map<String, String> values = values(body, operation);
-        values.put("host", literal(StringUtils.isBlank(address) ? "请填写服务地址" : uri.getHost()));
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put("host", literal(StringUtils.isBlank(address) ? ExampleConnections.ADDRESS_PLACEHOLDER : uri.getHost()));
         values.put("port", Integer.toString(uri.getPort()));
         boolean udp = StringUtils.equals(target.getEndpoint().getTransport(), "udp");
-        values.put("udp", Boolean.toString(udp));
-        values.put("thrift", Boolean.toString(StringUtils.equals(target.getEndpoint().getProtocolName(), "thrift")));
-        values.put("network", udp ? "udp" : "tcp");
-        values.put("socketKind", udp ? "SOCK_DGRAM" : "SOCK_STREAM");
-        return documents("socket", values, List.of("python", "javascript", "go", "c", "cpp"));
-    }
-
-    private static Map<String, String> values(byte[] body, String operation) {
-        Map<String, String> values = new LinkedHashMap<>();
-        values.put("body", Base64.getEncoder().encodeToString(body));
-        List<String> bytes = new ArrayList<>();
-        for (byte value : body) {
-            bytes.add(Integer.toString(value & 255));
+        if (udp) {
+            return documents("udp", values, setup, List.of("c", "cpp"));
         }
-        values.put("bytes", String.join(", ", bytes));
-        values.put("operation", operation);
-        return values;
+        if (StringUtils.equals(target.getEndpoint().getProtocolName(), "thrift")) {
+            return documents("framed", values, setup, List.of("python", "javascript", "go", "c", "cpp"));
+        }
+        return documents("record", values, setup, List.of("python", "javascript", "go", "c", "cpp"));
     }
 
-    private static List<ExampleDocument> documents(String transport, Map<String, String> values, List<String> languages) {
+    private static List<ExampleDocument> documents(String transport, Map<String, String> values, String setup, List<String> languages) {
         List<ExampleDocument> result = new ArrayList<>();
         for (String language : languages) {
             String extension = switch (language) {
@@ -158,113 +133,119 @@ public final class WireExampleGenerator {
                 case "shell" -> "sh";
                 default -> "mjs";
             };
-            Map<String, String> context = new LinkedHashMap<>(values);
-            if (StringUtils.equals(language, "python")) {
-                context.computeIfPresent("udp", (key, value) -> StringUtils.equals(value, "true") ? "True" : "False");
-                context.computeIfPresent("thrift", (key, value) -> {
-                    if (StringUtils.equals(value, "true")) {
-                        return "True";
-                    }
-                    return "False";
-                });
-            }
             String syntax = language;
             if (StringUtils.equals(language, "browser")) {
                 syntax = "javascript";
             } else if (StringUtils.equals(language, "shell")) {
                 syntax = "bash";
             }
-            String dependency = "使用标准网络 API";
-            if (StringUtils.equals(transport, "http") && List.of("c", "cpp").contains(language)) {
-                dependency = "依赖 libcurl（启用 HTTP/2）";
-            } else if (StringUtils.equals(language, "shell")) {
-                dependency = "依赖支持 HTTP/2 的 curl、base64、od";
+            String template = transport;
+            Map<String, String> context = new LinkedHashMap<>(values);
+            if (StringUtils.equals(transport, "http")) {
+                if (StringUtils.equals(language, "browser")) {
+                    context.put("jsBody", "const body = await (await fetch('./request.bin')).arrayBuffer();");
+                } else if (StringUtils.equals(language, "javascript")) {
+                    context.put("jsBody", "import { readFileSync } from 'node:fs';\n\nconst body = readFileSync('request.bin');");
+                }
+            } else {
+                template = "socket";
+                if (StringUtils.equals(extension, "c")) {
+                    boolean udp = StringUtils.equals(transport, "udp");
+                    context.put("socketKind", udp ? "SOCK_DGRAM" : "SOCK_STREAM");
+                    context.put("reader", udp ? "" : ExampleTemplates.render("wire/socket-reader.c.tpl", values));
+                }
+                String receive = ExampleTemplates.render("wire/" + transport + "-receive." + extension + ".tpl", values);
+                context.put("receive", receive.stripTrailing());
             }
-            String code = ExampleTemplates.render("wire/" + transport + "." + extension + ".tpl", context);
-            String markdown = dependency + "。以下是当前方法的最小报文调用，内嵌请求已按服务契约编码，响应以十六进制展示。" + " 修改业务数据应使用该协议的类型绑定重新编码。\n\n" + ExampleTemplates.codeBlock(syntax, code);
-            result.add(new ExampleDocument(language + "-direct", language, "direct", markdown));
+            String code = ExampleTemplates.render("wire/" + template + "." + extension + ".tpl", context);
+            String markdown = ExampleTemplates.codeBlock(syntax, code);
+            if (StringUtils.equals(transport, "http")) {
+                if (StringUtils.equals(language, "c")) {
+                    markdown = ExampleTemplates.codeBlock("bash", "cc consumer.c -o consumer -lcurl") + "\n\n" + markdown;
+                } else if (StringUtils.equals(language, "cpp")) {
+                    markdown = ExampleTemplates.codeBlock("bash", "c++ consumer.cpp -o consumer -lcurl") + "\n\n" + markdown;
+                }
+            }
+            result.add(new ExampleDocument(language + "-direct", language, "direct", setup + "\n\n" + markdown));
         }
         return result;
     }
 
-    private void thriftField(JsonNode types, JsonNode field, DataOutputStream output, Set<String> parents) throws IOException {
+    private void thriftField(JsonNode types, JsonNode field, RequestScript packet, Set<String> parents) {
         String reference = field.path("type").asText();
         JsonNode type = BinaryContracts.required(types, reference);
         if (parents.contains(reference) && !StringUtils.equals(field.path("requirement").asText(), "required")) {
             return;
         }
-        output.writeByte(type.path("wireType").asInt());
-        output.writeShort(field.path("fieldId").asInt());
-        this.thrift(types, reference, output, parents);
+        packet.field(field.path("name").asText());
+        packet.write("B", type.path("wireType").asInt());
+        packet.write("h", field.path("fieldId").asInt());
+        this.thrift(types, reference, packet, parents);
     }
 
-    private void thrift(JsonNode types, String reference, DataOutputStream output, Set<String> parents) throws IOException {
+    private void thrift(JsonNode types, String reference, RequestScript packet, Set<String> parents) {
         if (!parents.add(reference)) {
             throw new ErrorMessageException(ConsoleMessageKey.ERROR_A_REQUIRED_RECURSIVE_THRIFT_ARGUMENT_NEEDS);
         }
         JsonNode type = BinaryContracts.required(types, reference);
         switch (type.path("wireType").asInt()) {
-            case 2, 3 -> output.writeByte(0);
-            case 4 -> output.writeDouble(1);
-            case 6 -> output.writeShort(1);
+            case 2, 3 -> packet.write("B", 0);
+            case 4 -> packet.write("d", 1);
+            case 6 -> packet.write("h", 1);
             case 8 -> {
                 int value = 1;
                 if (!type.path("values").isEmpty()) {
                     value = type.path("values").get(0).path("fieldId").asInt();
                 }
-                output.writeInt(value);
+                packet.write("i", value);
             }
-            case 10 -> output.writeLong(1);
-            case 11 -> this.text(output, "example");
+            case 10 -> packet.write("q", 1);
+            case 11 -> packet.text("example", false);
             case 12 -> {
                 for (JsonNode field : type.path("fields")) {
-                    this.thriftField(types, field, output, new HashSet<>(parents));
+                    this.thriftField(types, field, packet, new HashSet<>(parents));
                     if (type.path("union").asBoolean()) {
                         break;
                     }
                 }
-                output.writeByte(0);
+                packet.write("B", 0);
             }
             case 13 -> {
-                output.writeByte(BinaryContracts.required(types, type.path("keyType").asText()).path("wireType").asInt());
-                output.writeByte(BinaryContracts.required(types, type.path("elementType").asText()).path("wireType").asInt());
-                output.writeInt(0);
+                packet.write("B", BinaryContracts.required(types, type.path("keyType").asText()).path("wireType").asInt());
+                packet.write("B", BinaryContracts.required(types, type.path("elementType").asText()).path("wireType").asInt());
+                packet.write("i", 0);
             }
             case 14, 15 -> {
-                output.writeByte(BinaryContracts.required(types, type.path("elementType").asText()).path("wireType").asInt());
-                output.writeInt(0);
+                packet.write("B", BinaryContracts.required(types, type.path("elementType").asText()).path("wireType").asInt());
+                packet.write("i", 0);
             }
             case 16 -> {
-                output.writeLong(0);
-                output.writeLong(1);
+                packet.write("q", 0);
+                packet.write("q", 1);
             }
             default -> throw new ErrorMessageException(ConsoleMessageKey.ERROR_UNSUPPORTED_THRIFT_SAMPLE_TYPE);
         }
     }
 
-    private void xdr(JsonNode types, String reference, DataOutputStream output, Set<String> parents) throws IOException {
+    private void xdr(JsonNode types, String reference, RequestScript packet, Set<String> parents) {
         if (!parents.add(reference)) {
             throw new ErrorMessageException(ConsoleMessageKey.ERROR_A_REQUIRED_RECURSIVE_XDR_ARGUMENT_NEEDS);
         }
         JsonNode type = BinaryContracts.required(types, reference);
         switch (type.path("kind").asText()) {
-            case "int", "unsignedInt" -> output.writeInt(1);
-            case "enum" -> output.writeInt(type.path("values").get(0).path("fieldId").asInt());
-            case "bool", "boolean", "optional" -> output.writeInt(0);
-            case "hyper", "unsignedHyper" -> output.writeLong(1);
-            case "float" -> output.writeFloat(1);
-            case "double" -> output.writeDouble(1);
+            case "int", "unsignedInt" -> packet.write("i", 1);
+            case "enum" -> packet.write("i", type.path("values").get(0).path("fieldId").asInt());
+            case "bool", "boolean", "optional" -> packet.write("i", 0);
+            case "hyper", "unsignedHyper" -> packet.write("q", 1);
+            case "float" -> packet.write("f", 1);
+            case "double" -> packet.write("d", 1);
             case "void" -> {
             }
-            case "string" -> {
-                byte[] text = "example".getBytes(StandardCharsets.UTF_8);
-                output.writeInt(text.length);
-                output.write(text);
-                output.write(new byte[(4 - text.length % 4) % 4]);
-            }
+            case "string" -> packet.text("example", true);
             case "struct" -> {
                 for (JsonNode member : type.path("members")) {
-                    this.xdr(types, member.path("type").asText(), output, new HashSet<>(parents));
+                    packet.field(member.path("name").asText());
+                    this.xdr(types, member.path("type").asText(), packet, new HashSet<>(parents));
                 }
             }
             case "array" -> {
@@ -274,10 +255,10 @@ public final class WireExampleGenerator {
                         throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_FIXED_LENGTH_XDR_SAMPLE_ARRAY);
                     }
                     for (int index = 0; index < length; index++) {
-                        this.xdr(types, type.path("elementType").asText(), output, new HashSet<>(parents));
+                        this.xdr(types, type.path("elementType").asText(), packet, new HashSet<>(parents));
                     }
                 } else {
-                    output.writeInt(0);
+                    packet.write("i", 0);
                 }
             }
             case "opaque" -> {
@@ -288,54 +269,61 @@ public final class WireExampleGenerator {
                         throw new ErrorMessageException(ConsoleMessageKey.ERROR_THE_FIXED_LENGTH_XDR_OPAQUE_SAMPLE);
                     }
                 } else {
-                    output.writeInt(0);
+                    packet.write("i", 0);
                 }
-                output.write(new byte[length + (4 - length % 4) % 4]);
+                packet.zeroes(length + (4 - length % 4) % 4);
             }
             default -> throw new ErrorMessageException(ConsoleMessageKey.ERROR_THIS_XDR_TYPE_REQUIRES_AN_EXPLICIT_2);
         }
     }
 
-    private void hprose(JsonNode value, DataOutputStream output) throws IOException {
-        if (value.isTextual()) {
-            String text = value.asText();
-            output.writeByte('s');
-            output.writeBytes(Integer.toString(text.length()));
-            output.writeByte('"');
-            output.write(text.getBytes(StandardCharsets.UTF_8));
-            output.writeByte('"');
-        } else if (value.isArray() || value.isObject()) {
-            output.writeByte(value.isArray() ? 'a' : 'm');
-            output.writeBytes(Integer.toString(value.size()));
-            output.writeByte('{');
-            if (value.isArray()) {
-                for (JsonNode item : value) {
-                    this.hprose(item, output);
-                }
-            } else {
-                var fields = value.fields();
-                while (fields.hasNext()) {
-                    var field = fields.next();
-                    this.hprose(JsonUtils.valueToTree(field.getKey()), output);
-                    this.hprose(field.getValue(), output);
+    private static final class RequestScript {
+        private final StringBuilder code = new StringBuilder();
+        private boolean text;
+        private boolean padded;
+
+        void field(String name) {
+            this.code.append("# ").append(name.replace("\r", " ").replace("\n", " ")).append('\n');
+        }
+
+        void write(String format, int... values) {
+            this.code.append("packet += pack(\">").append(format).append("\"");
+            for (int value : values) {
+                this.code.append(", ");
+                if (value < 0 && format.contains("I")) {
+                    this.code.append("0x").append(Integer.toHexString(value));
+                } else {
+                    this.code.append(value);
                 }
             }
-            output.writeByte('}');
-        } else if (value.isBoolean()) {
-            output.writeByte(value.asBoolean() ? 't' : 'f');
-        } else if (value.isNumber()) {
-            output.writeByte(value.isIntegralNumber() ? 'l' : 'd');
-            output.writeBytes(value.asText());
-            output.writeByte(';');
-        } else {
-            output.writeByte('n');
+            this.code.append(")\n");
         }
-    }
 
-    private void text(DataOutputStream output, String text) throws IOException {
-        byte[] bytes = text.getBytes(StandardCharsets.UTF_8);
-        output.writeInt(bytes.length);
-        output.write(bytes);
+        void text(String value, boolean xdr) {
+            this.text = true;
+            this.padded = xdr;
+            this.code.append("packet += text(").append(literal(value)).append(")\n");
+        }
+
+        void zeroes(int length) {
+            if (length > 0) {
+                this.code.append("packet += bytes(").append(length).append(")\n");
+            }
+        }
+
+        String document(String body) {
+            var script = new StringBuilder("from pathlib import Path\nfrom struct import pack\n\n");
+            if (this.text) {
+                script.append("def text(value):\n    data = value.encode(\"utf-8\")\n    return pack(\">I\", len(data)) + data");
+                if (this.padded) {
+                    script.append(" + bytes(-len(data) % 4)");
+                }
+                script.append("\n\n");
+            }
+            script.append("packet = bytearray()\n").append(this.code);
+            script.append("Path(\"request.bin\").write_bytes(").append(body).append(")\n");
+            return requestScript(script.toString());
+        }
     }
 
     private static String quote(String text) {

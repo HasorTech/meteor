@@ -33,6 +33,7 @@ import net.hasor.meteor.console.ConsoleMain;
 import net.hasor.meteor.console.utils.JsonUtils;
 import net.hasor.meteor.example.api.DebugMessage;
 import net.hasor.meteor.example.api.EchoService;
+import net.hasor.realmeteor.console.ProtoExampleCompiler;
 import net.hasor.meteor.registry.RegistryConfiguration;
 import net.hasor.meteor.test.scenario.api.InvocationEcho;
 import net.hasor.meteor.test.scenario.api.InvocationNestedApi;
@@ -231,9 +232,9 @@ public class ConsoleInvocationExamplesTest {
         }
     }
 
-    @ParameterizedTest(name = "{0} Java 文档使用真实业务 API 依赖编译")
+    @ParameterizedTest(name = "{0} Meteor 直连示例调用实际服务")
     @ValueSource(strings = { "rsf", "dubbo", "thrift", "thrift-http", "oncrpc", "oncrpc-udp", "hprose", "jsonrpc", "xmlrpc", "hessian", "soap", "grpc", "grpc-web", "connect", "triple" })
-    public void generatedJavaDocumentCompilesWithTheDeclaredBusinessApiDependency(String protocol) throws Exception {
+    public void generatedJavaDocumentCallsTheActualProvider(String protocol) throws Exception {
         MetConfiguration configuration = configuration(this.directory.resolve("provider"), protocol);
         Boot boot = new Boot().sources(ConsoleMain.class).hconfigFile(console(this.directory));
         try (MetContext provider = configuration.buildContext(); //
@@ -245,18 +246,158 @@ public class ConsoleInvocationExamplesTest {
             api.login();
             String selected = query(api, provider, id, protocol);
             var rendered = api.get("examples/render?" + selected);
+            var codeBlocks = Pattern.compile("(?ms)^(`{3,})[^\\r\\n]*\\R.*?^\\1[ \\t]*$");
+            for (JsonNode example : rendered.path("documents")) {
+                String markdown = example.path("markdown").asText();
+                assertTrue(codeBlocks.matcher(markdown).replaceAll("").isBlank(), markdown);
+            }
             JsonNode document = document(rendered, "java", "direct");
             Path files = saveCode(document, this.directory.resolve("generated"), "java");
             Path evidence = Files.createDirectories(repository().resolve("build/invocation-inventory/" + protocol));
             Files.writeString(evidence.resolve("targets.json"), api.get("examples/targets?" + selected).toPrettyString());
 
-            // 业务 API JAR 显式提供真实接口与 DTO，编译路径不携带整个 Console 测试输出。
+            // 示例自带顶层接口，业务 JAR 只提供 DTO。
             String markdown = document.path("markdown").asText();
-            assertTrue(markdown.contains(EchoService.class.getName()), markdown);
-            Path businessApi = businessApi(files, EchoService.class, DebugMessage.class);
-            Path classes = compile(files, businessApi);
-            assertTrue(Files.isRegularFile(classes.resolve("ExampleMain.class")));
-            assertFalse(Files.exists(files.resolve("src/main/java")), "文档不再生成接口或 DTO 替身文件");
+            assertTrue(markdown.contains("\npublic interface EchoService {"), markdown);
+            Path businessApi = businessApi(files, DebugMessage.class);
+            List<Path> runtime = new ArrayList<>(runtimeClasspath());
+            runtime.add(businessApi);
+            runtime.add(compile(files, runtime));
+
+            // 独立进程运行原样示例，由提供者返回 DTO。
+            String java = Path.of(System.getProperty("java.home"), "bin", "java").toString();
+            var command = List.of(java, "-Djava.io.tmpdir=" + files, "-Duser.home=" + files,
+                    "-cp", classpath(runtime), "ExampleMain");
+            String output = run(files, command);
+            assertTrue(output.contains(DebugMessage.class.getName() + "@"), output);
+        }
+    }
+
+    @ParameterizedTest(name = "{0} 注解接口示例发布并响应调用")
+    @ValueSource(strings = { "rsf", "dubbo", "thrift", "thrift-http", "oncrpc", "oncrpc-udp", "hprose", "jsonrpc", "xmlrpc", "hessian", "soap", "grpc", "grpc-web", "connect", "triple" })
+    public void providerDocumentPublishesTheSelectedService(String protocol) throws Exception {
+        // 从真实提供者读取契约，关闭原实例后再使用它的监听配置启动示例。
+        MetConfiguration configuration = configuration(this.directory.resolve("provider"), protocol);
+        Boot boot = new Boot().sources(ConsoleMain.class).hconfigFile(console(this.directory));
+        String serviceId;
+        int port;
+        Path files;
+        Path consumerFiles;
+        try (MetContext provider = configuration.buildContext(); //
+             BootApplication server = boot.start()) {
+            serviceId = provider.publisher().rsfService(EchoService.class, echoService()) //
+                    .group("example").name("PublishedEcho").version("2.1") //
+                    .protocol(protocol).register().getBindID();
+            provider.start();
+            port = provider.getListenAddress(protocol).getPort();
+            Api api = new Api(server);
+            api.login();
+            String selected = query(api, provider, serviceId, protocol);
+            JsonNode examples = api.get("examples/render?" + selected);
+            files = saveCode(document(examples, "java", "provider"), this.directory.resolve("published"), "java");
+            consumerFiles = saveCode(document(examples, "java", "direct"), this.directory.resolve("consumer"), "java");
+        }
+
+        // 为生成的唯一方法补入业务实现。提供者和消费者都只带原有 DTO。
+        Path main = files.resolve("ExampleMain.java");
+        Path providerTypes = files.resolve("EchoService.java");
+        String source = Files.readString(main);
+        String declaration = Files.readString(providerTypes);
+        var method = Pattern.compile("\\bDebugMessage (\\w+)\\(").matcher(declaration);
+        assertTrue(method.find(), declaration);
+        String name = method.group(1);
+        assertFalse(method.find(), declaration);
+        String implementation = """
+                public net.hasor.meteor.example.api.DebugMessage %s(net.hasor.meteor.example.api.DebugMessage message) {
+                    return message;
+                }
+                """.formatted(name);
+        String consumerInterface = Files.readString(consumerFiles.resolve("EchoService.java")).stripTrailing();
+        String implementationStub = "class EchoServiceImpl implements EchoService {\n    // ...\n}";
+        assertTrue(declaration.contains("@MetService(group = \"example\", name = \"PublishedEcho\", version = \"2.1\""), declaration);
+        assertEquals(consumerInterface + "\n\n" + implementationStub, declaration.stripTrailing());
+        assertFalse(source.contains("class EchoServiceImpl"), source);
+        String wait = "new java.util.concurrent.CountDownLatch(1).await();";
+        assertTrue(source.contains(wait), source);
+        String probe = "java.nio.file.Files.writeString(java.nio.file.Path.of(\"ready\"), "
+                + "context.getServiceInfo(EchoService.class).getBindID()"
+                + " + \" @ \" + context.getListenAddress(\"" + protocol + "\").getPort());\n"
+                + "            System.in.read();";
+        Files.writeString(providerTypes, declaration.replace("    // ...", implementation.indent(4).stripTrailing()));
+        Files.writeString(main, source.replace(wait, probe));
+        List<Path> dependencies = new ArrayList<>(runtimeClasspath());
+        List<Path> consumerDependencies = new ArrayList<>(dependencies);
+        dependencies.add(businessApi(files, DebugMessage.class));
+        dependencies.add(compile(files, dependencies));
+        consumerDependencies.add(businessApi(consumerFiles, DebugMessage.class));
+        consumerDependencies.add(compile(consumerFiles, consumerDependencies));
+
+        // 等待发布后的公开状态，再让独立消费者连接该提供者。
+        String java = Path.of(System.getProperty("java.home"), "bin", "java").toString();
+        Path log = files.resolve("provider.log");
+        Path ready = files.resolve("ready");
+        var command = List.of(java, "-Djava.io.tmpdir=" + files, "-Duser.home=" + files, "-cp", classpath(dependencies), "ExampleMain");
+        Process process = new ProcessBuilder(command).directory(files.toFile())
+                .redirectErrorStream(true).redirectOutput(log.toFile()).start();
+        try (var input = process.getOutputStream()) {
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+            while (process.isAlive() && (!Files.isRegularFile(ready) || Files.size(ready) == 0) && System.nanoTime() < deadline) {
+                Thread.sleep(25);
+            }
+            assertTrue(Files.isRegularFile(ready), () -> "提供者未就绪：" + log);
+            assertEquals(serviceId + " @ " + port, Files.readString(ready));
+            String output = run(consumerFiles, List.of(java, "-Djava.io.tmpdir=" + consumerFiles,
+                    "-Duser.home=" + consumerFiles, "-cp", classpath(consumerDependencies), "ExampleMain"));
+            assertTrue(output.contains(DebugMessage.class.getName() + "@"), output);
+            input.write('\n');
+            input.flush();
+            assertTrue(process.waitFor(5, TimeUnit.SECONDS), () -> "提供者未退出：" + log);
+            assertEquals(0, process.exitValue(), Files.readString(log));
+        } finally {
+            if (process.isAlive()) {
+                process.destroyForcibly().waitFor(5, TimeUnit.SECONDS);
+            }
+        }
+    }
+
+    @ParameterizedTest(name = "{0} 发布完整接口定义和独立的协议描述符")
+    @ValueSource(strings = { "rsf", "soap", "grpc", "grpc-web", "connect", "thrift", "oncrpc" })
+    public void exampleContractShowsEveryPublishedMethod(String protocol) throws Exception {
+        // 发布有三个方法的接口，通过控制台公开入口读取两份契约文档。
+        MetConfiguration configuration = configuration(this.directory.resolve("provider"), protocol);
+        Boot boot = new Boot().sources(ConsoleMain.class).hconfigFile(console(this.directory));
+        try (MetContext provider = configuration.buildContext(); BootApplication server = boot.start()) {
+            String id = provider.publisher().rsfService(EchoService.class, echoService()) //
+                    .protocol(protocol).register().getBindID();
+            provider.start();
+            Api api = new Api(server);
+            api.login();
+            String selected = query(api, provider, id, protocol);
+            JsonNode rendered = api.get("examples/render?" + selected);
+
+            String definition = rendered.path("interfaceDefinition").asText();
+            String descriptor = rendered.path("interfaceDescriptor").asText();
+            assertTrue(definition.contains("interface EchoService"), definition);
+            assertFalse(definition.contains("class ExampleMain"), definition);
+            List<String> methods = List.of("echo", "uppercase", "repeat");
+            for (String method : methods) {
+                assertTrue(definition.contains(" " + method + "("), definition);
+            }
+            String filename = switch (protocol) {
+                case "soap" -> "service.wsdl";
+                case "grpc", "grpc-web", "connect" -> "service.proto";
+                case "thrift" -> "service.thrift";
+                case "oncrpc" -> "service.x";
+                default -> "";
+            };
+            if (filename.isEmpty()) {
+                assertTrue(descriptor.isEmpty(), descriptor);
+            } else {
+                assertTrue(descriptor.contains(filename), rendered.path("warnings").toString());
+                for (String method : methods) {
+                    assertTrue(descriptor.toLowerCase(Locale.ROOT).contains(method), descriptor);
+                }
+            }
         }
     }
 
@@ -277,11 +418,39 @@ public class ConsoleInvocationExamplesTest {
             Api api = new Api(server);
             api.login();
             String selected = query(api, provider, id, protocol);
-            JsonNode document = document(api.get("examples/render?" + selected), "java-sdk", "direct");
+            JsonNode rendered = api.get("examples/render?" + selected);
+            JsonNode document = document(rendered, "java-sdk", "direct");
             Path files = saveCode(document, this.directory.resolve("native"), "java");
             String source = Files.readString(files.resolve("ExampleMain.java"));
             assertFalse(source.contains("import net.hasor.meteor"), source);
-            Path businessApi = businessApi(files, EchoService.class, DebugMessage.class);
+            assertTrue(document.path("markdown").asText().startsWith("```groovy\n"), document.toPrettyString());
+            boolean connect = StringUtils.equals(protocol, "connect");
+            if (connect) {
+                // 消费者直接展示请求内容，示例文件提供同一份请求及其编解码依赖。
+                assertFalse(Files.exists(files.resolve("service.json")));
+                assertTrue(Files.isRegularFile(files.resolve("request.json")));
+                assertFalse(source.contains("class ProtobufCodec"), source);
+                assertTrue(source.contains(".unaryBlocking("), source);
+                JsonNode support = document(rendered, "java-sdk", "files");
+                assertEquals(code(document, "json request.json"), code(support, "json request.json"));
+                saveExampleFiles(support, files);
+                assertTrue(Files.isRegularFile(files.resolve("ProtobufCodec.java")));
+            }
+            Path request = files.resolve("request.json");
+            String expected = "actual:";
+            if (Files.exists(request)) {
+                Path proto = files.resolve("service.proto");
+                if (Files.isRegularFile(proto)) {
+                    assertEquals(1, Pattern.compile("(?m)^  rpc ").matcher(Files.readString(proto)).results().count());
+                    Files.move(ProtoExampleCompiler.compile(proto), files.resolve("service.pb"));
+                } else {
+                    assertTrue(Files.isRegularFile(files.resolve("service.json")));
+                }
+                String original = Files.readString(request);
+                assertTrue(original.contains("example"), original);
+                Files.writeString(request, original.replace("example", "edited-request"));
+                expected = "actual:edited-request";
+            }
             List<Path> dependencies = new ArrayList<>(sdkClasspath());
             // 保持已解析类路径的查找顺序，验证 SDK 加载器不能看到 Meteor 或 Console。
             List<URL> sdkUrls = new ArrayList<>();
@@ -292,12 +461,14 @@ public class ConsoleInvocationExamplesTest {
                 assertThrows(ClassNotFoundException.class, () -> sdk.loadClass(MetContext.class.getName()));
                 assertThrows(ClassNotFoundException.class, () -> sdk.loadClass(ConsoleMain.class.getName()));
             }
-            dependencies.add(businessApi);
+            if (!connect) {
+                dependencies.add(businessApi(files, DebugMessage.class));
+            }
             Path classes = compile(files, dependencies);
             dependencies.add(classes);
             String java = Path.of(System.getProperty("java.home"), "bin", "java").toString();
             String output = run(files, List.of(java, "--add-opens=java.base/java.io=ALL-UNNAMED", "-Djava.io.tmpdir=" + files, "-Duser.home=" + files, "-cp", classpath(dependencies), "ExampleMain"));
-            assertTrue(output.contains("actual:"), output);
+            assertTrue(output.contains(expected), output);
         }
     }
 
@@ -317,21 +488,53 @@ public class ConsoleInvocationExamplesTest {
             JsonNode document = document(api.get("examples/render?" + selected), "java", "direct");
             Path files = saveCode(document, this.directory.resolve("generated"), "java");
 
-            // 只携带轻量外层、接口和 DTO 的 API JAR；javac 从真实嵌套符号读取源码所属关系。
+            // 独立接口仍引用真实 DTO 的 Java 源码名。
             String main = Files.readString(files.resolve("ExampleMain.java"));
-            assertTrue(main.contains(InvocationNestedApi.Service.class.getCanonicalName()), main);
+            assertTrue(main.contains("rsfService(Service.class)"), main);
             assertTrue(main.contains("new " + InvocationNestedApi.Message.class.getCanonicalName() + "()"), main);
             assertFalse(main.contains(InvocationNestedApi.Service.class.getName()), main);
-            Path businessApi = businessApi(files, InvocationNestedApi.class, //
-                    InvocationNestedApi.Service.class, InvocationNestedApi.Message.class);
+            Path businessApi = businessApi(files, InvocationNestedApi.class, InvocationNestedApi.Message.class);
             Path classes = compile(files, businessApi);
             assertTrue(Files.isRegularFile(classes.resolve("ExampleMain.class")));
         }
     }
 
+    @Test
+    public void rsfExamplePreservesThePublishedParameterErasure() throws Exception {
+        // 原接口的方法声明在泛型父接口上，服务端按 Object 参数查找方法。
+        MetConfiguration configuration = configuration(this.directory.resolve("provider"), "rsf");
+        Boot boot = new Boot().sources(ConsoleMain.class).hconfigFile(console(this.directory));
+        try (MetContext provider = configuration.buildContext();
+             BootApplication server = boot.start()) {
+            String id = provider.publisher().rsfService(StringEcho.class, value -> "generic:" + value).register().getBindID();
+            provider.start();
+            Api api = new Api(server);
+            api.login();
+            JsonNode document = document(api.get("examples/render?" + query(api, provider, id, "rsf")), "java", "direct");
+
+            // 生成接口独立声明同一个 JVM 参数类型，运行时只带框架。
+            Path files = saveCode(document, this.directory.resolve("generated"), "java");
+            String declaration = Files.readString(files.resolve("StringEcho.java"));
+            assertTrue(declaration.contains("java.lang.Object arg0"), declaration);
+            List<Path> runtime = new ArrayList<>(runtimeClasspath());
+            runtime.add(compile(files, runtime));
+            String java = Path.of(System.getProperty("java.home"), "bin", "java").toString();
+            String output = run(files, List.of(java, "-Duser.home=" + files, "-Djava.io.tmpdir=" + files,
+                    "-cp", classpath(runtime), "ExampleMain"));
+            assertTrue(output.contains("generic:example"), output);
+        }
+    }
+
+    public interface GenericEcho<T> {
+        String echo(T value);
+    }
+
+    public interface StringEcho extends GenericEcho<String> {
+    }
+
     @ParameterizedTest(name = "{0} SDK 示例使用挂载地址和服务绑定调用")
     @ValueSource(strings = { "rsf", "jsonrpc", "xmlrpc", "hessian" })
-    public void generatedJavaDocumentExecutesWithItsDeclaredBusinessApiJar(String protocol) throws Exception {
+    public void generatedJavaDocumentExecutesWithItsOwnScalarInterface(String protocol) throws Exception {
         // 标量接口可直接检查子 JVM 打印的真实返回值，而不是只看进程退出码。
         MetConfiguration configuration = configuration(this.directory.resolve("provider"), protocol);
         Boot boot = new Boot().sources(ConsoleMain.class).hconfigFile(console(this.directory));
@@ -351,14 +554,11 @@ public class ConsoleInvocationExamplesTest {
             assertTrue(markdown.contains(provider.getListenAddress(protocol).toString()), markdown);
             assertFalse(markdown.contains(".contextPathByPrefix("), markdown);
             Path files = saveCode(document, this.directory.resolve("generated"), "java");
-            Path businessApi = businessApi(files, InvocationEcho.class);
-            Path classes = compile(files, businessApi);
+            List<Path> classpath = new ArrayList<>(runtimeClasspath());
+            Path classes = compile(files, classpath);
 
-            // 独立 JVM 只携带明确的业务 API JAR，不携带整个测试输出，并使用自己的数据目录。
-            List<Path> classpath = new ArrayList<>();
+            // 独立 JVM 使用示例声明的接口并拥有自己的数据目录。
             classpath.add(classes);
-            classpath.add(businessApi);
-            classpath.addAll(runtimeClasspath());
             Path home = Files.createDirectories(this.directory.resolve("consumer-home"));
             Path temporary = Files.createDirectories(this.directory.resolve("consumer-tmp"));
             String java = Path.of(System.getProperty("java.home"), "bin", "java").toString();
@@ -372,45 +572,73 @@ public class ConsoleInvocationExamplesTest {
         }
     }
 
-    @ParameterizedTest(name = "注册中心 Java {0} 文档使用业务 API 编译")
-    @ValueSource(strings = { "consumer", "provider" })
-    public void registryDocumentsContainTheirDependenciesAndCompileWithBusinessApi(String role) throws Exception {
+    @ParameterizedTest(name = "{0} 示例在启动时从 JDBC 注册中心发现提供者")
+    @ValueSource(strings = { "rsf", "connect" })
+    public void registryDocumentCallsTheActualProvider(String protocol) throws Exception {
         // TCP 地址可供独立进程连接；不使用只存在于控制台 JVM 的 H2 内存 URL 伪造发现示例。
         Server database = Server.createTcpServer("-tcpPort", "0", "-ifNotExists").start();
         try {
-            String url = "jdbc:h2:tcp://127.0.0.1:" + database.getPort() + "/mem:" + role + ";DB_CLOSE_DELAY=-1";
+            String url = "jdbc:h2:tcp://127.0.0.1:" + database.getPort() + "/mem:registry-" + protocol + ";DB_CLOSE_DELAY=-1";
             var registry = registry(url);
             Path providerDirectory = this.directory.resolve("provider");
             MetConfiguration configuration = application(providerDirectory, registry, "registry-examples", "east", true);
+            if (StringUtils.equals(protocol, "connect")) {
+                configuration.connector("http").bind("127.0.0.1", 0).protocol(protocol);
+            }
             Boot boot = new Boot().sources(ConsoleMain.class).hconfigFile(console(this.directory));
             try (MetContext provider = configuration.buildContext(); //
                  BootApplication server = boot.start()) {
                 String id = provider.publisher().rsfService(EchoService.class, ConsoleInvocationExamplesTest.echoService()) //
-                        .register().getBindID();
+                        .protocol(protocol).register().getBindID();
                 provider.start();
                 Api api = new Api(server);
                 api.login();
                 String cluster = api.ok("clusters", "POST", profile("JDBC 发现", url)).path("id").asText();
-                String selected = "mode=registry&clusterId=" + cluster + "&serviceId=" + encode(id) + "&protocol=rsf";
+                String selected = "mode=registry&clusterId=" + cluster + "&serviceId=" + encode(id) + "&protocol=" + protocol;
                 var targets = api.get("examples/targets?" + selected);
                 assertEquals(1, targets.path("targets").size(), targets.toPrettyString());
                 JsonNode target = targets.path("targets").get(0);
                 selected += "&instanceId=" + target.path("instanceId").asText();
                 selected += "&endpointAddress=" + encode(target.path("address").asText());
 
-                // 单份 Java 代码自带注册中心配置，依赖坐标直接列在文档正文中。
-                JsonNode document = document(api.get("examples/render?" + selected), "java", role);
+                // 注册中心文档的 Java 和 Gradle 代码分别展示发现调用和依赖。
+                JsonNode document = document(api.get("examples/render?" + selected), "java", "registry");
                 Path files = saveCode(document, this.directory.resolve("generated"), "java");
-                String markdown = document.path("markdown").asText();
-                assertTrue(markdown.contains("meteor-registry-jdbc"), markdown);
-                assertTrue(markdown.contains("commons-dbcp2"), markdown);
-                assertTrue(markdown.contains("h2"), markdown);
-                Path businessApi = businessApi(files, EchoService.class, DebugMessage.class);
-                Path classes = compile(files, businessApi);
-                assertTrue(Files.isRegularFile(classes.resolve("ExampleMain.class")));
-                String main = Files.readString(files.resolve("ExampleMain.java"));
-                assertTrue(main.contains(url), main);
+                String dependencies = code(document, "groovy");
+                assertTrue(dependencies.contains("net.hasor:meteor-registry:"), dependencies);
+                assertFalse(dependencies.contains("meteor-registry-jdbc"), dependencies);
+                assertFalse(dependencies.contains("commons-dbcp2"), dependencies);
+                assertFalse(dependencies.contains("com.h2database:h2:"), dependencies);
+                Path mainFile = files.resolve("ExampleMain.java");
+                String main = Files.readString(mainFile);
+                assertFalse(main.contains(url), main);
                 assertFalse(main.contains("test-password"), main);
+                assertFalse(main.contains("Thread.sleep"), main);
+                assertFalse(main.contains("setDefaultProtocol"), main);
+
+                // 按注释提示补齐真实 JDBC 配置，再编译展示的发现调用。
+                String placeholder = "        RegistryConfiguration registry = ...;";
+                assertTrue(main.contains(placeholder), main);
+                String registrySetup = """
+                                var source = new org.h2.jdbcx.JdbcDataSource();
+                                source.setURL(%s);
+                                source.setUser("sa");
+                                RegistryConfiguration registry = new net.hasor.meteor.registry.jdbc.JdbcRegistryConfiguration()
+                                        .setDataSource(source);
+                                registry.setPublishHost("127.0.0.1");
+                        """.formatted(JsonUtils.writeValueAsString(url)).stripTrailing();
+                Files.writeString(mainFile, main.replace(placeholder, registrySetup));
+                Path businessApi = businessApi(files, DebugMessage.class);
+                List<Path> runtime = new ArrayList<>(runtimeClasspath());
+                runtime.add(businessApi);
+                runtime.add(compile(files, runtime));
+
+                // 独立消费者只依赖启动同步，通过真实 RPC 拿到结果。
+                String java = Path.of(System.getProperty("java.home"), "bin", "java").toString();
+                var command = List.of(java, "-Djava.io.tmpdir=" + files, "-Duser.home=" + files,
+                        "-cp", classpath(runtime), "ExampleMain");
+                String output = run(files, command);
+                assertTrue(output.contains(DebugMessage.class.getName() + "@"), output);
             }
         } finally {
             database.stop();
@@ -438,8 +666,8 @@ public class ConsoleInvocationExamplesTest {
             JsonNode response = api.get("examples/render?" + selected);
 
             // 使用者看到明确的填写位置，而不是在不知情的情况下指向真实在线服务。
-            String main = code(document(response, "java", "direct"), "java");
-            assertTrue(main.contains("new InterAddress(\"请填写服务地址\")"), main);
+            String main = codeBlocks(document(response, "java", "direct"), "java").get(1);
+            assertTrue(main.contains("getRsfClient(\"SERVICE_ADDRESS\")"), main);
             String actualAddress = target.path("address").asText();
             assertFalse(actualAddress.isBlank(), available.toPrettyString());
             assertFalse(main.contains(actualAddress), main);
@@ -596,11 +824,20 @@ public class ConsoleInvocationExamplesTest {
 
     static Path saveCode(JsonNode document, Path directory, String language) throws Exception {
         Files.createDirectories(directory);
+        saveExampleFiles(document, directory);
         String name;
         String fence;
         if (StringUtils.equals(language, "java")) {
             name = "ExampleMain.java";
             fence = "java";
+            var pattern = Pattern.compile("(?m)^public interface (\\p{javaJavaIdentifierStart}\\p{javaJavaIdentifierPart}*) \\{");
+            for (String source : codeBlocks(document, fence)) {
+                var type = pattern.matcher(source);
+                String filename = type.find() ? type.group(1) + ".java" : name;
+                Files.writeString(directory.resolve(filename), source, StandardCharsets.UTF_8);
+            }
+            assertTrue(Files.isRegularFile(directory.resolve(name)), document.toPrettyString());
+            return directory;
         } else if (StringUtils.equals(language, "python")) {
             name = "consumer.py";
             fence = "python";
@@ -612,6 +849,22 @@ public class ConsoleInvocationExamplesTest {
         }
         Files.writeString(directory.resolve(name), code(document, fence), StandardCharsets.UTF_8);
         return directory;
+    }
+
+    static void saveExampleFiles(JsonNode document, Path directory) throws Exception {
+        List<String> files = new ArrayList<>(List.of(
+                "json service.json", "json request.json", "json arguments.json", "python request.py", "java ProtobufCodec.java"));
+        var proto = Pattern.compile("(?m)^`{3,}(protobuf (?:service|types-[0-9]+)[.]proto)$").matcher(document.path("markdown").asText());
+        while (proto.find()) {
+            files.add(proto.group(1));
+        }
+        for (String info : files) {
+            List<String> blocks = codeBlocks(document, info);
+            if (!blocks.isEmpty()) {
+                assertEquals(1, blocks.size(), document.toPrettyString());
+                Files.writeString(directory.resolve(info.substring(info.indexOf(' ') + 1)), blocks.get(0), StandardCharsets.UTF_8);
+            }
+        }
     }
 
     static JsonNode document(JsonNode result, String language, String role) {
@@ -631,12 +884,15 @@ public class ConsoleInvocationExamplesTest {
     }
 
     static String code(JsonNode document, String language) {
-        String expression = "(?ms)^```" + Pattern.quote(language) + "[ \t]*\\R(.*?)^```[ \t]*$";
+        List<String> blocks = codeBlocks(document, language);
+        assertEquals(1, blocks.size(), "文档应该有一块 " + language + " 主代码：" + document);
+        return blocks.get(0);
+    }
+
+    static List<String> codeBlocks(JsonNode document, String language) {
+        String expression = "(?ms)^(`{3,})" + Pattern.quote(language) + "[ \t]*\\R(.*?)^\\1[ \t]*$";
         var matches = Pattern.compile(expression).matcher(document.path("markdown").asText());
-        assertTrue(matches.find(), "文档缺少 " + language + " 代码块：" + document);
-        String code = matches.group(1);
-        assertFalse(matches.find(), "文档只能有一份 " + language + " 主代码：" + document);
-        return code;
+        return matches.results().map(match -> match.group(2)).toList();
     }
 
     private static Path businessApi(Path directory, Class<?>... contracts) throws Exception {
@@ -666,8 +922,9 @@ public class ConsoleInvocationExamplesTest {
         var compiler = ToolProvider.getSystemJavaCompiler();
         assertNotNull(compiler, "生成的 Java 示例需要 JDK 编译器");
         DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
-        try (var manager = compiler.getStandardFileManager(diagnostics, null, StandardCharsets.UTF_8)) {
-            var units = manager.getJavaFileObjects(project.resolve("ExampleMain.java").toFile());
+        try (var manager = compiler.getStandardFileManager(diagnostics, null, StandardCharsets.UTF_8);
+             var files = Files.list(project)) {
+            var units = manager.getJavaFileObjectsFromPaths(files.filter(path -> path.toString().endsWith(".java")).sorted().toList());
             List<String> options = List.of("--release", "17", "-encoding", "UTF-8", //
                     "-classpath", classpath(dependencies), "-d", output.toString());
             StringWriter messages = new StringWriter();
@@ -724,7 +981,7 @@ public class ConsoleInvocationExamplesTest {
 
     private static String run(Path directory, List<String> command) throws Exception {
         Path output = directory.resolve("process-output.log");
-        Process process = new ProcessBuilder(command).directory(directory.toFile()) //
+        Process process = new ProcessBuilder(command).directory(directory.toFile())
                 .redirectErrorStream(true).redirectOutput(output.toFile()).start();
         try {
             boolean finished = process.waitFor(40, TimeUnit.SECONDS);

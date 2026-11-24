@@ -45,63 +45,89 @@ public final class InvocationExampleService {
         if (available.getTargets().size() != 1) {
             throw new ErrorMessageException(ConsoleMessageKey.ERROR_SELECT_AN_ENDPOINT_FROM_AN_ONLINE);
         }
+
         ExampleTarget selected = available.getTargets().get(0);
+        JavaExampleGenerator javaExamples = new JavaExampleGenerator();
+        String interfaceDefinition = "";
+        try {
+            interfaceDefinition = javaExamples.interfaceDefinition(selected);
+        } catch (IllegalArgumentException unsupported) {
+            warnings.add(exampleWarning(ConsoleMessageKey.EXAMPLE_INTERFACE_DEFINITION, unsupported, locale));
+        }
+
+        String interfaceDescriptor = "";
+        try {
+            interfaceDescriptor = ProtocolDescriptor.markdown(protocol, selected.getEndpoint().getDescription());
+        } catch (IllegalArgumentException unsupported) {
+            warnings.add(exampleWarning(ConsoleMessageKey.EXAMPLE_INTERFACE_DESCRIPTOR, unsupported, locale));
+        }
+
         ExampleRegistry registry = this.registry(target, available.getRegistry());
         List<ExampleDocument> documents = new ArrayList<>();
         try {
-            documents.addAll(new JavaExampleGenerator().generate(selected, registry, address));
+            documents.addAll(javaExamples.generate(selected, registry, address));
         } catch (IllegalArgumentException unsupported) {
             warnings.add(exampleWarning(ConsoleMessageKey.EXAMPLE_METEOR, unsupported, locale));
         }
+
         try {
             documents.addAll(new NativeJavaExampleGenerator().generate(selected, address));
         } catch (IllegalArgumentException unsupported) {
             warnings.add(exampleWarning(ConsoleMessageKey.EXAMPLE_JAVA_RPC_SDK, unsupported, locale));
         }
+
         try {
             documents.addAll(new HttpExampleGenerator().generate(selected, address));
         } catch (IllegalArgumentException unsupported) {
             warnings.add(exampleWarning(ConsoleMessageKey.EXAMPLE_NATIVE_HTTP, unsupported, locale));
         }
+
         try {
             documents.addAll(new HttpRequestExampleGenerator().generate(selected, address));
         } catch (IllegalArgumentException unsupported) {
             warnings.add(exampleWarning(ConsoleMessageKey.EXAMPLE_HTTP_REQUEST, unsupported, locale));
         }
+
         try {
             documents.addAll(new ProtobufExampleGenerator().generate(selected, address));
         } catch (IllegalArgumentException unsupported) {
             warnings.add(exampleWarning(ConsoleMessageKey.EXAMPLE_PROTOBUF_SDK, unsupported, locale));
         }
+
         try {
             documents.addAll(new BinaryJavaExampleGenerator().generate(selected, address));
         } catch (IllegalArgumentException unsupported) {
             warnings.add(exampleWarning(ConsoleMessageKey.EXAMPLE_JAVA_BINARY_SDK, unsupported, locale));
         }
+
         try {
             documents.addAll(new BinaryExampleGenerator().generate(selected, address));
         } catch (IllegalArgumentException unsupported) {
             warnings.add(exampleWarning(ConsoleMessageKey.EXAMPLE_NATIVE_BINARY, unsupported, locale));
         }
+
         try {
             documents.addAll(new DubboExampleGenerator().generate(selected, address));
         } catch (IllegalArgumentException unsupported) {
             warnings.add(exampleWarning(ConsoleMessageKey.EXAMPLE_DUBBO_SDK, unsupported, locale));
         }
+
         try {
             documents.addAll(new WireExampleGenerator().generate(selected, address));
         } catch (IllegalArgumentException unsupported) {
             warnings.add(exampleWarning(ConsoleMessageKey.EXAMPLE_WIRE, unsupported, locale));
         }
+
         Set<String> testedLanguages = new HashSet<>();
         for (Map<String, Object> language : LANGUAGES) {
             if (language.get("protocols") instanceof List<?> protocols && protocols.contains(protocol)) {
                 testedLanguages.add((String) language.get("id"));
             }
         }
+
         Set<String> documentKeys = new HashSet<>();
         documents.removeIf(document -> !testedLanguages.contains(document.getLanguage()) || !documentKeys.add(document.getLanguage() + ":" + document.getRole()));
-        return new InvocationExamples(LANGUAGES, documents, warnings);
+        return new InvocationExamples(interfaceDefinition, interfaceDescriptor, LANGUAGES, documents, warnings);
     }
 
     private static String exampleWarning(ConsoleMessageKey example, IllegalArgumentException failure, Locale locale) {
@@ -134,12 +160,6 @@ public final class InvocationExampleService {
             if (!StringUtils.equals(profile.getType(), "remote")) {
                 registry.setType(profile.getType());
                 registry.setAddress(profile.getAddress());
-                registry.setDatabase(profile.getDatabase());
-                registry.setUsername(profile.getUsername());
-                registry.setGroup(profile.getGroup());
-                registry.setNamespace(profile.getNamespace());
-                registry.setRoot(profile.getRoot());
-                registry.setCredentialsRequired(StringUtils.isNotEmpty(profile.getPassword()));
                 // H2 内存库与嵌入式文件库不能作为独立进程的通用注册发现地址。
                 if (StringUtils.equals(profile.getDatabase(), "h2") && !profile.getAddress().startsWith("jdbc:h2:tcp:") && !profile.getAddress().startsWith("jdbc:h2:ssl:")) {
                     return null;
@@ -156,9 +176,6 @@ public final class InvocationExampleService {
         }
         registry.setType(info.getProvider());
         registry.setAddress(scope.get("address"));
-        registry.setGroup(scope.get("group"));
-        registry.setNamespace(scope.get("namespace"));
-        registry.setRoot(scope.get("root"));
         return registry;
     }
 }

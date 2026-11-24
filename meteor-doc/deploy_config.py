@@ -1,6 +1,6 @@
 """Validate the shared documentation deployment configuration before publishing."""
 
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 import fcntl
 import json
 import os
@@ -72,6 +72,9 @@ def validate_config(document, site_name):
         prefix = normalize_prefix(site.get("prefix", ""))
         cdn_url, cdn_authority, cdn_prefix = normalize_cdn_url(site["cdnUrl"])
         for previous_name, bucket, previous_prefix, previous_cdn, previous_cdn_prefix in targets:
+            # Portal and Hasor may intentionally use the same complete target.
+            if {previous_name, name} == {"portal", "hasor"} and document["sites"][previous_name] == site:
+                continue
             # Bucket names identify the destination even when endpoint aliases differ.
             if bucket == site["bucketName"] and overlaps(prefix, previous_prefix):
                 raise ValueError(f"Overlapping OSS destinations: {previous_name} and {name}")
@@ -84,30 +87,44 @@ def validate_config(document, site_name):
                           "accessKeySecret": credential["accessKeySecret"], "endpoint": endpoint,
                           "bucketName": site["bucketName"], "prefix": prefix,
                           "cdnUrl": cdn_url, "cdnRegionId": region}
+        public_url = site.get("publicUrl")
+        if public_url is not None:
+            require_fields(site, "publicUrl")
+            origin, _, public_prefix = normalize_cdn_url(public_url)
+            if public_prefix:
+                raise ValueError("publicUrl must be an HTTP(S) origin; use baseUrl for its path.")
+            resolved[name]["publicUrl"] = origin.rstrip("/")
+        if "baseUrl" in site:
+            resolved[name]["baseUrl"] = "/" + normalize_prefix(site["baseUrl"])
     return resolved[site_name]
 
 
-def load_config():
+def load_config(mode="alone"):
     override = os.environ.get(CONFIG_ENV)
     config_path = Path(override).expanduser() if override else Path.home() / CONFIG_FILE_NAME
     try:
         document = json.loads(config_path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as error:
         raise ValueError(f"Cannot read configuration: {config_path}. See oss-config.sample.json.") from error
-    return validate_config(document, SITE_NAME)
+    target = "portal" if mode == "portal" else SITE_NAME
+    config = validate_config(document, target)
+    config["siteName"] = SITE_NAME
+    return config
 
 
 @contextmanager
-def deployment_lock():
-    """Serialize this site across checkouts for the same OS user; never unlink a live lock."""
-    directory = DOCUMENT_DIR.parent / ".gradle" / "docs-deploy"
+def deployment_lock(mode="alone"):
+    """Serialize publication for this site and for the shared portal and Hasor target."""
+    directory = Path.home() / ".cache" / "hasor-docs-deploy"
     directory.mkdir(parents=True, exist_ok=True, mode=0o700)
-    with (directory / (SITE_NAME + ".lock")).open("a") as lock_file:
-        try:
-            fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError as error:
-            raise RuntimeError(f"A deployment for {SITE_NAME} is already running.") from error
-        try:
-            yield
-        finally:
-            fcntl.flock(lock_file, fcntl.LOCK_UN)
+    names = [SITE_NAME]
+    if mode == "portal" or SITE_NAME == "hasor":
+        names.append("portal-target")
+    with ExitStack() as locks:
+        for name in names:
+            lock_file = locks.enter_context((directory / (name + ".lock")).open("a"))
+            try:
+                fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError as error:
+                raise RuntimeError(f"A deployment is already using the {name} lock.") from error
+        yield

@@ -74,14 +74,15 @@ public final class HttpRequestExampleGenerator {
             values.put("soapBinding", soap12 ? "SOAPBinding.SOAP12HTTP_BINDING" : "SOAPBinding.SOAP11HTTP_BINDING");
             values.put("soapVersion", soap12 ? "SOAPConstants.SOAP_1_2_PROTOCOL" : "SOAPConstants.SOAP_1_1_PROTOCOL");
             String code = ExampleTemplates.render("http-request/consumer.java.tpl", values);
-            result.add(new ExampleDocument("java-sdk-direct", "java-sdk", "direct", "依赖：`com.sun.xml.ws:jaxws-rt:2.3.7`。使用 JAX-WS 的消息调用 API。\n\n" + ExampleTemplates.codeBlock("java", code)));
+            String dependencies = ExampleTemplates.gradleDependencies(List.of("com.sun.xml.ws:jaxws-rt:2.3.7"));
+            result.add(new ExampleDocument("java-sdk-direct", "java-sdk", "direct", dependencies + "\n\n" + ExampleTemplates.codeBlock("java", code)));
         }
         return result;
     }
 
     static String endpoint(ExampleTarget target, String address, String type) {
         if (StringUtils.isBlank(address)) {
-            return "请填写服务地址";
+            return ExampleConnections.ADDRESS_PLACEHOLDER;
         }
         for (var endpoints : target.getEndpoint().getEndpoints().values()) {
             if (StringUtils.isNotBlank(endpoints.get(type))) {
@@ -120,14 +121,14 @@ public final class HttpRequestExampleGenerator {
                 case "shell" -> "bash";
                 default -> language;
             };
-            String dependency = "使用语言标准 HTTP API。";
-            if (List.of("c", "cpp").contains(language)) {
-                dependency = "依赖 libcurl；使用其 C API（也可在 C++ 中编译）。";
-            } else if (StringUtils.equals(language, "shell")) {
-                dependency = "依赖 curl。";
-            }
             String code = ExampleTemplates.render("http-request/consumer." + extension + ".tpl", values);
-            result.add(new ExampleDocument(language + "-direct", language, "direct", dependency + " 下方为当前服务的完整线上请求。\n\n" + ExampleTemplates.codeBlock(syntax, code)));
+            String markdown = ExampleTemplates.codeBlock(syntax, code);
+            if (StringUtils.equals(language, "c")) {
+                markdown = ExampleTemplates.codeBlock("bash", "cc consumer.c -o consumer -lcurl") + "\n\n" + markdown;
+            } else if (StringUtils.equals(language, "cpp")) {
+                markdown = ExampleTemplates.codeBlock("bash", "c++ consumer.cpp -o consumer -lcurl") + "\n\n" + markdown;
+            }
+            result.add(new ExampleDocument(language + "-direct", language, "direct", markdown));
         }
         return result;
     }

@@ -1,0 +1,9 @@
+[
+  {"id":"hasor","name":"Hasor","site":"hasor","icon":"/img/projects/hasor.svg","docs":"/docs/guides/getting-started/quickstart","source":"https://gitee.com/hasortech/hasor"},
+  {"id":"dbvisitor","name":"dbVisitor","site":"dbvisitor","icon":"/img/projects/dbvisitor.svg","docs":"/docs/guides/overview","source":"https://gitee.com/hasortech/dbvisitor"},
+  {"id":"dataway","name":"Dataway","site":"dataql","icon":"/img/projects/dataway.svg","docs":"/docs/intro/overview","source":"https://gitee.com/hasortech/dataql"},
+  {"id":"dataql","name":"DataQL","site":"dataql","icon":"/img/projects/dataql.svg","docs":"/docs/overview","source":"https://gitee.com/hasortech/dataql"},
+  {"id":"meteor","name":"Meteor","site":"meteor","icon":"/img/projects/meteor.svg","docs":"/docs/guides/start/quick-start/","source":"https://gitee.com/hasortech/meteor"},
+  {"id":"neta","name":"Neta","site":"neta","icon":"/img/projects/neta.svg","docs":"/docs/guides/overview","source":"https://gitee.com/hasortech/neta","releases":false},
+  {"id":"cobble","name":"Cobble","site":"cobble","icon":"/img/projects/cobble.svg","docs":"/docs/guides/overview","source":"https://gitee.com/hasortech/cobble","releases":false}
+]

@@ -33,23 +33,108 @@ class JavaInvocationExampleTest {
     private static final String STATE = "example.contract.State";
     private static final String SIGNATURE = "exchange(" + ORDER + ")";
 
-    @Test
-    void callerDocumentExplainsRegistryConfigurationWithoutDuplicatingTheMainProgram() {
+    @ParameterizedTest
+    @ValueSource(strings = { "jdbc", "nacos", "zookeeper" })
+    void registryCallerHasItsOwnDocument(String type) {
+        // 从目标注册中心生成独立的发现调用。
         ExampleTarget target = target("thrift", declaration(), thriftContract());
         ExampleRegistry registry = new ExampleRegistry();
-        registry.setType("nacos");
-        registry.setAddress("127.0.0.1:8848");
-        String markdown = new JavaExampleGenerator().generate(target, registry, target.getAddress()).get(0).getMarkdown();
-        assertTrue(markdown.contains("## 使用注册中心"), markdown);
-        assertTrue(markdown.contains("meteor-registry-nacos:"), markdown);
-        assertTrue(markdown.contains("127.0.0.1:8848"), markdown);
-        assertTrue(markdown.contains("configuration.addExtension(registry)"), markdown);
+        registry.setType(type);
+        registry.setAddress("registry.example.test");
+
+        List<ExampleDocument> documents = new JavaExampleGenerator().generate(target, registry, target.getAddress());
+        String markdown = documents.stream().filter(item -> item.getRole().equals("registry")).findFirst().orElseThrow().getMarkdown();
+        assertTrue(markdown.contains("net.hasor:meteor-registry:"), markdown);
+        assertFalse(markdown.contains("meteor-registry-" + type + ":"), markdown);
+        assertTrue(markdown.contains("import net.hasor.meteor.registry.RegistryConfiguration;"), markdown);
+        assertFalse(markdown.contains("import net.hasor.meteor.registry." + type + "."), markdown);
+        String setup = """
+                        // See the documentation for registry configuration.
+                        RegistryConfiguration registry = ...;
+                        configuration.addExtension(registry);
+                """;
+        assertTrue(markdown.contains(setup), markdown);
+        assertFalse(markdown.contains("registry.example.test"), markdown);
+        assertFalse(markdown.contains("commons-dbcp2"), markdown);
+        assertFalse(markdown.contains("com.h2database:h2"), markdown);
         assertTrue(markdown.contains("context.getRsfClient().getRemote(binding)"), markdown);
-        assertEquals(markdown.indexOf("public final class ExampleMain"), markdown.lastIndexOf("public final class ExampleMain"));
+        assertFalse(documents.get(0).getMarkdown().contains("configuration.addExtension(registry)"));
     }
 
     @Test
-    void thriftDocumentKeepsWireAliasesAndUsesTheOriginalBusinessInterface() {
+    void providerPublishesAnAnnotatedInterfaceFromAnOlderSnapshot() {
+        // 用不同的监听和发布端口验证示例应使用实例本地的端口。
+        ExampleTarget target = target("thrift", declaration(), thriftContract());
+        target.getEndpoint().setListenAddress("thrift://127.0.0.1:19512/default");
+
+        List<ExampleDocument> documents = new JavaExampleGenerator().generate(target, null, target.getAddress());
+
+        String source = documents.stream().filter(item -> item.getRole().equals("provider")).findFirst().orElseThrow().getMarkdown();
+        assertTrue(source.contains(".bind(\"0.0.0.0\", 19512)"), source);
+        assertTrue(source.contains("context.publisher().rsfService(OrderService.class, new OrderServiceImpl())"), source);
+        assertTrue(source.contains(".register();"), source);
+        assertTrue(source.indexOf(".register();") < source.indexOf("context.start();"), source);
+        assertTrue(source.contains("@MetService(group = \"example\", name = \"OrderService\""), source);
+        assertTrue(source.contains("public interface OrderService {"), source);
+        assertTrue(source.contains("@MetMethod(name = \"wire_exchange\")"), source);
+        assertTrue(source.contains("@MetParam(id = 5, name = \"arg0\")"), source);
+        assertTrue(source.contains("\nclass OrderServiceImpl implements OrderService {\n    // ...\n}"), source);
+        for (String removed : List.of(".group(", ".name(", ".version(", ".serialize(")) {
+            assertFalse(source.contains(removed), source);
+        }
+    }
+
+    @Test
+    void connectDocumentsOmitSettingsAlreadyProvidedByTheInterfaceAndProtocol() {
+        // 普通 Connect 示例沿用框架的默认分组、版本及 Protobuf。
+        MetServiceDescription description = declaration();
+        MetProtocolDescription contract = new MetProtocolDescription();
+        contract.setName("OrderService");
+        contract.setSerializeType("Protobuf");
+        ExampleTarget target = target("connect", description, contract);
+        target.getService().setGroup("default");
+        target.getEndpoint().setTransport("http");
+        target.setAddress("connect://127.0.0.1:19200/");
+        target.getEndpoint().setListenAddress(target.getAddress());
+
+        // 连接器足以选择 Connect；发布和调用都沿用已知的默认配置。
+        List<ExampleDocument> documents = new JavaExampleGenerator().generate(target, null, target.getAddress());
+        for (ExampleDocument document : documents) {
+            String code = document.getMarkdown();
+            assertTrue(code.contains(".protocol(\"connect\");"), code);
+            for (String removed : List.of("setDefaultProtocol", ".addressScheme(", ".contextPath(", ".group(",
+                    ".name(", ".version(", ".aliasName(", ".serialize(")) {
+                assertFalse(code.contains(removed), code);
+            }
+        }
+    }
+
+    @Test
+    void thriftDocumentKeepsNonDefaultTransportAndUsesThePublishedValuesInTheAnnotation() {
+        // 新接口的注解取实际发布配置，旧接口的注解不参与生成。
+        MetServiceDescription description = declaration();
+        description.getExtensions().put("javaDeclaration",
+                Map.of("group", "another-group", "name", "AnotherService", "version", "2.0.0", "serializeType", "compact"));
+        MetProtocolDescription contract = thriftContract();
+        contract.setSerializeType("Binary");
+        contract.getExtensions().put("framed", false);
+        contract.getExtensions().put("multiplexed", true);
+        ExampleTarget target = target("thrift", description, contract);
+        target.getEndpoint().setScheme("orders");
+
+        String code = new JavaExampleGenerator().generate(target, null, target.getAddress()).get(0).getMarkdown();
+
+        assertTrue(code.contains(".addressScheme(\"orders\")"), code);
+        assertTrue(code.contains(".option(\"framed\", false)"), code);
+        assertTrue(code.contains(".option(\"multiplexed\", true)"), code);
+        assertTrue(code.contains("@MetService(group = \"example\", name = \"OrderService\", serializeType = \"Binary\")"), code);
+        for (String removed : List.of(".group(", ".name(", ".version(", ".serialize(")) {
+            assertFalse(code.contains(removed), code);
+        }
+    }
+
+    @Test
+    void thriftDocumentKeepsWireAliasesAndDeclaresAnAnnotatedInterface() {
         // 原服务通过字段编号绑定 IDL 别名，Java 接口方法名保持 exchange。
         ExampleTarget target = target("thrift", declaration(), thriftContract());
 
@@ -57,19 +142,19 @@ class JavaInvocationExampleTest {
                 .generate(target, null, target.getAddress()) //
                 .get(0);
 
-        // 一份主代码引用真实业务 API，必需 IDL 内嵌其中，wire 名称来自实际上报的契约。
+        // IDL 保留实际上报的线上名称，Java 调用使用独立接口的原方法名。
         String markdown = document.getMarkdown();
-        assertTrue(markdown.contains(SERVICE), markdown);
+        assertTrue(markdown.contains("rsfService(OrderService.class)"), markdown);
         assertTrue(markdown.contains(".exchange("), markdown);
         assertTrue(markdown.contains("service WireOrderService"), markdown);
         assertTrue(markdown.contains("WireOrder wire_exchange(5: WireOrder input_order)"), markdown);
         assertTrue(markdown.contains("1: string payload_text"), markdown);
         assertTrue(markdown.contains("READY = 3"), markdown);
-        assertFalse(markdown.contains("public interface OrderService"), markdown);
+        assertTrue(markdown.contains("\npublic interface OrderService"), markdown);
     }
 
     @Test
-    void xdrDocumentKeepsTheActualTypeNamesAndOriginalBusinessInterface() {
+    void xdrDocumentKeepsTheActualTypeNamesWithAnAnnotatedInterface() {
         // XDR 文件按有效属性名和方法编号绑定，未显式声明的类型名允许与 IDL 不同。
         ExampleTarget target = target("oncrpc", xdrDeclaration(), xdrContract());
 
@@ -77,14 +162,14 @@ class JavaInvocationExampleTest {
                 .generate(target, null, target.getAddress()) //
                 .get(0);
 
-        // 原 Java 接口不做复制或改名；内嵌 XDR 契约保留实际类型、枚举与过程编号。
+        // 内嵌 XDR 契约保留实际类型、枚举与过程编号。
         String markdown = document.getMarkdown();
-        assertTrue(markdown.contains(SERVICE), markdown);
+        assertTrue(markdown.contains("rsfService(OrderService.class)"), markdown);
         assertTrue(markdown.contains(".exchange("), markdown);
         assertTrue(markdown.contains("struct xdr_order"), markdown);
         assertTrue(markdown.contains("XDR_READY = 3"), markdown);
         assertTrue(markdown.contains("WIRE_EXCHANGE(xdr_order) = 9"), markdown);
-        assertFalse(markdown.contains("public interface OrderService"), markdown);
+        assertTrue(markdown.contains("\npublic interface OrderService"), markdown);
     }
 
     @Test
@@ -201,11 +286,9 @@ class JavaInvocationExampleTest {
         List<ExampleDocument> documents = new JavaExampleGenerator().generate(target, null, null);
 
         String direct = documents.get(0).getMarkdown();
-        String consumer = documents.get(2).getMarkdown();
-        assertTrue(direct.contains("new InterAddress(\"请填写服务地址\")"), direct);
-        assertTrue(consumer.contains("new InterAddress(\"请填写服务地址\")"), consumer);
+        assertTrue(direct.contains("getRsfClient(\"SERVICE_ADDRESS\")"), direct);
         assertFalse(direct.contains(target.getAddress()), direct);
-        assertFalse(consumer.contains(target.getAddress()), consumer);
+        assertEquals(List.of("direct", "provider"), documents.stream().map(ExampleDocument::getRole).toList());
     }
 
     @ParameterizedTest(name = "构造证明 {0} 时使用显式业务参数")
@@ -268,7 +351,7 @@ class JavaInvocationExampleTest {
                 .generate(target, null, target.getAddress()) //
                 .get(0).getMarkdown();
 
-        assertTrue(markdown.contains(service + ".class"), markdown);
+        assertTrue(markdown.contains("Dollar$Service.class"), markdown);
         assertTrue(markdown.contains("new " + order + "()"), markdown);
         assertFalse(markdown.contains("example.contract.Dollar.Service"), markdown);
         assertFalse(markdown.contains("example.contract.Dollar.Order"), markdown);

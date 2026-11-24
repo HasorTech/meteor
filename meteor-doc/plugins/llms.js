@@ -105,8 +105,7 @@ module.exports = async function llmsPlugin(context, {overview, descriptions, ...
 };
 
 async function readOverview({siteDir, siteConfig, i18n}, overview, markdown, base) {
-    const directory = i18n.currentLocale === i18n.defaultLocale ? 'docs' :
-        'i18n/' + i18n.currentLocale + '/docusaurus-plugin-content-docs/current';
+    const directory = 'docs/' + i18n.localeConfigs[i18n.currentLocale].path + '/docusaurus-plugin-content-docs/current';
     const file = path.join(siteDir, directory, overview);
     const source = replaceVariables(await readFile(file, 'utf8'), projectVars);
     const sections = [...source.matchAll(/<!-- llms:start -->([\s\S]*?)<!-- llms:end -->/g)];

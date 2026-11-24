@@ -10,12 +10,31 @@ for command_name in python3 npm; do
     fi
 done
 
-# Keep deployment dependencies and caches inside the repository.
-export PIP_CACHE_DIR="$(pwd)/../.gradle/docs-deploy/pip"
-export PYTHONPYCACHEPREFIX="$(pwd)/../.gradle/docs-deploy/pycache"
-python3 -m venv .deploy-venv
-.deploy-venv/bin/python -m pip install --disable-pip-version-check -r requirements-deploy.txt
+for argument in "$@"; do
+    case "$argument" in
+        --dry-run|-h|--help) exec python3 -B deploy.py "$@" ;;
+    esac
+done
 
-.deploy-venv/bin/python deploy.py
+# Keep deployment dependencies separate from the system Python environment.
+dependency_log=$(mktemp)
+trap 'rm -f -- "$dependency_log"' EXIT
 
-echo "Documentation uploaded and CDN refresh submitted successfully."
+run_dependency_step() {
+    local status
+    if "$@" >"$dependency_log" 2>&1; then
+        # Hide only pip's repetitive no-op notices; preserve installation and warning output.
+        sed '/^Requirement already satisfied:/d' "$dependency_log"
+        return 0
+    else
+        status=$?
+        echo "Error: deployment dependency setup failed." >&2
+        cat -- "$dependency_log" >&2
+        return "$status"
+    fi
+}
+
+run_dependency_step python3 -m venv .deploy-venv
+run_dependency_step .deploy-venv/bin/python -m pip install --disable-pip-version-check -r requirements-deploy.txt
+
+.deploy-venv/bin/python -B deploy.py "$@"

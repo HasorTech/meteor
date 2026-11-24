@@ -24,20 +24,14 @@ function connect() {
 }
 </script>
 <template>
-  <div class="tabbar">
-    <div>
-      <h1>{{ $t('ui.direct-connection') }}</h1>
-      <p class="direct-introduction">{{ $t('ui.connect-to-an-instance-to-view') }}</p>
-    </div>
-  </div>
+  <h1 class="direct-title">{{ $t('ui.direct-connection') }}</h1>
   <div class="direct-layout">
     <form
       class="direct-form"
-      aria-labelledby="direct-form-title"
+      :aria-label="$t('ui.connection-details')"
       :aria-busy="busy"
       @submit.prevent="connect"
     >
-      <h2 id="direct-form-title">{{ $t('ui.connection-details') }}</h2>
       <div class="field">
         <label for="direct-endpoint">{{ $t('ui.instance-endpoint') }}</label>
         <input
@@ -51,12 +45,6 @@ function connect() {
           placeholder="rsf://127.0.0.1:19200"
           aria-describedby="direct-endpoint-hint"
         />
-        <p
-          id="direct-endpoint-hint"
-          class="field-hint"
-        >
-          {{ $t('ui.enter-the-full-endpoint-address-exposed') }}
-        </p>
       </div>
       <div class="field">
         <label for="direct-token">{{ $t('ui.management-token') }}</label>
@@ -71,16 +59,9 @@ function connect() {
           :placeholder="$t('ui.enter-the-target-instance-s-management')"
           aria-describedby="direct-token-hint"
         />
-        <p
-          id="direct-token-hint"
-          class="field-hint"
-        >
-          {{ $t('ui.use-the-token-configured-on-the') }}
-        </p>
       </div>
       <Feedback :error="error" />
       <div class="direct-form-footer">
-        <span class="muted">{{ $t('ui.on-success-opens-the-instance-details') }}</span>
         <button
           type="submit"
           class="primary"
@@ -96,12 +77,12 @@ function connect() {
     >
       <h2 id="direct-help-title">{{ $t('ui.before-connecting') }}</h2>
       <section>
-        <h3>{{ $t('ui.get-the-instance-endpoint') }}</h3>
-        <p>{{ $t('ui.copy-the-full-address-from-the') }}</p>
+        <h3>{{ $t('ui.instance-endpoint') }}</h3>
+        <p id="direct-endpoint-hint">{{ $t('ui.copy-the-full-address-from-the') }}</p>
       </section>
       <section>
-        <h3>{{ $t('ui.get-the-management-token') }}</h3>
-        <p>{{ $t('ui.the-target-instance-provides-the-token') }}</p>
+        <h3>{{ $t('ui.management-token') }}</h3>
+        <p id="direct-token-hint">{{ $t('ui.the-target-instance-provides-the-token') }}</p>
       </section>
     </aside>
   </div>

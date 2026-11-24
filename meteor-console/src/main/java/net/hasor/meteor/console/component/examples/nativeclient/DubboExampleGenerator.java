@@ -34,8 +34,8 @@ public final class DubboExampleGenerator {
         }
         Map<String, String> values = new LinkedHashMap<>();
         URI uri = URI.create(target.getAddress());
-        values.put("authority", literal(StringUtils.isBlank(address) ? "请填写服务地址" : uri.getRawAuthority()));
-        values.put("address", literal(StringUtils.defaultIfBlank(address, "请填写服务地址")));
+        values.put("authority", literal(StringUtils.isBlank(address) ? ExampleConnections.ADDRESS_PLACEHOLDER : uri.getRawAuthority()));
+        values.put("address", literal(StringUtils.defaultIfBlank(address, ExampleConnections.ADDRESS_PLACEHOLDER)));
         values.put("service", literal(binding.getName()));
         values.put("group", literal(target.getService().getGroup()));
         values.put("version", literal(target.getService().getVersion()));
@@ -44,8 +44,10 @@ public final class DubboExampleGenerator {
         values.put("types", String.join(", ", types));
         values.put("jsonArguments", literal(args.toString()));
         List<ExampleDocument> documents = new ArrayList<>();
-        documents.add(new ExampleDocument("javascript-direct", "javascript", "direct", "依赖：`dubbo2.js@2.3.9`。\n\n" + ExampleTemplates.codeBlock("javascript", ExampleTemplates.render("dubbo/consumer.cjs.tpl", values))));
-        documents.add(new ExampleDocument("go-direct", "go", "direct", "依赖：`dubbo.apache.org/dubbo-go/v3 v3.3.2`。\n\n" + ExampleTemplates.codeBlock("go", ExampleTemplates.render("dubbo/consumer.go.tpl", values))));
+        documents.add(new ExampleDocument("javascript-direct", "javascript", "direct", ExampleTemplates.codeBlock("bash", "npm install dubbo2.js@2.3.9")
+                + "\n\n" + ExampleTemplates.codeBlock("javascript", ExampleTemplates.render("dubbo/consumer.cjs.tpl", values))));
+        documents.add(new ExampleDocument("go-direct", "go", "direct", ExampleTemplates.codeBlock("bash", "go get dubbo.apache.org/dubbo-go/v3@v3.3.2")
+                + "\n\n" + ExampleTemplates.codeBlock("go", ExampleTemplates.render("dubbo/consumer.go.tpl", values))));
         return documents;
     }
 

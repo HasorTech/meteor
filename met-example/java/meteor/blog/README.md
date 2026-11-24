@@ -4,9 +4,9 @@
 
 | 文章 | 源码 | 运行结果 |
 | --- | --- | --- |
-| [从点对点调用到注册中心发现服务](../../../../meteor-doc/blog/2026-11-01-direct-to-discovery.md) | [DiscoveryMain](src/main/java/net/hasor/example/blog/DiscoveryMain.java) | 固定地址和内存注册中心发现均返回 `Hello, Meteor!` |
-| [多协议共享 HTTP 端口的路径配置](../../../../meteor-doc/blog/2026-11-01-http-protocol-paths.md) | [HttpPathsMain](src/main/java/net/hasor/example/blog/HttpPathsMain.java) | 请求 `/rpc/public`，返回 JSON-RPC 结果 `Meteor` |
-| [一个 Java 服务如何接入多种协议](../../../../meteor-doc/blog/2026-11-01-one-service-many-protocols.md) | [MultipleProtocolsMain](src/main/java/net/hasor/example/blog/MultipleProtocolsMain.java) | 同一端口的 JSON-RPC 和 Hprose 分别返回 `Meteor` |
+| [从点对点调用到注册中心发现服务](https://www.hasor.net/cn/blog/meteor/direct-to-discovery/) | [DiscoveryMain](src/main/java/net/hasor/example/blog/DiscoveryMain.java) | 固定地址和内存注册中心发现均返回 `Hello, Meteor!` |
+| [多协议共享 HTTP 端口的路径配置](https://www.hasor.net/cn/blog/meteor/http-protocol-paths/) | [HttpPathsMain](src/main/java/net/hasor/example/blog/HttpPathsMain.java) | 请求 `/rpc/public`，返回 JSON-RPC 结果 `Meteor` |
+| [一个 Java 服务如何接入多种协议](https://www.hasor.net/cn/blog/meteor/one-service-many-protocols/) | [MultipleProtocolsMain](src/main/java/net/hasor/example/blog/MultipleProtocolsMain.java) | 同一端口的 JSON-RPC 和 Hprose 分别返回 `Meteor` |
 
 从 Meteor 仓库根目录运行：
 

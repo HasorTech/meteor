@@ -1,23 +1,20 @@
 package main
 import (
     "bytes"
-    "encoding/base64"
     "encoding/hex"
     "fmt"
     "io"
     "net/http"
+    "os"
     "time"
 )
 func main() {
-    // {{operation}}；请求来自当前服务的实际线上契约。
-    body, err := base64.StdEncoding.DecodeString("{{body}}")
+    body, err := os.ReadFile("request.bin")
     if err != nil { panic(err) }
     request, err := http.NewRequest("POST", {{url}}, bytes.NewReader(body))
     if err != nil { panic(err) }
-    headers := map[string]string{{headers}}
-    for name, value := range headers { request.Header.Set(name, value) }
-    client := &http.Client{Timeout: 5 * time.Second}
-    response, err := client.Do(request)
+    for name, value := range map[string]string{{headers}} { request.Header.Set(name, value) }
+    response, err := (&http.Client{Timeout: 5 * time.Second}).Do(request)
     if err != nil { panic(err) }
     defer response.Body.Close()
     result, err := io.ReadAll(response.Body)
